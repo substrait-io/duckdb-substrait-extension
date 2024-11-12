@@ -107,6 +107,7 @@ add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})
 
 set(PARAMETERS "-warnings")
 build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES})
+add_subdirectory("test/c")
 
 install(
   TARGETS ${EXTENSION_NAME}

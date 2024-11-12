@@ -1,9 +1,6 @@
 #include "catch.hpp"
 #include "test_helpers.hpp"
-#include "duckdb/parser/parser.hpp"
-#include "duckdb/planner/logical_operator.hpp"
 #include "duckdb/main/connection_manager.hpp"
-#include "substrait_extension.hpp"
 
 #include <chrono>
 #include <thread>
@@ -13,7 +10,6 @@ using namespace std;
 
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
-  db.LoadExtension<duckdb::DUCKDB_EXTENSION_CLASS>();
   Connection con(db);
   con.EnableQueryVerification();
   // create the database
@@ -33,7 +29,6 @@ TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
 
 TEST_CASE("Test C Get and To Json-Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
-  db.LoadExtension<duckdb::DUCKDB_EXTENSION_CLASS>();
   Connection con(db);
   con.EnableQueryVerification();
   // create the database

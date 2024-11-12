@@ -19,3 +19,11 @@ add_library_unity(test_substrait OBJECT ${ALL_SOURCES})
 set(ALL_OBJECT_FILES
     ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:test_substrait>
     PARENT_SCOPE)
+
+option(ENABLE_TEST_EXE "Build the optional test executable" OFF)
+if (ENABLE_TEST_EXE)
+    # Add an executable target with main.cpp
+    add_executable(test_substrait_exe $<TARGET_OBJECTS:test_substrait> main.cpp)
+    # Link the executable with necessary libraries
+    target_link_libraries(test_substrait_exe duckdb substrait_extension test_helpers)
+endif()
