@@ -20,8 +20,8 @@ set(ALL_OBJECT_FILES
     ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:test_substrait>
     PARENT_SCOPE)
 
-option(ENABLE_TEST_EXE "Build the optional test executable" OFF)
-if (ENABLE_TEST_EXE)
+option(SUBSTRAIT_EXTENSION_TEST_EXE "Build the optional test executable" OFF)
+if (SUBSTRAIT_EXTENSION_TEST_EXE)
     # Add an executable target with main.cpp
     add_executable(test_substrait_exe $<TARGET_OBJECTS:test_substrait> main.cpp)
     # Link the executable with necessary libraries
