@@ -1317,7 +1317,7 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		auto &column_ids = dget.GetColumnIds();
 		for (auto col_idx : dget.projection_ids) {
 			auto struct_item = select->add_struct_items();
-			struct_item->set_field(static_cast<int32_t>(column_ids[col_idx]));
+			struct_item->set_field(static_cast<int32_t>(column_ids[col_idx].GetPrimaryIndex()));
 			// FIXME do we need to set the child? if yes, to what?
 		}
 		projection->set_allocated_select(select);
