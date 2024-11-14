@@ -93,6 +93,36 @@ struct DerivationExpression_ExpressionPrecisionTimestampDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DerivationExpression_ExpressionPrecisionTimestampDefaultTypeInternal _DerivationExpression_ExpressionPrecisionTimestamp_default_instance_;
+constexpr DerivationExpression_ExpressionIntervalDay::DerivationExpression_ExpressionIntervalDay(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : precision_(nullptr)
+  , variation_pointer_(0u)
+  , nullability_(0)
+{}
+struct DerivationExpression_ExpressionIntervalDayDefaultTypeInternal {
+  constexpr DerivationExpression_ExpressionIntervalDayDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DerivationExpression_ExpressionIntervalDayDefaultTypeInternal() {}
+  union {
+    DerivationExpression_ExpressionIntervalDay _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DerivationExpression_ExpressionIntervalDayDefaultTypeInternal _DerivationExpression_ExpressionIntervalDay_default_instance_;
+constexpr DerivationExpression_ExpressionIntervalCompound::DerivationExpression_ExpressionIntervalCompound(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : precision_(nullptr)
+  , variation_pointer_(0u)
+  , nullability_(0)
+{}
+struct DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal {
+  constexpr DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal() {}
+  union {
+    DerivationExpression_ExpressionIntervalCompound _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal _DerivationExpression_ExpressionIntervalCompound_default_instance_;
 constexpr DerivationExpression_ExpressionPrecisionTimestampTZ::DerivationExpression_ExpressionPrecisionTimestampTZ(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
   : precision_(nullptr)
@@ -264,7 +294,7 @@ struct DerivationExpressionDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DerivationExpressionDefaultTypeInternal _DerivationExpression_default_instance_;
 }  // namespace substrait
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2ftype_5fexpressions_2eproto[17];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2ftype_5fexpressions_2eproto[19];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_substrait_2ftype_5fexpressions_2eproto[2];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_substrait_2ftype_5fexpressions_2eproto = nullptr;
 
@@ -315,6 +345,24 @@ const uint32_t TableStruct_substrait_2ftype_5fexpressions_2eproto::offsets[] PRO
   PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionPrecisionTimestamp, precision_),
   PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionPrecisionTimestamp, variation_pointer_),
   PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionPrecisionTimestamp, nullability_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalDay, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalDay, precision_),
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalDay, variation_pointer_),
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalDay, nullability_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalCompound, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalCompound, precision_),
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalCompound, variation_pointer_),
+  PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionIntervalCompound, nullability_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -451,6 +499,7 @@ const uint32_t TableStruct_substrait_2ftype_5fexpressions_2eproto::offsets[] PRO
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
+  ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::substrait::DerivationExpression, kind_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -459,18 +508,20 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 18, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionFixedBinary)},
   { 27, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionDecimal)},
   { 37, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionPrecisionTimestamp)},
-  { 46, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ)},
-  { 55, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionStruct)},
-  { 64, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionNamedStruct)},
-  { 72, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionList)},
-  { 81, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionMap)},
-  { 91, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionUserDefined)},
-  { 100, -1, -1, sizeof(::substrait::DerivationExpression_IfElse)},
-  { 109, -1, -1, sizeof(::substrait::DerivationExpression_UnaryOp)},
-  { 117, -1, -1, sizeof(::substrait::DerivationExpression_BinaryOp)},
-  { 126, -1, -1, sizeof(::substrait::DerivationExpression_ReturnProgram_Assignment)},
-  { 134, -1, -1, sizeof(::substrait::DerivationExpression_ReturnProgram)},
-  { 142, -1, -1, sizeof(::substrait::DerivationExpression)},
+  { 46, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionIntervalDay)},
+  { 55, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionIntervalCompound)},
+  { 64, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ)},
+  { 73, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionStruct)},
+  { 82, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionNamedStruct)},
+  { 90, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionList)},
+  { 99, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionMap)},
+  { 109, -1, -1, sizeof(::substrait::DerivationExpression_ExpressionUserDefined)},
+  { 118, -1, -1, sizeof(::substrait::DerivationExpression_IfElse)},
+  { 127, -1, -1, sizeof(::substrait::DerivationExpression_UnaryOp)},
+  { 135, -1, -1, sizeof(::substrait::DerivationExpression_BinaryOp)},
+  { 144, -1, -1, sizeof(::substrait::DerivationExpression_ReturnProgram_Assignment)},
+  { 152, -1, -1, sizeof(::substrait::DerivationExpression_ReturnProgram)},
+  { 160, -1, -1, sizeof(::substrait::DerivationExpression)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -479,6 +530,8 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionFixedBinary_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionDecimal_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionPrecisionTimestamp_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionIntervalDay_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionIntervalCompound_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionPrecisionTimestampTZ_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionStruct_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DerivationExpression_ExpressionNamedStruct_default_instance_),
@@ -495,7 +548,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_substrait_2ftype_5fexpressions_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n substrait/type_expressions.proto\022\tsubs"
-  "trait\032\024substrait/type.proto\"\322$\n\024Derivati"
+  "trait\032\024substrait/type.proto\"\200(\n\024Derivati"
   "onExpression\022\'\n\004bool\030\001 \001(\0132\027.substrait.T"
   "ype.BooleanH\000\022 \n\002i8\030\002 \001(\0132\022.substrait.Ty"
   "pe.I8H\000\022\"\n\003i16\030\003 \001(\0132\023.substrait.Type.I1"
@@ -509,121 +562,132 @@ const char descriptor_table_protodef_substrait_2ftype_5fexpressions_2eproto[] PR
   "pB\002\030\001H\000\022$\n\004date\030\020 \001(\0132\024.substrait.Type.D"
   "ateH\000\022$\n\004time\030\021 \001(\0132\024.substrait.Type.Tim"
   "eH\000\0225\n\rinterval_year\030\023 \001(\0132\034.substrait.T"
-  "ype.IntervalYearH\000\0223\n\014interval_day\030\024 \001(\013"
-  "2\033.substrait.Type.IntervalDayH\000\0227\n\014times"
-  "tamp_tz\030\035 \001(\0132\033.substrait.Type.Timestamp"
-  "TZB\002\030\001H\000\022$\n\004uuid\030  \001(\0132\024.substrait.Type."
-  "UUIDH\000\022I\n\nfixed_char\030\025 \001(\01323.substrait.D"
-  "erivationExpression.ExpressionFixedCharH"
-  "\000\022D\n\007varchar\030\026 \001(\01321.substrait.Derivatio"
-  "nExpression.ExpressionVarCharH\000\022M\n\014fixed"
-  "_binary\030\027 \001(\01325.substrait.DerivationExpr"
-  "ession.ExpressionFixedBinaryH\000\022D\n\007decima"
-  "l\030\030 \001(\01321.substrait.DerivationExpression"
-  ".ExpressionDecimalH\000\022[\n\023precision_timest"
-  "amp\030( \001(\0132<.substrait.DerivationExpressi"
-  "on.ExpressionPrecisionTimestampH\000\022`\n\026pre"
-  "cision_timestamp_tz\030) \001(\0132>.substrait.De"
-  "rivationExpression.ExpressionPrecisionTi"
-  "mestampTZH\000\022B\n\006struct\030\031 \001(\01320.substrait."
-  "DerivationExpression.ExpressionStructH\000\022"
-  ">\n\004list\030\033 \001(\0132..substrait.DerivationExpr"
-  "ession.ExpressionListH\000\022<\n\003map\030\034 \001(\0132-.s"
-  "ubstrait.DerivationExpression.Expression"
-  "MapH\000\022M\n\014user_defined\030\036 \001(\01325.substrait."
-  "DerivationExpression.ExpressionUserDefin"
-  "edH\000\022\"\n\024user_defined_pointer\030\037 \001(\rB\002\030\001H\000"
-  "\022\035\n\023type_parameter_name\030! \001(\tH\000\022 \n\026integ"
-  "er_parameter_name\030\" \001(\tH\000\022\031\n\017integer_lit"
-  "eral\030# \001(\005H\000\022;\n\010unary_op\030$ \001(\0132\'.substra"
-  "it.DerivationExpression.UnaryOpH\000\022=\n\tbin"
-  "ary_op\030% \001(\0132(.substrait.DerivationExpre"
-  "ssion.BinaryOpH\000\0229\n\007if_else\030& \001(\0132&.subs"
-  "trait.DerivationExpression.IfElseH\000\022G\n\016r"
-  "eturn_program\030\' \001(\0132-.substrait.Derivati"
-  "onExpression.ReturnProgramH\000\032\223\001\n\023Express"
-  "ionFixedChar\022/\n\006length\030\001 \001(\0132\037.substrait"
-  ".DerivationExpression\022\031\n\021variation_point"
-  "er\030\002 \001(\r\0220\n\013nullability\030\003 \001(\0162\033.substrai"
-  "t.Type.Nullability\032\221\001\n\021ExpressionVarChar"
-  "\022/\n\006length\030\001 \001(\0132\037.substrait.DerivationE"
-  "xpression\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013"
-  "nullability\030\003 \001(\0162\033.substrait.Type.Nulla"
-  "bility\032\225\001\n\025ExpressionFixedBinary\022/\n\006leng"
-  "th\030\001 \001(\0132\037.substrait.DerivationExpressio"
-  "n\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013nullabil"
-  "ity\030\003 \001(\0162\033.substrait.Type.Nullability\032\304"
-  "\001\n\021ExpressionDecimal\022.\n\005scale\030\001 \001(\0132\037.su"
-  "bstrait.DerivationExpression\0222\n\tprecisio"
-  "n\030\002 \001(\0132\037.substrait.DerivationExpression"
-  "\022\031\n\021variation_pointer\030\003 \001(\r\0220\n\013nullabili"
-  "ty\030\004 \001(\0162\033.substrait.Type.Nullability\032\237\001"
-  "\n\034ExpressionPrecisionTimestamp\0222\n\tprecis"
-  "ion\030\001 \001(\0132\037.substrait.DerivationExpressi"
-  "on\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013nullabi"
-  "lity\030\003 \001(\0162\033.substrait.Type.Nullability\032"
-  "\241\001\n\036ExpressionPrecisionTimestampTZ\0222\n\tpr"
-  "ecision\030\001 \001(\0132\037.substrait.DerivationExpr"
-  "ession\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013nul"
-  "lability\030\003 \001(\0162\033.substrait.Type.Nullabil"
-  "ity\032\217\001\n\020ExpressionStruct\022.\n\005types\030\001 \003(\0132"
+  "ype.IntervalYearH\000\0227\n\014timestamp_tz\030\035 \001(\013"
+  "2\033.substrait.Type.TimestampTZB\002\030\001H\000\022$\n\004u"
+  "uid\030  \001(\0132\024.substrait.Type.UUIDH\000\022M\n\014int"
+  "erval_day\030\024 \001(\01325.substrait.DerivationEx"
+  "pression.ExpressionIntervalDayH\000\022W\n\021inte"
+  "rval_compound\030* \001(\0132:.substrait.Derivati"
+  "onExpression.ExpressionIntervalCompoundH"
+  "\000\022I\n\nfixed_char\030\025 \001(\01323.substrait.Deriva"
+  "tionExpression.ExpressionFixedCharH\000\022D\n\007"
+  "varchar\030\026 \001(\01321.substrait.DerivationExpr"
+  "ession.ExpressionVarCharH\000\022M\n\014fixed_bina"
+  "ry\030\027 \001(\01325.substrait.DerivationExpressio"
+  "n.ExpressionFixedBinaryH\000\022D\n\007decimal\030\030 \001"
+  "(\01321.substrait.DerivationExpression.Expr"
+  "essionDecimalH\000\022[\n\023precision_timestamp\030("
+  " \001(\0132<.substrait.DerivationExpression.Ex"
+  "pressionPrecisionTimestampH\000\022`\n\026precisio"
+  "n_timestamp_tz\030) \001(\0132>.substrait.Derivat"
+  "ionExpression.ExpressionPrecisionTimesta"
+  "mpTZH\000\022B\n\006struct\030\031 \001(\01320.substrait.Deriv"
+  "ationExpression.ExpressionStructH\000\022>\n\004li"
+  "st\030\033 \001(\0132..substrait.DerivationExpressio"
+  "n.ExpressionListH\000\022<\n\003map\030\034 \001(\0132-.substr"
+  "ait.DerivationExpression.ExpressionMapH\000"
+  "\022M\n\014user_defined\030\036 \001(\01325.substrait.Deriv"
+  "ationExpression.ExpressionUserDefinedH\000\022"
+  "\"\n\024user_defined_pointer\030\037 \001(\rB\002\030\001H\000\022\035\n\023t"
+  "ype_parameter_name\030! \001(\tH\000\022 \n\026integer_pa"
+  "rameter_name\030\" \001(\tH\000\022\031\n\017integer_literal\030"
+  "# \001(\005H\000\022;\n\010unary_op\030$ \001(\0132\'.substrait.De"
+  "rivationExpression.UnaryOpH\000\022=\n\tbinary_o"
+  "p\030% \001(\0132(.substrait.DerivationExpression"
+  ".BinaryOpH\000\0229\n\007if_else\030& \001(\0132&.substrait"
+  ".DerivationExpression.IfElseH\000\022G\n\016return"
+  "_program\030\' \001(\0132-.substrait.DerivationExp"
+  "ression.ReturnProgramH\000\032\223\001\n\023ExpressionFi"
+  "xedChar\022/\n\006length\030\001 \001(\0132\037.substrait.Deri"
+  "vationExpression\022\031\n\021variation_pointer\030\002 "
+  "\001(\r\0220\n\013nullability\030\003 \001(\0162\033.substrait.Typ"
+  "e.Nullability\032\221\001\n\021ExpressionVarChar\022/\n\006l"
+  "ength\030\001 \001(\0132\037.substrait.DerivationExpres"
+  "sion\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013nulla"
+  "bility\030\003 \001(\0162\033.substrait.Type.Nullabilit"
+  "y\032\225\001\n\025ExpressionFixedBinary\022/\n\006length\030\001 "
+  "\001(\0132\037.substrait.DerivationExpression\022\031\n\021"
+  "variation_pointer\030\002 \001(\r\0220\n\013nullability\030\003"
+  " \001(\0162\033.substrait.Type.Nullability\032\304\001\n\021Ex"
+  "pressionDecimal\022.\n\005scale\030\001 \001(\0132\037.substra"
+  "it.DerivationExpression\0222\n\tprecision\030\002 \001"
+  "(\0132\037.substrait.DerivationExpression\022\031\n\021v"
+  "ariation_pointer\030\003 \001(\r\0220\n\013nullability\030\004 "
+  "\001(\0162\033.substrait.Type.Nullability\032\237\001\n\034Exp"
+  "ressionPrecisionTimestamp\0222\n\tprecision\030\001"
+  " \001(\0132\037.substrait.DerivationExpression\022\031\n"
+  "\021variation_pointer\030\002 \001(\r\0220\n\013nullability\030"
+  "\003 \001(\0162\033.substrait.Type.Nullability\032\230\001\n\025E"
+  "xpressionIntervalDay\0222\n\tprecision\030\001 \001(\0132"
   "\037.substrait.DerivationExpression\022\031\n\021vari"
   "ation_pointer\030\002 \001(\r\0220\n\013nullability\030\003 \001(\016"
-  "2\033.substrait.Type.Nullability\032h\n\025Express"
-  "ionNamedStruct\022\r\n\005names\030\001 \003(\t\022@\n\006struct\030"
-  "\002 \001(\01320.substrait.DerivationExpression.E"
-  "xpressionStruct\032\214\001\n\016ExpressionList\022-\n\004ty"
-  "pe\030\001 \001(\0132\037.substrait.DerivationExpressio"
-  "n\022\031\n\021variation_pointer\030\002 \001(\r\0220\n\013nullabil"
-  "ity\030\003 \001(\0162\033.substrait.Type.Nullability\032\272"
-  "\001\n\rExpressionMap\022,\n\003key\030\001 \001(\0132\037.substrai"
-  "t.DerivationExpression\022.\n\005value\030\002 \001(\0132\037."
-  "substrait.DerivationExpression\022\031\n\021variat"
-  "ion_pointer\030\003 \001(\r\0220\n\013nullability\030\004 \001(\0162\033"
-  ".substrait.Type.Nullability\032z\n\025Expressio"
-  "nUserDefined\022\024\n\014type_pointer\030\001 \001(\r\022\031\n\021va"
-  "riation_pointer\030\002 \001(\r\0220\n\013nullability\030\003 \001"
-  "(\0162\033.substrait.Type.Nullability\032\251\001\n\006IfEl"
-  "se\0225\n\014if_condition\030\001 \001(\0132\037.substrait.Der"
-  "ivationExpression\0222\n\tif_return\030\002 \001(\0132\037.s"
-  "ubstrait.DerivationExpression\0224\n\013else_re"
-  "turn\030\003 \001(\0132\037.substrait.DerivationExpress"
-  "ion\032\312\001\n\007UnaryOp\022D\n\007op_type\030\001 \001(\01623.subst"
-  "rait.DerivationExpression.UnaryOp.UnaryO"
-  "pType\022,\n\003arg\030\002 \001(\0132\037.substrait.Derivatio"
-  "nExpression\"K\n\013UnaryOpType\022\035\n\031UNARY_OP_T"
-  "YPE_UNSPECIFIED\020\000\022\035\n\031UNARY_OP_TYPE_BOOLE"
-  "AN_NOT\020\001\032\240\004\n\010BinaryOp\022F\n\007op_type\030\001 \001(\01625"
-  ".substrait.DerivationExpression.BinaryOp"
-  ".BinaryOpType\022-\n\004arg1\030\002 \001(\0132\037.substrait."
-  "DerivationExpression\022-\n\004arg2\030\003 \001(\0132\037.sub"
-  "strait.DerivationExpression\"\355\002\n\014BinaryOp"
-  "Type\022\036\n\032BINARY_OP_TYPE_UNSPECIFIED\020\000\022\027\n\023"
-  "BINARY_OP_TYPE_PLUS\020\001\022\030\n\024BINARY_OP_TYPE_"
-  "MINUS\020\002\022\033\n\027BINARY_OP_TYPE_MULTIPLY\020\003\022\031\n\025"
-  "BINARY_OP_TYPE_DIVIDE\020\004\022\026\n\022BINARY_OP_TYP"
-  "E_MIN\020\005\022\026\n\022BINARY_OP_TYPE_MAX\020\006\022\037\n\033BINAR"
-  "Y_OP_TYPE_GREATER_THAN\020\007\022\034\n\030BINARY_OP_TY"
-  "PE_LESS_THAN\020\010\022\026\n\022BINARY_OP_TYPE_AND\020\t\022\025"
-  "\n\021BINARY_OP_TYPE_OR\020\n\022\031\n\025BINARY_OP_TYPE_"
-  "EQUALS\020\013\022\031\n\025BINARY_OP_TYPE_COVERS\020\014\032\352\001\n\r"
-  "ReturnProgram\022M\n\013assignments\030\001 \003(\01328.sub"
-  "strait.DerivationExpression.ReturnProgra"
-  "m.Assignment\0229\n\020final_expression\030\002 \001(\0132\037"
-  ".substrait.DerivationExpression\032O\n\nAssig"
-  "nment\022\014\n\004name\030\001 \001(\t\0223\n\nexpression\030\002 \001(\0132"
-  "\037.substrait.DerivationExpressionB\006\n\004kind"
-  "BW\n\022io.substrait.protoP\001Z*github.com/sub"
-  "strait-io/substrait-go/proto\252\002\022Substrait"
-  ".Protobufb\006proto3"
+  "2\033.substrait.Type.Nullability\032\235\001\n\032Expres"
+  "sionIntervalCompound\0222\n\tprecision\030\001 \001(\0132"
+  "\037.substrait.DerivationExpression\022\031\n\021vari"
+  "ation_pointer\030\002 \001(\r\0220\n\013nullability\030\003 \001(\016"
+  "2\033.substrait.Type.Nullability\032\241\001\n\036Expres"
+  "sionPrecisionTimestampTZ\0222\n\tprecision\030\001 "
+  "\001(\0132\037.substrait.DerivationExpression\022\031\n\021"
+  "variation_pointer\030\002 \001(\r\0220\n\013nullability\030\003"
+  " \001(\0162\033.substrait.Type.Nullability\032\217\001\n\020Ex"
+  "pressionStruct\022.\n\005types\030\001 \003(\0132\037.substrai"
+  "t.DerivationExpression\022\031\n\021variation_poin"
+  "ter\030\002 \001(\r\0220\n\013nullability\030\003 \001(\0162\033.substra"
+  "it.Type.Nullability\032h\n\025ExpressionNamedSt"
+  "ruct\022\r\n\005names\030\001 \003(\t\022@\n\006struct\030\002 \001(\01320.su"
+  "bstrait.DerivationExpression.ExpressionS"
+  "truct\032\214\001\n\016ExpressionList\022-\n\004type\030\001 \001(\0132\037"
+  ".substrait.DerivationExpression\022\031\n\021varia"
+  "tion_pointer\030\002 \001(\r\0220\n\013nullability\030\003 \001(\0162"
+  "\033.substrait.Type.Nullability\032\272\001\n\rExpress"
+  "ionMap\022,\n\003key\030\001 \001(\0132\037.substrait.Derivati"
+  "onExpression\022.\n\005value\030\002 \001(\0132\037.substrait."
+  "DerivationExpression\022\031\n\021variation_pointe"
+  "r\030\003 \001(\r\0220\n\013nullability\030\004 \001(\0162\033.substrait"
+  ".Type.Nullability\032z\n\025ExpressionUserDefin"
+  "ed\022\024\n\014type_pointer\030\001 \001(\r\022\031\n\021variation_po"
+  "inter\030\002 \001(\r\0220\n\013nullability\030\003 \001(\0162\033.subst"
+  "rait.Type.Nullability\032\251\001\n\006IfElse\0225\n\014if_c"
+  "ondition\030\001 \001(\0132\037.substrait.DerivationExp"
+  "ression\0222\n\tif_return\030\002 \001(\0132\037.substrait.D"
+  "erivationExpression\0224\n\013else_return\030\003 \001(\013"
+  "2\037.substrait.DerivationExpression\032\312\001\n\007Un"
+  "aryOp\022D\n\007op_type\030\001 \001(\01623.substrait.Deriv"
+  "ationExpression.UnaryOp.UnaryOpType\022,\n\003a"
+  "rg\030\002 \001(\0132\037.substrait.DerivationExpressio"
+  "n\"K\n\013UnaryOpType\022\035\n\031UNARY_OP_TYPE_UNSPEC"
+  "IFIED\020\000\022\035\n\031UNARY_OP_TYPE_BOOLEAN_NOT\020\001\032\240"
+  "\004\n\010BinaryOp\022F\n\007op_type\030\001 \001(\01625.substrait"
+  ".DerivationExpression.BinaryOp.BinaryOpT"
+  "ype\022-\n\004arg1\030\002 \001(\0132\037.substrait.Derivation"
+  "Expression\022-\n\004arg2\030\003 \001(\0132\037.substrait.Der"
+  "ivationExpression\"\355\002\n\014BinaryOpType\022\036\n\032BI"
+  "NARY_OP_TYPE_UNSPECIFIED\020\000\022\027\n\023BINARY_OP_"
+  "TYPE_PLUS\020\001\022\030\n\024BINARY_OP_TYPE_MINUS\020\002\022\033\n"
+  "\027BINARY_OP_TYPE_MULTIPLY\020\003\022\031\n\025BINARY_OP_"
+  "TYPE_DIVIDE\020\004\022\026\n\022BINARY_OP_TYPE_MIN\020\005\022\026\n"
+  "\022BINARY_OP_TYPE_MAX\020\006\022\037\n\033BINARY_OP_TYPE_"
+  "GREATER_THAN\020\007\022\034\n\030BINARY_OP_TYPE_LESS_TH"
+  "AN\020\010\022\026\n\022BINARY_OP_TYPE_AND\020\t\022\025\n\021BINARY_O"
+  "P_TYPE_OR\020\n\022\031\n\025BINARY_OP_TYPE_EQUALS\020\013\022\031"
+  "\n\025BINARY_OP_TYPE_COVERS\020\014\032\352\001\n\rReturnProg"
+  "ram\022M\n\013assignments\030\001 \003(\01328.substrait.Der"
+  "ivationExpression.ReturnProgram.Assignme"
+  "nt\0229\n\020final_expression\030\002 \001(\0132\037.substrait"
+  ".DerivationExpression\032O\n\nAssignment\022\014\n\004n"
+  "ame\030\001 \001(\t\0223\n\nexpression\030\002 \001(\0132\037.substrai"
+  "t.DerivationExpressionB\006\n\004kindBW\n\022io.sub"
+  "strait.protoP\001Z*github.com/substrait-io/"
+  "substrait-go/proto\252\002\022Substrait.Protobufb"
+  "\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2ftype_5fexpressions_2eproto_deps[1] = {
   &::descriptor_table_substrait_2ftype_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2ftype_5fexpressions_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2ftype_5fexpressions_2eproto = {
-  false, false, 4857, descriptor_table_protodef_substrait_2ftype_5fexpressions_2eproto, "substrait/type_expressions.proto", 
-  &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once, descriptor_table_substrait_2ftype_5fexpressions_2eproto_deps, 1, 17,
+  false, false, 5287, descriptor_table_protodef_substrait_2ftype_5fexpressions_2eproto, "substrait/type_expressions.proto", 
+  &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once, descriptor_table_substrait_2ftype_5fexpressions_2eproto_deps, 1, 19,
   schemas, file_default_instances, TableStruct_substrait_2ftype_5fexpressions_2eproto::offsets,
   file_level_metadata_substrait_2ftype_5fexpressions_2eproto, file_level_enum_descriptors_substrait_2ftype_5fexpressions_2eproto, file_level_service_descriptors_substrait_2ftype_5fexpressions_2eproto,
 };
@@ -2022,6 +2086,518 @@ void DerivationExpression_ExpressionPrecisionTimestamp::InternalSwap(DerivationE
 
 // ===================================================================
 
+class DerivationExpression_ExpressionIntervalDay::_Internal {
+ public:
+  static const ::substrait::DerivationExpression& precision(const DerivationExpression_ExpressionIntervalDay* msg);
+};
+
+const ::substrait::DerivationExpression&
+DerivationExpression_ExpressionIntervalDay::_Internal::precision(const DerivationExpression_ExpressionIntervalDay* msg) {
+  return *msg->precision_;
+}
+DerivationExpression_ExpressionIntervalDay::DerivationExpression_ExpressionIntervalDay(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  if (!is_message_owned) {
+    RegisterArenaDtor(arena);
+  }
+  // @@protoc_insertion_point(arena_constructor:substrait.DerivationExpression.ExpressionIntervalDay)
+}
+DerivationExpression_ExpressionIntervalDay::DerivationExpression_ExpressionIntervalDay(const DerivationExpression_ExpressionIntervalDay& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_precision()) {
+    precision_ = new ::substrait::DerivationExpression(*from.precision_);
+  } else {
+    precision_ = nullptr;
+  }
+  ::memcpy(&variation_pointer_, &from.variation_pointer_,
+    static_cast<size_t>(reinterpret_cast<char*>(&nullability_) -
+    reinterpret_cast<char*>(&variation_pointer_)) + sizeof(nullability_));
+  // @@protoc_insertion_point(copy_constructor:substrait.DerivationExpression.ExpressionIntervalDay)
+}
+
+inline void DerivationExpression_ExpressionIntervalDay::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&precision_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&nullability_) -
+    reinterpret_cast<char*>(&precision_)) + sizeof(nullability_));
+}
+
+DerivationExpression_ExpressionIntervalDay::~DerivationExpression_ExpressionIntervalDay() {
+  // @@protoc_insertion_point(destructor:substrait.DerivationExpression.ExpressionIntervalDay)
+  if (GetArenaForAllocation() != nullptr) return;
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+inline void DerivationExpression_ExpressionIntervalDay::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  if (this != internal_default_instance()) delete precision_;
+}
+
+void DerivationExpression_ExpressionIntervalDay::ArenaDtor(void* object) {
+  DerivationExpression_ExpressionIntervalDay* _this = reinterpret_cast< DerivationExpression_ExpressionIntervalDay* >(object);
+  (void)_this;
+}
+void DerivationExpression_ExpressionIntervalDay::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void DerivationExpression_ExpressionIntervalDay::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void DerivationExpression_ExpressionIntervalDay::Clear() {
+// @@protoc_insertion_point(message_clear_start:substrait.DerivationExpression.ExpressionIntervalDay)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+  ::memset(&variation_pointer_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&nullability_) -
+      reinterpret_cast<char*>(&variation_pointer_)) + sizeof(nullability_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* DerivationExpression_ExpressionIntervalDay::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .substrait.DerivationExpression precision = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_precision(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 variation_pointer = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          variation_pointer_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .substrait.Type.Nullability nullability = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_nullability(static_cast<::substrait::Type_Nullability>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* DerivationExpression_ExpressionIntervalDay::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:substrait.DerivationExpression.ExpressionIntervalDay)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .substrait.DerivationExpression precision = 1;
+  if (this->_internal_has_precision()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        1, _Internal::precision(this), target, stream);
+  }
+
+  // uint32 variation_pointer = 2;
+  if (this->_internal_variation_pointer() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_variation_pointer(), target);
+  }
+
+  // .substrait.Type.Nullability nullability = 3;
+  if (this->_internal_nullability() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      3, this->_internal_nullability(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:substrait.DerivationExpression.ExpressionIntervalDay)
+  return target;
+}
+
+size_t DerivationExpression_ExpressionIntervalDay::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:substrait.DerivationExpression.ExpressionIntervalDay)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .substrait.DerivationExpression precision = 1;
+  if (this->_internal_has_precision()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *precision_);
+  }
+
+  // uint32 variation_pointer = 2;
+  if (this->_internal_variation_pointer() != 0) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32SizePlusOne(this->_internal_variation_pointer());
+  }
+
+  // .substrait.Type.Nullability nullability = 3;
+  if (this->_internal_nullability() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_nullability());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData DerivationExpression_ExpressionIntervalDay::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    DerivationExpression_ExpressionIntervalDay::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*DerivationExpression_ExpressionIntervalDay::GetClassData() const { return &_class_data_; }
+
+void DerivationExpression_ExpressionIntervalDay::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<DerivationExpression_ExpressionIntervalDay *>(to)->MergeFrom(
+      static_cast<const DerivationExpression_ExpressionIntervalDay &>(from));
+}
+
+
+void DerivationExpression_ExpressionIntervalDay::MergeFrom(const DerivationExpression_ExpressionIntervalDay& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:substrait.DerivationExpression.ExpressionIntervalDay)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_precision()) {
+    _internal_mutable_precision()->::substrait::DerivationExpression::MergeFrom(from._internal_precision());
+  }
+  if (from._internal_variation_pointer() != 0) {
+    _internal_set_variation_pointer(from._internal_variation_pointer());
+  }
+  if (from._internal_nullability() != 0) {
+    _internal_set_nullability(from._internal_nullability());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void DerivationExpression_ExpressionIntervalDay::CopyFrom(const DerivationExpression_ExpressionIntervalDay& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:substrait.DerivationExpression.ExpressionIntervalDay)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool DerivationExpression_ExpressionIntervalDay::IsInitialized() const {
+  return true;
+}
+
+void DerivationExpression_ExpressionIntervalDay::InternalSwap(DerivationExpression_ExpressionIntervalDay* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DerivationExpression_ExpressionIntervalDay, nullability_)
+      + sizeof(DerivationExpression_ExpressionIntervalDay::nullability_)
+      - PROTOBUF_FIELD_OFFSET(DerivationExpression_ExpressionIntervalDay, precision_)>(
+          reinterpret_cast<char*>(&precision_),
+          reinterpret_cast<char*>(&other->precision_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionIntervalDay::GetMetadata() const {
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[5]);
+}
+
+// ===================================================================
+
+class DerivationExpression_ExpressionIntervalCompound::_Internal {
+ public:
+  static const ::substrait::DerivationExpression& precision(const DerivationExpression_ExpressionIntervalCompound* msg);
+};
+
+const ::substrait::DerivationExpression&
+DerivationExpression_ExpressionIntervalCompound::_Internal::precision(const DerivationExpression_ExpressionIntervalCompound* msg) {
+  return *msg->precision_;
+}
+DerivationExpression_ExpressionIntervalCompound::DerivationExpression_ExpressionIntervalCompound(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  if (!is_message_owned) {
+    RegisterArenaDtor(arena);
+  }
+  // @@protoc_insertion_point(arena_constructor:substrait.DerivationExpression.ExpressionIntervalCompound)
+}
+DerivationExpression_ExpressionIntervalCompound::DerivationExpression_ExpressionIntervalCompound(const DerivationExpression_ExpressionIntervalCompound& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_precision()) {
+    precision_ = new ::substrait::DerivationExpression(*from.precision_);
+  } else {
+    precision_ = nullptr;
+  }
+  ::memcpy(&variation_pointer_, &from.variation_pointer_,
+    static_cast<size_t>(reinterpret_cast<char*>(&nullability_) -
+    reinterpret_cast<char*>(&variation_pointer_)) + sizeof(nullability_));
+  // @@protoc_insertion_point(copy_constructor:substrait.DerivationExpression.ExpressionIntervalCompound)
+}
+
+inline void DerivationExpression_ExpressionIntervalCompound::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&precision_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&nullability_) -
+    reinterpret_cast<char*>(&precision_)) + sizeof(nullability_));
+}
+
+DerivationExpression_ExpressionIntervalCompound::~DerivationExpression_ExpressionIntervalCompound() {
+  // @@protoc_insertion_point(destructor:substrait.DerivationExpression.ExpressionIntervalCompound)
+  if (GetArenaForAllocation() != nullptr) return;
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+inline void DerivationExpression_ExpressionIntervalCompound::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  if (this != internal_default_instance()) delete precision_;
+}
+
+void DerivationExpression_ExpressionIntervalCompound::ArenaDtor(void* object) {
+  DerivationExpression_ExpressionIntervalCompound* _this = reinterpret_cast< DerivationExpression_ExpressionIntervalCompound* >(object);
+  (void)_this;
+}
+void DerivationExpression_ExpressionIntervalCompound::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void DerivationExpression_ExpressionIntervalCompound::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void DerivationExpression_ExpressionIntervalCompound::Clear() {
+// @@protoc_insertion_point(message_clear_start:substrait.DerivationExpression.ExpressionIntervalCompound)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+  ::memset(&variation_pointer_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&nullability_) -
+      reinterpret_cast<char*>(&variation_pointer_)) + sizeof(nullability_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* DerivationExpression_ExpressionIntervalCompound::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .substrait.DerivationExpression precision = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_precision(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint32 variation_pointer = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          variation_pointer_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .substrait.Type.Nullability nullability = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_nullability(static_cast<::substrait::Type_Nullability>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* DerivationExpression_ExpressionIntervalCompound::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:substrait.DerivationExpression.ExpressionIntervalCompound)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .substrait.DerivationExpression precision = 1;
+  if (this->_internal_has_precision()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        1, _Internal::precision(this), target, stream);
+  }
+
+  // uint32 variation_pointer = 2;
+  if (this->_internal_variation_pointer() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_variation_pointer(), target);
+  }
+
+  // .substrait.Type.Nullability nullability = 3;
+  if (this->_internal_nullability() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      3, this->_internal_nullability(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:substrait.DerivationExpression.ExpressionIntervalCompound)
+  return target;
+}
+
+size_t DerivationExpression_ExpressionIntervalCompound::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:substrait.DerivationExpression.ExpressionIntervalCompound)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .substrait.DerivationExpression precision = 1;
+  if (this->_internal_has_precision()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *precision_);
+  }
+
+  // uint32 variation_pointer = 2;
+  if (this->_internal_variation_pointer() != 0) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32SizePlusOne(this->_internal_variation_pointer());
+  }
+
+  // .substrait.Type.Nullability nullability = 3;
+  if (this->_internal_nullability() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_nullability());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData DerivationExpression_ExpressionIntervalCompound::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    DerivationExpression_ExpressionIntervalCompound::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*DerivationExpression_ExpressionIntervalCompound::GetClassData() const { return &_class_data_; }
+
+void DerivationExpression_ExpressionIntervalCompound::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<DerivationExpression_ExpressionIntervalCompound *>(to)->MergeFrom(
+      static_cast<const DerivationExpression_ExpressionIntervalCompound &>(from));
+}
+
+
+void DerivationExpression_ExpressionIntervalCompound::MergeFrom(const DerivationExpression_ExpressionIntervalCompound& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:substrait.DerivationExpression.ExpressionIntervalCompound)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_precision()) {
+    _internal_mutable_precision()->::substrait::DerivationExpression::MergeFrom(from._internal_precision());
+  }
+  if (from._internal_variation_pointer() != 0) {
+    _internal_set_variation_pointer(from._internal_variation_pointer());
+  }
+  if (from._internal_nullability() != 0) {
+    _internal_set_nullability(from._internal_nullability());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void DerivationExpression_ExpressionIntervalCompound::CopyFrom(const DerivationExpression_ExpressionIntervalCompound& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:substrait.DerivationExpression.ExpressionIntervalCompound)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool DerivationExpression_ExpressionIntervalCompound::IsInitialized() const {
+  return true;
+}
+
+void DerivationExpression_ExpressionIntervalCompound::InternalSwap(DerivationExpression_ExpressionIntervalCompound* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DerivationExpression_ExpressionIntervalCompound, nullability_)
+      + sizeof(DerivationExpression_ExpressionIntervalCompound::nullability_)
+      - PROTOBUF_FIELD_OFFSET(DerivationExpression_ExpressionIntervalCompound, precision_)>(
+          reinterpret_cast<char*>(&precision_),
+          reinterpret_cast<char*>(&other->precision_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionIntervalCompound::GetMetadata() const {
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[6]);
+}
+
+// ===================================================================
+
 class DerivationExpression_ExpressionPrecisionTimestampTZ::_Internal {
  public:
   static const ::substrait::DerivationExpression& precision(const DerivationExpression_ExpressionPrecisionTimestampTZ* msg);
@@ -2273,7 +2849,7 @@ void DerivationExpression_ExpressionPrecisionTimestampTZ::InternalSwap(Derivatio
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionPrecisionTimestampTZ::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[5]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[7]);
 }
 
 // ===================================================================
@@ -2521,7 +3097,7 @@ void DerivationExpression_ExpressionStruct::InternalSwap(DerivationExpression_Ex
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionStruct::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[6]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[8]);
 }
 
 // ===================================================================
@@ -2754,7 +3330,7 @@ void DerivationExpression_ExpressionNamedStruct::InternalSwap(DerivationExpressi
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionNamedStruct::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[7]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[9]);
 }
 
 // ===================================================================
@@ -3010,7 +3586,7 @@ void DerivationExpression_ExpressionList::InternalSwap(DerivationExpression_Expr
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionList::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[8]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[10]);
 }
 
 // ===================================================================
@@ -3307,7 +3883,7 @@ void DerivationExpression_ExpressionMap::InternalSwap(DerivationExpression_Expre
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionMap::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[9]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[11]);
 }
 
 // ===================================================================
@@ -3544,7 +4120,7 @@ void DerivationExpression_ExpressionUserDefined::InternalSwap(DerivationExpressi
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ExpressionUserDefined::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[10]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[12]);
 }
 
 // ===================================================================
@@ -3829,7 +4405,7 @@ void DerivationExpression_IfElse::InternalSwap(DerivationExpression_IfElse* othe
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_IfElse::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[11]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[13]);
 }
 
 // ===================================================================
@@ -4059,7 +4635,7 @@ void DerivationExpression_UnaryOp::InternalSwap(DerivationExpression_UnaryOp* ot
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_UnaryOp::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[12]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[14]);
 }
 
 // ===================================================================
@@ -4330,7 +4906,7 @@ void DerivationExpression_BinaryOp::InternalSwap(DerivationExpression_BinaryOp* 
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_BinaryOp::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[13]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[15]);
 }
 
 // ===================================================================
@@ -4576,7 +5152,7 @@ void DerivationExpression_ReturnProgram_Assignment::InternalSwap(DerivationExpre
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ReturnProgram_Assignment::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[14]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[16]);
 }
 
 // ===================================================================
@@ -4804,7 +5380,7 @@ void DerivationExpression_ReturnProgram::InternalSwap(DerivationExpression_Retur
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression_ReturnProgram::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[15]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[17]);
 }
 
 // ===================================================================
@@ -4824,9 +5400,10 @@ class DerivationExpression::_Internal {
   static const ::substrait::Type_Date& date(const DerivationExpression* msg);
   static const ::substrait::Type_Time& time(const DerivationExpression* msg);
   static const ::substrait::Type_IntervalYear& interval_year(const DerivationExpression* msg);
-  static const ::substrait::Type_IntervalDay& interval_day(const DerivationExpression* msg);
   static const ::substrait::Type_TimestampTZ& timestamp_tz(const DerivationExpression* msg);
   static const ::substrait::Type_UUID& uuid(const DerivationExpression* msg);
+  static const ::substrait::DerivationExpression_ExpressionIntervalDay& interval_day(const DerivationExpression* msg);
+  static const ::substrait::DerivationExpression_ExpressionIntervalCompound& interval_compound(const DerivationExpression* msg);
   static const ::substrait::DerivationExpression_ExpressionFixedChar& fixed_char(const DerivationExpression* msg);
   static const ::substrait::DerivationExpression_ExpressionVarChar& varchar(const DerivationExpression* msg);
   static const ::substrait::DerivationExpression_ExpressionFixedBinary& fixed_binary(const DerivationExpression* msg);
@@ -4895,10 +5472,6 @@ const ::substrait::Type_IntervalYear&
 DerivationExpression::_Internal::interval_year(const DerivationExpression* msg) {
   return *msg->kind_.interval_year_;
 }
-const ::substrait::Type_IntervalDay&
-DerivationExpression::_Internal::interval_day(const DerivationExpression* msg) {
-  return *msg->kind_.interval_day_;
-}
 const ::substrait::Type_TimestampTZ&
 DerivationExpression::_Internal::timestamp_tz(const DerivationExpression* msg) {
   return *msg->kind_.timestamp_tz_;
@@ -4906,6 +5479,14 @@ DerivationExpression::_Internal::timestamp_tz(const DerivationExpression* msg) {
 const ::substrait::Type_UUID&
 DerivationExpression::_Internal::uuid(const DerivationExpression* msg) {
   return *msg->kind_.uuid_;
+}
+const ::substrait::DerivationExpression_ExpressionIntervalDay&
+DerivationExpression::_Internal::interval_day(const DerivationExpression* msg) {
+  return *msg->kind_.interval_day_;
+}
+const ::substrait::DerivationExpression_ExpressionIntervalCompound&
+DerivationExpression::_Internal::interval_compound(const DerivationExpression* msg) {
+  return *msg->kind_.interval_compound_;
 }
 const ::substrait::DerivationExpression_ExpressionFixedChar&
 DerivationExpression::_Internal::fixed_char(const DerivationExpression* msg) {
@@ -5288,31 +5869,6 @@ void DerivationExpression::clear_interval_year() {
     clear_has_kind();
   }
 }
-void DerivationExpression::set_allocated_interval_day(::substrait::Type_IntervalDay* interval_day) {
-  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
-  clear_kind();
-  if (interval_day) {
-    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
-            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
-                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(interval_day));
-    if (message_arena != submessage_arena) {
-      interval_day = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
-          message_arena, interval_day, submessage_arena);
-    }
-    set_has_interval_day();
-    kind_.interval_day_ = interval_day;
-  }
-  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.interval_day)
-}
-void DerivationExpression::clear_interval_day() {
-  if (_internal_has_interval_day()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete kind_.interval_day_;
-    }
-    clear_has_kind();
-  }
-}
 void DerivationExpression::set_allocated_timestamp_tz(::substrait::Type_TimestampTZ* timestamp_tz) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   clear_kind();
@@ -5362,6 +5918,36 @@ void DerivationExpression::clear_uuid() {
     }
     clear_has_kind();
   }
+}
+void DerivationExpression::set_allocated_interval_day(::substrait::DerivationExpression_ExpressionIntervalDay* interval_day) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_kind();
+  if (interval_day) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::DerivationExpression_ExpressionIntervalDay>::GetOwningArena(interval_day);
+    if (message_arena != submessage_arena) {
+      interval_day = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, interval_day, submessage_arena);
+    }
+    set_has_interval_day();
+    kind_.interval_day_ = interval_day;
+  }
+  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.interval_day)
+}
+void DerivationExpression::set_allocated_interval_compound(::substrait::DerivationExpression_ExpressionIntervalCompound* interval_compound) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_kind();
+  if (interval_compound) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::DerivationExpression_ExpressionIntervalCompound>::GetOwningArena(interval_compound);
+    if (message_arena != submessage_arena) {
+      interval_compound = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, interval_compound, submessage_arena);
+    }
+    set_has_interval_compound();
+    kind_.interval_compound_ = interval_compound;
+  }
+  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.interval_compound)
 }
 void DerivationExpression::set_allocated_fixed_char(::substrait::DerivationExpression_ExpressionFixedChar* fixed_char) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
@@ -5639,16 +6225,20 @@ DerivationExpression::DerivationExpression(const DerivationExpression& from)
       _internal_mutable_interval_year()->::substrait::Type_IntervalYear::MergeFrom(from._internal_interval_year());
       break;
     }
-    case kIntervalDay: {
-      _internal_mutable_interval_day()->::substrait::Type_IntervalDay::MergeFrom(from._internal_interval_day());
-      break;
-    }
     case kTimestampTz: {
       _internal_mutable_timestamp_tz()->::substrait::Type_TimestampTZ::MergeFrom(from._internal_timestamp_tz());
       break;
     }
     case kUuid: {
       _internal_mutable_uuid()->::substrait::Type_UUID::MergeFrom(from._internal_uuid());
+      break;
+    }
+    case kIntervalDay: {
+      _internal_mutable_interval_day()->::substrait::DerivationExpression_ExpressionIntervalDay::MergeFrom(from._internal_interval_day());
+      break;
+    }
+    case kIntervalCompound: {
+      _internal_mutable_interval_compound()->::substrait::DerivationExpression_ExpressionIntervalCompound::MergeFrom(from._internal_interval_compound());
       break;
     }
     case kFixedChar: {
@@ -5839,12 +6429,6 @@ void DerivationExpression::clear_kind() {
       }
       break;
     }
-    case kIntervalDay: {
-      if (GetArenaForAllocation() == nullptr) {
-        delete kind_.interval_day_;
-      }
-      break;
-    }
     case kTimestampTz: {
       if (GetArenaForAllocation() == nullptr) {
         delete kind_.timestamp_tz_;
@@ -5854,6 +6438,18 @@ void DerivationExpression::clear_kind() {
     case kUuid: {
       if (GetArenaForAllocation() == nullptr) {
         delete kind_.uuid_;
+      }
+      break;
+    }
+    case kIntervalDay: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete kind_.interval_day_;
+      }
+      break;
+    }
+    case kIntervalCompound: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete kind_.interval_compound_;
       }
       break;
     }
@@ -6085,7 +6681,7 @@ const char* DerivationExpression::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         } else
           goto handle_unusual;
         continue;
-      // .substrait.Type.IntervalDay interval_day = 20;
+      // .substrait.DerivationExpression.ExpressionIntervalDay interval_day = 20;
       case 20:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 162)) {
           ptr = ctx->ParseMessage(_internal_mutable_interval_day(), ptr);
@@ -6257,6 +6853,14 @@ const char* DerivationExpression::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         } else
           goto handle_unusual;
         continue;
+      // .substrait.DerivationExpression.ExpressionIntervalCompound interval_compound = 42;
+      case 42:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 82)) {
+          ptr = ctx->ParseMessage(_internal_mutable_interval_compound(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -6390,7 +6994,7 @@ uint8_t* DerivationExpression::_InternalSerialize(
         19, _Internal::interval_year(this), target, stream);
   }
 
-  // .substrait.Type.IntervalDay interval_day = 20;
+  // .substrait.DerivationExpression.ExpressionIntervalDay interval_day = 20;
   if (_internal_has_interval_day()) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
@@ -6558,6 +7162,14 @@ uint8_t* DerivationExpression::_InternalSerialize(
         41, _Internal::precision_timestamp_tz(this), target, stream);
   }
 
+  // .substrait.DerivationExpression.ExpressionIntervalCompound interval_compound = 42;
+  if (_internal_has_interval_compound()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        42, _Internal::interval_compound(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -6666,13 +7278,6 @@ size_t DerivationExpression::ByteSizeLong() const {
           *kind_.interval_year_);
       break;
     }
-    // .substrait.Type.IntervalDay interval_day = 20;
-    case kIntervalDay: {
-      total_size += 2 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *kind_.interval_day_);
-      break;
-    }
     // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
     case kTimestampTz: {
       total_size += 2 +
@@ -6685,6 +7290,20 @@ size_t DerivationExpression::ByteSizeLong() const {
       total_size += 2 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
           *kind_.uuid_);
+      break;
+    }
+    // .substrait.DerivationExpression.ExpressionIntervalDay interval_day = 20;
+    case kIntervalDay: {
+      total_size += 2 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *kind_.interval_day_);
+      break;
+    }
+    // .substrait.DerivationExpression.ExpressionIntervalCompound interval_compound = 42;
+    case kIntervalCompound: {
+      total_size += 2 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *kind_.interval_compound_);
       break;
     }
     // .substrait.DerivationExpression.ExpressionFixedChar fixed_char = 21;
@@ -6892,16 +7511,20 @@ void DerivationExpression::MergeFrom(const DerivationExpression& from) {
       _internal_mutable_interval_year()->::substrait::Type_IntervalYear::MergeFrom(from._internal_interval_year());
       break;
     }
-    case kIntervalDay: {
-      _internal_mutable_interval_day()->::substrait::Type_IntervalDay::MergeFrom(from._internal_interval_day());
-      break;
-    }
     case kTimestampTz: {
       _internal_mutable_timestamp_tz()->::substrait::Type_TimestampTZ::MergeFrom(from._internal_timestamp_tz());
       break;
     }
     case kUuid: {
       _internal_mutable_uuid()->::substrait::Type_UUID::MergeFrom(from._internal_uuid());
+      break;
+    }
+    case kIntervalDay: {
+      _internal_mutable_interval_day()->::substrait::DerivationExpression_ExpressionIntervalDay::MergeFrom(from._internal_interval_day());
+      break;
+    }
+    case kIntervalCompound: {
+      _internal_mutable_interval_compound()->::substrait::DerivationExpression_ExpressionIntervalCompound::MergeFrom(from._internal_interval_compound());
       break;
     }
     case kFixedChar: {
@@ -7004,7 +7627,7 @@ void DerivationExpression::InternalSwap(DerivationExpression* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata DerivationExpression::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_substrait_2ftype_5fexpressions_2eproto_getter, &descriptor_table_substrait_2ftype_5fexpressions_2eproto_once,
-      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[16]);
+      file_level_metadata_substrait_2ftype_5fexpressions_2eproto[18]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
@@ -7024,6 +7647,12 @@ template<> PROTOBUF_NOINLINE ::substrait::DerivationExpression_ExpressionDecimal
 }
 template<> PROTOBUF_NOINLINE ::substrait::DerivationExpression_ExpressionPrecisionTimestamp* Arena::CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionPrecisionTimestamp >(Arena* arena) {
   return Arena::CreateMessageInternal< ::substrait::DerivationExpression_ExpressionPrecisionTimestamp >(arena);
+}
+template<> PROTOBUF_NOINLINE ::substrait::DerivationExpression_ExpressionIntervalDay* Arena::CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionIntervalDay >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::substrait::DerivationExpression_ExpressionIntervalDay >(arena);
+}
+template<> PROTOBUF_NOINLINE ::substrait::DerivationExpression_ExpressionIntervalCompound* Arena::CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionIntervalCompound >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::substrait::DerivationExpression_ExpressionIntervalCompound >(arena);
 }
 template<> PROTOBUF_NOINLINE ::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ* Arena::CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ >(Arena* arena) {
   return Arena::CreateMessageInternal< ::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ >(arena);

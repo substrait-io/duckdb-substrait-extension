@@ -47,7 +47,7 @@ struct TableStruct_substrait_2fparameterized_5ftypes_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[16]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[18]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -76,6 +76,12 @@ extern ParameterizedType_ParameterizedFixedBinaryDefaultTypeInternal _Parameteri
 class ParameterizedType_ParameterizedFixedChar;
 struct ParameterizedType_ParameterizedFixedCharDefaultTypeInternal;
 extern ParameterizedType_ParameterizedFixedCharDefaultTypeInternal _ParameterizedType_ParameterizedFixedChar_default_instance_;
+class ParameterizedType_ParameterizedIntervalCompound;
+struct ParameterizedType_ParameterizedIntervalCompoundDefaultTypeInternal;
+extern ParameterizedType_ParameterizedIntervalCompoundDefaultTypeInternal _ParameterizedType_ParameterizedIntervalCompound_default_instance_;
+class ParameterizedType_ParameterizedIntervalDay;
+struct ParameterizedType_ParameterizedIntervalDayDefaultTypeInternal;
+extern ParameterizedType_ParameterizedIntervalDayDefaultTypeInternal _ParameterizedType_ParameterizedIntervalDay_default_instance_;
 class ParameterizedType_ParameterizedList;
 struct ParameterizedType_ParameterizedListDefaultTypeInternal;
 extern ParameterizedType_ParameterizedListDefaultTypeInternal _ParameterizedType_ParameterizedList_default_instance_;
@@ -112,6 +118,8 @@ template<> ::substrait::ParameterizedType_NullableInteger* Arena::CreateMaybeMes
 template<> ::substrait::ParameterizedType_ParameterizedDecimal* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedDecimal>(Arena*);
 template<> ::substrait::ParameterizedType_ParameterizedFixedBinary* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedFixedBinary>(Arena*);
 template<> ::substrait::ParameterizedType_ParameterizedFixedChar* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedFixedChar>(Arena*);
+template<> ::substrait::ParameterizedType_ParameterizedIntervalCompound* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedIntervalCompound>(Arena*);
+template<> ::substrait::ParameterizedType_ParameterizedIntervalDay* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedIntervalDay>(Arena*);
 template<> ::substrait::ParameterizedType_ParameterizedList* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedList>(Arena*);
 template<> ::substrait::ParameterizedType_ParameterizedMap* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedMap>(Arena*);
 template<> ::substrait::ParameterizedType_ParameterizedNamedStruct* Arena::CreateMaybeMessage<::substrait::ParameterizedType_ParameterizedNamedStruct>(Arena*);
@@ -1362,6 +1370,360 @@ class ParameterizedType_ParameterizedDecimal final :
 };
 // -------------------------------------------------------------------
 
+class ParameterizedType_ParameterizedIntervalDay final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ParameterizedType.ParameterizedIntervalDay) */ {
+ public:
+  inline ParameterizedType_ParameterizedIntervalDay() : ParameterizedType_ParameterizedIntervalDay(nullptr) {}
+  ~ParameterizedType_ParameterizedIntervalDay() override;
+  explicit constexpr ParameterizedType_ParameterizedIntervalDay(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ParameterizedType_ParameterizedIntervalDay(const ParameterizedType_ParameterizedIntervalDay& from);
+  ParameterizedType_ParameterizedIntervalDay(ParameterizedType_ParameterizedIntervalDay&& from) noexcept
+    : ParameterizedType_ParameterizedIntervalDay() {
+    *this = ::std::move(from);
+  }
+
+  inline ParameterizedType_ParameterizedIntervalDay& operator=(const ParameterizedType_ParameterizedIntervalDay& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ParameterizedType_ParameterizedIntervalDay& operator=(ParameterizedType_ParameterizedIntervalDay&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ParameterizedType_ParameterizedIntervalDay& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ParameterizedType_ParameterizedIntervalDay* internal_default_instance() {
+    return reinterpret_cast<const ParameterizedType_ParameterizedIntervalDay*>(
+               &_ParameterizedType_ParameterizedIntervalDay_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    7;
+
+  friend void swap(ParameterizedType_ParameterizedIntervalDay& a, ParameterizedType_ParameterizedIntervalDay& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ParameterizedType_ParameterizedIntervalDay* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ParameterizedType_ParameterizedIntervalDay* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ParameterizedType_ParameterizedIntervalDay* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ParameterizedType_ParameterizedIntervalDay>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ParameterizedType_ParameterizedIntervalDay& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ParameterizedType_ParameterizedIntervalDay& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ParameterizedType_ParameterizedIntervalDay* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ParameterizedType.ParameterizedIntervalDay";
+  }
+  protected:
+  explicit ParameterizedType_ParameterizedIntervalDay(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kPrecisionFieldNumber = 1,
+    kVariationPointerFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // .substrait.ParameterizedType.IntegerOption precision = 1;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  const ::substrait::ParameterizedType_IntegerOption& precision() const;
+  PROTOBUF_NODISCARD ::substrait::ParameterizedType_IntegerOption* release_precision();
+  ::substrait::ParameterizedType_IntegerOption* mutable_precision();
+  void set_allocated_precision(::substrait::ParameterizedType_IntegerOption* precision);
+  private:
+  const ::substrait::ParameterizedType_IntegerOption& _internal_precision() const;
+  ::substrait::ParameterizedType_IntegerOption* _internal_mutable_precision();
+  public:
+  void unsafe_arena_set_allocated_precision(
+      ::substrait::ParameterizedType_IntegerOption* precision);
+  ::substrait::ParameterizedType_IntegerOption* unsafe_arena_release_precision();
+
+  // uint32 variation_pointer = 2;
+  void clear_variation_pointer();
+  uint32_t variation_pointer() const;
+  void set_variation_pointer(uint32_t value);
+  private:
+  uint32_t _internal_variation_pointer() const;
+  void _internal_set_variation_pointer(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.ParameterizedType.ParameterizedIntervalDay)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::ParameterizedType_IntegerOption* precision_;
+  uint32_t variation_pointer_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2fparameterized_5ftypes_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ParameterizedType_ParameterizedIntervalCompound final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ParameterizedType.ParameterizedIntervalCompound) */ {
+ public:
+  inline ParameterizedType_ParameterizedIntervalCompound() : ParameterizedType_ParameterizedIntervalCompound(nullptr) {}
+  ~ParameterizedType_ParameterizedIntervalCompound() override;
+  explicit constexpr ParameterizedType_ParameterizedIntervalCompound(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ParameterizedType_ParameterizedIntervalCompound(const ParameterizedType_ParameterizedIntervalCompound& from);
+  ParameterizedType_ParameterizedIntervalCompound(ParameterizedType_ParameterizedIntervalCompound&& from) noexcept
+    : ParameterizedType_ParameterizedIntervalCompound() {
+    *this = ::std::move(from);
+  }
+
+  inline ParameterizedType_ParameterizedIntervalCompound& operator=(const ParameterizedType_ParameterizedIntervalCompound& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ParameterizedType_ParameterizedIntervalCompound& operator=(ParameterizedType_ParameterizedIntervalCompound&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ParameterizedType_ParameterizedIntervalCompound& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ParameterizedType_ParameterizedIntervalCompound* internal_default_instance() {
+    return reinterpret_cast<const ParameterizedType_ParameterizedIntervalCompound*>(
+               &_ParameterizedType_ParameterizedIntervalCompound_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    8;
+
+  friend void swap(ParameterizedType_ParameterizedIntervalCompound& a, ParameterizedType_ParameterizedIntervalCompound& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ParameterizedType_ParameterizedIntervalCompound* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ParameterizedType_ParameterizedIntervalCompound* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ParameterizedType_ParameterizedIntervalCompound* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ParameterizedType_ParameterizedIntervalCompound>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ParameterizedType_ParameterizedIntervalCompound& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ParameterizedType_ParameterizedIntervalCompound& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ParameterizedType_ParameterizedIntervalCompound* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ParameterizedType.ParameterizedIntervalCompound";
+  }
+  protected:
+  explicit ParameterizedType_ParameterizedIntervalCompound(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kPrecisionFieldNumber = 1,
+    kVariationPointerFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // .substrait.ParameterizedType.IntegerOption precision = 1;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  const ::substrait::ParameterizedType_IntegerOption& precision() const;
+  PROTOBUF_NODISCARD ::substrait::ParameterizedType_IntegerOption* release_precision();
+  ::substrait::ParameterizedType_IntegerOption* mutable_precision();
+  void set_allocated_precision(::substrait::ParameterizedType_IntegerOption* precision);
+  private:
+  const ::substrait::ParameterizedType_IntegerOption& _internal_precision() const;
+  ::substrait::ParameterizedType_IntegerOption* _internal_mutable_precision();
+  public:
+  void unsafe_arena_set_allocated_precision(
+      ::substrait::ParameterizedType_IntegerOption* precision);
+  ::substrait::ParameterizedType_IntegerOption* unsafe_arena_release_precision();
+
+  // uint32 variation_pointer = 2;
+  void clear_variation_pointer();
+  uint32_t variation_pointer() const;
+  void set_variation_pointer(uint32_t value);
+  private:
+  uint32_t _internal_variation_pointer() const;
+  void _internal_set_variation_pointer(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.ParameterizedType.ParameterizedIntervalCompound)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::ParameterizedType_IntegerOption* precision_;
+  uint32_t variation_pointer_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2fparameterized_5ftypes_2eproto;
+};
+// -------------------------------------------------------------------
+
 class ParameterizedType_ParameterizedPrecisionTimestamp final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ParameterizedType.ParameterizedPrecisionTimestamp) */ {
  public:
@@ -1410,7 +1772,7 @@ class ParameterizedType_ParameterizedPrecisionTimestamp final :
                &_ParameterizedType_ParameterizedPrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    9;
 
   friend void swap(ParameterizedType_ParameterizedPrecisionTimestamp& a, ParameterizedType_ParameterizedPrecisionTimestamp& b) {
     a.Swap(&b);
@@ -1587,7 +1949,7 @@ class ParameterizedType_ParameterizedPrecisionTimestampTZ final :
                &_ParameterizedType_ParameterizedPrecisionTimestampTZ_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    10;
 
   friend void swap(ParameterizedType_ParameterizedPrecisionTimestampTZ& a, ParameterizedType_ParameterizedPrecisionTimestampTZ& b) {
     a.Swap(&b);
@@ -1764,7 +2126,7 @@ class ParameterizedType_ParameterizedStruct final :
                &_ParameterizedType_ParameterizedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    11;
 
   friend void swap(ParameterizedType_ParameterizedStruct& a, ParameterizedType_ParameterizedStruct& b) {
     a.Swap(&b);
@@ -1941,7 +2303,7 @@ class ParameterizedType_ParameterizedNamedStruct final :
                &_ParameterizedType_ParameterizedNamedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    12;
 
   friend void swap(ParameterizedType_ParameterizedNamedStruct& a, ParameterizedType_ParameterizedNamedStruct& b) {
     a.Swap(&b);
@@ -2122,7 +2484,7 @@ class ParameterizedType_ParameterizedList final :
                &_ParameterizedType_ParameterizedList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(ParameterizedType_ParameterizedList& a, ParameterizedType_ParameterizedList& b) {
     a.Swap(&b);
@@ -2299,7 +2661,7 @@ class ParameterizedType_ParameterizedMap final :
                &_ParameterizedType_ParameterizedMap_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(ParameterizedType_ParameterizedMap& a, ParameterizedType_ParameterizedMap& b) {
     a.Swap(&b);
@@ -2496,7 +2858,7 @@ class ParameterizedType_ParameterizedUserDefined final :
                &_ParameterizedType_ParameterizedUserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    15;
 
   friend void swap(ParameterizedType_ParameterizedUserDefined& a, ParameterizedType_ParameterizedUserDefined& b) {
     a.Swap(&b);
@@ -2670,7 +3032,7 @@ class ParameterizedType_IntegerOption final :
                &_ParameterizedType_IntegerOption_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    16;
 
   friend void swap(ParameterizedType_IntegerOption& a, ParameterizedType_IntegerOption& b) {
     a.Swap(&b);
@@ -2863,6 +3225,7 @@ class ParameterizedType final :
     kTime = 17,
     kIntervalYear = 19,
     kIntervalDay = 20,
+    kIntervalCompound = 36,
     kTimestampTz = 29,
     kUuid = 32,
     kFixedChar = 21,
@@ -2885,7 +3248,7 @@ class ParameterizedType final :
                &_ParameterizedType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    17;
 
   friend void swap(ParameterizedType& a, ParameterizedType& b) {
     a.Swap(&b);
@@ -2963,6 +3326,8 @@ class ParameterizedType final :
   typedef ParameterizedType_ParameterizedVarChar ParameterizedVarChar;
   typedef ParameterizedType_ParameterizedFixedBinary ParameterizedFixedBinary;
   typedef ParameterizedType_ParameterizedDecimal ParameterizedDecimal;
+  typedef ParameterizedType_ParameterizedIntervalDay ParameterizedIntervalDay;
+  typedef ParameterizedType_ParameterizedIntervalCompound ParameterizedIntervalCompound;
   typedef ParameterizedType_ParameterizedPrecisionTimestamp ParameterizedPrecisionTimestamp;
   typedef ParameterizedType_ParameterizedPrecisionTimestampTZ ParameterizedPrecisionTimestampTZ;
   typedef ParameterizedType_ParameterizedStruct ParameterizedStruct;
@@ -2989,6 +3354,7 @@ class ParameterizedType final :
     kTimeFieldNumber = 17,
     kIntervalYearFieldNumber = 19,
     kIntervalDayFieldNumber = 20,
+    kIntervalCompoundFieldNumber = 36,
     kTimestampTzFieldNumber = 29,
     kUuidFieldNumber = 32,
     kFixedCharFieldNumber = 21,
@@ -3238,23 +3604,41 @@ class ParameterizedType final :
       ::substrait::Type_IntervalYear* interval_year);
   ::substrait::Type_IntervalYear* unsafe_arena_release_interval_year();
 
-  // .substrait.Type.IntervalDay interval_day = 20;
+  // .substrait.ParameterizedType.ParameterizedIntervalDay interval_day = 20;
   bool has_interval_day() const;
   private:
   bool _internal_has_interval_day() const;
   public:
   void clear_interval_day();
-  const ::substrait::Type_IntervalDay& interval_day() const;
-  PROTOBUF_NODISCARD ::substrait::Type_IntervalDay* release_interval_day();
-  ::substrait::Type_IntervalDay* mutable_interval_day();
-  void set_allocated_interval_day(::substrait::Type_IntervalDay* interval_day);
+  const ::substrait::ParameterizedType_ParameterizedIntervalDay& interval_day() const;
+  PROTOBUF_NODISCARD ::substrait::ParameterizedType_ParameterizedIntervalDay* release_interval_day();
+  ::substrait::ParameterizedType_ParameterizedIntervalDay* mutable_interval_day();
+  void set_allocated_interval_day(::substrait::ParameterizedType_ParameterizedIntervalDay* interval_day);
   private:
-  const ::substrait::Type_IntervalDay& _internal_interval_day() const;
-  ::substrait::Type_IntervalDay* _internal_mutable_interval_day();
+  const ::substrait::ParameterizedType_ParameterizedIntervalDay& _internal_interval_day() const;
+  ::substrait::ParameterizedType_ParameterizedIntervalDay* _internal_mutable_interval_day();
   public:
   void unsafe_arena_set_allocated_interval_day(
-      ::substrait::Type_IntervalDay* interval_day);
-  ::substrait::Type_IntervalDay* unsafe_arena_release_interval_day();
+      ::substrait::ParameterizedType_ParameterizedIntervalDay* interval_day);
+  ::substrait::ParameterizedType_ParameterizedIntervalDay* unsafe_arena_release_interval_day();
+
+  // .substrait.ParameterizedType.ParameterizedIntervalCompound interval_compound = 36;
+  bool has_interval_compound() const;
+  private:
+  bool _internal_has_interval_compound() const;
+  public:
+  void clear_interval_compound();
+  const ::substrait::ParameterizedType_ParameterizedIntervalCompound& interval_compound() const;
+  PROTOBUF_NODISCARD ::substrait::ParameterizedType_ParameterizedIntervalCompound* release_interval_compound();
+  ::substrait::ParameterizedType_ParameterizedIntervalCompound* mutable_interval_compound();
+  void set_allocated_interval_compound(::substrait::ParameterizedType_ParameterizedIntervalCompound* interval_compound);
+  private:
+  const ::substrait::ParameterizedType_ParameterizedIntervalCompound& _internal_interval_compound() const;
+  ::substrait::ParameterizedType_ParameterizedIntervalCompound* _internal_mutable_interval_compound();
+  public:
+  void unsafe_arena_set_allocated_interval_compound(
+      ::substrait::ParameterizedType_ParameterizedIntervalCompound* interval_compound);
+  ::substrait::ParameterizedType_ParameterizedIntervalCompound* unsafe_arena_release_interval_compound();
 
   // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
   PROTOBUF_DEPRECATED bool has_timestamp_tz() const;
@@ -3522,6 +3906,7 @@ class ParameterizedType final :
   void set_has_time();
   void set_has_interval_year();
   void set_has_interval_day();
+  void set_has_interval_compound();
   void set_has_timestamp_tz();
   void set_has_uuid();
   void set_has_fixed_char();
@@ -3559,7 +3944,8 @@ class ParameterizedType final :
     ::substrait::Type_Date* date_;
     ::substrait::Type_Time* time_;
     ::substrait::Type_IntervalYear* interval_year_;
-    ::substrait::Type_IntervalDay* interval_day_;
+    ::substrait::ParameterizedType_ParameterizedIntervalDay* interval_day_;
+    ::substrait::ParameterizedType_ParameterizedIntervalCompound* interval_compound_;
     ::substrait::Type_TimestampTZ* timestamp_tz_;
     ::substrait::Type_UUID* uuid_;
     ::substrait::ParameterizedType_ParameterizedFixedChar* fixed_char_;
@@ -4565,6 +4951,274 @@ inline void ParameterizedType_ParameterizedDecimal::_internal_set_nullability(::
 inline void ParameterizedType_ParameterizedDecimal::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.ParameterizedType.ParameterizedDecimal.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// ParameterizedType_ParameterizedIntervalDay
+
+// .substrait.ParameterizedType.IntegerOption precision = 1;
+inline bool ParameterizedType_ParameterizedIntervalDay::_internal_has_precision() const {
+  return this != internal_default_instance() && precision_ != nullptr;
+}
+inline bool ParameterizedType_ParameterizedIntervalDay::has_precision() const {
+  return _internal_has_precision();
+}
+inline void ParameterizedType_ParameterizedIntervalDay::clear_precision() {
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+}
+inline const ::substrait::ParameterizedType_IntegerOption& ParameterizedType_ParameterizedIntervalDay::_internal_precision() const {
+  const ::substrait::ParameterizedType_IntegerOption* p = precision_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::ParameterizedType_IntegerOption&>(
+      ::substrait::_ParameterizedType_IntegerOption_default_instance_);
+}
+inline const ::substrait::ParameterizedType_IntegerOption& ParameterizedType_ParameterizedIntervalDay::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalDay.precision)
+  return _internal_precision();
+}
+inline void ParameterizedType_ParameterizedIntervalDay::unsafe_arena_set_allocated_precision(
+    ::substrait::ParameterizedType_IntegerOption* precision) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(precision_);
+  }
+  precision_ = precision;
+  if (precision) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ParameterizedType.ParameterizedIntervalDay.precision)
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalDay::release_precision() {
+  
+  ::substrait::ParameterizedType_IntegerOption* temp = precision_;
+  precision_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalDay::unsafe_arena_release_precision() {
+  // @@protoc_insertion_point(field_release:substrait.ParameterizedType.ParameterizedIntervalDay.precision)
+  
+  ::substrait::ParameterizedType_IntegerOption* temp = precision_;
+  precision_ = nullptr;
+  return temp;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalDay::_internal_mutable_precision() {
+  
+  if (precision_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::ParameterizedType_IntegerOption>(GetArenaForAllocation());
+    precision_ = p;
+  }
+  return precision_;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalDay::mutable_precision() {
+  ::substrait::ParameterizedType_IntegerOption* _msg = _internal_mutable_precision();
+  // @@protoc_insertion_point(field_mutable:substrait.ParameterizedType.ParameterizedIntervalDay.precision)
+  return _msg;
+}
+inline void ParameterizedType_ParameterizedIntervalDay::set_allocated_precision(::substrait::ParameterizedType_IntegerOption* precision) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete precision_;
+  }
+  if (precision) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::ParameterizedType_IntegerOption>::GetOwningArena(precision);
+    if (message_arena != submessage_arena) {
+      precision = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, precision, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  precision_ = precision;
+  // @@protoc_insertion_point(field_set_allocated:substrait.ParameterizedType.ParameterizedIntervalDay.precision)
+}
+
+// uint32 variation_pointer = 2;
+inline void ParameterizedType_ParameterizedIntervalDay::clear_variation_pointer() {
+  variation_pointer_ = 0u;
+}
+inline uint32_t ParameterizedType_ParameterizedIntervalDay::_internal_variation_pointer() const {
+  return variation_pointer_;
+}
+inline uint32_t ParameterizedType_ParameterizedIntervalDay::variation_pointer() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalDay.variation_pointer)
+  return _internal_variation_pointer();
+}
+inline void ParameterizedType_ParameterizedIntervalDay::_internal_set_variation_pointer(uint32_t value) {
+  
+  variation_pointer_ = value;
+}
+inline void ParameterizedType_ParameterizedIntervalDay::set_variation_pointer(uint32_t value) {
+  _internal_set_variation_pointer(value);
+  // @@protoc_insertion_point(field_set:substrait.ParameterizedType.ParameterizedIntervalDay.variation_pointer)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void ParameterizedType_ParameterizedIntervalDay::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability ParameterizedType_ParameterizedIntervalDay::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability ParameterizedType_ParameterizedIntervalDay::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalDay.nullability)
+  return _internal_nullability();
+}
+inline void ParameterizedType_ParameterizedIntervalDay::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void ParameterizedType_ParameterizedIntervalDay::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.ParameterizedType.ParameterizedIntervalDay.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// ParameterizedType_ParameterizedIntervalCompound
+
+// .substrait.ParameterizedType.IntegerOption precision = 1;
+inline bool ParameterizedType_ParameterizedIntervalCompound::_internal_has_precision() const {
+  return this != internal_default_instance() && precision_ != nullptr;
+}
+inline bool ParameterizedType_ParameterizedIntervalCompound::has_precision() const {
+  return _internal_has_precision();
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::clear_precision() {
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+}
+inline const ::substrait::ParameterizedType_IntegerOption& ParameterizedType_ParameterizedIntervalCompound::_internal_precision() const {
+  const ::substrait::ParameterizedType_IntegerOption* p = precision_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::ParameterizedType_IntegerOption&>(
+      ::substrait::_ParameterizedType_IntegerOption_default_instance_);
+}
+inline const ::substrait::ParameterizedType_IntegerOption& ParameterizedType_ParameterizedIntervalCompound::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalCompound.precision)
+  return _internal_precision();
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::unsafe_arena_set_allocated_precision(
+    ::substrait::ParameterizedType_IntegerOption* precision) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(precision_);
+  }
+  precision_ = precision;
+  if (precision) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ParameterizedType.ParameterizedIntervalCompound.precision)
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalCompound::release_precision() {
+  
+  ::substrait::ParameterizedType_IntegerOption* temp = precision_;
+  precision_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalCompound::unsafe_arena_release_precision() {
+  // @@protoc_insertion_point(field_release:substrait.ParameterizedType.ParameterizedIntervalCompound.precision)
+  
+  ::substrait::ParameterizedType_IntegerOption* temp = precision_;
+  precision_ = nullptr;
+  return temp;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalCompound::_internal_mutable_precision() {
+  
+  if (precision_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::ParameterizedType_IntegerOption>(GetArenaForAllocation());
+    precision_ = p;
+  }
+  return precision_;
+}
+inline ::substrait::ParameterizedType_IntegerOption* ParameterizedType_ParameterizedIntervalCompound::mutable_precision() {
+  ::substrait::ParameterizedType_IntegerOption* _msg = _internal_mutable_precision();
+  // @@protoc_insertion_point(field_mutable:substrait.ParameterizedType.ParameterizedIntervalCompound.precision)
+  return _msg;
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::set_allocated_precision(::substrait::ParameterizedType_IntegerOption* precision) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete precision_;
+  }
+  if (precision) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::ParameterizedType_IntegerOption>::GetOwningArena(precision);
+    if (message_arena != submessage_arena) {
+      precision = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, precision, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  precision_ = precision;
+  // @@protoc_insertion_point(field_set_allocated:substrait.ParameterizedType.ParameterizedIntervalCompound.precision)
+}
+
+// uint32 variation_pointer = 2;
+inline void ParameterizedType_ParameterizedIntervalCompound::clear_variation_pointer() {
+  variation_pointer_ = 0u;
+}
+inline uint32_t ParameterizedType_ParameterizedIntervalCompound::_internal_variation_pointer() const {
+  return variation_pointer_;
+}
+inline uint32_t ParameterizedType_ParameterizedIntervalCompound::variation_pointer() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalCompound.variation_pointer)
+  return _internal_variation_pointer();
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::_internal_set_variation_pointer(uint32_t value) {
+  
+  variation_pointer_ = value;
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::set_variation_pointer(uint32_t value) {
+  _internal_set_variation_pointer(value);
+  // @@protoc_insertion_point(field_set:substrait.ParameterizedType.ParameterizedIntervalCompound.variation_pointer)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void ParameterizedType_ParameterizedIntervalCompound::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability ParameterizedType_ParameterizedIntervalCompound::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability ParameterizedType_ParameterizedIntervalCompound::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.ParameterizedIntervalCompound.nullability)
+  return _internal_nullability();
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void ParameterizedType_ParameterizedIntervalCompound::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.ParameterizedType.ParameterizedIntervalCompound.nullability)
 }
 
 // -------------------------------------------------------------------
@@ -6497,7 +7151,7 @@ inline ::substrait::Type_IntervalYear* ParameterizedType::mutable_interval_year(
   return _msg;
 }
 
-// .substrait.Type.IntervalDay interval_day = 20;
+// .substrait.ParameterizedType.ParameterizedIntervalDay interval_day = 20;
 inline bool ParameterizedType::_internal_has_interval_day() const {
   return kind_case() == kIntervalDay;
 }
@@ -6507,11 +7161,19 @@ inline bool ParameterizedType::has_interval_day() const {
 inline void ParameterizedType::set_has_interval_day() {
   _oneof_case_[0] = kIntervalDay;
 }
-inline ::substrait::Type_IntervalDay* ParameterizedType::release_interval_day() {
+inline void ParameterizedType::clear_interval_day() {
+  if (_internal_has_interval_day()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.interval_day_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::ParameterizedType_ParameterizedIntervalDay* ParameterizedType::release_interval_day() {
   // @@protoc_insertion_point(field_release:substrait.ParameterizedType.interval_day)
   if (_internal_has_interval_day()) {
     clear_has_kind();
-      ::substrait::Type_IntervalDay* temp = kind_.interval_day_;
+      ::substrait::ParameterizedType_ParameterizedIntervalDay* temp = kind_.interval_day_;
     if (GetArenaForAllocation() != nullptr) {
       temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
     }
@@ -6521,27 +7183,27 @@ inline ::substrait::Type_IntervalDay* ParameterizedType::release_interval_day() 
     return nullptr;
   }
 }
-inline const ::substrait::Type_IntervalDay& ParameterizedType::_internal_interval_day() const {
+inline const ::substrait::ParameterizedType_ParameterizedIntervalDay& ParameterizedType::_internal_interval_day() const {
   return _internal_has_interval_day()
       ? *kind_.interval_day_
-      : reinterpret_cast< ::substrait::Type_IntervalDay&>(::substrait::_Type_IntervalDay_default_instance_);
+      : reinterpret_cast< ::substrait::ParameterizedType_ParameterizedIntervalDay&>(::substrait::_ParameterizedType_ParameterizedIntervalDay_default_instance_);
 }
-inline const ::substrait::Type_IntervalDay& ParameterizedType::interval_day() const {
+inline const ::substrait::ParameterizedType_ParameterizedIntervalDay& ParameterizedType::interval_day() const {
   // @@protoc_insertion_point(field_get:substrait.ParameterizedType.interval_day)
   return _internal_interval_day();
 }
-inline ::substrait::Type_IntervalDay* ParameterizedType::unsafe_arena_release_interval_day() {
+inline ::substrait::ParameterizedType_ParameterizedIntervalDay* ParameterizedType::unsafe_arena_release_interval_day() {
   // @@protoc_insertion_point(field_unsafe_arena_release:substrait.ParameterizedType.interval_day)
   if (_internal_has_interval_day()) {
     clear_has_kind();
-    ::substrait::Type_IntervalDay* temp = kind_.interval_day_;
+    ::substrait::ParameterizedType_ParameterizedIntervalDay* temp = kind_.interval_day_;
     kind_.interval_day_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline void ParameterizedType::unsafe_arena_set_allocated_interval_day(::substrait::Type_IntervalDay* interval_day) {
+inline void ParameterizedType::unsafe_arena_set_allocated_interval_day(::substrait::ParameterizedType_ParameterizedIntervalDay* interval_day) {
   clear_kind();
   if (interval_day) {
     set_has_interval_day();
@@ -6549,17 +7211,91 @@ inline void ParameterizedType::unsafe_arena_set_allocated_interval_day(::substra
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ParameterizedType.interval_day)
 }
-inline ::substrait::Type_IntervalDay* ParameterizedType::_internal_mutable_interval_day() {
+inline ::substrait::ParameterizedType_ParameterizedIntervalDay* ParameterizedType::_internal_mutable_interval_day() {
   if (!_internal_has_interval_day()) {
     clear_kind();
     set_has_interval_day();
-    kind_.interval_day_ = CreateMaybeMessage< ::substrait::Type_IntervalDay >(GetArenaForAllocation());
+    kind_.interval_day_ = CreateMaybeMessage< ::substrait::ParameterizedType_ParameterizedIntervalDay >(GetArenaForAllocation());
   }
   return kind_.interval_day_;
 }
-inline ::substrait::Type_IntervalDay* ParameterizedType::mutable_interval_day() {
-  ::substrait::Type_IntervalDay* _msg = _internal_mutable_interval_day();
+inline ::substrait::ParameterizedType_ParameterizedIntervalDay* ParameterizedType::mutable_interval_day() {
+  ::substrait::ParameterizedType_ParameterizedIntervalDay* _msg = _internal_mutable_interval_day();
   // @@protoc_insertion_point(field_mutable:substrait.ParameterizedType.interval_day)
+  return _msg;
+}
+
+// .substrait.ParameterizedType.ParameterizedIntervalCompound interval_compound = 36;
+inline bool ParameterizedType::_internal_has_interval_compound() const {
+  return kind_case() == kIntervalCompound;
+}
+inline bool ParameterizedType::has_interval_compound() const {
+  return _internal_has_interval_compound();
+}
+inline void ParameterizedType::set_has_interval_compound() {
+  _oneof_case_[0] = kIntervalCompound;
+}
+inline void ParameterizedType::clear_interval_compound() {
+  if (_internal_has_interval_compound()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.interval_compound_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::ParameterizedType_ParameterizedIntervalCompound* ParameterizedType::release_interval_compound() {
+  // @@protoc_insertion_point(field_release:substrait.ParameterizedType.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+      ::substrait::ParameterizedType_ParameterizedIntervalCompound* temp = kind_.interval_compound_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::ParameterizedType_ParameterizedIntervalCompound& ParameterizedType::_internal_interval_compound() const {
+  return _internal_has_interval_compound()
+      ? *kind_.interval_compound_
+      : reinterpret_cast< ::substrait::ParameterizedType_ParameterizedIntervalCompound&>(::substrait::_ParameterizedType_ParameterizedIntervalCompound_default_instance_);
+}
+inline const ::substrait::ParameterizedType_ParameterizedIntervalCompound& ParameterizedType::interval_compound() const {
+  // @@protoc_insertion_point(field_get:substrait.ParameterizedType.interval_compound)
+  return _internal_interval_compound();
+}
+inline ::substrait::ParameterizedType_ParameterizedIntervalCompound* ParameterizedType::unsafe_arena_release_interval_compound() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.ParameterizedType.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+    ::substrait::ParameterizedType_ParameterizedIntervalCompound* temp = kind_.interval_compound_;
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ParameterizedType::unsafe_arena_set_allocated_interval_compound(::substrait::ParameterizedType_ParameterizedIntervalCompound* interval_compound) {
+  clear_kind();
+  if (interval_compound) {
+    set_has_interval_compound();
+    kind_.interval_compound_ = interval_compound;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ParameterizedType.interval_compound)
+}
+inline ::substrait::ParameterizedType_ParameterizedIntervalCompound* ParameterizedType::_internal_mutable_interval_compound() {
+  if (!_internal_has_interval_compound()) {
+    clear_kind();
+    set_has_interval_compound();
+    kind_.interval_compound_ = CreateMaybeMessage< ::substrait::ParameterizedType_ParameterizedIntervalCompound >(GetArenaForAllocation());
+  }
+  return kind_.interval_compound_;
+}
+inline ::substrait::ParameterizedType_ParameterizedIntervalCompound* ParameterizedType::mutable_interval_compound() {
+  ::substrait::ParameterizedType_ParameterizedIntervalCompound* _msg = _internal_mutable_interval_compound();
+  // @@protoc_insertion_point(field_mutable:substrait.ParameterizedType.interval_compound)
   return _msg;
 }
 
@@ -7559,6 +8295,10 @@ inline ParameterizedType::KindCase ParameterizedType::kind_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

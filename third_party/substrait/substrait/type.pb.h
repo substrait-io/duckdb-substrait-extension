@@ -48,7 +48,7 @@ struct TableStruct_substrait_2ftype_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[29]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[30]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -98,6 +98,9 @@ extern Type_I64DefaultTypeInternal _Type_I64_default_instance_;
 class Type_I8;
 struct Type_I8DefaultTypeInternal;
 extern Type_I8DefaultTypeInternal _Type_I8_default_instance_;
+class Type_IntervalCompound;
+struct Type_IntervalCompoundDefaultTypeInternal;
+extern Type_IntervalCompoundDefaultTypeInternal _Type_IntervalCompound_default_instance_;
 class Type_IntervalDay;
 struct Type_IntervalDayDefaultTypeInternal;
 extern Type_IntervalDayDefaultTypeInternal _Type_IntervalDay_default_instance_;
@@ -159,6 +162,7 @@ template<> ::substrait::Type_I16* Arena::CreateMaybeMessage<::substrait::Type_I1
 template<> ::substrait::Type_I32* Arena::CreateMaybeMessage<::substrait::Type_I32>(Arena*);
 template<> ::substrait::Type_I64* Arena::CreateMaybeMessage<::substrait::Type_I64>(Arena*);
 template<> ::substrait::Type_I8* Arena::CreateMaybeMessage<::substrait::Type_I8>(Arena*);
+template<> ::substrait::Type_IntervalCompound* Arena::CreateMaybeMessage<::substrait::Type_IntervalCompound>(Arena*);
 template<> ::substrait::Type_IntervalDay* Arena::CreateMaybeMessage<::substrait::Type_IntervalDay>(Arena*);
 template<> ::substrait::Type_IntervalYear* Arena::CreateMaybeMessage<::substrait::Type_IntervalYear>(Arena*);
 template<> ::substrait::Type_List* Arena::CreateMaybeMessage<::substrait::Type_List>(Arena*);
@@ -2527,6 +2531,7 @@ class Type_IntervalDay final :
   enum : int {
     kTypeVariationReferenceFieldNumber = 1,
     kNullabilityFieldNumber = 2,
+    kPrecisionFieldNumber = 3,
   };
   // uint32 type_variation_reference = 1;
   void clear_type_variation_reference();
@@ -2546,7 +2551,189 @@ class Type_IntervalDay final :
   void _internal_set_nullability(::substrait::Type_Nullability value);
   public:
 
+  // optional int32 precision = 3;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  int32_t precision() const;
+  void set_precision(int32_t value);
+  private:
+  int32_t _internal_precision() const;
+  void _internal_set_precision(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:substrait.Type.IntervalDay)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t type_variation_reference_;
+  int nullability_;
+  int32_t precision_;
+  friend struct ::TableStruct_substrait_2ftype_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Type_IntervalCompound final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.IntervalCompound) */ {
+ public:
+  inline Type_IntervalCompound() : Type_IntervalCompound(nullptr) {}
+  ~Type_IntervalCompound() override;
+  explicit constexpr Type_IntervalCompound(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Type_IntervalCompound(const Type_IntervalCompound& from);
+  Type_IntervalCompound(Type_IntervalCompound&& from) noexcept
+    : Type_IntervalCompound() {
+    *this = ::std::move(from);
+  }
+
+  inline Type_IntervalCompound& operator=(const Type_IntervalCompound& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Type_IntervalCompound& operator=(Type_IntervalCompound&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Type_IntervalCompound& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Type_IntervalCompound* internal_default_instance() {
+    return reinterpret_cast<const Type_IntervalCompound*>(
+               &_Type_IntervalCompound_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    15;
+
+  friend void swap(Type_IntervalCompound& a, Type_IntervalCompound& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Type_IntervalCompound* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Type_IntervalCompound* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Type_IntervalCompound* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Type_IntervalCompound>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Type_IntervalCompound& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Type_IntervalCompound& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Type_IntervalCompound* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Type.IntervalCompound";
+  }
+  protected:
+  explicit Type_IntervalCompound(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTypeVariationReferenceFieldNumber = 1,
+    kNullabilityFieldNumber = 2,
+    kPrecisionFieldNumber = 3,
+  };
+  // uint32 type_variation_reference = 1;
+  void clear_type_variation_reference();
+  uint32_t type_variation_reference() const;
+  void set_type_variation_reference(uint32_t value);
+  private:
+  uint32_t _internal_type_variation_reference() const;
+  void _internal_set_type_variation_reference(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 2;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // int32 precision = 3;
+  void clear_precision();
+  int32_t precision() const;
+  void set_precision(int32_t value);
+  private:
+  int32_t _internal_precision() const;
+  void _internal_set_precision(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.Type.IntervalCompound)
  private:
   class _Internal;
 
@@ -2555,6 +2742,7 @@ class Type_IntervalDay final :
   typedef void DestructorSkippable_;
   uint32_t type_variation_reference_;
   int nullability_;
+  int32_t precision_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2ftype_2eproto;
 };
@@ -2608,7 +2796,7 @@ class Type_UUID final :
                &_Type_UUID_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    16;
 
   friend void swap(Type_UUID& a, Type_UUID& b) {
     a.Swap(&b);
@@ -2765,7 +2953,7 @@ class Type_FixedChar final :
                &_Type_FixedChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    17;
 
   friend void swap(Type_FixedChar& a, Type_FixedChar& b) {
     a.Swap(&b);
@@ -2933,7 +3121,7 @@ class Type_VarChar final :
                &_Type_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    18;
 
   friend void swap(Type_VarChar& a, Type_VarChar& b) {
     a.Swap(&b);
@@ -3101,7 +3289,7 @@ class Type_FixedBinary final :
                &_Type_FixedBinary_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    19;
 
   friend void swap(Type_FixedBinary& a, Type_FixedBinary& b) {
     a.Swap(&b);
@@ -3269,7 +3457,7 @@ class Type_Decimal final :
                &_Type_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    20;
 
   friend void swap(Type_Decimal& a, Type_Decimal& b) {
     a.Swap(&b);
@@ -3448,7 +3636,7 @@ class Type_PrecisionTimestamp final :
                &_Type_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    21;
 
   friend void swap(Type_PrecisionTimestamp& a, Type_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -3616,7 +3804,7 @@ class Type_PrecisionTimestampTZ final :
                &_Type_PrecisionTimestampTZ_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    22;
 
   friend void swap(Type_PrecisionTimestampTZ& a, Type_PrecisionTimestampTZ& b) {
     a.Swap(&b);
@@ -3784,7 +3972,7 @@ class Type_Struct final :
                &_Type_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    23;
 
   friend void swap(Type_Struct& a, Type_Struct& b) {
     a.Swap(&b);
@@ -3961,7 +4149,7 @@ class Type_List final :
                &_Type_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    24;
 
   friend void swap(Type_List& a, Type_List& b) {
     a.Swap(&b);
@@ -4138,7 +4326,7 @@ class Type_Map final :
                &_Type_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    25;
 
   friend void swap(Type_Map& a, Type_Map& b) {
     a.Swap(&b);
@@ -4335,7 +4523,7 @@ class Type_UserDefined final :
                &_Type_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    26;
 
   friend void swap(Type_UserDefined& a, Type_UserDefined& b) {
     a.Swap(&b);
@@ -4533,7 +4721,7 @@ class Type_Parameter final :
                &_Type_Parameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    27;
 
   friend void swap(Type_Parameter& a, Type_Parameter& b) {
     a.Swap(&b);
@@ -4805,6 +4993,7 @@ class Type final :
     kTime = 17,
     kIntervalYear = 19,
     kIntervalDay = 20,
+    kIntervalCompound = 35,
     kTimestampTz = 29,
     kUuid = 32,
     kFixedChar = 21,
@@ -4826,7 +5015,7 @@ class Type final :
                &_Type_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    28;
 
   friend void swap(Type& a, Type& b) {
     a.Swap(&b);
@@ -4912,6 +5101,7 @@ class Type final :
   typedef Type_TimestampTZ TimestampTZ;
   typedef Type_IntervalYear IntervalYear;
   typedef Type_IntervalDay IntervalDay;
+  typedef Type_IntervalCompound IntervalCompound;
   typedef Type_UUID UUID;
   typedef Type_FixedChar FixedChar;
   typedef Type_VarChar VarChar;
@@ -4974,6 +5164,7 @@ class Type final :
     kTimeFieldNumber = 17,
     kIntervalYearFieldNumber = 19,
     kIntervalDayFieldNumber = 20,
+    kIntervalCompoundFieldNumber = 35,
     kTimestampTzFieldNumber = 29,
     kUuidFieldNumber = 32,
     kFixedCharFieldNumber = 21,
@@ -5240,6 +5431,24 @@ class Type final :
       ::substrait::Type_IntervalDay* interval_day);
   ::substrait::Type_IntervalDay* unsafe_arena_release_interval_day();
 
+  // .substrait.Type.IntervalCompound interval_compound = 35;
+  bool has_interval_compound() const;
+  private:
+  bool _internal_has_interval_compound() const;
+  public:
+  void clear_interval_compound();
+  const ::substrait::Type_IntervalCompound& interval_compound() const;
+  PROTOBUF_NODISCARD ::substrait::Type_IntervalCompound* release_interval_compound();
+  ::substrait::Type_IntervalCompound* mutable_interval_compound();
+  void set_allocated_interval_compound(::substrait::Type_IntervalCompound* interval_compound);
+  private:
+  const ::substrait::Type_IntervalCompound& _internal_interval_compound() const;
+  ::substrait::Type_IntervalCompound* _internal_mutable_interval_compound();
+  public:
+  void unsafe_arena_set_allocated_interval_compound(
+      ::substrait::Type_IntervalCompound* interval_compound);
+  ::substrait::Type_IntervalCompound* unsafe_arena_release_interval_compound();
+
   // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
   PROTOBUF_DEPRECATED bool has_timestamp_tz() const;
   private:
@@ -5488,6 +5697,7 @@ class Type final :
   void set_has_time();
   void set_has_interval_year();
   void set_has_interval_day();
+  void set_has_interval_compound();
   void set_has_timestamp_tz();
   void set_has_uuid();
   void set_has_fixed_char();
@@ -5525,6 +5735,7 @@ class Type final :
     ::substrait::Type_Time* time_;
     ::substrait::Type_IntervalYear* interval_year_;
     ::substrait::Type_IntervalDay* interval_day_;
+    ::substrait::Type_IntervalCompound* interval_compound_;
     ::substrait::Type_TimestampTZ* timestamp_tz_;
     ::substrait::Type_UUID* uuid_;
     ::substrait::Type_FixedChar* fixed_char_;
@@ -5594,7 +5805,7 @@ class NamedStruct final :
                &_NamedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    29;
 
   friend void swap(NamedStruct& a, NamedStruct& b) {
     a.Swap(&b);
@@ -6390,6 +6601,98 @@ inline void Type_IntervalDay::_internal_set_nullability(::substrait::Type_Nullab
 inline void Type_IntervalDay::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.Type.IntervalDay.nullability)
+}
+
+// optional int32 precision = 3;
+inline bool Type_IntervalDay::_internal_has_precision() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool Type_IntervalDay::has_precision() const {
+  return _internal_has_precision();
+}
+inline void Type_IntervalDay::clear_precision() {
+  precision_ = 0;
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline int32_t Type_IntervalDay::_internal_precision() const {
+  return precision_;
+}
+inline int32_t Type_IntervalDay::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.IntervalDay.precision)
+  return _internal_precision();
+}
+inline void Type_IntervalDay::_internal_set_precision(int32_t value) {
+  _has_bits_[0] |= 0x00000001u;
+  precision_ = value;
+}
+inline void Type_IntervalDay::set_precision(int32_t value) {
+  _internal_set_precision(value);
+  // @@protoc_insertion_point(field_set:substrait.Type.IntervalDay.precision)
+}
+
+// -------------------------------------------------------------------
+
+// Type_IntervalCompound
+
+// uint32 type_variation_reference = 1;
+inline void Type_IntervalCompound::clear_type_variation_reference() {
+  type_variation_reference_ = 0u;
+}
+inline uint32_t Type_IntervalCompound::_internal_type_variation_reference() const {
+  return type_variation_reference_;
+}
+inline uint32_t Type_IntervalCompound::type_variation_reference() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.IntervalCompound.type_variation_reference)
+  return _internal_type_variation_reference();
+}
+inline void Type_IntervalCompound::_internal_set_type_variation_reference(uint32_t value) {
+  
+  type_variation_reference_ = value;
+}
+inline void Type_IntervalCompound::set_type_variation_reference(uint32_t value) {
+  _internal_set_type_variation_reference(value);
+  // @@protoc_insertion_point(field_set:substrait.Type.IntervalCompound.type_variation_reference)
+}
+
+// .substrait.Type.Nullability nullability = 2;
+inline void Type_IntervalCompound::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability Type_IntervalCompound::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability Type_IntervalCompound::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.IntervalCompound.nullability)
+  return _internal_nullability();
+}
+inline void Type_IntervalCompound::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void Type_IntervalCompound::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.Type.IntervalCompound.nullability)
+}
+
+// int32 precision = 3;
+inline void Type_IntervalCompound::clear_precision() {
+  precision_ = 0;
+}
+inline int32_t Type_IntervalCompound::_internal_precision() const {
+  return precision_;
+}
+inline int32_t Type_IntervalCompound::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.IntervalCompound.precision)
+  return _internal_precision();
+}
+inline void Type_IntervalCompound::_internal_set_precision(int32_t value) {
+  
+  precision_ = value;
+}
+inline void Type_IntervalCompound::set_precision(int32_t value) {
+  _internal_set_precision(value);
+  // @@protoc_insertion_point(field_set:substrait.Type.IntervalCompound.precision)
 }
 
 // -------------------------------------------------------------------
@@ -8819,6 +9122,80 @@ inline ::substrait::Type_IntervalDay* Type::mutable_interval_day() {
   return _msg;
 }
 
+// .substrait.Type.IntervalCompound interval_compound = 35;
+inline bool Type::_internal_has_interval_compound() const {
+  return kind_case() == kIntervalCompound;
+}
+inline bool Type::has_interval_compound() const {
+  return _internal_has_interval_compound();
+}
+inline void Type::set_has_interval_compound() {
+  _oneof_case_[0] = kIntervalCompound;
+}
+inline void Type::clear_interval_compound() {
+  if (_internal_has_interval_compound()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.interval_compound_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::Type_IntervalCompound* Type::release_interval_compound() {
+  // @@protoc_insertion_point(field_release:substrait.Type.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+      ::substrait::Type_IntervalCompound* temp = kind_.interval_compound_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Type_IntervalCompound& Type::_internal_interval_compound() const {
+  return _internal_has_interval_compound()
+      ? *kind_.interval_compound_
+      : reinterpret_cast< ::substrait::Type_IntervalCompound&>(::substrait::_Type_IntervalCompound_default_instance_);
+}
+inline const ::substrait::Type_IntervalCompound& Type::interval_compound() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.interval_compound)
+  return _internal_interval_compound();
+}
+inline ::substrait::Type_IntervalCompound* Type::unsafe_arena_release_interval_compound() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Type.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+    ::substrait::Type_IntervalCompound* temp = kind_.interval_compound_;
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Type::unsafe_arena_set_allocated_interval_compound(::substrait::Type_IntervalCompound* interval_compound) {
+  clear_kind();
+  if (interval_compound) {
+    set_has_interval_compound();
+    kind_.interval_compound_ = interval_compound;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.interval_compound)
+}
+inline ::substrait::Type_IntervalCompound* Type::_internal_mutable_interval_compound() {
+  if (!_internal_has_interval_compound()) {
+    clear_kind();
+    set_has_interval_compound();
+    kind_.interval_compound_ = CreateMaybeMessage< ::substrait::Type_IntervalCompound >(GetArenaForAllocation());
+  }
+  return kind_.interval_compound_;
+}
+inline ::substrait::Type_IntervalCompound* Type::mutable_interval_compound() {
+  ::substrait::Type_IntervalCompound* _msg = _internal_mutable_interval_compound();
+  // @@protoc_insertion_point(field_mutable:substrait.Type.interval_compound)
+  return _msg;
+}
+
 // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
 inline bool Type::_internal_has_timestamp_tz() const {
   return kind_case() == kTimestampTz;
@@ -9926,6 +10303,8 @@ inline void NamedStruct::set_allocated_struct_(::substrait::Type_Struct* struct_
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
