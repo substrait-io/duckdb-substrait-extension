@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 using namespace duckdb;
 using namespace std;
@@ -44,4 +45,24 @@ TEST_CASE("Test C Get and To Json-Substrait API", "[substrait-api]") {
   REQUIRE_THROWS(con.GetSubstraitJSON("select * from p"));
 
   REQUIRE_THROWS(con.FromSubstraitJSON("this is not valid"));
+}
+
+
+TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
+  DuckDB db(nullptr);
+  Connection con(db);
+
+  auto json = con.GetSubstraitJSON("select * from (values (1, 2),(3, 4))");
+  REQUIRE(!json.empty());
+  std::cout << json << std::endl;
+}
+
+TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
+  DuckDB db(nullptr);
+  Connection con(db);
+
+  auto json = con.GetSubstraitJSON("select * from (values (1+1,2+2),(3+3,4+4)) as temp(a,b)");
+  REQUIRE(!json.empty());
+  std::cout << json << std::endl;
+
 }
