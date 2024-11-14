@@ -1339,6 +1339,25 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 	return get_rel;
 }
 
+substrait::Rel *DuckDBToSubstrait::TransformExpressionGet(LogicalOperator &dop) {
+	auto get_rel = new substrait::Rel();
+	auto &dget = dop.Cast<LogicalExpressionGet>();
+
+	auto sget = get_rel->mutable_read();
+	auto virtual_table = sget->mutable_virtual_table();
+
+	for (auto &row : dget.expressions) {
+		auto row_item = virtual_table->add_expressions();
+		for (auto &expr : row) {
+			auto s_expr = new substrait::Expression();
+			TransformExpr(*expr, *s_expr);
+			*row_item->add_fields() = *s_expr;
+			delete s_expr;
+		}
+	}
+	return get_rel;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformCrossProduct(LogicalOperator &dop) {
 	auto rel = new substrait::Rel();
 	auto sub_cross_prod = rel->mutable_cross();
@@ -1537,6 +1556,8 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformAggregateGroup(dop);
 	case LogicalOperatorType::LOGICAL_GET:
 		return TransformGet(dop);
+	case LogicalOperatorType::LOGICAL_EXPRESSION_GET:
+		return TransformExpressionGet(dop);
 	case LogicalOperatorType::LOGICAL_CROSS_PRODUCT:
 		return TransformCrossProduct(dop);
 	case LogicalOperatorType::LOGICAL_UNION:

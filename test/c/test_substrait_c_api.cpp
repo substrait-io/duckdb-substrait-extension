@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 using namespace duckdb;
 using namespace std;
@@ -292,4 +293,23 @@ TEST_CASE("Test C DeleteRows with Substrait API", "[substrait-api]") {
 	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Jane Smith", "Bob Brown"}));
 	REQUIRE(CHECK_COLUMN(result, 2, {1, 2, 3}));
 	REQUIRE(CHECK_COLUMN(result, 3, {120000, 80000, 95000}));
+}
+
+TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
+  DuckDB db(nullptr);
+  Connection con(db);
+
+  auto json = con.GetSubstraitJSON("select * from (values (1, 2),(3, 4))");
+  REQUIRE(!json.empty());
+  std::cout << json << std::endl;
+}
+
+TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
+  DuckDB db(nullptr);
+  Connection con(db);
+
+  auto json = con.GetSubstraitJSON("select * from (values (1+1,2+2),(3+3,4+4)) as temp(a,b)");
+  REQUIRE(!json.empty());
+  std::cout << json << std::endl;
+
 }
