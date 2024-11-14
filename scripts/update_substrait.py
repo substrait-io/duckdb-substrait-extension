@@ -5,7 +5,7 @@ import os
 import shutil
 from os import walk
 
-GITHUB_TAG = "5fe2a16ac3a3e8deb970b757ea91dc33b7763a1d" # V0.53
+GITHUB_TAG = "a0a10bb39dae32a5564f4f37a4673068a08c8e91" # v0.59.0
 # Change to substrait folder
 sub_folder  = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','third_party','substrait')
 os.chdir(sub_folder)

@@ -48,7 +48,7 @@ struct TableStruct_substrait_2ftype_5fexpressions_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[17]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[19]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -71,6 +71,12 @@ extern DerivationExpression_ExpressionFixedBinaryDefaultTypeInternal _Derivation
 class DerivationExpression_ExpressionFixedChar;
 struct DerivationExpression_ExpressionFixedCharDefaultTypeInternal;
 extern DerivationExpression_ExpressionFixedCharDefaultTypeInternal _DerivationExpression_ExpressionFixedChar_default_instance_;
+class DerivationExpression_ExpressionIntervalCompound;
+struct DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal;
+extern DerivationExpression_ExpressionIntervalCompoundDefaultTypeInternal _DerivationExpression_ExpressionIntervalCompound_default_instance_;
+class DerivationExpression_ExpressionIntervalDay;
+struct DerivationExpression_ExpressionIntervalDayDefaultTypeInternal;
+extern DerivationExpression_ExpressionIntervalDayDefaultTypeInternal _DerivationExpression_ExpressionIntervalDay_default_instance_;
 class DerivationExpression_ExpressionList;
 struct DerivationExpression_ExpressionListDefaultTypeInternal;
 extern DerivationExpression_ExpressionListDefaultTypeInternal _DerivationExpression_ExpressionList_default_instance_;
@@ -114,6 +120,8 @@ template<> ::substrait::DerivationExpression_BinaryOp* Arena::CreateMaybeMessage
 template<> ::substrait::DerivationExpression_ExpressionDecimal* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionDecimal>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionFixedBinary* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionFixedBinary>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionFixedChar* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionFixedChar>(Arena*);
+template<> ::substrait::DerivationExpression_ExpressionIntervalCompound* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionIntervalCompound>(Arena*);
+template<> ::substrait::DerivationExpression_ExpressionIntervalDay* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionIntervalDay>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionList* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionList>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionMap* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionMap>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionNamedStruct* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionNamedStruct>(Arena*);
@@ -1097,6 +1105,360 @@ class DerivationExpression_ExpressionPrecisionTimestamp final :
 };
 // -------------------------------------------------------------------
 
+class DerivationExpression_ExpressionIntervalDay final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DerivationExpression.ExpressionIntervalDay) */ {
+ public:
+  inline DerivationExpression_ExpressionIntervalDay() : DerivationExpression_ExpressionIntervalDay(nullptr) {}
+  ~DerivationExpression_ExpressionIntervalDay() override;
+  explicit constexpr DerivationExpression_ExpressionIntervalDay(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  DerivationExpression_ExpressionIntervalDay(const DerivationExpression_ExpressionIntervalDay& from);
+  DerivationExpression_ExpressionIntervalDay(DerivationExpression_ExpressionIntervalDay&& from) noexcept
+    : DerivationExpression_ExpressionIntervalDay() {
+    *this = ::std::move(from);
+  }
+
+  inline DerivationExpression_ExpressionIntervalDay& operator=(const DerivationExpression_ExpressionIntervalDay& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DerivationExpression_ExpressionIntervalDay& operator=(DerivationExpression_ExpressionIntervalDay&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DerivationExpression_ExpressionIntervalDay& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const DerivationExpression_ExpressionIntervalDay* internal_default_instance() {
+    return reinterpret_cast<const DerivationExpression_ExpressionIntervalDay*>(
+               &_DerivationExpression_ExpressionIntervalDay_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(DerivationExpression_ExpressionIntervalDay& a, DerivationExpression_ExpressionIntervalDay& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(DerivationExpression_ExpressionIntervalDay* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DerivationExpression_ExpressionIntervalDay* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DerivationExpression_ExpressionIntervalDay* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<DerivationExpression_ExpressionIntervalDay>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const DerivationExpression_ExpressionIntervalDay& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const DerivationExpression_ExpressionIntervalDay& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(DerivationExpression_ExpressionIntervalDay* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.DerivationExpression.ExpressionIntervalDay";
+  }
+  protected:
+  explicit DerivationExpression_ExpressionIntervalDay(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kPrecisionFieldNumber = 1,
+    kVariationPointerFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // .substrait.DerivationExpression precision = 1;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  const ::substrait::DerivationExpression& precision() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression* release_precision();
+  ::substrait::DerivationExpression* mutable_precision();
+  void set_allocated_precision(::substrait::DerivationExpression* precision);
+  private:
+  const ::substrait::DerivationExpression& _internal_precision() const;
+  ::substrait::DerivationExpression* _internal_mutable_precision();
+  public:
+  void unsafe_arena_set_allocated_precision(
+      ::substrait::DerivationExpression* precision);
+  ::substrait::DerivationExpression* unsafe_arena_release_precision();
+
+  // uint32 variation_pointer = 2;
+  void clear_variation_pointer();
+  uint32_t variation_pointer() const;
+  void set_variation_pointer(uint32_t value);
+  private:
+  uint32_t _internal_variation_pointer() const;
+  void _internal_set_variation_pointer(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.DerivationExpression.ExpressionIntervalDay)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::DerivationExpression* precision_;
+  uint32_t variation_pointer_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2ftype_5fexpressions_2eproto;
+};
+// -------------------------------------------------------------------
+
+class DerivationExpression_ExpressionIntervalCompound final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DerivationExpression.ExpressionIntervalCompound) */ {
+ public:
+  inline DerivationExpression_ExpressionIntervalCompound() : DerivationExpression_ExpressionIntervalCompound(nullptr) {}
+  ~DerivationExpression_ExpressionIntervalCompound() override;
+  explicit constexpr DerivationExpression_ExpressionIntervalCompound(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  DerivationExpression_ExpressionIntervalCompound(const DerivationExpression_ExpressionIntervalCompound& from);
+  DerivationExpression_ExpressionIntervalCompound(DerivationExpression_ExpressionIntervalCompound&& from) noexcept
+    : DerivationExpression_ExpressionIntervalCompound() {
+    *this = ::std::move(from);
+  }
+
+  inline DerivationExpression_ExpressionIntervalCompound& operator=(const DerivationExpression_ExpressionIntervalCompound& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DerivationExpression_ExpressionIntervalCompound& operator=(DerivationExpression_ExpressionIntervalCompound&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DerivationExpression_ExpressionIntervalCompound& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const DerivationExpression_ExpressionIntervalCompound* internal_default_instance() {
+    return reinterpret_cast<const DerivationExpression_ExpressionIntervalCompound*>(
+               &_DerivationExpression_ExpressionIntervalCompound_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    6;
+
+  friend void swap(DerivationExpression_ExpressionIntervalCompound& a, DerivationExpression_ExpressionIntervalCompound& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(DerivationExpression_ExpressionIntervalCompound* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DerivationExpression_ExpressionIntervalCompound* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DerivationExpression_ExpressionIntervalCompound* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<DerivationExpression_ExpressionIntervalCompound>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const DerivationExpression_ExpressionIntervalCompound& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const DerivationExpression_ExpressionIntervalCompound& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(DerivationExpression_ExpressionIntervalCompound* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.DerivationExpression.ExpressionIntervalCompound";
+  }
+  protected:
+  explicit DerivationExpression_ExpressionIntervalCompound(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kPrecisionFieldNumber = 1,
+    kVariationPointerFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // .substrait.DerivationExpression precision = 1;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  const ::substrait::DerivationExpression& precision() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression* release_precision();
+  ::substrait::DerivationExpression* mutable_precision();
+  void set_allocated_precision(::substrait::DerivationExpression* precision);
+  private:
+  const ::substrait::DerivationExpression& _internal_precision() const;
+  ::substrait::DerivationExpression* _internal_mutable_precision();
+  public:
+  void unsafe_arena_set_allocated_precision(
+      ::substrait::DerivationExpression* precision);
+  ::substrait::DerivationExpression* unsafe_arena_release_precision();
+
+  // uint32 variation_pointer = 2;
+  void clear_variation_pointer();
+  uint32_t variation_pointer() const;
+  void set_variation_pointer(uint32_t value);
+  private:
+  uint32_t _internal_variation_pointer() const;
+  void _internal_set_variation_pointer(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.DerivationExpression.ExpressionIntervalCompound)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::DerivationExpression* precision_;
+  uint32_t variation_pointer_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2ftype_5fexpressions_2eproto;
+};
+// -------------------------------------------------------------------
+
 class DerivationExpression_ExpressionPrecisionTimestampTZ final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DerivationExpression.ExpressionPrecisionTimestampTZ) */ {
  public:
@@ -1145,7 +1507,7 @@ class DerivationExpression_ExpressionPrecisionTimestampTZ final :
                &_DerivationExpression_ExpressionPrecisionTimestampTZ_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    7;
 
   friend void swap(DerivationExpression_ExpressionPrecisionTimestampTZ& a, DerivationExpression_ExpressionPrecisionTimestampTZ& b) {
     a.Swap(&b);
@@ -1322,7 +1684,7 @@ class DerivationExpression_ExpressionStruct final :
                &_DerivationExpression_ExpressionStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    8;
 
   friend void swap(DerivationExpression_ExpressionStruct& a, DerivationExpression_ExpressionStruct& b) {
     a.Swap(&b);
@@ -1499,7 +1861,7 @@ class DerivationExpression_ExpressionNamedStruct final :
                &_DerivationExpression_ExpressionNamedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    9;
 
   friend void swap(DerivationExpression_ExpressionNamedStruct& a, DerivationExpression_ExpressionNamedStruct& b) {
     a.Swap(&b);
@@ -1680,7 +2042,7 @@ class DerivationExpression_ExpressionList final :
                &_DerivationExpression_ExpressionList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    10;
 
   friend void swap(DerivationExpression_ExpressionList& a, DerivationExpression_ExpressionList& b) {
     a.Swap(&b);
@@ -1857,7 +2219,7 @@ class DerivationExpression_ExpressionMap final :
                &_DerivationExpression_ExpressionMap_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    11;
 
   friend void swap(DerivationExpression_ExpressionMap& a, DerivationExpression_ExpressionMap& b) {
     a.Swap(&b);
@@ -2054,7 +2416,7 @@ class DerivationExpression_ExpressionUserDefined final :
                &_DerivationExpression_ExpressionUserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    12;
 
   friend void swap(DerivationExpression_ExpressionUserDefined& a, DerivationExpression_ExpressionUserDefined& b) {
     a.Swap(&b);
@@ -2222,7 +2584,7 @@ class DerivationExpression_IfElse final :
                &_DerivationExpression_IfElse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(DerivationExpression_IfElse& a, DerivationExpression_IfElse& b) {
     a.Swap(&b);
@@ -2417,7 +2779,7 @@ class DerivationExpression_UnaryOp final :
                &_DerivationExpression_UnaryOp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(DerivationExpression_UnaryOp& a, DerivationExpression_UnaryOp& b) {
     a.Swap(&b);
@@ -2613,7 +2975,7 @@ class DerivationExpression_BinaryOp final :
                &_DerivationExpression_BinaryOp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    15;
 
   friend void swap(DerivationExpression_BinaryOp& a, DerivationExpression_BinaryOp& b) {
     a.Swap(&b);
@@ -2851,7 +3213,7 @@ class DerivationExpression_ReturnProgram_Assignment final :
                &_DerivationExpression_ReturnProgram_Assignment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    16;
 
   friend void swap(DerivationExpression_ReturnProgram_Assignment& a, DerivationExpression_ReturnProgram_Assignment& b) {
     a.Swap(&b);
@@ -3022,7 +3384,7 @@ class DerivationExpression_ReturnProgram final :
                &_DerivationExpression_ReturnProgram_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    17;
 
   friend void swap(DerivationExpression_ReturnProgram& a, DerivationExpression_ReturnProgram& b) {
     a.Swap(&b);
@@ -3208,9 +3570,10 @@ class DerivationExpression final :
     kDate = 16,
     kTime = 17,
     kIntervalYear = 19,
-    kIntervalDay = 20,
     kTimestampTz = 29,
     kUuid = 32,
+    kIntervalDay = 20,
+    kIntervalCompound = 42,
     kFixedChar = 21,
     kVarchar = 22,
     kFixedBinary = 23,
@@ -3237,7 +3600,7 @@ class DerivationExpression final :
                &_DerivationExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    18;
 
   friend void swap(DerivationExpression& a, DerivationExpression& b) {
     a.Swap(&b);
@@ -3313,6 +3676,8 @@ class DerivationExpression final :
   typedef DerivationExpression_ExpressionFixedBinary ExpressionFixedBinary;
   typedef DerivationExpression_ExpressionDecimal ExpressionDecimal;
   typedef DerivationExpression_ExpressionPrecisionTimestamp ExpressionPrecisionTimestamp;
+  typedef DerivationExpression_ExpressionIntervalDay ExpressionIntervalDay;
+  typedef DerivationExpression_ExpressionIntervalCompound ExpressionIntervalCompound;
   typedef DerivationExpression_ExpressionPrecisionTimestampTZ ExpressionPrecisionTimestampTZ;
   typedef DerivationExpression_ExpressionStruct ExpressionStruct;
   typedef DerivationExpression_ExpressionNamedStruct ExpressionNamedStruct;
@@ -3340,9 +3705,10 @@ class DerivationExpression final :
     kDateFieldNumber = 16,
     kTimeFieldNumber = 17,
     kIntervalYearFieldNumber = 19,
-    kIntervalDayFieldNumber = 20,
     kTimestampTzFieldNumber = 29,
     kUuidFieldNumber = 32,
+    kIntervalDayFieldNumber = 20,
+    kIntervalCompoundFieldNumber = 42,
     kFixedCharFieldNumber = 21,
     kVarcharFieldNumber = 22,
     kFixedBinaryFieldNumber = 23,
@@ -3596,24 +3962,6 @@ class DerivationExpression final :
       ::substrait::Type_IntervalYear* interval_year);
   ::substrait::Type_IntervalYear* unsafe_arena_release_interval_year();
 
-  // .substrait.Type.IntervalDay interval_day = 20;
-  bool has_interval_day() const;
-  private:
-  bool _internal_has_interval_day() const;
-  public:
-  void clear_interval_day();
-  const ::substrait::Type_IntervalDay& interval_day() const;
-  PROTOBUF_NODISCARD ::substrait::Type_IntervalDay* release_interval_day();
-  ::substrait::Type_IntervalDay* mutable_interval_day();
-  void set_allocated_interval_day(::substrait::Type_IntervalDay* interval_day);
-  private:
-  const ::substrait::Type_IntervalDay& _internal_interval_day() const;
-  ::substrait::Type_IntervalDay* _internal_mutable_interval_day();
-  public:
-  void unsafe_arena_set_allocated_interval_day(
-      ::substrait::Type_IntervalDay* interval_day);
-  ::substrait::Type_IntervalDay* unsafe_arena_release_interval_day();
-
   // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
   PROTOBUF_DEPRECATED bool has_timestamp_tz() const;
   private:
@@ -3649,6 +3997,42 @@ class DerivationExpression final :
   void unsafe_arena_set_allocated_uuid(
       ::substrait::Type_UUID* uuid);
   ::substrait::Type_UUID* unsafe_arena_release_uuid();
+
+  // .substrait.DerivationExpression.ExpressionIntervalDay interval_day = 20;
+  bool has_interval_day() const;
+  private:
+  bool _internal_has_interval_day() const;
+  public:
+  void clear_interval_day();
+  const ::substrait::DerivationExpression_ExpressionIntervalDay& interval_day() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression_ExpressionIntervalDay* release_interval_day();
+  ::substrait::DerivationExpression_ExpressionIntervalDay* mutable_interval_day();
+  void set_allocated_interval_day(::substrait::DerivationExpression_ExpressionIntervalDay* interval_day);
+  private:
+  const ::substrait::DerivationExpression_ExpressionIntervalDay& _internal_interval_day() const;
+  ::substrait::DerivationExpression_ExpressionIntervalDay* _internal_mutable_interval_day();
+  public:
+  void unsafe_arena_set_allocated_interval_day(
+      ::substrait::DerivationExpression_ExpressionIntervalDay* interval_day);
+  ::substrait::DerivationExpression_ExpressionIntervalDay* unsafe_arena_release_interval_day();
+
+  // .substrait.DerivationExpression.ExpressionIntervalCompound interval_compound = 42;
+  bool has_interval_compound() const;
+  private:
+  bool _internal_has_interval_compound() const;
+  public:
+  void clear_interval_compound();
+  const ::substrait::DerivationExpression_ExpressionIntervalCompound& interval_compound() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression_ExpressionIntervalCompound* release_interval_compound();
+  ::substrait::DerivationExpression_ExpressionIntervalCompound* mutable_interval_compound();
+  void set_allocated_interval_compound(::substrait::DerivationExpression_ExpressionIntervalCompound* interval_compound);
+  private:
+  const ::substrait::DerivationExpression_ExpressionIntervalCompound& _internal_interval_compound() const;
+  ::substrait::DerivationExpression_ExpressionIntervalCompound* _internal_mutable_interval_compound();
+  public:
+  void unsafe_arena_set_allocated_interval_compound(
+      ::substrait::DerivationExpression_ExpressionIntervalCompound* interval_compound);
+  ::substrait::DerivationExpression_ExpressionIntervalCompound* unsafe_arena_release_interval_compound();
 
   // .substrait.DerivationExpression.ExpressionFixedChar fixed_char = 21;
   bool has_fixed_char() const;
@@ -3982,9 +4366,10 @@ class DerivationExpression final :
   void set_has_date();
   void set_has_time();
   void set_has_interval_year();
-  void set_has_interval_day();
   void set_has_timestamp_tz();
   void set_has_uuid();
+  void set_has_interval_day();
+  void set_has_interval_compound();
   void set_has_fixed_char();
   void set_has_varchar();
   void set_has_fixed_binary();
@@ -4026,9 +4411,10 @@ class DerivationExpression final :
     ::substrait::Type_Date* date_;
     ::substrait::Type_Time* time_;
     ::substrait::Type_IntervalYear* interval_year_;
-    ::substrait::Type_IntervalDay* interval_day_;
     ::substrait::Type_TimestampTZ* timestamp_tz_;
     ::substrait::Type_UUID* uuid_;
+    ::substrait::DerivationExpression_ExpressionIntervalDay* interval_day_;
+    ::substrait::DerivationExpression_ExpressionIntervalCompound* interval_compound_;
     ::substrait::DerivationExpression_ExpressionFixedChar* fixed_char_;
     ::substrait::DerivationExpression_ExpressionVarChar* varchar_;
     ::substrait::DerivationExpression_ExpressionFixedBinary* fixed_binary_;
@@ -4818,6 +5204,274 @@ inline void DerivationExpression_ExpressionPrecisionTimestamp::_internal_set_nul
 inline void DerivationExpression_ExpressionPrecisionTimestamp::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionPrecisionTimestamp.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// DerivationExpression_ExpressionIntervalDay
+
+// .substrait.DerivationExpression precision = 1;
+inline bool DerivationExpression_ExpressionIntervalDay::_internal_has_precision() const {
+  return this != internal_default_instance() && precision_ != nullptr;
+}
+inline bool DerivationExpression_ExpressionIntervalDay::has_precision() const {
+  return _internal_has_precision();
+}
+inline void DerivationExpression_ExpressionIntervalDay::clear_precision() {
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionIntervalDay::_internal_precision() const {
+  const ::substrait::DerivationExpression* p = precision_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::DerivationExpression&>(
+      ::substrait::_DerivationExpression_default_instance_);
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionIntervalDay::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalDay.precision)
+  return _internal_precision();
+}
+inline void DerivationExpression_ExpressionIntervalDay::unsafe_arena_set_allocated_precision(
+    ::substrait::DerivationExpression* precision) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(precision_);
+  }
+  precision_ = precision;
+  if (precision) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.ExpressionIntervalDay.precision)
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalDay::release_precision() {
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalDay::unsafe_arena_release_precision() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.ExpressionIntervalDay.precision)
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalDay::_internal_mutable_precision() {
+  
+  if (precision_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::DerivationExpression>(GetArenaForAllocation());
+    precision_ = p;
+  }
+  return precision_;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalDay::mutable_precision() {
+  ::substrait::DerivationExpression* _msg = _internal_mutable_precision();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.ExpressionIntervalDay.precision)
+  return _msg;
+}
+inline void DerivationExpression_ExpressionIntervalDay::set_allocated_precision(::substrait::DerivationExpression* precision) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete precision_;
+  }
+  if (precision) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::DerivationExpression>::GetOwningArena(precision);
+    if (message_arena != submessage_arena) {
+      precision = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, precision, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  precision_ = precision;
+  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.ExpressionIntervalDay.precision)
+}
+
+// uint32 variation_pointer = 2;
+inline void DerivationExpression_ExpressionIntervalDay::clear_variation_pointer() {
+  variation_pointer_ = 0u;
+}
+inline uint32_t DerivationExpression_ExpressionIntervalDay::_internal_variation_pointer() const {
+  return variation_pointer_;
+}
+inline uint32_t DerivationExpression_ExpressionIntervalDay::variation_pointer() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalDay.variation_pointer)
+  return _internal_variation_pointer();
+}
+inline void DerivationExpression_ExpressionIntervalDay::_internal_set_variation_pointer(uint32_t value) {
+  
+  variation_pointer_ = value;
+}
+inline void DerivationExpression_ExpressionIntervalDay::set_variation_pointer(uint32_t value) {
+  _internal_set_variation_pointer(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionIntervalDay.variation_pointer)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void DerivationExpression_ExpressionIntervalDay::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionIntervalDay::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionIntervalDay::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalDay.nullability)
+  return _internal_nullability();
+}
+inline void DerivationExpression_ExpressionIntervalDay::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void DerivationExpression_ExpressionIntervalDay::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionIntervalDay.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// DerivationExpression_ExpressionIntervalCompound
+
+// .substrait.DerivationExpression precision = 1;
+inline bool DerivationExpression_ExpressionIntervalCompound::_internal_has_precision() const {
+  return this != internal_default_instance() && precision_ != nullptr;
+}
+inline bool DerivationExpression_ExpressionIntervalCompound::has_precision() const {
+  return _internal_has_precision();
+}
+inline void DerivationExpression_ExpressionIntervalCompound::clear_precision() {
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionIntervalCompound::_internal_precision() const {
+  const ::substrait::DerivationExpression* p = precision_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::DerivationExpression&>(
+      ::substrait::_DerivationExpression_default_instance_);
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionIntervalCompound::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalCompound.precision)
+  return _internal_precision();
+}
+inline void DerivationExpression_ExpressionIntervalCompound::unsafe_arena_set_allocated_precision(
+    ::substrait::DerivationExpression* precision) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(precision_);
+  }
+  precision_ = precision;
+  if (precision) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.ExpressionIntervalCompound.precision)
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalCompound::release_precision() {
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalCompound::unsafe_arena_release_precision() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.ExpressionIntervalCompound.precision)
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalCompound::_internal_mutable_precision() {
+  
+  if (precision_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::DerivationExpression>(GetArenaForAllocation());
+    precision_ = p;
+  }
+  return precision_;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionIntervalCompound::mutable_precision() {
+  ::substrait::DerivationExpression* _msg = _internal_mutable_precision();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.ExpressionIntervalCompound.precision)
+  return _msg;
+}
+inline void DerivationExpression_ExpressionIntervalCompound::set_allocated_precision(::substrait::DerivationExpression* precision) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete precision_;
+  }
+  if (precision) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::DerivationExpression>::GetOwningArena(precision);
+    if (message_arena != submessage_arena) {
+      precision = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, precision, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  precision_ = precision;
+  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.ExpressionIntervalCompound.precision)
+}
+
+// uint32 variation_pointer = 2;
+inline void DerivationExpression_ExpressionIntervalCompound::clear_variation_pointer() {
+  variation_pointer_ = 0u;
+}
+inline uint32_t DerivationExpression_ExpressionIntervalCompound::_internal_variation_pointer() const {
+  return variation_pointer_;
+}
+inline uint32_t DerivationExpression_ExpressionIntervalCompound::variation_pointer() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalCompound.variation_pointer)
+  return _internal_variation_pointer();
+}
+inline void DerivationExpression_ExpressionIntervalCompound::_internal_set_variation_pointer(uint32_t value) {
+  
+  variation_pointer_ = value;
+}
+inline void DerivationExpression_ExpressionIntervalCompound::set_variation_pointer(uint32_t value) {
+  _internal_set_variation_pointer(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionIntervalCompound.variation_pointer)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void DerivationExpression_ExpressionIntervalCompound::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionIntervalCompound::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionIntervalCompound::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionIntervalCompound.nullability)
+  return _internal_nullability();
+}
+inline void DerivationExpression_ExpressionIntervalCompound::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void DerivationExpression_ExpressionIntervalCompound::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionIntervalCompound.nullability)
 }
 
 // -------------------------------------------------------------------
@@ -7362,72 +8016,6 @@ inline ::substrait::Type_IntervalYear* DerivationExpression::mutable_interval_ye
   return _msg;
 }
 
-// .substrait.Type.IntervalDay interval_day = 20;
-inline bool DerivationExpression::_internal_has_interval_day() const {
-  return kind_case() == kIntervalDay;
-}
-inline bool DerivationExpression::has_interval_day() const {
-  return _internal_has_interval_day();
-}
-inline void DerivationExpression::set_has_interval_day() {
-  _oneof_case_[0] = kIntervalDay;
-}
-inline ::substrait::Type_IntervalDay* DerivationExpression::release_interval_day() {
-  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.interval_day)
-  if (_internal_has_interval_day()) {
-    clear_has_kind();
-      ::substrait::Type_IntervalDay* temp = kind_.interval_day_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    kind_.interval_day_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::substrait::Type_IntervalDay& DerivationExpression::_internal_interval_day() const {
-  return _internal_has_interval_day()
-      ? *kind_.interval_day_
-      : reinterpret_cast< ::substrait::Type_IntervalDay&>(::substrait::_Type_IntervalDay_default_instance_);
-}
-inline const ::substrait::Type_IntervalDay& DerivationExpression::interval_day() const {
-  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.interval_day)
-  return _internal_interval_day();
-}
-inline ::substrait::Type_IntervalDay* DerivationExpression::unsafe_arena_release_interval_day() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.DerivationExpression.interval_day)
-  if (_internal_has_interval_day()) {
-    clear_has_kind();
-    ::substrait::Type_IntervalDay* temp = kind_.interval_day_;
-    kind_.interval_day_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void DerivationExpression::unsafe_arena_set_allocated_interval_day(::substrait::Type_IntervalDay* interval_day) {
-  clear_kind();
-  if (interval_day) {
-    set_has_interval_day();
-    kind_.interval_day_ = interval_day;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.interval_day)
-}
-inline ::substrait::Type_IntervalDay* DerivationExpression::_internal_mutable_interval_day() {
-  if (!_internal_has_interval_day()) {
-    clear_kind();
-    set_has_interval_day();
-    kind_.interval_day_ = CreateMaybeMessage< ::substrait::Type_IntervalDay >(GetArenaForAllocation());
-  }
-  return kind_.interval_day_;
-}
-inline ::substrait::Type_IntervalDay* DerivationExpression::mutable_interval_day() {
-  ::substrait::Type_IntervalDay* _msg = _internal_mutable_interval_day();
-  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.interval_day)
-  return _msg;
-}
-
 // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
 inline bool DerivationExpression::_internal_has_timestamp_tz() const {
   return kind_case() == kTimestampTz;
@@ -7557,6 +8145,154 @@ inline ::substrait::Type_UUID* DerivationExpression::_internal_mutable_uuid() {
 inline ::substrait::Type_UUID* DerivationExpression::mutable_uuid() {
   ::substrait::Type_UUID* _msg = _internal_mutable_uuid();
   // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.uuid)
+  return _msg;
+}
+
+// .substrait.DerivationExpression.ExpressionIntervalDay interval_day = 20;
+inline bool DerivationExpression::_internal_has_interval_day() const {
+  return kind_case() == kIntervalDay;
+}
+inline bool DerivationExpression::has_interval_day() const {
+  return _internal_has_interval_day();
+}
+inline void DerivationExpression::set_has_interval_day() {
+  _oneof_case_[0] = kIntervalDay;
+}
+inline void DerivationExpression::clear_interval_day() {
+  if (_internal_has_interval_day()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.interval_day_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalDay* DerivationExpression::release_interval_day() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.interval_day)
+  if (_internal_has_interval_day()) {
+    clear_has_kind();
+      ::substrait::DerivationExpression_ExpressionIntervalDay* temp = kind_.interval_day_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.interval_day_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::DerivationExpression_ExpressionIntervalDay& DerivationExpression::_internal_interval_day() const {
+  return _internal_has_interval_day()
+      ? *kind_.interval_day_
+      : reinterpret_cast< ::substrait::DerivationExpression_ExpressionIntervalDay&>(::substrait::_DerivationExpression_ExpressionIntervalDay_default_instance_);
+}
+inline const ::substrait::DerivationExpression_ExpressionIntervalDay& DerivationExpression::interval_day() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.interval_day)
+  return _internal_interval_day();
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalDay* DerivationExpression::unsafe_arena_release_interval_day() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.DerivationExpression.interval_day)
+  if (_internal_has_interval_day()) {
+    clear_has_kind();
+    ::substrait::DerivationExpression_ExpressionIntervalDay* temp = kind_.interval_day_;
+    kind_.interval_day_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void DerivationExpression::unsafe_arena_set_allocated_interval_day(::substrait::DerivationExpression_ExpressionIntervalDay* interval_day) {
+  clear_kind();
+  if (interval_day) {
+    set_has_interval_day();
+    kind_.interval_day_ = interval_day;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.interval_day)
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalDay* DerivationExpression::_internal_mutable_interval_day() {
+  if (!_internal_has_interval_day()) {
+    clear_kind();
+    set_has_interval_day();
+    kind_.interval_day_ = CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionIntervalDay >(GetArenaForAllocation());
+  }
+  return kind_.interval_day_;
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalDay* DerivationExpression::mutable_interval_day() {
+  ::substrait::DerivationExpression_ExpressionIntervalDay* _msg = _internal_mutable_interval_day();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.interval_day)
+  return _msg;
+}
+
+// .substrait.DerivationExpression.ExpressionIntervalCompound interval_compound = 42;
+inline bool DerivationExpression::_internal_has_interval_compound() const {
+  return kind_case() == kIntervalCompound;
+}
+inline bool DerivationExpression::has_interval_compound() const {
+  return _internal_has_interval_compound();
+}
+inline void DerivationExpression::set_has_interval_compound() {
+  _oneof_case_[0] = kIntervalCompound;
+}
+inline void DerivationExpression::clear_interval_compound() {
+  if (_internal_has_interval_compound()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.interval_compound_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalCompound* DerivationExpression::release_interval_compound() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+      ::substrait::DerivationExpression_ExpressionIntervalCompound* temp = kind_.interval_compound_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::DerivationExpression_ExpressionIntervalCompound& DerivationExpression::_internal_interval_compound() const {
+  return _internal_has_interval_compound()
+      ? *kind_.interval_compound_
+      : reinterpret_cast< ::substrait::DerivationExpression_ExpressionIntervalCompound&>(::substrait::_DerivationExpression_ExpressionIntervalCompound_default_instance_);
+}
+inline const ::substrait::DerivationExpression_ExpressionIntervalCompound& DerivationExpression::interval_compound() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.interval_compound)
+  return _internal_interval_compound();
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalCompound* DerivationExpression::unsafe_arena_release_interval_compound() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.DerivationExpression.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_kind();
+    ::substrait::DerivationExpression_ExpressionIntervalCompound* temp = kind_.interval_compound_;
+    kind_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void DerivationExpression::unsafe_arena_set_allocated_interval_compound(::substrait::DerivationExpression_ExpressionIntervalCompound* interval_compound) {
+  clear_kind();
+  if (interval_compound) {
+    set_has_interval_compound();
+    kind_.interval_compound_ = interval_compound;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.interval_compound)
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalCompound* DerivationExpression::_internal_mutable_interval_compound() {
+  if (!_internal_has_interval_compound()) {
+    clear_kind();
+    set_has_interval_compound();
+    kind_.interval_compound_ = CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionIntervalCompound >(GetArenaForAllocation());
+  }
+  return kind_.interval_compound_;
+}
+inline ::substrait::DerivationExpression_ExpressionIntervalCompound* DerivationExpression::mutable_interval_compound() {
+  ::substrait::DerivationExpression_ExpressionIntervalCompound* _msg = _internal_mutable_interval_compound();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.interval_compound)
   return _msg;
 }
 
@@ -8848,6 +9584,10 @@ inline DerivationExpression::KindCase DerivationExpression::kind_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

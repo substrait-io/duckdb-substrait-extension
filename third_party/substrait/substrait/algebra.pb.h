@@ -51,7 +51,7 @@ struct TableStruct_substrait_2falgebra_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[117]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[121]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -161,6 +161,9 @@ extern Expression_LiteralDefaultTypeInternal _Expression_Literal_default_instanc
 class Expression_Literal_Decimal;
 struct Expression_Literal_DecimalDefaultTypeInternal;
 extern Expression_Literal_DecimalDefaultTypeInternal _Expression_Literal_Decimal_default_instance_;
+class Expression_Literal_IntervalCompound;
+struct Expression_Literal_IntervalCompoundDefaultTypeInternal;
+extern Expression_Literal_IntervalCompoundDefaultTypeInternal _Expression_Literal_IntervalCompound_default_instance_;
 class Expression_Literal_IntervalDayToSecond;
 struct Expression_Literal_IntervalDayToSecondDefaultTypeInternal;
 extern Expression_Literal_IntervalDayToSecondDefaultTypeInternal _Expression_Literal_IntervalDayToSecond_default_instance_;
@@ -356,6 +359,9 @@ extern ReadRel_LocalFiles_FileOrFilesDefaultTypeInternal _ReadRel_LocalFiles_Fil
 class ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions;
 struct ReadRel_LocalFiles_FileOrFiles_ArrowReadOptionsDefaultTypeInternal;
 extern ReadRel_LocalFiles_FileOrFiles_ArrowReadOptionsDefaultTypeInternal _ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions_default_instance_;
+class ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions;
+struct ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptionsDefaultTypeInternal;
+extern ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptionsDefaultTypeInternal _ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions_default_instance_;
 class ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions;
 struct ReadRel_LocalFiles_FileOrFiles_DwrfReadOptionsDefaultTypeInternal;
 extern ReadRel_LocalFiles_FileOrFiles_DwrfReadOptionsDefaultTypeInternal _ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions_default_instance_;
@@ -389,9 +395,15 @@ extern RelCommon_EmitDefaultTypeInternal _RelCommon_Emit_default_instance_;
 class RelCommon_Hint;
 struct RelCommon_HintDefaultTypeInternal;
 extern RelCommon_HintDefaultTypeInternal _RelCommon_Hint_default_instance_;
+class RelCommon_Hint_LoadedComputation;
+struct RelCommon_Hint_LoadedComputationDefaultTypeInternal;
+extern RelCommon_Hint_LoadedComputationDefaultTypeInternal _RelCommon_Hint_LoadedComputation_default_instance_;
 class RelCommon_Hint_RuntimeConstraint;
 struct RelCommon_Hint_RuntimeConstraintDefaultTypeInternal;
 extern RelCommon_Hint_RuntimeConstraintDefaultTypeInternal _RelCommon_Hint_RuntimeConstraint_default_instance_;
+class RelCommon_Hint_SavedComputation;
+struct RelCommon_Hint_SavedComputationDefaultTypeInternal;
+extern RelCommon_Hint_SavedComputationDefaultTypeInternal _RelCommon_Hint_SavedComputation_default_instance_;
 class RelCommon_Hint_Stats;
 struct RelCommon_Hint_StatsDefaultTypeInternal;
 extern RelCommon_Hint_StatsDefaultTypeInternal _RelCommon_Hint_Stats_default_instance_;
@@ -446,6 +458,7 @@ template<> ::substrait::Expression_IfThen* Arena::CreateMaybeMessage<::substrait
 template<> ::substrait::Expression_IfThen_IfClause* Arena::CreateMaybeMessage<::substrait::Expression_IfThen_IfClause>(Arena*);
 template<> ::substrait::Expression_Literal* Arena::CreateMaybeMessage<::substrait::Expression_Literal>(Arena*);
 template<> ::substrait::Expression_Literal_Decimal* Arena::CreateMaybeMessage<::substrait::Expression_Literal_Decimal>(Arena*);
+template<> ::substrait::Expression_Literal_IntervalCompound* Arena::CreateMaybeMessage<::substrait::Expression_Literal_IntervalCompound>(Arena*);
 template<> ::substrait::Expression_Literal_IntervalDayToSecond* Arena::CreateMaybeMessage<::substrait::Expression_Literal_IntervalDayToSecond>(Arena*);
 template<> ::substrait::Expression_Literal_IntervalYearToMonth* Arena::CreateMaybeMessage<::substrait::Expression_Literal_IntervalYearToMonth>(Arena*);
 template<> ::substrait::Expression_Literal_List* Arena::CreateMaybeMessage<::substrait::Expression_Literal_List>(Arena*);
@@ -511,6 +524,7 @@ template<> ::substrait::ReadRel_ExtensionTable* Arena::CreateMaybeMessage<::subs
 template<> ::substrait::ReadRel_LocalFiles* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions>(Arena*);
+template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_OrcReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_OrcReadOptions>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions>(Arena*);
@@ -522,7 +536,9 @@ template<> ::substrait::RelCommon* Arena::CreateMaybeMessage<::substrait::RelCom
 template<> ::substrait::RelCommon_Direct* Arena::CreateMaybeMessage<::substrait::RelCommon_Direct>(Arena*);
 template<> ::substrait::RelCommon_Emit* Arena::CreateMaybeMessage<::substrait::RelCommon_Emit>(Arena*);
 template<> ::substrait::RelCommon_Hint* Arena::CreateMaybeMessage<::substrait::RelCommon_Hint>(Arena*);
+template<> ::substrait::RelCommon_Hint_LoadedComputation* Arena::CreateMaybeMessage<::substrait::RelCommon_Hint_LoadedComputation>(Arena*);
 template<> ::substrait::RelCommon_Hint_RuntimeConstraint* Arena::CreateMaybeMessage<::substrait::RelCommon_Hint_RuntimeConstraint>(Arena*);
+template<> ::substrait::RelCommon_Hint_SavedComputation* Arena::CreateMaybeMessage<::substrait::RelCommon_Hint_SavedComputation>(Arena*);
 template<> ::substrait::RelCommon_Hint_Stats* Arena::CreateMaybeMessage<::substrait::RelCommon_Hint_Stats>(Arena*);
 template<> ::substrait::RelRoot* Arena::CreateMaybeMessage<::substrait::RelRoot>(Arena*);
 template<> ::substrait::SetRel* Arena::CreateMaybeMessage<::substrait::SetRel>(Arena*);
@@ -532,21 +548,53 @@ template<> ::substrait::WriteRel* Arena::CreateMaybeMessage<::substrait::WriteRe
 PROTOBUF_NAMESPACE_CLOSE
 namespace substrait {
 
+enum RelCommon_Hint_ComputationType : int {
+  RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNSPECIFIED = 0,
+  RelCommon_Hint_ComputationType_COMPUTATION_TYPE_HASHTABLE = 1,
+  RelCommon_Hint_ComputationType_COMPUTATION_TYPE_BLOOM_FILTER = 2,
+  RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN = 9999,
+  RelCommon_Hint_ComputationType_RelCommon_Hint_ComputationType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  RelCommon_Hint_ComputationType_RelCommon_Hint_ComputationType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool RelCommon_Hint_ComputationType_IsValid(int value);
+constexpr RelCommon_Hint_ComputationType RelCommon_Hint_ComputationType_ComputationType_MIN = RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNSPECIFIED;
+constexpr RelCommon_Hint_ComputationType RelCommon_Hint_ComputationType_ComputationType_MAX = RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN;
+constexpr int RelCommon_Hint_ComputationType_ComputationType_ARRAYSIZE = RelCommon_Hint_ComputationType_ComputationType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* RelCommon_Hint_ComputationType_descriptor();
+template<typename T>
+inline const std::string& RelCommon_Hint_ComputationType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, RelCommon_Hint_ComputationType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function RelCommon_Hint_ComputationType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    RelCommon_Hint_ComputationType_descriptor(), enum_t_value);
+}
+inline bool RelCommon_Hint_ComputationType_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, RelCommon_Hint_ComputationType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<RelCommon_Hint_ComputationType>(
+    RelCommon_Hint_ComputationType_descriptor(), name, value);
+}
 enum JoinRel_JoinType : int {
   JoinRel_JoinType_JOIN_TYPE_UNSPECIFIED = 0,
   JoinRel_JoinType_JOIN_TYPE_INNER = 1,
   JoinRel_JoinType_JOIN_TYPE_OUTER = 2,
   JoinRel_JoinType_JOIN_TYPE_LEFT = 3,
   JoinRel_JoinType_JOIN_TYPE_RIGHT = 4,
-  JoinRel_JoinType_JOIN_TYPE_SEMI = 5,
-  JoinRel_JoinType_JOIN_TYPE_ANTI = 6,
-  JoinRel_JoinType_JOIN_TYPE_SINGLE = 7,
+  JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI = 5,
+  JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI = 6,
+  JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE = 7,
+  JoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI = 8,
+  JoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI = 9,
+  JoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE = 10,
+  JoinRel_JoinType_JOIN_TYPE_LEFT_MARK = 11,
+  JoinRel_JoinType_JOIN_TYPE_RIGHT_MARK = 12,
   JoinRel_JoinType_JoinRel_JoinType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   JoinRel_JoinType_JoinRel_JoinType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
 bool JoinRel_JoinType_IsValid(int value);
 constexpr JoinRel_JoinType JoinRel_JoinType_JoinType_MIN = JoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
-constexpr JoinRel_JoinType JoinRel_JoinType_JoinType_MAX = JoinRel_JoinType_JOIN_TYPE_SINGLE;
+constexpr JoinRel_JoinType JoinRel_JoinType_JoinType_MAX = JoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
 constexpr int JoinRel_JoinType_JoinType_ARRAYSIZE = JoinRel_JoinType_JoinType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* JoinRel_JoinType_descriptor();
@@ -566,9 +614,11 @@ inline bool JoinRel_JoinType_Parse(
 enum SetRel_SetOp : int {
   SetRel_SetOp_SET_OP_UNSPECIFIED = 0,
   SetRel_SetOp_SET_OP_MINUS_PRIMARY = 1,
+  SetRel_SetOp_SET_OP_MINUS_PRIMARY_ALL = 7,
   SetRel_SetOp_SET_OP_MINUS_MULTISET = 2,
   SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY = 3,
   SetRel_SetOp_SET_OP_INTERSECTION_MULTISET = 4,
+  SetRel_SetOp_SET_OP_INTERSECTION_MULTISET_ALL = 8,
   SetRel_SetOp_SET_OP_UNION_DISTINCT = 5,
   SetRel_SetOp_SET_OP_UNION_ALL = 6,
   SetRel_SetOp_SetRel_SetOp_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
@@ -576,7 +626,7 @@ enum SetRel_SetOp : int {
 };
 bool SetRel_SetOp_IsValid(int value);
 constexpr SetRel_SetOp SetRel_SetOp_SetOp_MIN = SetRel_SetOp_SET_OP_UNSPECIFIED;
-constexpr SetRel_SetOp SetRel_SetOp_SetOp_MAX = SetRel_SetOp_SET_OP_UNION_ALL;
+constexpr SetRel_SetOp SetRel_SetOp_SetOp_MAX = SetRel_SetOp_SET_OP_INTERSECTION_MULTISET_ALL;
 constexpr int SetRel_SetOp_SetOp_ARRAYSIZE = SetRel_SetOp_SetOp_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SetRel_SetOp_descriptor();
@@ -739,12 +789,16 @@ enum HashJoinRel_JoinType : int {
   HashJoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI = 6,
   HashJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI = 7,
   HashJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI = 8,
+  HashJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE = 9,
+  HashJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE = 10,
+  HashJoinRel_JoinType_JOIN_TYPE_LEFT_MARK = 11,
+  HashJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK = 12,
   HashJoinRel_JoinType_HashJoinRel_JoinType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   HashJoinRel_JoinType_HashJoinRel_JoinType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
 bool HashJoinRel_JoinType_IsValid(int value);
 constexpr HashJoinRel_JoinType HashJoinRel_JoinType_JoinType_MIN = HashJoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
-constexpr HashJoinRel_JoinType HashJoinRel_JoinType_JoinType_MAX = HashJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+constexpr HashJoinRel_JoinType HashJoinRel_JoinType_JoinType_MAX = HashJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
 constexpr int HashJoinRel_JoinType_JoinType_ARRAYSIZE = HashJoinRel_JoinType_JoinType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* HashJoinRel_JoinType_descriptor();
@@ -771,12 +825,16 @@ enum MergeJoinRel_JoinType : int {
   MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI = 6,
   MergeJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI = 7,
   MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI = 8,
+  MergeJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE = 9,
+  MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE = 10,
+  MergeJoinRel_JoinType_JOIN_TYPE_LEFT_MARK = 11,
+  MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK = 12,
   MergeJoinRel_JoinType_MergeJoinRel_JoinType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   MergeJoinRel_JoinType_MergeJoinRel_JoinType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
 bool MergeJoinRel_JoinType_IsValid(int value);
 constexpr MergeJoinRel_JoinType MergeJoinRel_JoinType_JoinType_MIN = MergeJoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
-constexpr MergeJoinRel_JoinType MergeJoinRel_JoinType_JoinType_MAX = MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+constexpr MergeJoinRel_JoinType MergeJoinRel_JoinType_JoinType_MAX = MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
 constexpr int MergeJoinRel_JoinType_JoinType_ARRAYSIZE = MergeJoinRel_JoinType_JoinType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* MergeJoinRel_JoinType_descriptor();
@@ -803,12 +861,16 @@ enum NestedLoopJoinRel_JoinType : int {
   NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI = 6,
   NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI = 7,
   NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI = 8,
+  NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE = 9,
+  NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE = 10,
+  NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_MARK = 11,
+  NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK = 12,
   NestedLoopJoinRel_JoinType_NestedLoopJoinRel_JoinType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   NestedLoopJoinRel_JoinType_NestedLoopJoinRel_JoinType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
 bool NestedLoopJoinRel_JoinType_IsValid(int value);
 constexpr NestedLoopJoinRel_JoinType NestedLoopJoinRel_JoinType_JoinType_MIN = NestedLoopJoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
-constexpr NestedLoopJoinRel_JoinType NestedLoopJoinRel_JoinType_JoinType_MAX = NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+constexpr NestedLoopJoinRel_JoinType NestedLoopJoinRel_JoinType_JoinType_MAX = NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
 constexpr int NestedLoopJoinRel_JoinType_JoinType_ARRAYSIZE = NestedLoopJoinRel_JoinType_JoinType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* NestedLoopJoinRel_JoinType_descriptor();
@@ -1654,6 +1716,320 @@ class RelCommon_Hint_RuntimeConstraint final :
 };
 // -------------------------------------------------------------------
 
+class RelCommon_Hint_SavedComputation final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.RelCommon.Hint.SavedComputation) */ {
+ public:
+  inline RelCommon_Hint_SavedComputation() : RelCommon_Hint_SavedComputation(nullptr) {}
+  ~RelCommon_Hint_SavedComputation() override;
+  explicit constexpr RelCommon_Hint_SavedComputation(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  RelCommon_Hint_SavedComputation(const RelCommon_Hint_SavedComputation& from);
+  RelCommon_Hint_SavedComputation(RelCommon_Hint_SavedComputation&& from) noexcept
+    : RelCommon_Hint_SavedComputation() {
+    *this = ::std::move(from);
+  }
+
+  inline RelCommon_Hint_SavedComputation& operator=(const RelCommon_Hint_SavedComputation& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RelCommon_Hint_SavedComputation& operator=(RelCommon_Hint_SavedComputation&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RelCommon_Hint_SavedComputation& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RelCommon_Hint_SavedComputation* internal_default_instance() {
+    return reinterpret_cast<const RelCommon_Hint_SavedComputation*>(
+               &_RelCommon_Hint_SavedComputation_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(RelCommon_Hint_SavedComputation& a, RelCommon_Hint_SavedComputation& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(RelCommon_Hint_SavedComputation* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RelCommon_Hint_SavedComputation* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RelCommon_Hint_SavedComputation* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<RelCommon_Hint_SavedComputation>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const RelCommon_Hint_SavedComputation& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const RelCommon_Hint_SavedComputation& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(RelCommon_Hint_SavedComputation* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.RelCommon.Hint.SavedComputation";
+  }
+  protected:
+  explicit RelCommon_Hint_SavedComputation(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kComputationIdFieldNumber = 1,
+    kTypeFieldNumber = 2,
+  };
+  // int32 computation_id = 1;
+  void clear_computation_id();
+  int32_t computation_id() const;
+  void set_computation_id(int32_t value);
+  private:
+  int32_t _internal_computation_id() const;
+  void _internal_set_computation_id(int32_t value);
+  public:
+
+  // .substrait.RelCommon.Hint.ComputationType type = 2;
+  void clear_type();
+  ::substrait::RelCommon_Hint_ComputationType type() const;
+  void set_type(::substrait::RelCommon_Hint_ComputationType value);
+  private:
+  ::substrait::RelCommon_Hint_ComputationType _internal_type() const;
+  void _internal_set_type(::substrait::RelCommon_Hint_ComputationType value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.RelCommon.Hint.SavedComputation)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  int32_t computation_id_;
+  int type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RelCommon_Hint_LoadedComputation final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.RelCommon.Hint.LoadedComputation) */ {
+ public:
+  inline RelCommon_Hint_LoadedComputation() : RelCommon_Hint_LoadedComputation(nullptr) {}
+  ~RelCommon_Hint_LoadedComputation() override;
+  explicit constexpr RelCommon_Hint_LoadedComputation(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  RelCommon_Hint_LoadedComputation(const RelCommon_Hint_LoadedComputation& from);
+  RelCommon_Hint_LoadedComputation(RelCommon_Hint_LoadedComputation&& from) noexcept
+    : RelCommon_Hint_LoadedComputation() {
+    *this = ::std::move(from);
+  }
+
+  inline RelCommon_Hint_LoadedComputation& operator=(const RelCommon_Hint_LoadedComputation& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RelCommon_Hint_LoadedComputation& operator=(RelCommon_Hint_LoadedComputation&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RelCommon_Hint_LoadedComputation& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RelCommon_Hint_LoadedComputation* internal_default_instance() {
+    return reinterpret_cast<const RelCommon_Hint_LoadedComputation*>(
+               &_RelCommon_Hint_LoadedComputation_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(RelCommon_Hint_LoadedComputation& a, RelCommon_Hint_LoadedComputation& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(RelCommon_Hint_LoadedComputation* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RelCommon_Hint_LoadedComputation* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RelCommon_Hint_LoadedComputation* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<RelCommon_Hint_LoadedComputation>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const RelCommon_Hint_LoadedComputation& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const RelCommon_Hint_LoadedComputation& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(RelCommon_Hint_LoadedComputation* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.RelCommon.Hint.LoadedComputation";
+  }
+  protected:
+  explicit RelCommon_Hint_LoadedComputation(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kComputationIdReferenceFieldNumber = 1,
+    kTypeFieldNumber = 2,
+  };
+  // int32 computation_id_reference = 1;
+  void clear_computation_id_reference();
+  int32_t computation_id_reference() const;
+  void set_computation_id_reference(int32_t value);
+  private:
+  int32_t _internal_computation_id_reference() const;
+  void _internal_set_computation_id_reference(int32_t value);
+  public:
+
+  // .substrait.RelCommon.Hint.ComputationType type = 2;
+  void clear_type();
+  ::substrait::RelCommon_Hint_ComputationType type() const;
+  void set_type(::substrait::RelCommon_Hint_ComputationType value);
+  private:
+  ::substrait::RelCommon_Hint_ComputationType _internal_type() const;
+  void _internal_set_type(::substrait::RelCommon_Hint_ComputationType value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.RelCommon.Hint.LoadedComputation)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  int32_t computation_id_reference_;
+  int type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class RelCommon_Hint final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.RelCommon.Hint) */ {
  public:
@@ -1702,7 +2078,7 @@ class RelCommon_Hint final :
                &_RelCommon_Hint_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    6;
 
   friend void swap(RelCommon_Hint& a, RelCommon_Hint& b) {
     a.Swap(&b);
@@ -1775,15 +2151,114 @@ class RelCommon_Hint final :
 
   typedef RelCommon_Hint_Stats Stats;
   typedef RelCommon_Hint_RuntimeConstraint RuntimeConstraint;
+  typedef RelCommon_Hint_SavedComputation SavedComputation;
+  typedef RelCommon_Hint_LoadedComputation LoadedComputation;
+
+  typedef RelCommon_Hint_ComputationType ComputationType;
+  static constexpr ComputationType COMPUTATION_TYPE_UNSPECIFIED =
+    RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNSPECIFIED;
+  static constexpr ComputationType COMPUTATION_TYPE_HASHTABLE =
+    RelCommon_Hint_ComputationType_COMPUTATION_TYPE_HASHTABLE;
+  static constexpr ComputationType COMPUTATION_TYPE_BLOOM_FILTER =
+    RelCommon_Hint_ComputationType_COMPUTATION_TYPE_BLOOM_FILTER;
+  static constexpr ComputationType COMPUTATION_TYPE_UNKNOWN =
+    RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN;
+  static inline bool ComputationType_IsValid(int value) {
+    return RelCommon_Hint_ComputationType_IsValid(value);
+  }
+  static constexpr ComputationType ComputationType_MIN =
+    RelCommon_Hint_ComputationType_ComputationType_MIN;
+  static constexpr ComputationType ComputationType_MAX =
+    RelCommon_Hint_ComputationType_ComputationType_MAX;
+  static constexpr int ComputationType_ARRAYSIZE =
+    RelCommon_Hint_ComputationType_ComputationType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  ComputationType_descriptor() {
+    return RelCommon_Hint_ComputationType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& ComputationType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, ComputationType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function ComputationType_Name.");
+    return RelCommon_Hint_ComputationType_Name(enum_t_value);
+  }
+  static inline bool ComputationType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      ComputationType* value) {
+    return RelCommon_Hint_ComputationType_Parse(name, value);
+  }
 
   // accessors -------------------------------------------------------
 
   enum : int {
+    kOutputNamesFieldNumber = 4,
+    kSavedComputationsFieldNumber = 11,
+    kLoadedComputationsFieldNumber = 12,
     kAliasFieldNumber = 3,
     kStatsFieldNumber = 1,
     kConstraintFieldNumber = 2,
     kAdvancedExtensionFieldNumber = 10,
   };
+  // repeated string output_names = 4;
+  int output_names_size() const;
+  private:
+  int _internal_output_names_size() const;
+  public:
+  void clear_output_names();
+  const std::string& output_names(int index) const;
+  std::string* mutable_output_names(int index);
+  void set_output_names(int index, const std::string& value);
+  void set_output_names(int index, std::string&& value);
+  void set_output_names(int index, const char* value);
+  void set_output_names(int index, const char* value, size_t size);
+  std::string* add_output_names();
+  void add_output_names(const std::string& value);
+  void add_output_names(std::string&& value);
+  void add_output_names(const char* value);
+  void add_output_names(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& output_names() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_output_names();
+  private:
+  const std::string& _internal_output_names(int index) const;
+  std::string* _internal_add_output_names();
+  public:
+
+  // repeated .substrait.RelCommon.Hint.SavedComputation saved_computations = 11;
+  int saved_computations_size() const;
+  private:
+  int _internal_saved_computations_size() const;
+  public:
+  void clear_saved_computations();
+  ::substrait::RelCommon_Hint_SavedComputation* mutable_saved_computations(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_SavedComputation >*
+      mutable_saved_computations();
+  private:
+  const ::substrait::RelCommon_Hint_SavedComputation& _internal_saved_computations(int index) const;
+  ::substrait::RelCommon_Hint_SavedComputation* _internal_add_saved_computations();
+  public:
+  const ::substrait::RelCommon_Hint_SavedComputation& saved_computations(int index) const;
+  ::substrait::RelCommon_Hint_SavedComputation* add_saved_computations();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_SavedComputation >&
+      saved_computations() const;
+
+  // repeated .substrait.RelCommon.Hint.LoadedComputation loaded_computations = 12;
+  int loaded_computations_size() const;
+  private:
+  int _internal_loaded_computations_size() const;
+  public:
+  void clear_loaded_computations();
+  ::substrait::RelCommon_Hint_LoadedComputation* mutable_loaded_computations(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_LoadedComputation >*
+      mutable_loaded_computations();
+  private:
+  const ::substrait::RelCommon_Hint_LoadedComputation& _internal_loaded_computations(int index) const;
+  ::substrait::RelCommon_Hint_LoadedComputation* _internal_add_loaded_computations();
+  public:
+  const ::substrait::RelCommon_Hint_LoadedComputation& loaded_computations(int index) const;
+  ::substrait::RelCommon_Hint_LoadedComputation* add_loaded_computations();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_LoadedComputation >&
+      loaded_computations() const;
+
   // string alias = 3;
   void clear_alias();
   const std::string& alias() const;
@@ -1859,6 +2334,9 @@ class RelCommon_Hint final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> output_names_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_SavedComputation > saved_computations_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_LoadedComputation > loaded_computations_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr alias_;
   ::substrait::RelCommon_Hint_Stats* stats_;
   ::substrait::RelCommon_Hint_RuntimeConstraint* constraint_;
@@ -1922,7 +2400,7 @@ class RelCommon final :
                &_RelCommon_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    7;
 
   friend void swap(RelCommon& a, RelCommon& b) {
     a.Swap(&b);
@@ -2154,7 +2632,7 @@ class ReadRel_NamedTable final :
                &_ReadRel_NamedTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    8;
 
   friend void swap(ReadRel_NamedTable& a, ReadRel_NamedTable& b) {
     a.Swap(&b);
@@ -2335,7 +2813,7 @@ class ReadRel_VirtualTable final :
                &_ReadRel_VirtualTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    9;
 
   friend void swap(ReadRel_VirtualTable& a, ReadRel_VirtualTable& b) {
     a.Swap(&b);
@@ -2410,24 +2888,43 @@ class ReadRel_VirtualTable final :
 
   enum : int {
     kValuesFieldNumber = 1,
+    kExpressionsFieldNumber = 2,
   };
-  // repeated .substrait.Expression.Literal.Struct values = 1;
-  int values_size() const;
+  // repeated .substrait.Expression.Literal.Struct values = 1 [deprecated = true];
+  PROTOBUF_DEPRECATED int values_size() const;
   private:
   int _internal_values_size() const;
   public:
-  void clear_values();
-  ::substrait::Expression_Literal_Struct* mutable_values(int index);
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Literal_Struct >*
+  PROTOBUF_DEPRECATED void clear_values();
+  PROTOBUF_DEPRECATED ::substrait::Expression_Literal_Struct* mutable_values(int index);
+  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Literal_Struct >*
       mutable_values();
   private:
   const ::substrait::Expression_Literal_Struct& _internal_values(int index) const;
   ::substrait::Expression_Literal_Struct* _internal_add_values();
   public:
-  const ::substrait::Expression_Literal_Struct& values(int index) const;
-  ::substrait::Expression_Literal_Struct* add_values();
-  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Literal_Struct >&
+  PROTOBUF_DEPRECATED const ::substrait::Expression_Literal_Struct& values(int index) const;
+  PROTOBUF_DEPRECATED ::substrait::Expression_Literal_Struct* add_values();
+  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Literal_Struct >&
       values() const;
+
+  // repeated .substrait.Expression.Nested.Struct expressions = 2;
+  int expressions_size() const;
+  private:
+  int _internal_expressions_size() const;
+  public:
+  void clear_expressions();
+  ::substrait::Expression_Nested_Struct* mutable_expressions(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Nested_Struct >*
+      mutable_expressions();
+  private:
+  const ::substrait::Expression_Nested_Struct& _internal_expressions(int index) const;
+  ::substrait::Expression_Nested_Struct* _internal_add_expressions();
+  public:
+  const ::substrait::Expression_Nested_Struct& expressions(int index) const;
+  ::substrait::Expression_Nested_Struct* add_expressions();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Nested_Struct >&
+      expressions() const;
 
   // @@protoc_insertion_point(class_scope:substrait.ReadRel.VirtualTable)
  private:
@@ -2437,6 +2934,7 @@ class ReadRel_VirtualTable final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Literal_Struct > values_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Nested_Struct > expressions_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
 };
@@ -2490,7 +2988,7 @@ class ReadRel_ExtensionTable final :
                &_ReadRel_ExtensionTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    10;
 
   friend void swap(ReadRel_ExtensionTable& a, ReadRel_ExtensionTable& b) {
     a.Swap(&b);
@@ -2644,7 +3142,7 @@ class ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    11;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions& a, ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions& b) {
     a.Swap(&b);
@@ -2762,7 +3260,7 @@ class ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    12;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions& a, ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions& b) {
     a.Swap(&b);
@@ -2880,7 +3378,7 @@ class ReadRel_LocalFiles_FileOrFiles_OrcReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_OrcReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_OrcReadOptions& a, ReadRel_LocalFiles_FileOrFiles_OrcReadOptions& b) {
     a.Swap(&b);
@@ -2998,7 +3496,7 @@ class ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions& a, ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions& b) {
     a.Swap(&b);
@@ -3069,6 +3567,232 @@ class ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions final :
 };
 // -------------------------------------------------------------------
 
+class ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions) */ {
+ public:
+  inline ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions() : ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions(nullptr) {}
+  ~ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions() override;
+  explicit constexpr ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions(const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& from);
+  ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions&& from) noexcept
+    : ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions() {
+    *this = ::std::move(from);
+  }
+
+  inline ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& operator=(const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& operator=(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* internal_default_instance() {
+    return reinterpret_cast<const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions*>(
+               &_ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    15;
+
+  friend void swap(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& a, ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions";
+  }
+  protected:
+  explicit ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kFieldDelimiterFieldNumber = 1,
+    kQuoteFieldNumber = 3,
+    kEscapeFieldNumber = 5,
+    kValueTreatedAsNullFieldNumber = 6,
+    kMaxLineSizeFieldNumber = 2,
+    kHeaderLinesToSkipFieldNumber = 4,
+  };
+  // string field_delimiter = 1;
+  void clear_field_delimiter();
+  const std::string& field_delimiter() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_field_delimiter(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_field_delimiter();
+  PROTOBUF_NODISCARD std::string* release_field_delimiter();
+  void set_allocated_field_delimiter(std::string* field_delimiter);
+  private:
+  const std::string& _internal_field_delimiter() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_field_delimiter(const std::string& value);
+  std::string* _internal_mutable_field_delimiter();
+  public:
+
+  // string quote = 3;
+  void clear_quote();
+  const std::string& quote() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_quote(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_quote();
+  PROTOBUF_NODISCARD std::string* release_quote();
+  void set_allocated_quote(std::string* quote);
+  private:
+  const std::string& _internal_quote() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_quote(const std::string& value);
+  std::string* _internal_mutable_quote();
+  public:
+
+  // string escape = 5;
+  void clear_escape();
+  const std::string& escape() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_escape(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_escape();
+  PROTOBUF_NODISCARD std::string* release_escape();
+  void set_allocated_escape(std::string* escape);
+  private:
+  const std::string& _internal_escape() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_escape(const std::string& value);
+  std::string* _internal_mutable_escape();
+  public:
+
+  // optional string value_treated_as_null = 6;
+  bool has_value_treated_as_null() const;
+  private:
+  bool _internal_has_value_treated_as_null() const;
+  public:
+  void clear_value_treated_as_null();
+  const std::string& value_treated_as_null() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_value_treated_as_null(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_value_treated_as_null();
+  PROTOBUF_NODISCARD std::string* release_value_treated_as_null();
+  void set_allocated_value_treated_as_null(std::string* value_treated_as_null);
+  private:
+  const std::string& _internal_value_treated_as_null() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_value_treated_as_null(const std::string& value);
+  std::string* _internal_mutable_value_treated_as_null();
+  public:
+
+  // uint64 max_line_size = 2;
+  void clear_max_line_size();
+  uint64_t max_line_size() const;
+  void set_max_line_size(uint64_t value);
+  private:
+  uint64_t _internal_max_line_size() const;
+  void _internal_set_max_line_size(uint64_t value);
+  public:
+
+  // uint64 header_lines_to_skip = 4;
+  void clear_header_lines_to_skip();
+  uint64_t header_lines_to_skip() const;
+  void set_header_lines_to_skip(uint64_t value);
+  private:
+  uint64_t _internal_header_lines_to_skip() const;
+  void _internal_set_header_lines_to_skip(uint64_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr field_delimiter_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr quote_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr escape_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr value_treated_as_null_;
+  uint64_t max_line_size_;
+  uint64_t header_lines_to_skip_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class ReadRel_LocalFiles_FileOrFiles final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ReadRel.LocalFiles.FileOrFiles) */ {
  public:
@@ -3126,6 +3850,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
     kOrc = 11,
     kExtension = 12,
     kDwrf = 13,
+    kText = 14,
     FILE_FORMAT_NOT_SET = 0,
   };
 
@@ -3134,7 +3859,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
                &_ReadRel_LocalFiles_FileOrFiles_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    16;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles& a, ReadRel_LocalFiles_FileOrFiles& b) {
     a.Swap(&b);
@@ -3209,6 +3934,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
   typedef ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions ArrowReadOptions;
   typedef ReadRel_LocalFiles_FileOrFiles_OrcReadOptions OrcReadOptions;
   typedef ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions DwrfReadOptions;
+  typedef ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions DelimiterSeparatedTextReadOptions;
 
   // accessors -------------------------------------------------------
 
@@ -3225,6 +3951,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
     kOrcFieldNumber = 11,
     kExtensionFieldNumber = 12,
     kDwrfFieldNumber = 13,
+    kTextFieldNumber = 14,
   };
   // uint64 partition_index = 6;
   void clear_partition_index();
@@ -3415,6 +4142,24 @@ class ReadRel_LocalFiles_FileOrFiles final :
       ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* dwrf);
   ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* unsafe_arena_release_dwrf();
 
+  // .substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions text = 14;
+  bool has_text() const;
+  private:
+  bool _internal_has_text() const;
+  public:
+  void clear_text();
+  const ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& text() const;
+  PROTOBUF_NODISCARD ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* release_text();
+  ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* mutable_text();
+  void set_allocated_text(::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* text);
+  private:
+  const ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& _internal_text() const;
+  ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* _internal_mutable_text();
+  public:
+  void unsafe_arena_set_allocated_text(
+      ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* text);
+  ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* unsafe_arena_release_text();
+
   void clear_path_type();
   PathTypeCase path_type_case() const;
   void clear_file_format();
@@ -3431,6 +4176,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
   void set_has_orc();
   void set_has_extension();
   void set_has_dwrf();
+  void set_has_text();
 
   inline bool has_path_type() const;
   inline void clear_has_path_type();
@@ -3460,6 +4206,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
     ::substrait::ReadRel_LocalFiles_FileOrFiles_OrcReadOptions* orc_;
     ::PROTOBUF_NAMESPACE_ID::Any* extension_;
     ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* dwrf_;
+    ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* text_;
   } file_format_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[2];
@@ -3516,7 +4263,7 @@ class ReadRel_LocalFiles final :
                &_ReadRel_LocalFiles_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    17;
 
   friend void swap(ReadRel_LocalFiles& a, ReadRel_LocalFiles& b) {
     a.Swap(&b);
@@ -3701,7 +4448,7 @@ class ReadRel final :
                &_ReadRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    18;
 
   friend void swap(ReadRel& a, ReadRel& b) {
     a.Swap(&b);
@@ -4056,7 +4803,7 @@ class ProjectRel final :
                &_ProjectRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    19;
 
   friend void swap(ProjectRel& a, ProjectRel& b) {
     a.Swap(&b);
@@ -4271,7 +5018,7 @@ class JoinRel final :
                &_JoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    20;
 
   friend void swap(JoinRel& a, JoinRel& b) {
     a.Swap(&b);
@@ -4353,12 +5100,22 @@ class JoinRel final :
     JoinRel_JoinType_JOIN_TYPE_LEFT;
   static constexpr JoinType JOIN_TYPE_RIGHT =
     JoinRel_JoinType_JOIN_TYPE_RIGHT;
-  static constexpr JoinType JOIN_TYPE_SEMI =
-    JoinRel_JoinType_JOIN_TYPE_SEMI;
-  static constexpr JoinType JOIN_TYPE_ANTI =
-    JoinRel_JoinType_JOIN_TYPE_ANTI;
-  static constexpr JoinType JOIN_TYPE_SINGLE =
-    JoinRel_JoinType_JOIN_TYPE_SINGLE;
+  static constexpr JoinType JOIN_TYPE_LEFT_SEMI =
+    JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI;
+  static constexpr JoinType JOIN_TYPE_LEFT_ANTI =
+    JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI;
+  static constexpr JoinType JOIN_TYPE_LEFT_SINGLE =
+    JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_RIGHT_SEMI =
+    JoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI;
+  static constexpr JoinType JOIN_TYPE_RIGHT_ANTI =
+    JoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+  static constexpr JoinType JOIN_TYPE_RIGHT_SINGLE =
+    JoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_LEFT_MARK =
+    JoinRel_JoinType_JOIN_TYPE_LEFT_MARK;
+  static constexpr JoinType JOIN_TYPE_RIGHT_MARK =
+    JoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
   static inline bool JoinType_IsValid(int value) {
     return JoinRel_JoinType_IsValid(value);
   }
@@ -4579,7 +5336,7 @@ class CrossRel final :
                &_CrossRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    21;
 
   friend void swap(CrossRel& a, CrossRel& b) {
     a.Swap(&b);
@@ -4794,7 +5551,7 @@ class FetchRel final :
                &_FetchRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    22;
 
   friend void swap(FetchRel& a, FetchRel& b) {
     a.Swap(&b);
@@ -5011,7 +5768,7 @@ class AggregateRel_Grouping final :
                &_AggregateRel_Grouping_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    23;
 
   friend void swap(AggregateRel_Grouping& a, AggregateRel_Grouping& b) {
     a.Swap(&b);
@@ -5086,24 +5843,47 @@ class AggregateRel_Grouping final :
 
   enum : int {
     kGroupingExpressionsFieldNumber = 1,
+    kExpressionReferencesFieldNumber = 2,
   };
-  // repeated .substrait.Expression grouping_expressions = 1;
-  int grouping_expressions_size() const;
+  // repeated .substrait.Expression grouping_expressions = 1 [deprecated = true];
+  PROTOBUF_DEPRECATED int grouping_expressions_size() const;
   private:
   int _internal_grouping_expressions_size() const;
   public:
-  void clear_grouping_expressions();
-  ::substrait::Expression* mutable_grouping_expressions(int index);
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
+  PROTOBUF_DEPRECATED void clear_grouping_expressions();
+  PROTOBUF_DEPRECATED ::substrait::Expression* mutable_grouping_expressions(int index);
+  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
       mutable_grouping_expressions();
   private:
   const ::substrait::Expression& _internal_grouping_expressions(int index) const;
   ::substrait::Expression* _internal_add_grouping_expressions();
   public:
-  const ::substrait::Expression& grouping_expressions(int index) const;
-  ::substrait::Expression* add_grouping_expressions();
-  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
+  PROTOBUF_DEPRECATED const ::substrait::Expression& grouping_expressions(int index) const;
+  PROTOBUF_DEPRECATED ::substrait::Expression* add_grouping_expressions();
+  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
       grouping_expressions() const;
+
+  // repeated uint32 expression_references = 2;
+  int expression_references_size() const;
+  private:
+  int _internal_expression_references_size() const;
+  public:
+  void clear_expression_references();
+  private:
+  uint32_t _internal_expression_references(int index) const;
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >&
+      _internal_expression_references() const;
+  void _internal_add_expression_references(uint32_t value);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >*
+      _internal_mutable_expression_references();
+  public:
+  uint32_t expression_references(int index) const;
+  void set_expression_references(int index, uint32_t value);
+  void add_expression_references(uint32_t value);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >&
+      expression_references() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >*
+      mutable_expression_references();
 
   // @@protoc_insertion_point(class_scope:substrait.AggregateRel.Grouping)
  private:
@@ -5113,6 +5893,8 @@ class AggregateRel_Grouping final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression > grouping_expressions_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t > expression_references_;
+  mutable std::atomic<int> _expression_references_cached_byte_size_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
 };
@@ -5166,7 +5948,7 @@ class AggregateRel_Measure final :
                &_AggregateRel_Measure_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    24;
 
   friend void swap(AggregateRel_Measure& a, AggregateRel_Measure& b) {
     a.Swap(&b);
@@ -5341,7 +6123,7 @@ class AggregateRel final :
                &_AggregateRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    25;
 
   friend void swap(AggregateRel& a, AggregateRel& b) {
     a.Swap(&b);
@@ -5420,6 +6202,7 @@ class AggregateRel final :
   enum : int {
     kGroupingsFieldNumber = 3,
     kMeasuresFieldNumber = 4,
+    kGroupingExpressionsFieldNumber = 5,
     kCommonFieldNumber = 1,
     kInputFieldNumber = 2,
     kAdvancedExtensionFieldNumber = 10,
@@ -5459,6 +6242,24 @@ class AggregateRel final :
   ::substrait::AggregateRel_Measure* add_measures();
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::AggregateRel_Measure >&
       measures() const;
+
+  // repeated .substrait.Expression grouping_expressions = 5;
+  int grouping_expressions_size() const;
+  private:
+  int _internal_grouping_expressions_size() const;
+  public:
+  void clear_grouping_expressions();
+  ::substrait::Expression* mutable_grouping_expressions(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
+      mutable_grouping_expressions();
+  private:
+  const ::substrait::Expression& _internal_grouping_expressions(int index) const;
+  ::substrait::Expression* _internal_add_grouping_expressions();
+  public:
+  const ::substrait::Expression& grouping_expressions(int index) const;
+  ::substrait::Expression* add_grouping_expressions();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
+      grouping_expressions() const;
 
   // .substrait.RelCommon common = 1;
   bool has_common() const;
@@ -5523,6 +6324,7 @@ class AggregateRel final :
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::AggregateRel_Grouping > groupings_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::AggregateRel_Measure > measures_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression > grouping_expressions_;
   ::substrait::RelCommon* common_;
   ::substrait::Rel* input_;
   ::substrait::extensions::AdvancedExtension* advanced_extension_;
@@ -5579,7 +6381,7 @@ class ConsistentPartitionWindowRel_WindowRelFunction final :
                &_ConsistentPartitionWindowRel_WindowRelFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    26;
 
   friend void swap(ConsistentPartitionWindowRel_WindowRelFunction& a, ConsistentPartitionWindowRel_WindowRelFunction& b) {
     a.Swap(&b);
@@ -5858,7 +6660,7 @@ class ConsistentPartitionWindowRel final :
                &_ConsistentPartitionWindowRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    27;
 
   friend void swap(ConsistentPartitionWindowRel& a, ConsistentPartitionWindowRel& b) {
     a.Swap(&b);
@@ -6115,7 +6917,7 @@ class SortRel final :
                &_SortRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    28;
 
   friend void swap(SortRel& a, SortRel& b) {
     a.Swap(&b);
@@ -6330,7 +7132,7 @@ class FilterRel final :
                &_FilterRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    29;
 
   friend void swap(FilterRel& a, FilterRel& b) {
     a.Swap(&b);
@@ -6545,7 +7347,7 @@ class SetRel final :
                &_SetRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    30;
 
   friend void swap(SetRel& a, SetRel& b) {
     a.Swap(&b);
@@ -6621,12 +7423,16 @@ class SetRel final :
     SetRel_SetOp_SET_OP_UNSPECIFIED;
   static constexpr SetOp SET_OP_MINUS_PRIMARY =
     SetRel_SetOp_SET_OP_MINUS_PRIMARY;
+  static constexpr SetOp SET_OP_MINUS_PRIMARY_ALL =
+    SetRel_SetOp_SET_OP_MINUS_PRIMARY_ALL;
   static constexpr SetOp SET_OP_MINUS_MULTISET =
     SetRel_SetOp_SET_OP_MINUS_MULTISET;
   static constexpr SetOp SET_OP_INTERSECTION_PRIMARY =
     SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY;
   static constexpr SetOp SET_OP_INTERSECTION_MULTISET =
     SetRel_SetOp_SET_OP_INTERSECTION_MULTISET;
+  static constexpr SetOp SET_OP_INTERSECTION_MULTISET_ALL =
+    SetRel_SetOp_SET_OP_INTERSECTION_MULTISET_ALL;
   static constexpr SetOp SET_OP_UNION_DISTINCT =
     SetRel_SetOp_SET_OP_UNION_DISTINCT;
   static constexpr SetOp SET_OP_UNION_ALL =
@@ -6791,7 +7597,7 @@ class ExtensionSingleRel final :
                &_ExtensionSingleRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    31;
 
   friend void swap(ExtensionSingleRel& a, ExtensionSingleRel& b) {
     a.Swap(&b);
@@ -6986,7 +7792,7 @@ class ExtensionLeafRel final :
                &_ExtensionLeafRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    32;
 
   friend void swap(ExtensionLeafRel& a, ExtensionLeafRel& b) {
     a.Swap(&b);
@@ -7161,7 +7967,7 @@ class ExtensionMultiRel final :
                &_ExtensionMultiRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    33;
 
   friend void swap(ExtensionMultiRel& a, ExtensionMultiRel& b) {
     a.Swap(&b);
@@ -7356,7 +8162,7 @@ class ExchangeRel_ScatterFields final :
                &_ExchangeRel_ScatterFields_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    34;
 
   friend void swap(ExchangeRel_ScatterFields& a, ExchangeRel_ScatterFields& b) {
     a.Swap(&b);
@@ -7511,7 +8317,7 @@ class ExchangeRel_SingleBucketExpression final :
                &_ExchangeRel_SingleBucketExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    35;
 
   friend void swap(ExchangeRel_SingleBucketExpression& a, ExchangeRel_SingleBucketExpression& b) {
     a.Swap(&b);
@@ -7666,7 +8472,7 @@ class ExchangeRel_MultiBucketExpression final :
                &_ExchangeRel_MultiBucketExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    36;
 
   friend void swap(ExchangeRel_MultiBucketExpression& a, ExchangeRel_MultiBucketExpression& b) {
     a.Swap(&b);
@@ -7831,7 +8637,7 @@ class ExchangeRel_Broadcast final :
                &_ExchangeRel_Broadcast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    37;
 
   friend void swap(ExchangeRel_Broadcast& a, ExchangeRel_Broadcast& b) {
     a.Swap(&b);
@@ -7950,7 +8756,7 @@ class ExchangeRel_RoundRobin final :
                &_ExchangeRel_RoundRobin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    38;
 
   friend void swap(ExchangeRel_RoundRobin& a, ExchangeRel_RoundRobin& b) {
     a.Swap(&b);
@@ -8102,7 +8908,7 @@ class ExchangeRel_ExchangeTarget final :
                &_ExchangeRel_ExchangeTarget_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    39;
 
   friend void swap(ExchangeRel_ExchangeTarget& a, ExchangeRel_ExchangeTarget& b) {
     a.Swap(&b);
@@ -8324,7 +9130,7 @@ class ExchangeRel final :
                &_ExchangeRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    40;
 
   friend void swap(ExchangeRel& a, ExchangeRel& b) {
     a.Swap(&b);
@@ -8679,7 +9485,7 @@ class ExpandRel_ExpandField final :
                &_ExpandRel_ExpandField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    41;
 
   friend void swap(ExpandRel_ExpandField& a, ExpandRel_ExpandField& b) {
     a.Swap(&b);
@@ -8867,7 +9673,7 @@ class ExpandRel_SwitchingField final :
                &_ExpandRel_SwitchingField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    42;
 
   friend void swap(ExpandRel_SwitchingField& a, ExpandRel_SwitchingField& b) {
     a.Swap(&b);
@@ -9022,7 +9828,7 @@ class ExpandRel final :
                &_ExpandRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    43;
 
   friend void swap(ExpandRel& a, ExpandRel& b) {
     a.Swap(&b);
@@ -9220,7 +10026,7 @@ class RelRoot final :
                &_RelRoot_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    44;
 
   friend void swap(RelRoot& a, RelRoot& b) {
     a.Swap(&b);
@@ -9426,7 +10232,7 @@ class Rel final :
                &_Rel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    45;
 
   friend void swap(Rel& a, Rel& b) {
     a.Swap(&b);
@@ -10013,7 +10819,7 @@ class NamedObjectWrite final :
                &_NamedObjectWrite_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    46;
 
   friend void swap(NamedObjectWrite& a, NamedObjectWrite& b) {
     a.Swap(&b);
@@ -10194,7 +11000,7 @@ class ExtensionObject final :
                &_ExtensionObject_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    47;
 
   friend void swap(ExtensionObject& a, ExtensionObject& b) {
     a.Swap(&b);
@@ -10355,7 +11161,7 @@ class DdlRel final :
                &_DdlRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    48;
 
   friend void swap(DdlRel& a, DdlRel& b) {
     a.Swap(&b);
@@ -10721,7 +11527,7 @@ class WriteRel final :
                &_WriteRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    49;
 
   friend void swap(WriteRel& a, WriteRel& b) {
     a.Swap(&b);
@@ -11065,7 +11871,7 @@ class ComparisonJoinKey_ComparisonType final :
                &_ComparisonJoinKey_ComparisonType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    50;
 
   friend void swap(ComparisonJoinKey_ComparisonType& a, ComparisonJoinKey_ComparisonType& b) {
     a.Swap(&b);
@@ -11243,7 +12049,7 @@ class ComparisonJoinKey final :
                &_ComparisonJoinKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    51;
 
   friend void swap(ComparisonJoinKey& a, ComparisonJoinKey& b) {
     a.Swap(&b);
@@ -11474,7 +12280,7 @@ class HashJoinRel final :
                &_HashJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    52;
 
   friend void swap(HashJoinRel& a, HashJoinRel& b) {
     a.Swap(&b);
@@ -11564,6 +12370,14 @@ class HashJoinRel final :
     HashJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI;
   static constexpr JoinType JOIN_TYPE_RIGHT_ANTI =
     HashJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+  static constexpr JoinType JOIN_TYPE_LEFT_SINGLE =
+    HashJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_RIGHT_SINGLE =
+    HashJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_LEFT_MARK =
+    HashJoinRel_JoinType_JOIN_TYPE_LEFT_MARK;
+  static constexpr JoinType JOIN_TYPE_RIGHT_MARK =
+    HashJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
   static inline bool JoinType_IsValid(int value) {
     return HashJoinRel_JoinType_IsValid(value);
   }
@@ -11824,7 +12638,7 @@ class MergeJoinRel final :
                &_MergeJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    53;
 
   friend void swap(MergeJoinRel& a, MergeJoinRel& b) {
     a.Swap(&b);
@@ -11914,6 +12728,14 @@ class MergeJoinRel final :
     MergeJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI;
   static constexpr JoinType JOIN_TYPE_RIGHT_ANTI =
     MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+  static constexpr JoinType JOIN_TYPE_LEFT_SINGLE =
+    MergeJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_RIGHT_SINGLE =
+    MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_LEFT_MARK =
+    MergeJoinRel_JoinType_JOIN_TYPE_LEFT_MARK;
+  static constexpr JoinType JOIN_TYPE_RIGHT_MARK =
+    MergeJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
   static inline bool JoinType_IsValid(int value) {
     return MergeJoinRel_JoinType_IsValid(value);
   }
@@ -12174,7 +12996,7 @@ class NestedLoopJoinRel final :
                &_NestedLoopJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    54;
 
   friend void swap(NestedLoopJoinRel& a, NestedLoopJoinRel& b) {
     a.Swap(&b);
@@ -12264,6 +13086,14 @@ class NestedLoopJoinRel final :
     NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_ANTI;
   static constexpr JoinType JOIN_TYPE_RIGHT_ANTI =
     NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI;
+  static constexpr JoinType JOIN_TYPE_LEFT_SINGLE =
+    NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_RIGHT_SINGLE =
+    NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_SINGLE;
+  static constexpr JoinType JOIN_TYPE_LEFT_MARK =
+    NestedLoopJoinRel_JoinType_JOIN_TYPE_LEFT_MARK;
+  static constexpr JoinType JOIN_TYPE_RIGHT_MARK =
+    NestedLoopJoinRel_JoinType_JOIN_TYPE_RIGHT_MARK;
   static inline bool JoinType_IsValid(int value) {
     return NestedLoopJoinRel_JoinType_IsValid(value);
   }
@@ -12471,7 +13301,7 @@ class FunctionArgument final :
                &_FunctionArgument_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    55;
 
   friend void swap(FunctionArgument& a, FunctionArgument& b) {
     a.Swap(&b);
@@ -12680,7 +13510,7 @@ class FunctionOption final :
                &_FunctionOption_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    56;
 
   friend void swap(FunctionOption& a, FunctionOption& b) {
     a.Swap(&b);
@@ -12856,7 +13686,7 @@ class Expression_Enum_Empty final :
                &_Expression_Enum_Empty_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    57;
 
   friend void swap(Expression_Enum_Empty& a, Expression_Enum_Empty& b) {
     a.Swap(&b);
@@ -12981,7 +13811,7 @@ class Expression_Enum final :
                &_Expression_Enum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    58;
 
   friend void swap(Expression_Enum& a, Expression_Enum& b) {
     a.Swap(&b);
@@ -13171,7 +14001,7 @@ class Expression_Literal_VarChar final :
                &_Expression_Literal_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    59;
 
   friend void swap(Expression_Literal_VarChar& a, Expression_Literal_VarChar& b) {
     a.Swap(&b);
@@ -13333,7 +14163,7 @@ class Expression_Literal_Decimal final :
                &_Expression_Literal_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    60;
 
   friend void swap(Expression_Literal_Decimal& a, Expression_Literal_Decimal& b) {
     a.Swap(&b);
@@ -13506,7 +14336,7 @@ class Expression_Literal_PrecisionTimestamp final :
                &_Expression_Literal_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    61;
 
   friend void swap(Expression_Literal_PrecisionTimestamp& a, Expression_Literal_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -13663,7 +14493,7 @@ class Expression_Literal_Map_KeyValue final :
                &_Expression_Literal_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    62;
 
   friend void swap(Expression_Literal_Map_KeyValue& a, Expression_Literal_Map_KeyValue& b) {
     a.Swap(&b);
@@ -13838,7 +14668,7 @@ class Expression_Literal_Map final :
                &_Expression_Literal_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    63;
 
   friend void swap(Expression_Literal_Map& a, Expression_Literal_Map& b) {
     a.Swap(&b);
@@ -13995,7 +14825,7 @@ class Expression_Literal_IntervalYearToMonth final :
                &_Expression_Literal_IntervalYearToMonth_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    64;
 
   friend void swap(Expression_Literal_IntervalYearToMonth& a, Expression_Literal_IntervalYearToMonth& b) {
     a.Swap(&b);
@@ -14147,12 +14977,18 @@ class Expression_Literal_IntervalDayToSecond final :
   static const Expression_Literal_IntervalDayToSecond& default_instance() {
     return *internal_default_instance();
   }
+  enum PrecisionModeCase {
+    kMicroseconds = 3,
+    kPrecision = 4,
+    PRECISION_MODE_NOT_SET = 0,
+  };
+
   static inline const Expression_Literal_IntervalDayToSecond* internal_default_instance() {
     return reinterpret_cast<const Expression_Literal_IntervalDayToSecond*>(
                &_Expression_Literal_IntervalDayToSecond_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    65;
 
   friend void swap(Expression_Literal_IntervalDayToSecond& a, Expression_Literal_IntervalDayToSecond& b) {
     a.Swap(&b);
@@ -14228,7 +15064,9 @@ class Expression_Literal_IntervalDayToSecond final :
   enum : int {
     kDaysFieldNumber = 1,
     kSecondsFieldNumber = 2,
+    kSubsecondsFieldNumber = 5,
     kMicrosecondsFieldNumber = 3,
+    kPrecisionFieldNumber = 4,
   };
   // int32 days = 1;
   void clear_days();
@@ -14248,25 +15086,241 @@ class Expression_Literal_IntervalDayToSecond final :
   void _internal_set_seconds(int32_t value);
   public:
 
-  // int32 microseconds = 3;
-  void clear_microseconds();
-  int32_t microseconds() const;
-  void set_microseconds(int32_t value);
+  // int64 subseconds = 5;
+  void clear_subseconds();
+  int64_t subseconds() const;
+  void set_subseconds(int64_t value);
+  private:
+  int64_t _internal_subseconds() const;
+  void _internal_set_subseconds(int64_t value);
+  public:
+
+  // int32 microseconds = 3 [deprecated = true];
+  PROTOBUF_DEPRECATED bool has_microseconds() const;
+  private:
+  bool _internal_has_microseconds() const;
+  public:
+  PROTOBUF_DEPRECATED void clear_microseconds();
+  PROTOBUF_DEPRECATED int32_t microseconds() const;
+  PROTOBUF_DEPRECATED void set_microseconds(int32_t value);
   private:
   int32_t _internal_microseconds() const;
   void _internal_set_microseconds(int32_t value);
   public:
 
+  // int32 precision = 4;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  int32_t precision() const;
+  void set_precision(int32_t value);
+  private:
+  int32_t _internal_precision() const;
+  void _internal_set_precision(int32_t value);
+  public:
+
+  void clear_precision_mode();
+  PrecisionModeCase precision_mode_case() const;
   // @@protoc_insertion_point(class_scope:substrait.Expression.Literal.IntervalDayToSecond)
  private:
   class _Internal;
+  void set_has_microseconds();
+  void set_has_precision();
+
+  inline bool has_precision_mode() const;
+  inline void clear_has_precision_mode();
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   int32_t days_;
   int32_t seconds_;
-  int32_t microseconds_;
+  int64_t subseconds_;
+  union PrecisionModeUnion {
+    constexpr PrecisionModeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    int32_t microseconds_;
+    int32_t precision_;
+  } precision_mode_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Expression_Literal_IntervalCompound final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.Literal.IntervalCompound) */ {
+ public:
+  inline Expression_Literal_IntervalCompound() : Expression_Literal_IntervalCompound(nullptr) {}
+  ~Expression_Literal_IntervalCompound() override;
+  explicit constexpr Expression_Literal_IntervalCompound(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Expression_Literal_IntervalCompound(const Expression_Literal_IntervalCompound& from);
+  Expression_Literal_IntervalCompound(Expression_Literal_IntervalCompound&& from) noexcept
+    : Expression_Literal_IntervalCompound() {
+    *this = ::std::move(from);
+  }
+
+  inline Expression_Literal_IntervalCompound& operator=(const Expression_Literal_IntervalCompound& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Expression_Literal_IntervalCompound& operator=(Expression_Literal_IntervalCompound&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Expression_Literal_IntervalCompound& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Expression_Literal_IntervalCompound* internal_default_instance() {
+    return reinterpret_cast<const Expression_Literal_IntervalCompound*>(
+               &_Expression_Literal_IntervalCompound_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    66;
+
+  friend void swap(Expression_Literal_IntervalCompound& a, Expression_Literal_IntervalCompound& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Expression_Literal_IntervalCompound* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Expression_Literal_IntervalCompound* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Expression_Literal_IntervalCompound* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Expression_Literal_IntervalCompound>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Expression_Literal_IntervalCompound& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Expression_Literal_IntervalCompound& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Expression_Literal_IntervalCompound* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Expression.Literal.IntervalCompound";
+  }
+  protected:
+  explicit Expression_Literal_IntervalCompound(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIntervalYearToMonthFieldNumber = 1,
+    kIntervalDayToSecondFieldNumber = 2,
+  };
+  // .substrait.Expression.Literal.IntervalYearToMonth interval_year_to_month = 1;
+  bool has_interval_year_to_month() const;
+  private:
+  bool _internal_has_interval_year_to_month() const;
+  public:
+  void clear_interval_year_to_month();
+  const ::substrait::Expression_Literal_IntervalYearToMonth& interval_year_to_month() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Literal_IntervalYearToMonth* release_interval_year_to_month();
+  ::substrait::Expression_Literal_IntervalYearToMonth* mutable_interval_year_to_month();
+  void set_allocated_interval_year_to_month(::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month);
+  private:
+  const ::substrait::Expression_Literal_IntervalYearToMonth& _internal_interval_year_to_month() const;
+  ::substrait::Expression_Literal_IntervalYearToMonth* _internal_mutable_interval_year_to_month();
+  public:
+  void unsafe_arena_set_allocated_interval_year_to_month(
+      ::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month);
+  ::substrait::Expression_Literal_IntervalYearToMonth* unsafe_arena_release_interval_year_to_month();
+
+  // .substrait.Expression.Literal.IntervalDayToSecond interval_day_to_second = 2;
+  bool has_interval_day_to_second() const;
+  private:
+  bool _internal_has_interval_day_to_second() const;
+  public:
+  void clear_interval_day_to_second();
+  const ::substrait::Expression_Literal_IntervalDayToSecond& interval_day_to_second() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Literal_IntervalDayToSecond* release_interval_day_to_second();
+  ::substrait::Expression_Literal_IntervalDayToSecond* mutable_interval_day_to_second();
+  void set_allocated_interval_day_to_second(::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second);
+  private:
+  const ::substrait::Expression_Literal_IntervalDayToSecond& _internal_interval_day_to_second() const;
+  ::substrait::Expression_Literal_IntervalDayToSecond* _internal_mutable_interval_day_to_second();
+  public:
+  void unsafe_arena_set_allocated_interval_day_to_second(
+      ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second);
+  ::substrait::Expression_Literal_IntervalDayToSecond* unsafe_arena_release_interval_day_to_second();
+
+  // @@protoc_insertion_point(class_scope:substrait.Expression.Literal.IntervalCompound)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month_;
+  ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
 };
@@ -14320,7 +15374,7 @@ class Expression_Literal_Struct final :
                &_Expression_Literal_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    67;
 
   friend void swap(Expression_Literal_Struct& a, Expression_Literal_Struct& b) {
     a.Swap(&b);
@@ -14475,7 +15529,7 @@ class Expression_Literal_List final :
                &_Expression_Literal_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    68;
 
   friend void swap(Expression_Literal_List& a, Expression_Literal_List& b) {
     a.Swap(&b);
@@ -14636,7 +15690,7 @@ class Expression_Literal_UserDefined final :
                &_Expression_Literal_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    69;
 
   friend void swap(Expression_Literal_UserDefined& a, Expression_Literal_UserDefined& b) {
     a.Swap(&b);
@@ -14865,6 +15919,7 @@ class Expression_Literal final :
     kTime = 17,
     kIntervalYearToMonth = 19,
     kIntervalDayToSecond = 20,
+    kIntervalCompound = 36,
     kFixedChar = 21,
     kVarChar = 22,
     kFixedBinary = 23,
@@ -14888,7 +15943,7 @@ class Expression_Literal final :
                &_Expression_Literal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    70;
 
   friend void swap(Expression_Literal& a, Expression_Literal& b) {
     a.Swap(&b);
@@ -14965,6 +16020,7 @@ class Expression_Literal final :
   typedef Expression_Literal_Map Map;
   typedef Expression_Literal_IntervalYearToMonth IntervalYearToMonth;
   typedef Expression_Literal_IntervalDayToSecond IntervalDayToSecond;
+  typedef Expression_Literal_IntervalCompound IntervalCompound;
   typedef Expression_Literal_Struct Struct;
   typedef Expression_Literal_List List;
   typedef Expression_Literal_UserDefined UserDefined;
@@ -14988,6 +16044,7 @@ class Expression_Literal final :
     kTimeFieldNumber = 17,
     kIntervalYearToMonthFieldNumber = 19,
     kIntervalDayToSecondFieldNumber = 20,
+    kIntervalCompoundFieldNumber = 36,
     kFixedCharFieldNumber = 21,
     kVarCharFieldNumber = 22,
     kFixedBinaryFieldNumber = 23,
@@ -15223,6 +16280,24 @@ class Expression_Literal final :
   void unsafe_arena_set_allocated_interval_day_to_second(
       ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second);
   ::substrait::Expression_Literal_IntervalDayToSecond* unsafe_arena_release_interval_day_to_second();
+
+  // .substrait.Expression.Literal.IntervalCompound interval_compound = 36;
+  bool has_interval_compound() const;
+  private:
+  bool _internal_has_interval_compound() const;
+  public:
+  void clear_interval_compound();
+  const ::substrait::Expression_Literal_IntervalCompound& interval_compound() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Literal_IntervalCompound* release_interval_compound();
+  ::substrait::Expression_Literal_IntervalCompound* mutable_interval_compound();
+  void set_allocated_interval_compound(::substrait::Expression_Literal_IntervalCompound* interval_compound);
+  private:
+  const ::substrait::Expression_Literal_IntervalCompound& _internal_interval_compound() const;
+  ::substrait::Expression_Literal_IntervalCompound* _internal_mutable_interval_compound();
+  public:
+  void unsafe_arena_set_allocated_interval_compound(
+      ::substrait::Expression_Literal_IntervalCompound* interval_compound);
+  ::substrait::Expression_Literal_IntervalCompound* unsafe_arena_release_interval_compound();
 
   // string fixed_char = 21;
   bool has_fixed_char() const;
@@ -15508,6 +16583,7 @@ class Expression_Literal final :
   void set_has_time();
   void set_has_interval_year_to_month();
   void set_has_interval_day_to_second();
+  void set_has_interval_compound();
   void set_has_fixed_char();
   void set_has_var_char();
   void set_has_fixed_binary();
@@ -15549,6 +16625,7 @@ class Expression_Literal final :
     int64_t time_;
     ::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month_;
     ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second_;
+    ::substrait::Expression_Literal_IntervalCompound* interval_compound_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr fixed_char_;
     ::substrait::Expression_Literal_VarChar* var_char_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr fixed_binary_;
@@ -15620,7 +16697,7 @@ class Expression_Nested_Map_KeyValue final :
                &_Expression_Nested_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    71;
 
   friend void swap(Expression_Nested_Map_KeyValue& a, Expression_Nested_Map_KeyValue& b) {
     a.Swap(&b);
@@ -15795,7 +16872,7 @@ class Expression_Nested_Map final :
                &_Expression_Nested_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    72;
 
   friend void swap(Expression_Nested_Map& a, Expression_Nested_Map& b) {
     a.Swap(&b);
@@ -15952,7 +17029,7 @@ class Expression_Nested_Struct final :
                &_Expression_Nested_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    73;
 
   friend void swap(Expression_Nested_Struct& a, Expression_Nested_Struct& b) {
     a.Swap(&b);
@@ -16107,7 +17184,7 @@ class Expression_Nested_List final :
                &_Expression_Nested_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    74;
 
   friend void swap(Expression_Nested_List& a, Expression_Nested_List& b) {
     a.Swap(&b);
@@ -16269,7 +17346,7 @@ class Expression_Nested final :
                &_Expression_Nested_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    75;
 
   friend void swap(Expression_Nested& a, Expression_Nested& b) {
     a.Swap(&b);
@@ -16504,7 +17581,7 @@ class Expression_ScalarFunction final :
                &_Expression_ScalarFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    76;
 
   friend void swap(Expression_ScalarFunction& a, Expression_ScalarFunction& b) {
     a.Swap(&b);
@@ -16730,7 +17807,7 @@ class Expression_WindowFunction_Bound_Preceding final :
                &_Expression_WindowFunction_Bound_Preceding_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    77;
 
   friend void swap(Expression_WindowFunction_Bound_Preceding& a, Expression_WindowFunction_Bound_Preceding& b) {
     a.Swap(&b);
@@ -16876,7 +17953,7 @@ class Expression_WindowFunction_Bound_Following final :
                &_Expression_WindowFunction_Bound_Following_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    78;
 
   friend void swap(Expression_WindowFunction_Bound_Following& a, Expression_WindowFunction_Bound_Following& b) {
     a.Swap(&b);
@@ -17021,7 +18098,7 @@ class Expression_WindowFunction_Bound_CurrentRow final :
                &_Expression_WindowFunction_Bound_CurrentRow_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    79;
 
   friend void swap(Expression_WindowFunction_Bound_CurrentRow& a, Expression_WindowFunction_Bound_CurrentRow& b) {
     a.Swap(&b);
@@ -17139,7 +18216,7 @@ class Expression_WindowFunction_Bound_Unbounded final :
                &_Expression_WindowFunction_Bound_Unbounded_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    80;
 
   friend void swap(Expression_WindowFunction_Bound_Unbounded& a, Expression_WindowFunction_Bound_Unbounded& b) {
     a.Swap(&b);
@@ -17266,7 +18343,7 @@ class Expression_WindowFunction_Bound final :
                &_Expression_WindowFunction_Bound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    81;
 
   friend void swap(Expression_WindowFunction_Bound& a, Expression_WindowFunction_Bound& b) {
     a.Swap(&b);
@@ -17501,7 +18578,7 @@ class Expression_WindowFunction final :
                &_Expression_WindowFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    82;
 
   friend void swap(Expression_WindowFunction& a, Expression_WindowFunction& b) {
     a.Swap(&b);
@@ -17874,7 +18951,7 @@ class Expression_IfThen_IfClause final :
                &_Expression_IfThen_IfClause_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    83;
 
   friend void swap(Expression_IfThen_IfClause& a, Expression_IfThen_IfClause& b) {
     a.Swap(&b);
@@ -18049,7 +19126,7 @@ class Expression_IfThen final :
                &_Expression_IfThen_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    84;
 
   friend void swap(Expression_IfThen& a, Expression_IfThen& b) {
     a.Swap(&b);
@@ -18226,7 +19303,7 @@ class Expression_Cast final :
                &_Expression_Cast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    85;
 
   friend void swap(Expression_Cast& a, Expression_Cast& b) {
     a.Swap(&b);
@@ -18444,7 +19521,7 @@ class Expression_SwitchExpression_IfValue final :
                &_Expression_SwitchExpression_IfValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    86;
 
   friend void swap(Expression_SwitchExpression_IfValue& a, Expression_SwitchExpression_IfValue& b) {
     a.Swap(&b);
@@ -18619,7 +19696,7 @@ class Expression_SwitchExpression final :
                &_Expression_SwitchExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    87;
 
   friend void swap(Expression_SwitchExpression& a, Expression_SwitchExpression& b) {
     a.Swap(&b);
@@ -18816,7 +19893,7 @@ class Expression_SingularOrList final :
                &_Expression_SingularOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    88;
 
   friend void swap(Expression_SingularOrList& a, Expression_SingularOrList& b) {
     a.Swap(&b);
@@ -18991,7 +20068,7 @@ class Expression_MultiOrList_Record final :
                &_Expression_MultiOrList_Record_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    89;
 
   friend void swap(Expression_MultiOrList_Record& a, Expression_MultiOrList_Record& b) {
     a.Swap(&b);
@@ -19146,7 +20223,7 @@ class Expression_MultiOrList final :
                &_Expression_MultiOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    90;
 
   friend void swap(Expression_MultiOrList& a, Expression_MultiOrList& b) {
     a.Swap(&b);
@@ -19323,7 +20400,7 @@ class Expression_EmbeddedFunction_PythonPickleFunction final :
                &_Expression_EmbeddedFunction_PythonPickleFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    91;
 
   friend void swap(Expression_EmbeddedFunction_PythonPickleFunction& a, Expression_EmbeddedFunction_PythonPickleFunction& b) {
     a.Swap(&b);
@@ -19500,7 +20577,7 @@ class Expression_EmbeddedFunction_WebAssemblyFunction final :
                &_Expression_EmbeddedFunction_WebAssemblyFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    92;
 
   friend void swap(Expression_EmbeddedFunction_WebAssemblyFunction& a, Expression_EmbeddedFunction_WebAssemblyFunction& b) {
     a.Swap(&b);
@@ -19683,7 +20760,7 @@ class Expression_EmbeddedFunction final :
                &_Expression_EmbeddedFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    93;
 
   friend void swap(Expression_EmbeddedFunction& a, Expression_EmbeddedFunction& b) {
     a.Swap(&b);
@@ -19914,7 +20991,7 @@ class Expression_ReferenceSegment_MapKey final :
                &_Expression_ReferenceSegment_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    94;
 
   friend void swap(Expression_ReferenceSegment_MapKey& a, Expression_ReferenceSegment_MapKey& b) {
     a.Swap(&b);
@@ -20089,7 +21166,7 @@ class Expression_ReferenceSegment_StructField final :
                &_Expression_ReferenceSegment_StructField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    95;
 
   friend void swap(Expression_ReferenceSegment_StructField& a, Expression_ReferenceSegment_StructField& b) {
     a.Swap(&b);
@@ -20255,7 +21332,7 @@ class Expression_ReferenceSegment_ListElement final :
                &_Expression_ReferenceSegment_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    96;
 
   friend void swap(Expression_ReferenceSegment_ListElement& a, Expression_ReferenceSegment_ListElement& b) {
     a.Swap(&b);
@@ -20428,7 +21505,7 @@ class Expression_ReferenceSegment final :
                &_Expression_ReferenceSegment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    97;
 
   friend void swap(Expression_ReferenceSegment& a, Expression_ReferenceSegment& b) {
     a.Swap(&b);
@@ -20648,7 +21725,7 @@ class Expression_MaskExpression_Select final :
                &_Expression_MaskExpression_Select_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    98;
 
   friend void swap(Expression_MaskExpression_Select& a, Expression_MaskExpression_Select& b) {
     a.Swap(&b);
@@ -20857,7 +21934,7 @@ class Expression_MaskExpression_StructSelect final :
                &_Expression_MaskExpression_StructSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    99;
 
   friend void swap(Expression_MaskExpression_StructSelect& a, Expression_MaskExpression_StructSelect& b) {
     a.Swap(&b);
@@ -21012,7 +22089,7 @@ class Expression_MaskExpression_StructItem final :
                &_Expression_MaskExpression_StructItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    100;
 
   friend void swap(Expression_MaskExpression_StructItem& a, Expression_MaskExpression_StructItem& b) {
     a.Swap(&b);
@@ -21178,7 +22255,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListElement final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    101;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& b) {
     a.Swap(&b);
@@ -21324,7 +22401,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    102;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& b) {
     a.Swap(&b);
@@ -21487,7 +22564,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    103;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem& a, Expression_MaskExpression_ListSelect_ListSelectItem& b) {
     a.Swap(&b);
@@ -21678,7 +22755,7 @@ class Expression_MaskExpression_ListSelect final :
                &_Expression_MaskExpression_ListSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    104;
 
   friend void swap(Expression_MaskExpression_ListSelect& a, Expression_MaskExpression_ListSelect& b) {
     a.Swap(&b);
@@ -21855,7 +22932,7 @@ class Expression_MaskExpression_MapSelect_MapKey final :
                &_Expression_MaskExpression_MapSelect_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    105;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKey& a, Expression_MaskExpression_MapSelect_MapKey& b) {
     a.Swap(&b);
@@ -22006,7 +23083,7 @@ class Expression_MaskExpression_MapSelect_MapKeyExpression final :
                &_Expression_MaskExpression_MapSelect_MapKeyExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    106;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKeyExpression& a, Expression_MaskExpression_MapSelect_MapKeyExpression& b) {
     a.Swap(&b);
@@ -22163,7 +23240,7 @@ class Expression_MaskExpression_MapSelect final :
                &_Expression_MaskExpression_MapSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    107;
 
   friend void swap(Expression_MaskExpression_MapSelect& a, Expression_MaskExpression_MapSelect& b) {
     a.Swap(&b);
@@ -22374,7 +23451,7 @@ class Expression_MaskExpression final :
                &_Expression_MaskExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    108;
 
   friend void swap(Expression_MaskExpression& a, Expression_MaskExpression& b) {
     a.Swap(&b);
@@ -22545,7 +23622,7 @@ class Expression_FieldReference_RootReference final :
                &_Expression_FieldReference_RootReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    109;
 
   friend void swap(Expression_FieldReference_RootReference& a, Expression_FieldReference_RootReference& b) {
     a.Swap(&b);
@@ -22664,7 +23741,7 @@ class Expression_FieldReference_OuterReference final :
                &_Expression_FieldReference_OuterReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    110;
 
   friend void swap(Expression_FieldReference_OuterReference& a, Expression_FieldReference_OuterReference& b) {
     a.Swap(&b);
@@ -22823,7 +23900,7 @@ class Expression_FieldReference final :
                &_Expression_FieldReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    111;
 
   friend void swap(Expression_FieldReference& a, Expression_FieldReference& b) {
     a.Swap(&b);
@@ -23086,7 +24163,7 @@ class Expression_Subquery_Scalar final :
                &_Expression_Subquery_Scalar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    108;
+    112;
 
   friend void swap(Expression_Subquery_Scalar& a, Expression_Subquery_Scalar& b) {
     a.Swap(&b);
@@ -23241,7 +24318,7 @@ class Expression_Subquery_InPredicate final :
                &_Expression_Subquery_InPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    109;
+    113;
 
   friend void swap(Expression_Subquery_InPredicate& a, Expression_Subquery_InPredicate& b) {
     a.Swap(&b);
@@ -23416,7 +24493,7 @@ class Expression_Subquery_SetPredicate final :
                &_Expression_Subquery_SetPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    110;
+    114;
 
   friend void swap(Expression_Subquery_SetPredicate& a, Expression_Subquery_SetPredicate& b) {
     a.Swap(&b);
@@ -23614,7 +24691,7 @@ class Expression_Subquery_SetComparison final :
                &_Expression_Subquery_SetComparison_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    111;
+    115;
 
   friend void swap(Expression_Subquery_SetComparison& a, Expression_Subquery_SetComparison& b) {
     a.Swap(&b);
@@ -23891,7 +24968,7 @@ class Expression_Subquery final :
                &_Expression_Subquery_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    112;
+    116;
 
   friend void swap(Expression_Subquery& a, Expression_Subquery& b) {
     a.Swap(&b);
@@ -24142,7 +25219,7 @@ class Expression final :
                &_Expression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    113;
+    117;
 
   friend void swap(Expression& a, Expression& b) {
     a.Swap(&b);
@@ -24562,7 +25639,7 @@ class SortField final :
                &_SortField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    114;
+    118;
 
   friend void swap(SortField& a, SortField& b) {
     a.Swap(&b);
@@ -24798,7 +25875,7 @@ class AggregateFunction final :
                &_AggregateFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    115;
+    119;
 
   friend void swap(AggregateFunction& a, AggregateFunction& b) {
     a.Swap(&b);
@@ -25098,7 +26175,7 @@ class ReferenceRel final :
                &_ReferenceRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    116;
+    120;
 
   friend void swap(ReferenceRel& a, ReferenceRel& b) {
     a.Swap(&b);
@@ -25478,6 +26555,94 @@ inline void RelCommon_Hint_RuntimeConstraint::set_allocated_advanced_extension(:
 
 // -------------------------------------------------------------------
 
+// RelCommon_Hint_SavedComputation
+
+// int32 computation_id = 1;
+inline void RelCommon_Hint_SavedComputation::clear_computation_id() {
+  computation_id_ = 0;
+}
+inline int32_t RelCommon_Hint_SavedComputation::_internal_computation_id() const {
+  return computation_id_;
+}
+inline int32_t RelCommon_Hint_SavedComputation::computation_id() const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.SavedComputation.computation_id)
+  return _internal_computation_id();
+}
+inline void RelCommon_Hint_SavedComputation::_internal_set_computation_id(int32_t value) {
+  
+  computation_id_ = value;
+}
+inline void RelCommon_Hint_SavedComputation::set_computation_id(int32_t value) {
+  _internal_set_computation_id(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.SavedComputation.computation_id)
+}
+
+// .substrait.RelCommon.Hint.ComputationType type = 2;
+inline void RelCommon_Hint_SavedComputation::clear_type() {
+  type_ = 0;
+}
+inline ::substrait::RelCommon_Hint_ComputationType RelCommon_Hint_SavedComputation::_internal_type() const {
+  return static_cast< ::substrait::RelCommon_Hint_ComputationType >(type_);
+}
+inline ::substrait::RelCommon_Hint_ComputationType RelCommon_Hint_SavedComputation::type() const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.SavedComputation.type)
+  return _internal_type();
+}
+inline void RelCommon_Hint_SavedComputation::_internal_set_type(::substrait::RelCommon_Hint_ComputationType value) {
+  
+  type_ = value;
+}
+inline void RelCommon_Hint_SavedComputation::set_type(::substrait::RelCommon_Hint_ComputationType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.SavedComputation.type)
+}
+
+// -------------------------------------------------------------------
+
+// RelCommon_Hint_LoadedComputation
+
+// int32 computation_id_reference = 1;
+inline void RelCommon_Hint_LoadedComputation::clear_computation_id_reference() {
+  computation_id_reference_ = 0;
+}
+inline int32_t RelCommon_Hint_LoadedComputation::_internal_computation_id_reference() const {
+  return computation_id_reference_;
+}
+inline int32_t RelCommon_Hint_LoadedComputation::computation_id_reference() const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.LoadedComputation.computation_id_reference)
+  return _internal_computation_id_reference();
+}
+inline void RelCommon_Hint_LoadedComputation::_internal_set_computation_id_reference(int32_t value) {
+  
+  computation_id_reference_ = value;
+}
+inline void RelCommon_Hint_LoadedComputation::set_computation_id_reference(int32_t value) {
+  _internal_set_computation_id_reference(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.LoadedComputation.computation_id_reference)
+}
+
+// .substrait.RelCommon.Hint.ComputationType type = 2;
+inline void RelCommon_Hint_LoadedComputation::clear_type() {
+  type_ = 0;
+}
+inline ::substrait::RelCommon_Hint_ComputationType RelCommon_Hint_LoadedComputation::_internal_type() const {
+  return static_cast< ::substrait::RelCommon_Hint_ComputationType >(type_);
+}
+inline ::substrait::RelCommon_Hint_ComputationType RelCommon_Hint_LoadedComputation::type() const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.LoadedComputation.type)
+  return _internal_type();
+}
+inline void RelCommon_Hint_LoadedComputation::_internal_set_type(::substrait::RelCommon_Hint_ComputationType value) {
+  
+  type_ = value;
+}
+inline void RelCommon_Hint_LoadedComputation::set_type(::substrait::RelCommon_Hint_ComputationType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.LoadedComputation.type)
+}
+
+// -------------------------------------------------------------------
+
 // RelCommon_Hint
 
 // .substrait.RelCommon.Hint.Stats stats = 1;
@@ -25711,6 +26876,81 @@ inline void RelCommon_Hint::set_allocated_alias(std::string* alias) {
   // @@protoc_insertion_point(field_set_allocated:substrait.RelCommon.Hint.alias)
 }
 
+// repeated string output_names = 4;
+inline int RelCommon_Hint::_internal_output_names_size() const {
+  return output_names_.size();
+}
+inline int RelCommon_Hint::output_names_size() const {
+  return _internal_output_names_size();
+}
+inline void RelCommon_Hint::clear_output_names() {
+  output_names_.Clear();
+}
+inline std::string* RelCommon_Hint::add_output_names() {
+  std::string* _s = _internal_add_output_names();
+  // @@protoc_insertion_point(field_add_mutable:substrait.RelCommon.Hint.output_names)
+  return _s;
+}
+inline const std::string& RelCommon_Hint::_internal_output_names(int index) const {
+  return output_names_.Get(index);
+}
+inline const std::string& RelCommon_Hint::output_names(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.output_names)
+  return _internal_output_names(index);
+}
+inline std::string* RelCommon_Hint::mutable_output_names(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.RelCommon.Hint.output_names)
+  return output_names_.Mutable(index);
+}
+inline void RelCommon_Hint::set_output_names(int index, const std::string& value) {
+  output_names_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::set_output_names(int index, std::string&& value) {
+  output_names_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::set_output_names(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  output_names_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::set_output_names(int index, const char* value, size_t size) {
+  output_names_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:substrait.RelCommon.Hint.output_names)
+}
+inline std::string* RelCommon_Hint::_internal_add_output_names() {
+  return output_names_.Add();
+}
+inline void RelCommon_Hint::add_output_names(const std::string& value) {
+  output_names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::add_output_names(std::string&& value) {
+  output_names_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::add_output_names(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  output_names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:substrait.RelCommon.Hint.output_names)
+}
+inline void RelCommon_Hint::add_output_names(const char* value, size_t size) {
+  output_names_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:substrait.RelCommon.Hint.output_names)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+RelCommon_Hint::output_names() const {
+  // @@protoc_insertion_point(field_list:substrait.RelCommon.Hint.output_names)
+  return output_names_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+RelCommon_Hint::mutable_output_names() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.RelCommon.Hint.output_names)
+  return &output_names_;
+}
+
 // .substrait.extensions.AdvancedExtension advanced_extension = 10;
 inline bool RelCommon_Hint::_internal_has_advanced_extension() const {
   return this != internal_default_instance() && advanced_extension_ != nullptr;
@@ -25795,6 +27035,86 @@ inline void RelCommon_Hint::set_allocated_advanced_extension(::substrait::extens
   }
   advanced_extension_ = advanced_extension;
   // @@protoc_insertion_point(field_set_allocated:substrait.RelCommon.Hint.advanced_extension)
+}
+
+// repeated .substrait.RelCommon.Hint.SavedComputation saved_computations = 11;
+inline int RelCommon_Hint::_internal_saved_computations_size() const {
+  return saved_computations_.size();
+}
+inline int RelCommon_Hint::saved_computations_size() const {
+  return _internal_saved_computations_size();
+}
+inline void RelCommon_Hint::clear_saved_computations() {
+  saved_computations_.Clear();
+}
+inline ::substrait::RelCommon_Hint_SavedComputation* RelCommon_Hint::mutable_saved_computations(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.RelCommon.Hint.saved_computations)
+  return saved_computations_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_SavedComputation >*
+RelCommon_Hint::mutable_saved_computations() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.RelCommon.Hint.saved_computations)
+  return &saved_computations_;
+}
+inline const ::substrait::RelCommon_Hint_SavedComputation& RelCommon_Hint::_internal_saved_computations(int index) const {
+  return saved_computations_.Get(index);
+}
+inline const ::substrait::RelCommon_Hint_SavedComputation& RelCommon_Hint::saved_computations(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.saved_computations)
+  return _internal_saved_computations(index);
+}
+inline ::substrait::RelCommon_Hint_SavedComputation* RelCommon_Hint::_internal_add_saved_computations() {
+  return saved_computations_.Add();
+}
+inline ::substrait::RelCommon_Hint_SavedComputation* RelCommon_Hint::add_saved_computations() {
+  ::substrait::RelCommon_Hint_SavedComputation* _add = _internal_add_saved_computations();
+  // @@protoc_insertion_point(field_add:substrait.RelCommon.Hint.saved_computations)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_SavedComputation >&
+RelCommon_Hint::saved_computations() const {
+  // @@protoc_insertion_point(field_list:substrait.RelCommon.Hint.saved_computations)
+  return saved_computations_;
+}
+
+// repeated .substrait.RelCommon.Hint.LoadedComputation loaded_computations = 12;
+inline int RelCommon_Hint::_internal_loaded_computations_size() const {
+  return loaded_computations_.size();
+}
+inline int RelCommon_Hint::loaded_computations_size() const {
+  return _internal_loaded_computations_size();
+}
+inline void RelCommon_Hint::clear_loaded_computations() {
+  loaded_computations_.Clear();
+}
+inline ::substrait::RelCommon_Hint_LoadedComputation* RelCommon_Hint::mutable_loaded_computations(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.RelCommon.Hint.loaded_computations)
+  return loaded_computations_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_LoadedComputation >*
+RelCommon_Hint::mutable_loaded_computations() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.RelCommon.Hint.loaded_computations)
+  return &loaded_computations_;
+}
+inline const ::substrait::RelCommon_Hint_LoadedComputation& RelCommon_Hint::_internal_loaded_computations(int index) const {
+  return loaded_computations_.Get(index);
+}
+inline const ::substrait::RelCommon_Hint_LoadedComputation& RelCommon_Hint::loaded_computations(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.Hint.loaded_computations)
+  return _internal_loaded_computations(index);
+}
+inline ::substrait::RelCommon_Hint_LoadedComputation* RelCommon_Hint::_internal_add_loaded_computations() {
+  return loaded_computations_.Add();
+}
+inline ::substrait::RelCommon_Hint_LoadedComputation* RelCommon_Hint::add_loaded_computations() {
+  ::substrait::RelCommon_Hint_LoadedComputation* _add = _internal_add_loaded_computations();
+  // @@protoc_insertion_point(field_add:substrait.RelCommon.Hint.loaded_computations)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::RelCommon_Hint_LoadedComputation >&
+RelCommon_Hint::loaded_computations() const {
+  // @@protoc_insertion_point(field_list:substrait.RelCommon.Hint.loaded_computations)
+  return loaded_computations_;
 }
 
 // -------------------------------------------------------------------
@@ -26303,7 +27623,7 @@ inline void ReadRel_NamedTable::set_allocated_advanced_extension(::substrait::ex
 
 // ReadRel_VirtualTable
 
-// repeated .substrait.Expression.Literal.Struct values = 1;
+// repeated .substrait.Expression.Literal.Struct values = 1 [deprecated = true];
 inline int ReadRel_VirtualTable::_internal_values_size() const {
   return values_.size();
 }
@@ -26341,6 +27661,46 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_
 ReadRel_VirtualTable::values() const {
   // @@protoc_insertion_point(field_list:substrait.ReadRel.VirtualTable.values)
   return values_;
+}
+
+// repeated .substrait.Expression.Nested.Struct expressions = 2;
+inline int ReadRel_VirtualTable::_internal_expressions_size() const {
+  return expressions_.size();
+}
+inline int ReadRel_VirtualTable::expressions_size() const {
+  return _internal_expressions_size();
+}
+inline void ReadRel_VirtualTable::clear_expressions() {
+  expressions_.Clear();
+}
+inline ::substrait::Expression_Nested_Struct* ReadRel_VirtualTable::mutable_expressions(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.VirtualTable.expressions)
+  return expressions_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Nested_Struct >*
+ReadRel_VirtualTable::mutable_expressions() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.ReadRel.VirtualTable.expressions)
+  return &expressions_;
+}
+inline const ::substrait::Expression_Nested_Struct& ReadRel_VirtualTable::_internal_expressions(int index) const {
+  return expressions_.Get(index);
+}
+inline const ::substrait::Expression_Nested_Struct& ReadRel_VirtualTable::expressions(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.VirtualTable.expressions)
+  return _internal_expressions(index);
+}
+inline ::substrait::Expression_Nested_Struct* ReadRel_VirtualTable::_internal_add_expressions() {
+  return expressions_.Add();
+}
+inline ::substrait::Expression_Nested_Struct* ReadRel_VirtualTable::add_expressions() {
+  ::substrait::Expression_Nested_Struct* _add = _internal_add_expressions();
+  // @@protoc_insertion_point(field_add:substrait.ReadRel.VirtualTable.expressions)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression_Nested_Struct >&
+ReadRel_VirtualTable::expressions() const {
+  // @@protoc_insertion_point(field_list:substrait.ReadRel.VirtualTable.expressions)
+  return expressions_;
 }
 
 // -------------------------------------------------------------------
@@ -26448,6 +27808,272 @@ inline void ReadRel_ExtensionTable::set_allocated_detail(::PROTOBUF_NAMESPACE_ID
 // -------------------------------------------------------------------
 
 // ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions
+
+// -------------------------------------------------------------------
+
+// ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions
+
+// string field_delimiter = 1;
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_field_delimiter() {
+  field_delimiter_.ClearToEmpty();
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::field_delimiter() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.field_delimiter)
+  return _internal_field_delimiter();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_field_delimiter(ArgT0&& arg0, ArgT... args) {
+ 
+ field_delimiter_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.field_delimiter)
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::mutable_field_delimiter() {
+  std::string* _s = _internal_mutable_field_delimiter();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.field_delimiter)
+  return _s;
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_field_delimiter() const {
+  return field_delimiter_.Get();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_field_delimiter(const std::string& value) {
+  
+  field_delimiter_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_mutable_field_delimiter() {
+  
+  return field_delimiter_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::release_field_delimiter() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.field_delimiter)
+  return field_delimiter_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_allocated_field_delimiter(std::string* field_delimiter) {
+  if (field_delimiter != nullptr) {
+    
+  } else {
+    
+  }
+  field_delimiter_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), field_delimiter,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (field_delimiter_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    field_delimiter_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.field_delimiter)
+}
+
+// uint64 max_line_size = 2;
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_max_line_size() {
+  max_line_size_ = uint64_t{0u};
+}
+inline uint64_t ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_max_line_size() const {
+  return max_line_size_;
+}
+inline uint64_t ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::max_line_size() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.max_line_size)
+  return _internal_max_line_size();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_max_line_size(uint64_t value) {
+  
+  max_line_size_ = value;
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_max_line_size(uint64_t value) {
+  _internal_set_max_line_size(value);
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.max_line_size)
+}
+
+// string quote = 3;
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_quote() {
+  quote_.ClearToEmpty();
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::quote() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.quote)
+  return _internal_quote();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_quote(ArgT0&& arg0, ArgT... args) {
+ 
+ quote_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.quote)
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::mutable_quote() {
+  std::string* _s = _internal_mutable_quote();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.quote)
+  return _s;
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_quote() const {
+  return quote_.Get();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_quote(const std::string& value) {
+  
+  quote_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_mutable_quote() {
+  
+  return quote_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::release_quote() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.quote)
+  return quote_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_allocated_quote(std::string* quote) {
+  if (quote != nullptr) {
+    
+  } else {
+    
+  }
+  quote_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), quote,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (quote_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    quote_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.quote)
+}
+
+// uint64 header_lines_to_skip = 4;
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_header_lines_to_skip() {
+  header_lines_to_skip_ = uint64_t{0u};
+}
+inline uint64_t ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_header_lines_to_skip() const {
+  return header_lines_to_skip_;
+}
+inline uint64_t ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::header_lines_to_skip() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.header_lines_to_skip)
+  return _internal_header_lines_to_skip();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_header_lines_to_skip(uint64_t value) {
+  
+  header_lines_to_skip_ = value;
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_header_lines_to_skip(uint64_t value) {
+  _internal_set_header_lines_to_skip(value);
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.header_lines_to_skip)
+}
+
+// string escape = 5;
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_escape() {
+  escape_.ClearToEmpty();
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::escape() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.escape)
+  return _internal_escape();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_escape(ArgT0&& arg0, ArgT... args) {
+ 
+ escape_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.escape)
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::mutable_escape() {
+  std::string* _s = _internal_mutable_escape();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.escape)
+  return _s;
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_escape() const {
+  return escape_.Get();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_escape(const std::string& value) {
+  
+  escape_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_mutable_escape() {
+  
+  return escape_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::release_escape() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.escape)
+  return escape_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_allocated_escape(std::string* escape) {
+  if (escape != nullptr) {
+    
+  } else {
+    
+  }
+  escape_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), escape,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (escape_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    escape_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.escape)
+}
+
+// optional string value_treated_as_null = 6;
+inline bool ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_has_value_treated_as_null() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::has_value_treated_as_null() const {
+  return _internal_has_value_treated_as_null();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::clear_value_treated_as_null() {
+  value_treated_as_null_.ClearToEmpty();
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::value_treated_as_null() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.value_treated_as_null)
+  return _internal_value_treated_as_null();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_value_treated_as_null(ArgT0&& arg0, ArgT... args) {
+ _has_bits_[0] |= 0x00000001u;
+ value_treated_as_null_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.value_treated_as_null)
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::mutable_value_treated_as_null() {
+  std::string* _s = _internal_mutable_value_treated_as_null();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.value_treated_as_null)
+  return _s;
+}
+inline const std::string& ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_value_treated_as_null() const {
+  return value_treated_as_null_.Get();
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_set_value_treated_as_null(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  value_treated_as_null_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::_internal_mutable_value_treated_as_null() {
+  _has_bits_[0] |= 0x00000001u;
+  return value_treated_as_null_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::release_value_treated_as_null() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.value_treated_as_null)
+  if (!_internal_has_value_treated_as_null()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  auto* p = value_treated_as_null_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (value_treated_as_null_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    value_treated_as_null_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  return p;
+}
+inline void ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions::set_allocated_value_treated_as_null(std::string* value_treated_as_null) {
+  if (value_treated_as_null != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  value_treated_as_null_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value_treated_as_null,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (value_treated_as_null_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    value_treated_as_null_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions.value_treated_as_null)
+}
 
 // -------------------------------------------------------------------
 
@@ -27200,6 +28826,80 @@ inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* ReadRel_Loca
 inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* ReadRel_LocalFiles_FileOrFiles::mutable_dwrf() {
   ::substrait::ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions* _msg = _internal_mutable_dwrf();
   // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.dwrf)
+  return _msg;
+}
+
+// .substrait.ReadRel.LocalFiles.FileOrFiles.DelimiterSeparatedTextReadOptions text = 14;
+inline bool ReadRel_LocalFiles_FileOrFiles::_internal_has_text() const {
+  return file_format_case() == kText;
+}
+inline bool ReadRel_LocalFiles_FileOrFiles::has_text() const {
+  return _internal_has_text();
+}
+inline void ReadRel_LocalFiles_FileOrFiles::set_has_text() {
+  _oneof_case_[1] = kText;
+}
+inline void ReadRel_LocalFiles_FileOrFiles::clear_text() {
+  if (_internal_has_text()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete file_format_.text_;
+    }
+    clear_has_file_format();
+  }
+}
+inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* ReadRel_LocalFiles_FileOrFiles::release_text() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.LocalFiles.FileOrFiles.text)
+  if (_internal_has_text()) {
+    clear_has_file_format();
+      ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* temp = file_format_.text_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    file_format_.text_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& ReadRel_LocalFiles_FileOrFiles::_internal_text() const {
+  return _internal_has_text()
+      ? *file_format_.text_
+      : reinterpret_cast< ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions&>(::substrait::_ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions_default_instance_);
+}
+inline const ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& ReadRel_LocalFiles_FileOrFiles::text() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.LocalFiles.FileOrFiles.text)
+  return _internal_text();
+}
+inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* ReadRel_LocalFiles_FileOrFiles::unsafe_arena_release_text() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.ReadRel.LocalFiles.FileOrFiles.text)
+  if (_internal_has_text()) {
+    clear_has_file_format();
+    ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* temp = file_format_.text_;
+    file_format_.text_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ReadRel_LocalFiles_FileOrFiles::unsafe_arena_set_allocated_text(::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* text) {
+  clear_file_format();
+  if (text) {
+    set_has_text();
+    file_format_.text_ = text;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ReadRel.LocalFiles.FileOrFiles.text)
+}
+inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* ReadRel_LocalFiles_FileOrFiles::_internal_mutable_text() {
+  if (!_internal_has_text()) {
+    clear_file_format();
+    set_has_text();
+    file_format_.text_ = CreateMaybeMessage< ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions >(GetArenaForAllocation());
+  }
+  return file_format_.text_;
+}
+inline ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* ReadRel_LocalFiles_FileOrFiles::mutable_text() {
+  ::substrait::ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions* _msg = _internal_mutable_text();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.LocalFiles.FileOrFiles.text)
   return _msg;
 }
 
@@ -29736,7 +31436,7 @@ inline void FetchRel::set_allocated_advanced_extension(::substrait::extensions::
 
 // AggregateRel_Grouping
 
-// repeated .substrait.Expression grouping_expressions = 1;
+// repeated .substrait.Expression grouping_expressions = 1 [deprecated = true];
 inline int AggregateRel_Grouping::_internal_grouping_expressions_size() const {
   return grouping_expressions_.size();
 }
@@ -29774,6 +31474,53 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression 
 AggregateRel_Grouping::grouping_expressions() const {
   // @@protoc_insertion_point(field_list:substrait.AggregateRel.Grouping.grouping_expressions)
   return grouping_expressions_;
+}
+
+// repeated uint32 expression_references = 2;
+inline int AggregateRel_Grouping::_internal_expression_references_size() const {
+  return expression_references_.size();
+}
+inline int AggregateRel_Grouping::expression_references_size() const {
+  return _internal_expression_references_size();
+}
+inline void AggregateRel_Grouping::clear_expression_references() {
+  expression_references_.Clear();
+}
+inline uint32_t AggregateRel_Grouping::_internal_expression_references(int index) const {
+  return expression_references_.Get(index);
+}
+inline uint32_t AggregateRel_Grouping::expression_references(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.AggregateRel.Grouping.expression_references)
+  return _internal_expression_references(index);
+}
+inline void AggregateRel_Grouping::set_expression_references(int index, uint32_t value) {
+  expression_references_.Set(index, value);
+  // @@protoc_insertion_point(field_set:substrait.AggregateRel.Grouping.expression_references)
+}
+inline void AggregateRel_Grouping::_internal_add_expression_references(uint32_t value) {
+  expression_references_.Add(value);
+}
+inline void AggregateRel_Grouping::add_expression_references(uint32_t value) {
+  _internal_add_expression_references(value);
+  // @@protoc_insertion_point(field_add:substrait.AggregateRel.Grouping.expression_references)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >&
+AggregateRel_Grouping::_internal_expression_references() const {
+  return expression_references_;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >&
+AggregateRel_Grouping::expression_references() const {
+  // @@protoc_insertion_point(field_list:substrait.AggregateRel.Grouping.expression_references)
+  return _internal_expression_references();
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >*
+AggregateRel_Grouping::_internal_mutable_expression_references() {
+  return &expression_references_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t >*
+AggregateRel_Grouping::mutable_expression_references() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.AggregateRel.Grouping.expression_references)
+  return _internal_mutable_expression_references();
 }
 
 // -------------------------------------------------------------------
@@ -30222,6 +31969,46 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::AggregateRe
 AggregateRel::measures() const {
   // @@protoc_insertion_point(field_list:substrait.AggregateRel.measures)
   return measures_;
+}
+
+// repeated .substrait.Expression grouping_expressions = 5;
+inline int AggregateRel::_internal_grouping_expressions_size() const {
+  return grouping_expressions_.size();
+}
+inline int AggregateRel::grouping_expressions_size() const {
+  return _internal_grouping_expressions_size();
+}
+inline void AggregateRel::clear_grouping_expressions() {
+  grouping_expressions_.Clear();
+}
+inline ::substrait::Expression* AggregateRel::mutable_grouping_expressions(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.AggregateRel.grouping_expressions)
+  return grouping_expressions_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
+AggregateRel::mutable_grouping_expressions() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.AggregateRel.grouping_expressions)
+  return &grouping_expressions_;
+}
+inline const ::substrait::Expression& AggregateRel::_internal_grouping_expressions(int index) const {
+  return grouping_expressions_.Get(index);
+}
+inline const ::substrait::Expression& AggregateRel::grouping_expressions(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.AggregateRel.grouping_expressions)
+  return _internal_grouping_expressions(index);
+}
+inline ::substrait::Expression* AggregateRel::_internal_add_grouping_expressions() {
+  return grouping_expressions_.Add();
+}
+inline ::substrait::Expression* AggregateRel::add_grouping_expressions() {
+  ::substrait::Expression* _add = _internal_add_grouping_expressions();
+  // @@protoc_insertion_point(field_add:substrait.AggregateRel.grouping_expressions)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
+AggregateRel::grouping_expressions() const {
+  // @@protoc_insertion_point(field_list:substrait.AggregateRel.grouping_expressions)
+  return grouping_expressions_;
 }
 
 // .substrait.extensions.AdvancedExtension advanced_extension = 10;
@@ -40432,24 +42219,293 @@ inline void Expression_Literal_IntervalDayToSecond::set_seconds(int32_t value) {
   // @@protoc_insertion_point(field_set:substrait.Expression.Literal.IntervalDayToSecond.seconds)
 }
 
-// int32 microseconds = 3;
+// int32 microseconds = 3 [deprecated = true];
+inline bool Expression_Literal_IntervalDayToSecond::_internal_has_microseconds() const {
+  return precision_mode_case() == kMicroseconds;
+}
+inline bool Expression_Literal_IntervalDayToSecond::has_microseconds() const {
+  return _internal_has_microseconds();
+}
+inline void Expression_Literal_IntervalDayToSecond::set_has_microseconds() {
+  _oneof_case_[0] = kMicroseconds;
+}
 inline void Expression_Literal_IntervalDayToSecond::clear_microseconds() {
-  microseconds_ = 0;
+  if (_internal_has_microseconds()) {
+    precision_mode_.microseconds_ = 0;
+    clear_has_precision_mode();
+  }
 }
 inline int32_t Expression_Literal_IntervalDayToSecond::_internal_microseconds() const {
-  return microseconds_;
+  if (_internal_has_microseconds()) {
+    return precision_mode_.microseconds_;
+  }
+  return 0;
+}
+inline void Expression_Literal_IntervalDayToSecond::_internal_set_microseconds(int32_t value) {
+  if (!_internal_has_microseconds()) {
+    clear_precision_mode();
+    set_has_microseconds();
+  }
+  precision_mode_.microseconds_ = value;
 }
 inline int32_t Expression_Literal_IntervalDayToSecond::microseconds() const {
   // @@protoc_insertion_point(field_get:substrait.Expression.Literal.IntervalDayToSecond.microseconds)
   return _internal_microseconds();
 }
-inline void Expression_Literal_IntervalDayToSecond::_internal_set_microseconds(int32_t value) {
-  
-  microseconds_ = value;
-}
 inline void Expression_Literal_IntervalDayToSecond::set_microseconds(int32_t value) {
   _internal_set_microseconds(value);
   // @@protoc_insertion_point(field_set:substrait.Expression.Literal.IntervalDayToSecond.microseconds)
+}
+
+// int32 precision = 4;
+inline bool Expression_Literal_IntervalDayToSecond::_internal_has_precision() const {
+  return precision_mode_case() == kPrecision;
+}
+inline bool Expression_Literal_IntervalDayToSecond::has_precision() const {
+  return _internal_has_precision();
+}
+inline void Expression_Literal_IntervalDayToSecond::set_has_precision() {
+  _oneof_case_[0] = kPrecision;
+}
+inline void Expression_Literal_IntervalDayToSecond::clear_precision() {
+  if (_internal_has_precision()) {
+    precision_mode_.precision_ = 0;
+    clear_has_precision_mode();
+  }
+}
+inline int32_t Expression_Literal_IntervalDayToSecond::_internal_precision() const {
+  if (_internal_has_precision()) {
+    return precision_mode_.precision_;
+  }
+  return 0;
+}
+inline void Expression_Literal_IntervalDayToSecond::_internal_set_precision(int32_t value) {
+  if (!_internal_has_precision()) {
+    clear_precision_mode();
+    set_has_precision();
+  }
+  precision_mode_.precision_ = value;
+}
+inline int32_t Expression_Literal_IntervalDayToSecond::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.IntervalDayToSecond.precision)
+  return _internal_precision();
+}
+inline void Expression_Literal_IntervalDayToSecond::set_precision(int32_t value) {
+  _internal_set_precision(value);
+  // @@protoc_insertion_point(field_set:substrait.Expression.Literal.IntervalDayToSecond.precision)
+}
+
+// int64 subseconds = 5;
+inline void Expression_Literal_IntervalDayToSecond::clear_subseconds() {
+  subseconds_ = int64_t{0};
+}
+inline int64_t Expression_Literal_IntervalDayToSecond::_internal_subseconds() const {
+  return subseconds_;
+}
+inline int64_t Expression_Literal_IntervalDayToSecond::subseconds() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.IntervalDayToSecond.subseconds)
+  return _internal_subseconds();
+}
+inline void Expression_Literal_IntervalDayToSecond::_internal_set_subseconds(int64_t value) {
+  
+  subseconds_ = value;
+}
+inline void Expression_Literal_IntervalDayToSecond::set_subseconds(int64_t value) {
+  _internal_set_subseconds(value);
+  // @@protoc_insertion_point(field_set:substrait.Expression.Literal.IntervalDayToSecond.subseconds)
+}
+
+inline bool Expression_Literal_IntervalDayToSecond::has_precision_mode() const {
+  return precision_mode_case() != PRECISION_MODE_NOT_SET;
+}
+inline void Expression_Literal_IntervalDayToSecond::clear_has_precision_mode() {
+  _oneof_case_[0] = PRECISION_MODE_NOT_SET;
+}
+inline Expression_Literal_IntervalDayToSecond::PrecisionModeCase Expression_Literal_IntervalDayToSecond::precision_mode_case() const {
+  return Expression_Literal_IntervalDayToSecond::PrecisionModeCase(_oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
+// Expression_Literal_IntervalCompound
+
+// .substrait.Expression.Literal.IntervalYearToMonth interval_year_to_month = 1;
+inline bool Expression_Literal_IntervalCompound::_internal_has_interval_year_to_month() const {
+  return this != internal_default_instance() && interval_year_to_month_ != nullptr;
+}
+inline bool Expression_Literal_IntervalCompound::has_interval_year_to_month() const {
+  return _internal_has_interval_year_to_month();
+}
+inline void Expression_Literal_IntervalCompound::clear_interval_year_to_month() {
+  if (GetArenaForAllocation() == nullptr && interval_year_to_month_ != nullptr) {
+    delete interval_year_to_month_;
+  }
+  interval_year_to_month_ = nullptr;
+}
+inline const ::substrait::Expression_Literal_IntervalYearToMonth& Expression_Literal_IntervalCompound::_internal_interval_year_to_month() const {
+  const ::substrait::Expression_Literal_IntervalYearToMonth* p = interval_year_to_month_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression_Literal_IntervalYearToMonth&>(
+      ::substrait::_Expression_Literal_IntervalYearToMonth_default_instance_);
+}
+inline const ::substrait::Expression_Literal_IntervalYearToMonth& Expression_Literal_IntervalCompound::interval_year_to_month() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.IntervalCompound.interval_year_to_month)
+  return _internal_interval_year_to_month();
+}
+inline void Expression_Literal_IntervalCompound::unsafe_arena_set_allocated_interval_year_to_month(
+    ::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(interval_year_to_month_);
+  }
+  interval_year_to_month_ = interval_year_to_month;
+  if (interval_year_to_month) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.Literal.IntervalCompound.interval_year_to_month)
+}
+inline ::substrait::Expression_Literal_IntervalYearToMonth* Expression_Literal_IntervalCompound::release_interval_year_to_month() {
+  
+  ::substrait::Expression_Literal_IntervalYearToMonth* temp = interval_year_to_month_;
+  interval_year_to_month_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression_Literal_IntervalYearToMonth* Expression_Literal_IntervalCompound::unsafe_arena_release_interval_year_to_month() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.Literal.IntervalCompound.interval_year_to_month)
+  
+  ::substrait::Expression_Literal_IntervalYearToMonth* temp = interval_year_to_month_;
+  interval_year_to_month_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression_Literal_IntervalYearToMonth* Expression_Literal_IntervalCompound::_internal_mutable_interval_year_to_month() {
+  
+  if (interval_year_to_month_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression_Literal_IntervalYearToMonth>(GetArenaForAllocation());
+    interval_year_to_month_ = p;
+  }
+  return interval_year_to_month_;
+}
+inline ::substrait::Expression_Literal_IntervalYearToMonth* Expression_Literal_IntervalCompound::mutable_interval_year_to_month() {
+  ::substrait::Expression_Literal_IntervalYearToMonth* _msg = _internal_mutable_interval_year_to_month();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.Literal.IntervalCompound.interval_year_to_month)
+  return _msg;
+}
+inline void Expression_Literal_IntervalCompound::set_allocated_interval_year_to_month(::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete interval_year_to_month_;
+  }
+  if (interval_year_to_month) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression_Literal_IntervalYearToMonth>::GetOwningArena(interval_year_to_month);
+    if (message_arena != submessage_arena) {
+      interval_year_to_month = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, interval_year_to_month, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  interval_year_to_month_ = interval_year_to_month;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.Literal.IntervalCompound.interval_year_to_month)
+}
+
+// .substrait.Expression.Literal.IntervalDayToSecond interval_day_to_second = 2;
+inline bool Expression_Literal_IntervalCompound::_internal_has_interval_day_to_second() const {
+  return this != internal_default_instance() && interval_day_to_second_ != nullptr;
+}
+inline bool Expression_Literal_IntervalCompound::has_interval_day_to_second() const {
+  return _internal_has_interval_day_to_second();
+}
+inline void Expression_Literal_IntervalCompound::clear_interval_day_to_second() {
+  if (GetArenaForAllocation() == nullptr && interval_day_to_second_ != nullptr) {
+    delete interval_day_to_second_;
+  }
+  interval_day_to_second_ = nullptr;
+}
+inline const ::substrait::Expression_Literal_IntervalDayToSecond& Expression_Literal_IntervalCompound::_internal_interval_day_to_second() const {
+  const ::substrait::Expression_Literal_IntervalDayToSecond* p = interval_day_to_second_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression_Literal_IntervalDayToSecond&>(
+      ::substrait::_Expression_Literal_IntervalDayToSecond_default_instance_);
+}
+inline const ::substrait::Expression_Literal_IntervalDayToSecond& Expression_Literal_IntervalCompound::interval_day_to_second() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.IntervalCompound.interval_day_to_second)
+  return _internal_interval_day_to_second();
+}
+inline void Expression_Literal_IntervalCompound::unsafe_arena_set_allocated_interval_day_to_second(
+    ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(interval_day_to_second_);
+  }
+  interval_day_to_second_ = interval_day_to_second;
+  if (interval_day_to_second) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.Literal.IntervalCompound.interval_day_to_second)
+}
+inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal_IntervalCompound::release_interval_day_to_second() {
+  
+  ::substrait::Expression_Literal_IntervalDayToSecond* temp = interval_day_to_second_;
+  interval_day_to_second_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal_IntervalCompound::unsafe_arena_release_interval_day_to_second() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.Literal.IntervalCompound.interval_day_to_second)
+  
+  ::substrait::Expression_Literal_IntervalDayToSecond* temp = interval_day_to_second_;
+  interval_day_to_second_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal_IntervalCompound::_internal_mutable_interval_day_to_second() {
+  
+  if (interval_day_to_second_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression_Literal_IntervalDayToSecond>(GetArenaForAllocation());
+    interval_day_to_second_ = p;
+  }
+  return interval_day_to_second_;
+}
+inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal_IntervalCompound::mutable_interval_day_to_second() {
+  ::substrait::Expression_Literal_IntervalDayToSecond* _msg = _internal_mutable_interval_day_to_second();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.Literal.IntervalCompound.interval_day_to_second)
+  return _msg;
+}
+inline void Expression_Literal_IntervalCompound::set_allocated_interval_day_to_second(::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete interval_day_to_second_;
+  }
+  if (interval_day_to_second) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression_Literal_IntervalDayToSecond>::GetOwningArena(interval_day_to_second);
+    if (message_arena != submessage_arena) {
+      interval_day_to_second = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, interval_day_to_second, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  interval_day_to_second_ = interval_day_to_second;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.Literal.IntervalCompound.interval_day_to_second)
 }
 
 // -------------------------------------------------------------------
@@ -41443,6 +43499,80 @@ inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal::
 inline ::substrait::Expression_Literal_IntervalDayToSecond* Expression_Literal::mutable_interval_day_to_second() {
   ::substrait::Expression_Literal_IntervalDayToSecond* _msg = _internal_mutable_interval_day_to_second();
   // @@protoc_insertion_point(field_mutable:substrait.Expression.Literal.interval_day_to_second)
+  return _msg;
+}
+
+// .substrait.Expression.Literal.IntervalCompound interval_compound = 36;
+inline bool Expression_Literal::_internal_has_interval_compound() const {
+  return literal_type_case() == kIntervalCompound;
+}
+inline bool Expression_Literal::has_interval_compound() const {
+  return _internal_has_interval_compound();
+}
+inline void Expression_Literal::set_has_interval_compound() {
+  _oneof_case_[0] = kIntervalCompound;
+}
+inline void Expression_Literal::clear_interval_compound() {
+  if (_internal_has_interval_compound()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete literal_type_.interval_compound_;
+    }
+    clear_has_literal_type();
+  }
+}
+inline ::substrait::Expression_Literal_IntervalCompound* Expression_Literal::release_interval_compound() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.Literal.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_literal_type();
+      ::substrait::Expression_Literal_IntervalCompound* temp = literal_type_.interval_compound_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    literal_type_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression_Literal_IntervalCompound& Expression_Literal::_internal_interval_compound() const {
+  return _internal_has_interval_compound()
+      ? *literal_type_.interval_compound_
+      : reinterpret_cast< ::substrait::Expression_Literal_IntervalCompound&>(::substrait::_Expression_Literal_IntervalCompound_default_instance_);
+}
+inline const ::substrait::Expression_Literal_IntervalCompound& Expression_Literal::interval_compound() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.interval_compound)
+  return _internal_interval_compound();
+}
+inline ::substrait::Expression_Literal_IntervalCompound* Expression_Literal::unsafe_arena_release_interval_compound() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.Literal.interval_compound)
+  if (_internal_has_interval_compound()) {
+    clear_has_literal_type();
+    ::substrait::Expression_Literal_IntervalCompound* temp = literal_type_.interval_compound_;
+    literal_type_.interval_compound_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression_Literal::unsafe_arena_set_allocated_interval_compound(::substrait::Expression_Literal_IntervalCompound* interval_compound) {
+  clear_literal_type();
+  if (interval_compound) {
+    set_has_interval_compound();
+    literal_type_.interval_compound_ = interval_compound;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.Literal.interval_compound)
+}
+inline ::substrait::Expression_Literal_IntervalCompound* Expression_Literal::_internal_mutable_interval_compound() {
+  if (!_internal_has_interval_compound()) {
+    clear_literal_type();
+    set_has_interval_compound();
+    literal_type_.interval_compound_ = CreateMaybeMessage< ::substrait::Expression_Literal_IntervalCompound >(GetArenaForAllocation());
+  }
+  return literal_type_.interval_compound_;
+}
+inline ::substrait::Expression_Literal_IntervalCompound* Expression_Literal::mutable_interval_compound() {
+  ::substrait::Expression_Literal_IntervalCompound* _msg = _internal_mutable_interval_compound();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.Literal.interval_compound)
   return _msg;
 }
 
@@ -50862,6 +52992,14 @@ inline void ReferenceRel::set_subtree_ordinal(int32_t value) {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -50869,6 +53007,11 @@ inline void ReferenceRel::set_subtree_ordinal(int32_t value) {
 
 PROTOBUF_NAMESPACE_OPEN
 
+template <> struct is_proto_enum< ::substrait::RelCommon_Hint_ComputationType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::substrait::RelCommon_Hint_ComputationType>() {
+  return ::substrait::RelCommon_Hint_ComputationType_descriptor();
+}
 template <> struct is_proto_enum< ::substrait::JoinRel_JoinType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::substrait::JoinRel_JoinType>() {
