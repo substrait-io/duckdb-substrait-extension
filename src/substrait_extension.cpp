@@ -275,6 +275,7 @@ static unique_ptr<TableRef> FromSubstraitBind(ClientContext &context, TableFunct
 
 static unique_ptr<TableRef> FromSubstraitBindJSON(ClientContext &context, TableFunctionBindInput &input) {
 	return SubstraitBind(context, input, true);
+}
 
 //! Container for TableFnExplainSubstrait to get data from BindFnExplainSubstrait
 struct FromSubstraitFunctionData : public TableFunctionData {
@@ -284,8 +285,8 @@ struct FromSubstraitFunctionData : public TableFunctionData {
 	unique_ptr<Connection> conn;
 };
 
-static unique_ptr<TableRef> BindFnExplainSubstrait(ClientContext &context, TableFunctionBindInput &input
-	                                                 vector<LogicalType> &return_types, vector<string> &names) {
+static unique_ptr<FunctionData> BindFnExplainSubstrait(ClientContext &context, TableFunctionBindInput &input,
+	                                                     vector<LogicalType> &return_types, vector<string> &names) {
 	if (input.inputs[0].IsNull()) {
 		throw BinderException("explain_substrait cannot be called with a NULL parameter");
 	}
