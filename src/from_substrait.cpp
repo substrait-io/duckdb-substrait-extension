@@ -718,7 +718,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		return input->CreateRel(schema_name, table_name);
         }
 	default:
-		throw NotImplementedException("Unsupported write operation" + to_string(swrite.op()));
+		throw NotImplementedException("Unsupported write operation " + to_string(swrite.op()));
 	}
 }
 
