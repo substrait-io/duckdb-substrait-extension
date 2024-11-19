@@ -259,6 +259,27 @@ TEST_CASE("Test C CTAS Union with Substrait API", "[substrait-api]") {
 	REQUIRE(CHECK_COLUMN(result, 2, {1, 2, 1, 3, 2, 1, 2}));
 }
 
+TEST_CASE("Test C InsertRows with Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE senior_employees ("
+	                          "employee_id INTEGER PRIMARY KEY, "
+	                          "name VARCHAR(100), "
+	                          "department_id INTEGER, "
+	                          "salary DECIMAL(10, 2))"));
+
+	ExecuteViaSubstrait(con, "INSERT INTO senior_employees "
+	                         "SELECT * FROM employees WHERE salary > 80000");
+
+	auto result = ExecuteViaSubstrait(con, "SELECT * from senior_employees");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 4}));
+	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Bob Brown"}));
+	REQUIRE(CHECK_COLUMN(result, 2, {1, 3}));
+	REQUIRE(CHECK_COLUMN(result, 3, {120000, 95000}));
+}
+
 TEST_CASE("Test C DeleteRows with Substrait API", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);

@@ -152,6 +152,20 @@ def test_ctas_with_union(require):
     pd.testing.assert_frame_equal(query_result.df(), expected)
 
 
+def test_insert_rows_into_table(require):
+    connection = require('substrait')
+    create_employee_table(connection)
+    create_senior_employees_table(connection)
+    _ = execute_via_substrait(connection, "INSERT INTO senior_employees SELECT * FROM employees WHERE salary > 80000")
+
+    expected = pd.DataFrame({"employee_id": pd.Series([1, 4], dtype="int32"),
+                                "name": ["John Doe", "Bob Brown"],
+                                "department_id": pd.Series([1, 3], dtype="int32"),
+                                "salary":  pd.Series([120000, 95000], dtype="float64")})
+    query_result = execute_via_substrait(connection, "SELECT * FROM senior_employees")
+    pd.testing.assert_frame_equal(query_result.df(), expected)
+
+
 def test_delete_rows_in_table(require):
     connection = require('substrait')
     create_employee_table(connection)
@@ -208,6 +222,15 @@ def create_part_time_employee_table(connection):
             (7, 'Eve Green', 2, 20)
     """)
 
+def create_senior_employees_table(connection):
+    connection.execute("""
+        CREATE TABLE senior_employees (
+            employee_id INTEGER PRIMARY KEY,
+            name VARCHAR(100),
+            department_id INTEGER,
+            salary DECIMAL(10, 2)
+        )
+    """)
 
 def create_departments_table(connection):
     connection.execute("""

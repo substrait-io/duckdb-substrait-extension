@@ -1472,6 +1472,27 @@ void DuckDBToSubstrait::SetNamedTable(const TableCatalogEntry &table, substrait:
 	named_table->add_names(table.name);
 }
 
+substrait::Rel *DuckDBToSubstrait::TransformInsertTable(LogicalOperator &dop) {
+	auto rel = new substrait::Rel();
+	auto &insert_table = dop.Cast<LogicalInsert>();
+	if (insert_table.children.size() != 1) {
+		throw InternalException("insert table expected one child, found " + to_string(insert_table.children.size()));
+	}
+
+	auto writeRel = rel->mutable_write();
+	writeRel->set_op(substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT);
+	writeRel->set_output(substrait::WriteRel::OUTPUT_MODE_NO_OUTPUT);
+
+	SetNamedTable(insert_table.table, writeRel);
+	auto schema = new substrait::NamedStruct();
+	SetTableSchema(insert_table.table, schema);
+	writeRel->set_allocated_table_schema(schema);
+
+	substrait::Rel *input = TransformOp(*insert_table.children[0]);
+	writeRel->set_allocated_input(input);
+	return rel;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	auto rel = new substrait::Rel();
 	auto &logical_delete = dop.Cast<LogicalDelete>();
@@ -1530,6 +1551,8 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformDummyScan();
 	case LogicalOperatorType::LOGICAL_CREATE_TABLE:
 		return TransformCreateTable(dop);
+	case LogicalOperatorType::LOGICAL_INSERT:
+		return TransformInsertTable(dop);
 	case LogicalOperatorType::LOGICAL_DELETE:
 		return TransformDeleteTable(dop);
 	default:
