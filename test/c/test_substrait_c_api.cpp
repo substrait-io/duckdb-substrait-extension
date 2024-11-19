@@ -302,6 +302,10 @@ TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
   auto json = con.GetSubstraitJSON("select * from (values (1, 2),(3, 4))");
   REQUIRE(!json.empty());
   std::cout << json << std::endl;
+
+  auto result = con.FromSubstraitJSON(json);
+  REQUIRE(CHECK_COLUMN(result, 0, {1, 3}));
+  REQUIRE(CHECK_COLUMN(result, 1, {2, 4}));
 }
 
 TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
@@ -312,4 +316,7 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(!json.empty());
   std::cout << json << std::endl;
 
+  auto result = con.FromSubstraitJSON(json);
+  REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
+  REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
