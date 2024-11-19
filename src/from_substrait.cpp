@@ -716,6 +716,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	switch (swrite.op()) {
         case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
 	        return input->CreateRel(schema_name, table_name);
+	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
+		return input->InsertRel(schema_name, table_name);
         case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
         	auto filter = std::move(input.get()->Cast<FilterRelation>());
         	auto context = filter.child->Cast<TableRelation>().context;
