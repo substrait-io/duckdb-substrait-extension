@@ -258,3 +258,17 @@ TEST_CASE("Test C CTAS Union with Substrait API", "[substrait-api]") {
 	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black", "David White", "Eve Green"}));
 	REQUIRE(CHECK_COLUMN(result, 2, {1, 2, 1, 3, 2, 1, 2}));
 }
+
+TEST_CASE("Test C DeleteRows with Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	ExecuteViaSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000");
+	auto result = ExecuteViaSubstrait(con, "SELECT * from employees");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 4}));
+	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Jane Smith", "Bob Brown"}));
+	REQUIRE(CHECK_COLUMN(result, 2, {1, 2, 3}));
+	REQUIRE(CHECK_COLUMN(result, 3, {120000, 80000, 95000}));
+}

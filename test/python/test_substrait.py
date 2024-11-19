@@ -152,6 +152,18 @@ def test_ctas_with_union(require):
     pd.testing.assert_frame_equal(query_result.df(), expected)
 
 
+def test_delete_rows_in_table(require):
+    connection = require('substrait')
+    create_employee_table(connection)
+    connection.execute("DELETE FROM employees WHERE salary < 80000")
+    query_result = execute_via_substrait(connection, "SELECT * FROM employees")
+    expected = pd.DataFrame({"employee_id": pd.Series([1, 2, 4], dtype="int32"),
+                             "name": ["John Doe", "Jane Smith", "Bob Brown"],
+                             "department_id": pd.Series([1, 2, 3], dtype="int32"),
+                             "salary":  pd.Series([120000, 80000, 95000], dtype="float64")})
+    pd.testing.assert_frame_equal(query_result.df(), expected)
+
+
 def execute_via_substrait(connection, query):
     res = connection.get_substrait(query)
     proto_bytes = res.fetchone()[0]
