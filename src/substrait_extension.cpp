@@ -259,22 +259,73 @@ static void ToJsonFunction(ClientContext &context, TableFunctionInput &data_p, D
 	VerifyBlobRoundtrip(query_plan, context, data, serialized);
 }
 
-static unique_ptr<TableRef> SubstraitBind(ClientContext &context, TableFunctionBindInput &input, bool is_json) {
+static unique_ptr<TableRef> SubstraitBindReplace(ClientContext &context, TableFunctionBindInput &input, bool is_json) {
 	if (input.inputs[0].IsNull()) {
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
 	string serialized = input.inputs[0].GetValueUnsafe<string>();
 	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
 	auto plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	if (!plan.get()->IsReadOnly()) {
+		return nullptr;
+	}
 	return plan->GetTableRef();
 }
 
-static unique_ptr<TableRef> FromSubstraitBind(ClientContext &context, TableFunctionBindInput &input) {
-	return SubstraitBind(context, input, false);
+static unique_ptr<TableRef> FromSubstraitBindReplace(ClientContext &context, TableFunctionBindInput &input) {
+	return SubstraitBindReplace(context, input, false);
 }
 
-static unique_ptr<TableRef> FromSubstraitBindJSON(ClientContext &context, TableFunctionBindInput &input) {
-	return SubstraitBind(context, input, true);
+static unique_ptr<TableRef> FromSubstraitBindReplaceJSON(ClientContext &context, TableFunctionBindInput &input) {
+	return SubstraitBindReplace(context, input, true);
+}
+
+struct FromSubstraitFunctionData : public TableFunctionData {
+	FromSubstraitFunctionData() = default;
+	shared_ptr<Relation> plan;
+	unique_ptr<QueryResult> res;
+	unique_ptr<Connection> conn;
+};
+
+static unique_ptr<FunctionData> SubstraitBind(ClientContext &context, TableFunctionBindInput &input,
+					      vector<LogicalType> &return_types, vector<string> &names, bool is_json) {
+	auto result = make_uniq<FromSubstraitFunctionData>();
+	result->conn = make_uniq<Connection>(*context.db);
+	if (input.inputs[0].IsNull()) {
+		throw BinderException("from_substrait cannot be called with a NULL parameter");
+	}
+	string serialized = input.inputs[0].GetValueUnsafe<string>();
+	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
+	result->plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	for (auto &column : result->plan->Columns()) {
+		return_types.emplace_back(column.Type());
+		names.emplace_back(column.Name());
+	}
+	return std::move(result);
+}
+
+static unique_ptr<FunctionData> FromSubstraitBind(ClientContext &context, TableFunctionBindInput &input,
+						  vector<LogicalType> &return_types, vector<string> &names) {
+	return SubstraitBind(context, input, return_types, names, false);
+}
+
+static unique_ptr<FunctionData> FromSubstraitBindJSON(ClientContext &context, TableFunctionBindInput &input,
+						      vector<LogicalType> &return_types, vector<string> &names) {
+	return SubstraitBind(context, input, return_types, names, true);
+}
+
+static void FromSubFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk &output) {
+	auto &data = data_p.bind_data->CastNoConst<FromSubstraitFunctionData>();
+	if (!data.res) {
+		auto con = Connection(*context.db);
+		data.plan->context = make_shared_ptr<ClientContextWrapper>(con.context);
+		data.res = data.plan->Execute();
+	}
+	auto result_chunk = data.res->Fetch();
+	if (!result_chunk) {
+		return;
+	}
+	output.Move(*result_chunk);
 }
 
 void InitializeGetSubstrait(const Connection &con) {
@@ -304,8 +355,8 @@ void InitializeFromSubstrait(const Connection &con) {
 
 	// create the from_substrait table function that allows us to get a query
 	// result from a substrait plan
-	TableFunction from_sub_func("from_substrait", {LogicalType::BLOB}, nullptr, nullptr);
-	from_sub_func.bind_replace = FromSubstraitBind;
+	TableFunction from_sub_func("from_substrait", {LogicalType::BLOB}, FromSubFunction, FromSubstraitBind);
+	from_sub_func.bind_replace = FromSubstraitBindReplace;
 	CreateTableFunctionInfo from_sub_info(from_sub_func);
 	catalog.CreateTableFunction(*con.context, from_sub_info);
 }
@@ -314,8 +365,8 @@ void InitializeFromSubstraitJSON(const Connection &con) {
 	auto &catalog = Catalog::GetSystemCatalog(*con.context);
 	// create the from_substrait table function that allows us to get a query
 	// result from a substrait plan
-	TableFunction from_sub_func_json("from_substrait_json", {LogicalType::VARCHAR}, nullptr, nullptr);
-	from_sub_func_json.bind_replace = FromSubstraitBindJSON;
+	TableFunction from_sub_func_json("from_substrait_json", {LogicalType::VARCHAR}, FromSubFunction, FromSubstraitBindJSON);
+	from_sub_func_json.bind_replace = FromSubstraitBindReplaceJSON;
 	CreateTableFunctionInfo from_sub_info_json(from_sub_func_json);
 	catalog.CreateTableFunction(*con.context, from_sub_info_json);
 }

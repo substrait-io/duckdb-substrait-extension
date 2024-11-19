@@ -78,6 +78,7 @@ private:
 	                                     const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformSetOp(const substrait::Rel &sop,
 	                                    const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
+	shared_ptr<Relation> TransformWriteOp(const substrait::Rel &sop);
 
 	//! Transform Substrait Expressions to DuckDB Expressions
 	unique_ptr<ParsedExpression> TransformExpr(const substrait::Expression &sexpr,
