@@ -51,7 +51,7 @@ struct TableStruct_substrait_2falgebra_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[121]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[124]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -338,6 +338,9 @@ extern MergeJoinRelDefaultTypeInternal _MergeJoinRel_default_instance_;
 class NamedObjectWrite;
 struct NamedObjectWriteDefaultTypeInternal;
 extern NamedObjectWriteDefaultTypeInternal _NamedObjectWrite_default_instance_;
+class NamedTable;
+struct NamedTableDefaultTypeInternal;
+extern NamedTableDefaultTypeInternal _NamedTable_default_instance_;
 class NestedLoopJoinRel;
 struct NestedLoopJoinRelDefaultTypeInternal;
 extern NestedLoopJoinRelDefaultTypeInternal _NestedLoopJoinRel_default_instance_;
@@ -419,6 +422,12 @@ extern SortFieldDefaultTypeInternal _SortField_default_instance_;
 class SortRel;
 struct SortRelDefaultTypeInternal;
 extern SortRelDefaultTypeInternal _SortRel_default_instance_;
+class UpdateRel;
+struct UpdateRelDefaultTypeInternal;
+extern UpdateRelDefaultTypeInternal _UpdateRel_default_instance_;
+class UpdateRel_TransformExpression;
+struct UpdateRel_TransformExpressionDefaultTypeInternal;
+extern UpdateRel_TransformExpressionDefaultTypeInternal _UpdateRel_TransformExpression_default_instance_;
 class WriteRel;
 struct WriteRelDefaultTypeInternal;
 extern WriteRelDefaultTypeInternal _WriteRel_default_instance_;
@@ -517,6 +526,7 @@ template<> ::substrait::HashJoinRel* Arena::CreateMaybeMessage<::substrait::Hash
 template<> ::substrait::JoinRel* Arena::CreateMaybeMessage<::substrait::JoinRel>(Arena*);
 template<> ::substrait::MergeJoinRel* Arena::CreateMaybeMessage<::substrait::MergeJoinRel>(Arena*);
 template<> ::substrait::NamedObjectWrite* Arena::CreateMaybeMessage<::substrait::NamedObjectWrite>(Arena*);
+template<> ::substrait::NamedTable* Arena::CreateMaybeMessage<::substrait::NamedTable>(Arena*);
 template<> ::substrait::NestedLoopJoinRel* Arena::CreateMaybeMessage<::substrait::NestedLoopJoinRel>(Arena*);
 template<> ::substrait::ProjectRel* Arena::CreateMaybeMessage<::substrait::ProjectRel>(Arena*);
 template<> ::substrait::ReadRel* Arena::CreateMaybeMessage<::substrait::ReadRel>(Arena*);
@@ -544,6 +554,8 @@ template<> ::substrait::RelRoot* Arena::CreateMaybeMessage<::substrait::RelRoot>
 template<> ::substrait::SetRel* Arena::CreateMaybeMessage<::substrait::SetRel>(Arena*);
 template<> ::substrait::SortField* Arena::CreateMaybeMessage<::substrait::SortField>(Arena*);
 template<> ::substrait::SortRel* Arena::CreateMaybeMessage<::substrait::SortRel>(Arena*);
+template<> ::substrait::UpdateRel* Arena::CreateMaybeMessage<::substrait::UpdateRel>(Arena*);
+template<> ::substrait::UpdateRel_TransformExpression* Arena::CreateMaybeMessage<::substrait::UpdateRel_TransformExpression>(Arena*);
 template<> ::substrait::WriteRel* Arena::CreateMaybeMessage<::substrait::WriteRel>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace substrait {
@@ -725,6 +737,34 @@ inline bool WriteRel_WriteOp_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, WriteRel_WriteOp* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<WriteRel_WriteOp>(
     WriteRel_WriteOp_descriptor(), name, value);
+}
+enum WriteRel_CreateMode : int {
+  WriteRel_CreateMode_CREATE_MODE_UNSPECIFIED = 0,
+  WriteRel_CreateMode_CREATE_MODE_APPEND_IF_EXISTS = 1,
+  WriteRel_CreateMode_CREATE_MODE_REPLACE_IF_EXISTS = 2,
+  WriteRel_CreateMode_CREATE_MODE_IGNORE_IF_EXISTS = 3,
+  WriteRel_CreateMode_CREATE_MODE_ERROR_IF_EXISTS = 4,
+  WriteRel_CreateMode_WriteRel_CreateMode_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  WriteRel_CreateMode_WriteRel_CreateMode_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool WriteRel_CreateMode_IsValid(int value);
+constexpr WriteRel_CreateMode WriteRel_CreateMode_CreateMode_MIN = WriteRel_CreateMode_CREATE_MODE_UNSPECIFIED;
+constexpr WriteRel_CreateMode WriteRel_CreateMode_CreateMode_MAX = WriteRel_CreateMode_CREATE_MODE_ERROR_IF_EXISTS;
+constexpr int WriteRel_CreateMode_CreateMode_ARRAYSIZE = WriteRel_CreateMode_CreateMode_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* WriteRel_CreateMode_descriptor();
+template<typename T>
+inline const std::string& WriteRel_CreateMode_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, WriteRel_CreateMode>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function WriteRel_CreateMode_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    WriteRel_CreateMode_descriptor(), enum_t_value);
+}
+inline bool WriteRel_CreateMode_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, WriteRel_CreateMode* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<WriteRel_CreateMode>(
+    WriteRel_CreateMode_descriptor(), name, value);
 }
 enum WriteRel_OutputMode : int {
   WriteRel_OutputMode_OUTPUT_MODE_UNSPECIFIED = 0,
@@ -10218,6 +10258,7 @@ class Rel final :
     kReference = 21,
     kWrite = 19,
     kDdl = 20,
+    kUpdate = 22,
     kHashJoin = 13,
     kMergeJoin = 14,
     kNestedLoopJoin = 18,
@@ -10321,6 +10362,7 @@ class Rel final :
     kReferenceFieldNumber = 21,
     kWriteFieldNumber = 19,
     kDdlFieldNumber = 20,
+    kUpdateFieldNumber = 22,
     kHashJoinFieldNumber = 13,
     kMergeJoinFieldNumber = 14,
     kNestedLoopJoinFieldNumber = 18,
@@ -10598,6 +10640,24 @@ class Rel final :
       ::substrait::DdlRel* ddl);
   ::substrait::DdlRel* unsafe_arena_release_ddl();
 
+  // .substrait.UpdateRel update = 22;
+  bool has_update() const;
+  private:
+  bool _internal_has_update() const;
+  public:
+  void clear_update();
+  const ::substrait::UpdateRel& update() const;
+  PROTOBUF_NODISCARD ::substrait::UpdateRel* release_update();
+  ::substrait::UpdateRel* mutable_update();
+  void set_allocated_update(::substrait::UpdateRel* update);
+  private:
+  const ::substrait::UpdateRel& _internal_update() const;
+  ::substrait::UpdateRel* _internal_mutable_update();
+  public:
+  void unsafe_arena_set_allocated_update(
+      ::substrait::UpdateRel* update);
+  ::substrait::UpdateRel* unsafe_arena_release_update();
+
   // .substrait.HashJoinRel hash_join = 13;
   bool has_hash_join() const;
   private:
@@ -10726,6 +10786,7 @@ class Rel final :
   void set_has_reference();
   void set_has_write();
   void set_has_ddl();
+  void set_has_update();
   void set_has_hash_join();
   void set_has_merge_join();
   void set_has_nested_loop_join();
@@ -10757,6 +10818,7 @@ class Rel final :
     ::substrait::ReferenceRel* reference_;
     ::substrait::WriteRel* write_;
     ::substrait::DdlRel* ddl_;
+    ::substrait::UpdateRel* update_;
     ::substrait::HashJoinRel* hash_join_;
     ::substrait::MergeJoinRel* merge_join_;
     ::substrait::NestedLoopJoinRel* nested_loop_join_;
@@ -11634,6 +11696,42 @@ class WriteRel final :
     return WriteRel_WriteOp_Parse(name, value);
   }
 
+  typedef WriteRel_CreateMode CreateMode;
+  static constexpr CreateMode CREATE_MODE_UNSPECIFIED =
+    WriteRel_CreateMode_CREATE_MODE_UNSPECIFIED;
+  static constexpr CreateMode CREATE_MODE_APPEND_IF_EXISTS =
+    WriteRel_CreateMode_CREATE_MODE_APPEND_IF_EXISTS;
+  static constexpr CreateMode CREATE_MODE_REPLACE_IF_EXISTS =
+    WriteRel_CreateMode_CREATE_MODE_REPLACE_IF_EXISTS;
+  static constexpr CreateMode CREATE_MODE_IGNORE_IF_EXISTS =
+    WriteRel_CreateMode_CREATE_MODE_IGNORE_IF_EXISTS;
+  static constexpr CreateMode CREATE_MODE_ERROR_IF_EXISTS =
+    WriteRel_CreateMode_CREATE_MODE_ERROR_IF_EXISTS;
+  static inline bool CreateMode_IsValid(int value) {
+    return WriteRel_CreateMode_IsValid(value);
+  }
+  static constexpr CreateMode CreateMode_MIN =
+    WriteRel_CreateMode_CreateMode_MIN;
+  static constexpr CreateMode CreateMode_MAX =
+    WriteRel_CreateMode_CreateMode_MAX;
+  static constexpr int CreateMode_ARRAYSIZE =
+    WriteRel_CreateMode_CreateMode_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  CreateMode_descriptor() {
+    return WriteRel_CreateMode_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& CreateMode_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, CreateMode>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function CreateMode_Name.");
+    return WriteRel_CreateMode_Name(enum_t_value);
+  }
+  static inline bool CreateMode_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      CreateMode* value) {
+    return WriteRel_CreateMode_Parse(name, value);
+  }
+
   typedef WriteRel_OutputMode OutputMode;
   static constexpr OutputMode OUTPUT_MODE_UNSPECIFIED =
     WriteRel_OutputMode_OUTPUT_MODE_UNSPECIFIED;
@@ -11674,6 +11772,7 @@ class WriteRel final :
     kCommonFieldNumber = 7,
     kOpFieldNumber = 4,
     kOutputFieldNumber = 6,
+    kCreateModeFieldNumber = 8,
     kNamedTableFieldNumber = 1,
     kExtensionTableFieldNumber = 2,
   };
@@ -11749,6 +11848,15 @@ class WriteRel final :
   void _internal_set_output(::substrait::WriteRel_OutputMode value);
   public:
 
+  // .substrait.WriteRel.CreateMode create_mode = 8;
+  void clear_create_mode();
+  ::substrait::WriteRel_CreateMode create_mode() const;
+  void set_create_mode(::substrait::WriteRel_CreateMode value);
+  private:
+  ::substrait::WriteRel_CreateMode _internal_create_mode() const;
+  void _internal_set_create_mode(::substrait::WriteRel_CreateMode value);
+  public:
+
   // .substrait.NamedObjectWrite named_table = 1;
   bool has_named_table() const;
   private:
@@ -11804,6 +11912,7 @@ class WriteRel final :
   ::substrait::RelCommon* common_;
   int op_;
   int output_;
+  int create_mode_;
   union WriteTypeUnion {
     constexpr WriteTypeUnion() : _constinit_{} {}
       ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
@@ -11813,6 +11922,587 @@ class WriteRel final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
 
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class UpdateRel_TransformExpression final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.UpdateRel.TransformExpression) */ {
+ public:
+  inline UpdateRel_TransformExpression() : UpdateRel_TransformExpression(nullptr) {}
+  ~UpdateRel_TransformExpression() override;
+  explicit constexpr UpdateRel_TransformExpression(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  UpdateRel_TransformExpression(const UpdateRel_TransformExpression& from);
+  UpdateRel_TransformExpression(UpdateRel_TransformExpression&& from) noexcept
+    : UpdateRel_TransformExpression() {
+    *this = ::std::move(from);
+  }
+
+  inline UpdateRel_TransformExpression& operator=(const UpdateRel_TransformExpression& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline UpdateRel_TransformExpression& operator=(UpdateRel_TransformExpression&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const UpdateRel_TransformExpression& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const UpdateRel_TransformExpression* internal_default_instance() {
+    return reinterpret_cast<const UpdateRel_TransformExpression*>(
+               &_UpdateRel_TransformExpression_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    50;
+
+  friend void swap(UpdateRel_TransformExpression& a, UpdateRel_TransformExpression& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(UpdateRel_TransformExpression* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(UpdateRel_TransformExpression* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  UpdateRel_TransformExpression* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<UpdateRel_TransformExpression>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const UpdateRel_TransformExpression& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const UpdateRel_TransformExpression& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(UpdateRel_TransformExpression* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.UpdateRel.TransformExpression";
+  }
+  protected:
+  explicit UpdateRel_TransformExpression(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTransformationFieldNumber = 1,
+    kColumnTargetFieldNumber = 2,
+  };
+  // .substrait.Expression transformation = 1;
+  bool has_transformation() const;
+  private:
+  bool _internal_has_transformation() const;
+  public:
+  void clear_transformation();
+  const ::substrait::Expression& transformation() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_transformation();
+  ::substrait::Expression* mutable_transformation();
+  void set_allocated_transformation(::substrait::Expression* transformation);
+  private:
+  const ::substrait::Expression& _internal_transformation() const;
+  ::substrait::Expression* _internal_mutable_transformation();
+  public:
+  void unsafe_arena_set_allocated_transformation(
+      ::substrait::Expression* transformation);
+  ::substrait::Expression* unsafe_arena_release_transformation();
+
+  // int32 column_target = 2;
+  void clear_column_target();
+  int32_t column_target() const;
+  void set_column_target(int32_t value);
+  private:
+  int32_t _internal_column_target() const;
+  void _internal_set_column_target(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.UpdateRel.TransformExpression)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::Expression* transformation_;
+  int32_t column_target_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class UpdateRel final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.UpdateRel) */ {
+ public:
+  inline UpdateRel() : UpdateRel(nullptr) {}
+  ~UpdateRel() override;
+  explicit constexpr UpdateRel(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  UpdateRel(const UpdateRel& from);
+  UpdateRel(UpdateRel&& from) noexcept
+    : UpdateRel() {
+    *this = ::std::move(from);
+  }
+
+  inline UpdateRel& operator=(const UpdateRel& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline UpdateRel& operator=(UpdateRel&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const UpdateRel& default_instance() {
+    return *internal_default_instance();
+  }
+  enum UpdateTypeCase {
+    kNamedTable = 1,
+    UPDATE_TYPE_NOT_SET = 0,
+  };
+
+  static inline const UpdateRel* internal_default_instance() {
+    return reinterpret_cast<const UpdateRel*>(
+               &_UpdateRel_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    51;
+
+  friend void swap(UpdateRel& a, UpdateRel& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(UpdateRel* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(UpdateRel* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  UpdateRel* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<UpdateRel>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const UpdateRel& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const UpdateRel& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(UpdateRel* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.UpdateRel";
+  }
+  protected:
+  explicit UpdateRel(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  typedef UpdateRel_TransformExpression TransformExpression;
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTransformationsFieldNumber = 4,
+    kTableSchemaFieldNumber = 2,
+    kConditionFieldNumber = 3,
+    kNamedTableFieldNumber = 1,
+  };
+  // repeated .substrait.UpdateRel.TransformExpression transformations = 4;
+  int transformations_size() const;
+  private:
+  int _internal_transformations_size() const;
+  public:
+  void clear_transformations();
+  ::substrait::UpdateRel_TransformExpression* mutable_transformations(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::UpdateRel_TransformExpression >*
+      mutable_transformations();
+  private:
+  const ::substrait::UpdateRel_TransformExpression& _internal_transformations(int index) const;
+  ::substrait::UpdateRel_TransformExpression* _internal_add_transformations();
+  public:
+  const ::substrait::UpdateRel_TransformExpression& transformations(int index) const;
+  ::substrait::UpdateRel_TransformExpression* add_transformations();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::UpdateRel_TransformExpression >&
+      transformations() const;
+
+  // .substrait.NamedStruct table_schema = 2;
+  bool has_table_schema() const;
+  private:
+  bool _internal_has_table_schema() const;
+  public:
+  void clear_table_schema();
+  const ::substrait::NamedStruct& table_schema() const;
+  PROTOBUF_NODISCARD ::substrait::NamedStruct* release_table_schema();
+  ::substrait::NamedStruct* mutable_table_schema();
+  void set_allocated_table_schema(::substrait::NamedStruct* table_schema);
+  private:
+  const ::substrait::NamedStruct& _internal_table_schema() const;
+  ::substrait::NamedStruct* _internal_mutable_table_schema();
+  public:
+  void unsafe_arena_set_allocated_table_schema(
+      ::substrait::NamedStruct* table_schema);
+  ::substrait::NamedStruct* unsafe_arena_release_table_schema();
+
+  // .substrait.Expression condition = 3;
+  bool has_condition() const;
+  private:
+  bool _internal_has_condition() const;
+  public:
+  void clear_condition();
+  const ::substrait::Expression& condition() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_condition();
+  ::substrait::Expression* mutable_condition();
+  void set_allocated_condition(::substrait::Expression* condition);
+  private:
+  const ::substrait::Expression& _internal_condition() const;
+  ::substrait::Expression* _internal_mutable_condition();
+  public:
+  void unsafe_arena_set_allocated_condition(
+      ::substrait::Expression* condition);
+  ::substrait::Expression* unsafe_arena_release_condition();
+
+  // .substrait.NamedTable named_table = 1;
+  bool has_named_table() const;
+  private:
+  bool _internal_has_named_table() const;
+  public:
+  void clear_named_table();
+  const ::substrait::NamedTable& named_table() const;
+  PROTOBUF_NODISCARD ::substrait::NamedTable* release_named_table();
+  ::substrait::NamedTable* mutable_named_table();
+  void set_allocated_named_table(::substrait::NamedTable* named_table);
+  private:
+  const ::substrait::NamedTable& _internal_named_table() const;
+  ::substrait::NamedTable* _internal_mutable_named_table();
+  public:
+  void unsafe_arena_set_allocated_named_table(
+      ::substrait::NamedTable* named_table);
+  ::substrait::NamedTable* unsafe_arena_release_named_table();
+
+  void clear_update_type();
+  UpdateTypeCase update_type_case() const;
+  // @@protoc_insertion_point(class_scope:substrait.UpdateRel)
+ private:
+  class _Internal;
+  void set_has_named_table();
+
+  inline bool has_update_type() const;
+  inline void clear_has_update_type();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::UpdateRel_TransformExpression > transformations_;
+  ::substrait::NamedStruct* table_schema_;
+  ::substrait::Expression* condition_;
+  union UpdateTypeUnion {
+    constexpr UpdateTypeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    ::substrait::NamedTable* named_table_;
+  } update_type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class NamedTable final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.NamedTable) */ {
+ public:
+  inline NamedTable() : NamedTable(nullptr) {}
+  ~NamedTable() override;
+  explicit constexpr NamedTable(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  NamedTable(const NamedTable& from);
+  NamedTable(NamedTable&& from) noexcept
+    : NamedTable() {
+    *this = ::std::move(from);
+  }
+
+  inline NamedTable& operator=(const NamedTable& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NamedTable& operator=(NamedTable&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NamedTable& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NamedTable* internal_default_instance() {
+    return reinterpret_cast<const NamedTable*>(
+               &_NamedTable_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    52;
+
+  friend void swap(NamedTable& a, NamedTable& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(NamedTable* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NamedTable* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NamedTable* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<NamedTable>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const NamedTable& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const NamedTable& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(NamedTable* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.NamedTable";
+  }
+  protected:
+  explicit NamedTable(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kNamesFieldNumber = 1,
+    kAdvancedExtensionFieldNumber = 10,
+  };
+  // repeated string names = 1;
+  int names_size() const;
+  private:
+  int _internal_names_size() const;
+  public:
+  void clear_names();
+  const std::string& names(int index) const;
+  std::string* mutable_names(int index);
+  void set_names(int index, const std::string& value);
+  void set_names(int index, std::string&& value);
+  void set_names(int index, const char* value);
+  void set_names(int index, const char* value, size_t size);
+  std::string* add_names();
+  void add_names(const std::string& value);
+  void add_names(std::string&& value);
+  void add_names(const char* value);
+  void add_names(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& names() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_names();
+  private:
+  const std::string& _internal_names(int index) const;
+  std::string* _internal_add_names();
+  public:
+
+  // .substrait.extensions.AdvancedExtension advanced_extension = 10;
+  bool has_advanced_extension() const;
+  private:
+  bool _internal_has_advanced_extension() const;
+  public:
+  void clear_advanced_extension();
+  const ::substrait::extensions::AdvancedExtension& advanced_extension() const;
+  PROTOBUF_NODISCARD ::substrait::extensions::AdvancedExtension* release_advanced_extension();
+  ::substrait::extensions::AdvancedExtension* mutable_advanced_extension();
+  void set_allocated_advanced_extension(::substrait::extensions::AdvancedExtension* advanced_extension);
+  private:
+  const ::substrait::extensions::AdvancedExtension& _internal_advanced_extension() const;
+  ::substrait::extensions::AdvancedExtension* _internal_mutable_advanced_extension();
+  public:
+  void unsafe_arena_set_allocated_advanced_extension(
+      ::substrait::extensions::AdvancedExtension* advanced_extension);
+  ::substrait::extensions::AdvancedExtension* unsafe_arena_release_advanced_extension();
+
+  // @@protoc_insertion_point(class_scope:substrait.NamedTable)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> names_;
+  ::substrait::extensions::AdvancedExtension* advanced_extension_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
 };
 // -------------------------------------------------------------------
@@ -11871,7 +12561,7 @@ class ComparisonJoinKey_ComparisonType final :
                &_ComparisonJoinKey_ComparisonType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    53;
 
   friend void swap(ComparisonJoinKey_ComparisonType& a, ComparisonJoinKey_ComparisonType& b) {
     a.Swap(&b);
@@ -12049,7 +12739,7 @@ class ComparisonJoinKey final :
                &_ComparisonJoinKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    54;
 
   friend void swap(ComparisonJoinKey& a, ComparisonJoinKey& b) {
     a.Swap(&b);
@@ -12280,7 +12970,7 @@ class HashJoinRel final :
                &_HashJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    55;
 
   friend void swap(HashJoinRel& a, HashJoinRel& b) {
     a.Swap(&b);
@@ -12638,7 +13328,7 @@ class MergeJoinRel final :
                &_MergeJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    56;
 
   friend void swap(MergeJoinRel& a, MergeJoinRel& b) {
     a.Swap(&b);
@@ -12996,7 +13686,7 @@ class NestedLoopJoinRel final :
                &_NestedLoopJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    57;
 
   friend void swap(NestedLoopJoinRel& a, NestedLoopJoinRel& b) {
     a.Swap(&b);
@@ -13301,7 +13991,7 @@ class FunctionArgument final :
                &_FunctionArgument_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    58;
 
   friend void swap(FunctionArgument& a, FunctionArgument& b) {
     a.Swap(&b);
@@ -13510,7 +14200,7 @@ class FunctionOption final :
                &_FunctionOption_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    59;
 
   friend void swap(FunctionOption& a, FunctionOption& b) {
     a.Swap(&b);
@@ -13686,7 +14376,7 @@ class Expression_Enum_Empty final :
                &_Expression_Enum_Empty_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    60;
 
   friend void swap(Expression_Enum_Empty& a, Expression_Enum_Empty& b) {
     a.Swap(&b);
@@ -13811,7 +14501,7 @@ class Expression_Enum final :
                &_Expression_Enum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    61;
 
   friend void swap(Expression_Enum& a, Expression_Enum& b) {
     a.Swap(&b);
@@ -14001,7 +14691,7 @@ class Expression_Literal_VarChar final :
                &_Expression_Literal_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    62;
 
   friend void swap(Expression_Literal_VarChar& a, Expression_Literal_VarChar& b) {
     a.Swap(&b);
@@ -14163,7 +14853,7 @@ class Expression_Literal_Decimal final :
                &_Expression_Literal_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    63;
 
   friend void swap(Expression_Literal_Decimal& a, Expression_Literal_Decimal& b) {
     a.Swap(&b);
@@ -14336,7 +15026,7 @@ class Expression_Literal_PrecisionTimestamp final :
                &_Expression_Literal_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    64;
 
   friend void swap(Expression_Literal_PrecisionTimestamp& a, Expression_Literal_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -14493,7 +15183,7 @@ class Expression_Literal_Map_KeyValue final :
                &_Expression_Literal_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    65;
 
   friend void swap(Expression_Literal_Map_KeyValue& a, Expression_Literal_Map_KeyValue& b) {
     a.Swap(&b);
@@ -14668,7 +15358,7 @@ class Expression_Literal_Map final :
                &_Expression_Literal_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    66;
 
   friend void swap(Expression_Literal_Map& a, Expression_Literal_Map& b) {
     a.Swap(&b);
@@ -14825,7 +15515,7 @@ class Expression_Literal_IntervalYearToMonth final :
                &_Expression_Literal_IntervalYearToMonth_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    67;
 
   friend void swap(Expression_Literal_IntervalYearToMonth& a, Expression_Literal_IntervalYearToMonth& b) {
     a.Swap(&b);
@@ -14988,7 +15678,7 @@ class Expression_Literal_IntervalDayToSecond final :
                &_Expression_Literal_IntervalDayToSecond_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    68;
 
   friend void swap(Expression_Literal_IntervalDayToSecond& a, Expression_Literal_IntervalDayToSecond& b) {
     a.Swap(&b);
@@ -15199,7 +15889,7 @@ class Expression_Literal_IntervalCompound final :
                &_Expression_Literal_IntervalCompound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    69;
 
   friend void swap(Expression_Literal_IntervalCompound& a, Expression_Literal_IntervalCompound& b) {
     a.Swap(&b);
@@ -15374,7 +16064,7 @@ class Expression_Literal_Struct final :
                &_Expression_Literal_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    70;
 
   friend void swap(Expression_Literal_Struct& a, Expression_Literal_Struct& b) {
     a.Swap(&b);
@@ -15529,7 +16219,7 @@ class Expression_Literal_List final :
                &_Expression_Literal_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    71;
 
   friend void swap(Expression_Literal_List& a, Expression_Literal_List& b) {
     a.Swap(&b);
@@ -15690,7 +16380,7 @@ class Expression_Literal_UserDefined final :
                &_Expression_Literal_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    72;
 
   friend void swap(Expression_Literal_UserDefined& a, Expression_Literal_UserDefined& b) {
     a.Swap(&b);
@@ -15943,7 +16633,7 @@ class Expression_Literal final :
                &_Expression_Literal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    73;
 
   friend void swap(Expression_Literal& a, Expression_Literal& b) {
     a.Swap(&b);
@@ -16697,7 +17387,7 @@ class Expression_Nested_Map_KeyValue final :
                &_Expression_Nested_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    74;
 
   friend void swap(Expression_Nested_Map_KeyValue& a, Expression_Nested_Map_KeyValue& b) {
     a.Swap(&b);
@@ -16872,7 +17562,7 @@ class Expression_Nested_Map final :
                &_Expression_Nested_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    75;
 
   friend void swap(Expression_Nested_Map& a, Expression_Nested_Map& b) {
     a.Swap(&b);
@@ -17029,7 +17719,7 @@ class Expression_Nested_Struct final :
                &_Expression_Nested_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    76;
 
   friend void swap(Expression_Nested_Struct& a, Expression_Nested_Struct& b) {
     a.Swap(&b);
@@ -17184,7 +17874,7 @@ class Expression_Nested_List final :
                &_Expression_Nested_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    77;
 
   friend void swap(Expression_Nested_List& a, Expression_Nested_List& b) {
     a.Swap(&b);
@@ -17346,7 +18036,7 @@ class Expression_Nested final :
                &_Expression_Nested_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    78;
 
   friend void swap(Expression_Nested& a, Expression_Nested& b) {
     a.Swap(&b);
@@ -17581,7 +18271,7 @@ class Expression_ScalarFunction final :
                &_Expression_ScalarFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    79;
 
   friend void swap(Expression_ScalarFunction& a, Expression_ScalarFunction& b) {
     a.Swap(&b);
@@ -17807,7 +18497,7 @@ class Expression_WindowFunction_Bound_Preceding final :
                &_Expression_WindowFunction_Bound_Preceding_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    80;
 
   friend void swap(Expression_WindowFunction_Bound_Preceding& a, Expression_WindowFunction_Bound_Preceding& b) {
     a.Swap(&b);
@@ -17953,7 +18643,7 @@ class Expression_WindowFunction_Bound_Following final :
                &_Expression_WindowFunction_Bound_Following_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    81;
 
   friend void swap(Expression_WindowFunction_Bound_Following& a, Expression_WindowFunction_Bound_Following& b) {
     a.Swap(&b);
@@ -18098,7 +18788,7 @@ class Expression_WindowFunction_Bound_CurrentRow final :
                &_Expression_WindowFunction_Bound_CurrentRow_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    82;
 
   friend void swap(Expression_WindowFunction_Bound_CurrentRow& a, Expression_WindowFunction_Bound_CurrentRow& b) {
     a.Swap(&b);
@@ -18216,7 +18906,7 @@ class Expression_WindowFunction_Bound_Unbounded final :
                &_Expression_WindowFunction_Bound_Unbounded_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    83;
 
   friend void swap(Expression_WindowFunction_Bound_Unbounded& a, Expression_WindowFunction_Bound_Unbounded& b) {
     a.Swap(&b);
@@ -18343,7 +19033,7 @@ class Expression_WindowFunction_Bound final :
                &_Expression_WindowFunction_Bound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    84;
 
   friend void swap(Expression_WindowFunction_Bound& a, Expression_WindowFunction_Bound& b) {
     a.Swap(&b);
@@ -18578,7 +19268,7 @@ class Expression_WindowFunction final :
                &_Expression_WindowFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    85;
 
   friend void swap(Expression_WindowFunction& a, Expression_WindowFunction& b) {
     a.Swap(&b);
@@ -18951,7 +19641,7 @@ class Expression_IfThen_IfClause final :
                &_Expression_IfThen_IfClause_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    86;
 
   friend void swap(Expression_IfThen_IfClause& a, Expression_IfThen_IfClause& b) {
     a.Swap(&b);
@@ -19126,7 +19816,7 @@ class Expression_IfThen final :
                &_Expression_IfThen_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    87;
 
   friend void swap(Expression_IfThen& a, Expression_IfThen& b) {
     a.Swap(&b);
@@ -19303,7 +19993,7 @@ class Expression_Cast final :
                &_Expression_Cast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    88;
 
   friend void swap(Expression_Cast& a, Expression_Cast& b) {
     a.Swap(&b);
@@ -19521,7 +20211,7 @@ class Expression_SwitchExpression_IfValue final :
                &_Expression_SwitchExpression_IfValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    89;
 
   friend void swap(Expression_SwitchExpression_IfValue& a, Expression_SwitchExpression_IfValue& b) {
     a.Swap(&b);
@@ -19696,7 +20386,7 @@ class Expression_SwitchExpression final :
                &_Expression_SwitchExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    90;
 
   friend void swap(Expression_SwitchExpression& a, Expression_SwitchExpression& b) {
     a.Swap(&b);
@@ -19893,7 +20583,7 @@ class Expression_SingularOrList final :
                &_Expression_SingularOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    91;
 
   friend void swap(Expression_SingularOrList& a, Expression_SingularOrList& b) {
     a.Swap(&b);
@@ -20068,7 +20758,7 @@ class Expression_MultiOrList_Record final :
                &_Expression_MultiOrList_Record_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    92;
 
   friend void swap(Expression_MultiOrList_Record& a, Expression_MultiOrList_Record& b) {
     a.Swap(&b);
@@ -20223,7 +20913,7 @@ class Expression_MultiOrList final :
                &_Expression_MultiOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    93;
 
   friend void swap(Expression_MultiOrList& a, Expression_MultiOrList& b) {
     a.Swap(&b);
@@ -20400,7 +21090,7 @@ class Expression_EmbeddedFunction_PythonPickleFunction final :
                &_Expression_EmbeddedFunction_PythonPickleFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    94;
 
   friend void swap(Expression_EmbeddedFunction_PythonPickleFunction& a, Expression_EmbeddedFunction_PythonPickleFunction& b) {
     a.Swap(&b);
@@ -20577,7 +21267,7 @@ class Expression_EmbeddedFunction_WebAssemblyFunction final :
                &_Expression_EmbeddedFunction_WebAssemblyFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    95;
 
   friend void swap(Expression_EmbeddedFunction_WebAssemblyFunction& a, Expression_EmbeddedFunction_WebAssemblyFunction& b) {
     a.Swap(&b);
@@ -20760,7 +21450,7 @@ class Expression_EmbeddedFunction final :
                &_Expression_EmbeddedFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    96;
 
   friend void swap(Expression_EmbeddedFunction& a, Expression_EmbeddedFunction& b) {
     a.Swap(&b);
@@ -20991,7 +21681,7 @@ class Expression_ReferenceSegment_MapKey final :
                &_Expression_ReferenceSegment_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    97;
 
   friend void swap(Expression_ReferenceSegment_MapKey& a, Expression_ReferenceSegment_MapKey& b) {
     a.Swap(&b);
@@ -21166,7 +21856,7 @@ class Expression_ReferenceSegment_StructField final :
                &_Expression_ReferenceSegment_StructField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    98;
 
   friend void swap(Expression_ReferenceSegment_StructField& a, Expression_ReferenceSegment_StructField& b) {
     a.Swap(&b);
@@ -21332,7 +22022,7 @@ class Expression_ReferenceSegment_ListElement final :
                &_Expression_ReferenceSegment_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    99;
 
   friend void swap(Expression_ReferenceSegment_ListElement& a, Expression_ReferenceSegment_ListElement& b) {
     a.Swap(&b);
@@ -21505,7 +22195,7 @@ class Expression_ReferenceSegment final :
                &_Expression_ReferenceSegment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    100;
 
   friend void swap(Expression_ReferenceSegment& a, Expression_ReferenceSegment& b) {
     a.Swap(&b);
@@ -21725,7 +22415,7 @@ class Expression_MaskExpression_Select final :
                &_Expression_MaskExpression_Select_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    101;
 
   friend void swap(Expression_MaskExpression_Select& a, Expression_MaskExpression_Select& b) {
     a.Swap(&b);
@@ -21934,7 +22624,7 @@ class Expression_MaskExpression_StructSelect final :
                &_Expression_MaskExpression_StructSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    102;
 
   friend void swap(Expression_MaskExpression_StructSelect& a, Expression_MaskExpression_StructSelect& b) {
     a.Swap(&b);
@@ -22089,7 +22779,7 @@ class Expression_MaskExpression_StructItem final :
                &_Expression_MaskExpression_StructItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    103;
 
   friend void swap(Expression_MaskExpression_StructItem& a, Expression_MaskExpression_StructItem& b) {
     a.Swap(&b);
@@ -22255,7 +22945,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListElement final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    104;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& b) {
     a.Swap(&b);
@@ -22401,7 +23091,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    105;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& b) {
     a.Swap(&b);
@@ -22564,7 +23254,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    106;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem& a, Expression_MaskExpression_ListSelect_ListSelectItem& b) {
     a.Swap(&b);
@@ -22755,7 +23445,7 @@ class Expression_MaskExpression_ListSelect final :
                &_Expression_MaskExpression_ListSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    107;
 
   friend void swap(Expression_MaskExpression_ListSelect& a, Expression_MaskExpression_ListSelect& b) {
     a.Swap(&b);
@@ -22932,7 +23622,7 @@ class Expression_MaskExpression_MapSelect_MapKey final :
                &_Expression_MaskExpression_MapSelect_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    108;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKey& a, Expression_MaskExpression_MapSelect_MapKey& b) {
     a.Swap(&b);
@@ -23083,7 +23773,7 @@ class Expression_MaskExpression_MapSelect_MapKeyExpression final :
                &_Expression_MaskExpression_MapSelect_MapKeyExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    109;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKeyExpression& a, Expression_MaskExpression_MapSelect_MapKeyExpression& b) {
     a.Swap(&b);
@@ -23240,7 +23930,7 @@ class Expression_MaskExpression_MapSelect final :
                &_Expression_MaskExpression_MapSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    110;
 
   friend void swap(Expression_MaskExpression_MapSelect& a, Expression_MaskExpression_MapSelect& b) {
     a.Swap(&b);
@@ -23451,7 +24141,7 @@ class Expression_MaskExpression final :
                &_Expression_MaskExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    108;
+    111;
 
   friend void swap(Expression_MaskExpression& a, Expression_MaskExpression& b) {
     a.Swap(&b);
@@ -23622,7 +24312,7 @@ class Expression_FieldReference_RootReference final :
                &_Expression_FieldReference_RootReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    109;
+    112;
 
   friend void swap(Expression_FieldReference_RootReference& a, Expression_FieldReference_RootReference& b) {
     a.Swap(&b);
@@ -23741,7 +24431,7 @@ class Expression_FieldReference_OuterReference final :
                &_Expression_FieldReference_OuterReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    110;
+    113;
 
   friend void swap(Expression_FieldReference_OuterReference& a, Expression_FieldReference_OuterReference& b) {
     a.Swap(&b);
@@ -23900,7 +24590,7 @@ class Expression_FieldReference final :
                &_Expression_FieldReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    111;
+    114;
 
   friend void swap(Expression_FieldReference& a, Expression_FieldReference& b) {
     a.Swap(&b);
@@ -24163,7 +24853,7 @@ class Expression_Subquery_Scalar final :
                &_Expression_Subquery_Scalar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    112;
+    115;
 
   friend void swap(Expression_Subquery_Scalar& a, Expression_Subquery_Scalar& b) {
     a.Swap(&b);
@@ -24318,7 +25008,7 @@ class Expression_Subquery_InPredicate final :
                &_Expression_Subquery_InPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    113;
+    116;
 
   friend void swap(Expression_Subquery_InPredicate& a, Expression_Subquery_InPredicate& b) {
     a.Swap(&b);
@@ -24493,7 +25183,7 @@ class Expression_Subquery_SetPredicate final :
                &_Expression_Subquery_SetPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    114;
+    117;
 
   friend void swap(Expression_Subquery_SetPredicate& a, Expression_Subquery_SetPredicate& b) {
     a.Swap(&b);
@@ -24691,7 +25381,7 @@ class Expression_Subquery_SetComparison final :
                &_Expression_Subquery_SetComparison_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    115;
+    118;
 
   friend void swap(Expression_Subquery_SetComparison& a, Expression_Subquery_SetComparison& b) {
     a.Swap(&b);
@@ -24968,7 +25658,7 @@ class Expression_Subquery final :
                &_Expression_Subquery_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    116;
+    119;
 
   friend void swap(Expression_Subquery& a, Expression_Subquery& b) {
     a.Swap(&b);
@@ -25219,7 +25909,7 @@ class Expression final :
                &_Expression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    117;
+    120;
 
   friend void swap(Expression& a, Expression& b) {
     a.Swap(&b);
@@ -25639,7 +26329,7 @@ class SortField final :
                &_SortField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    118;
+    121;
 
   friend void swap(SortField& a, SortField& b) {
     a.Swap(&b);
@@ -25875,7 +26565,7 @@ class AggregateFunction final :
                &_AggregateFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    119;
+    122;
 
   friend void swap(AggregateFunction& a, AggregateFunction& b) {
     a.Swap(&b);
@@ -26175,7 +26865,7 @@ class ReferenceRel final :
                &_ReferenceRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    120;
+    123;
 
   friend void swap(ReferenceRel& a, ReferenceRel& b) {
     a.Swap(&b);
@@ -37406,6 +38096,80 @@ inline ::substrait::DdlRel* Rel::mutable_ddl() {
   return _msg;
 }
 
+// .substrait.UpdateRel update = 22;
+inline bool Rel::_internal_has_update() const {
+  return rel_type_case() == kUpdate;
+}
+inline bool Rel::has_update() const {
+  return _internal_has_update();
+}
+inline void Rel::set_has_update() {
+  _oneof_case_[0] = kUpdate;
+}
+inline void Rel::clear_update() {
+  if (_internal_has_update()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete rel_type_.update_;
+    }
+    clear_has_rel_type();
+  }
+}
+inline ::substrait::UpdateRel* Rel::release_update() {
+  // @@protoc_insertion_point(field_release:substrait.Rel.update)
+  if (_internal_has_update()) {
+    clear_has_rel_type();
+      ::substrait::UpdateRel* temp = rel_type_.update_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    rel_type_.update_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::UpdateRel& Rel::_internal_update() const {
+  return _internal_has_update()
+      ? *rel_type_.update_
+      : reinterpret_cast< ::substrait::UpdateRel&>(::substrait::_UpdateRel_default_instance_);
+}
+inline const ::substrait::UpdateRel& Rel::update() const {
+  // @@protoc_insertion_point(field_get:substrait.Rel.update)
+  return _internal_update();
+}
+inline ::substrait::UpdateRel* Rel::unsafe_arena_release_update() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Rel.update)
+  if (_internal_has_update()) {
+    clear_has_rel_type();
+    ::substrait::UpdateRel* temp = rel_type_.update_;
+    rel_type_.update_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Rel::unsafe_arena_set_allocated_update(::substrait::UpdateRel* update) {
+  clear_rel_type();
+  if (update) {
+    set_has_update();
+    rel_type_.update_ = update;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Rel.update)
+}
+inline ::substrait::UpdateRel* Rel::_internal_mutable_update() {
+  if (!_internal_has_update()) {
+    clear_rel_type();
+    set_has_update();
+    rel_type_.update_ = CreateMaybeMessage< ::substrait::UpdateRel >(GetArenaForAllocation());
+  }
+  return rel_type_.update_;
+}
+inline ::substrait::UpdateRel* Rel::mutable_update() {
+  ::substrait::UpdateRel* _msg = _internal_mutable_update();
+  // @@protoc_insertion_point(field_mutable:substrait.Rel.update)
+  return _msg;
+}
+
 // .substrait.HashJoinRel hash_join = 13;
 inline bool Rel::_internal_has_hash_join() const {
   return rel_type_case() == kHashJoin;
@@ -39019,6 +39783,26 @@ inline void WriteRel::set_allocated_input(::substrait::Rel* input) {
   // @@protoc_insertion_point(field_set_allocated:substrait.WriteRel.input)
 }
 
+// .substrait.WriteRel.CreateMode create_mode = 8;
+inline void WriteRel::clear_create_mode() {
+  create_mode_ = 0;
+}
+inline ::substrait::WriteRel_CreateMode WriteRel::_internal_create_mode() const {
+  return static_cast< ::substrait::WriteRel_CreateMode >(create_mode_);
+}
+inline ::substrait::WriteRel_CreateMode WriteRel::create_mode() const {
+  // @@protoc_insertion_point(field_get:substrait.WriteRel.create_mode)
+  return _internal_create_mode();
+}
+inline void WriteRel::_internal_set_create_mode(::substrait::WriteRel_CreateMode value) {
+  
+  create_mode_ = value;
+}
+inline void WriteRel::set_create_mode(::substrait::WriteRel_CreateMode value) {
+  _internal_set_create_mode(value);
+  // @@protoc_insertion_point(field_set:substrait.WriteRel.create_mode)
+}
+
 // .substrait.WriteRel.OutputMode output = 6;
 inline void WriteRel::clear_output() {
   output_ = 0;
@@ -39138,6 +39922,588 @@ inline void WriteRel::clear_has_write_type() {
 inline WriteRel::WriteTypeCase WriteRel::write_type_case() const {
   return WriteRel::WriteTypeCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// UpdateRel_TransformExpression
+
+// .substrait.Expression transformation = 1;
+inline bool UpdateRel_TransformExpression::_internal_has_transformation() const {
+  return this != internal_default_instance() && transformation_ != nullptr;
+}
+inline bool UpdateRel_TransformExpression::has_transformation() const {
+  return _internal_has_transformation();
+}
+inline void UpdateRel_TransformExpression::clear_transformation() {
+  if (GetArenaForAllocation() == nullptr && transformation_ != nullptr) {
+    delete transformation_;
+  }
+  transformation_ = nullptr;
+}
+inline const ::substrait::Expression& UpdateRel_TransformExpression::_internal_transformation() const {
+  const ::substrait::Expression* p = transformation_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression&>(
+      ::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& UpdateRel_TransformExpression::transformation() const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.TransformExpression.transformation)
+  return _internal_transformation();
+}
+inline void UpdateRel_TransformExpression::unsafe_arena_set_allocated_transformation(
+    ::substrait::Expression* transformation) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(transformation_);
+  }
+  transformation_ = transformation;
+  if (transformation) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.UpdateRel.TransformExpression.transformation)
+}
+inline ::substrait::Expression* UpdateRel_TransformExpression::release_transformation() {
+  
+  ::substrait::Expression* temp = transformation_;
+  transformation_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression* UpdateRel_TransformExpression::unsafe_arena_release_transformation() {
+  // @@protoc_insertion_point(field_release:substrait.UpdateRel.TransformExpression.transformation)
+  
+  ::substrait::Expression* temp = transformation_;
+  transformation_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression* UpdateRel_TransformExpression::_internal_mutable_transformation() {
+  
+  if (transformation_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression>(GetArenaForAllocation());
+    transformation_ = p;
+  }
+  return transformation_;
+}
+inline ::substrait::Expression* UpdateRel_TransformExpression::mutable_transformation() {
+  ::substrait::Expression* _msg = _internal_mutable_transformation();
+  // @@protoc_insertion_point(field_mutable:substrait.UpdateRel.TransformExpression.transformation)
+  return _msg;
+}
+inline void UpdateRel_TransformExpression::set_allocated_transformation(::substrait::Expression* transformation) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete transformation_;
+  }
+  if (transformation) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression>::GetOwningArena(transformation);
+    if (message_arena != submessage_arena) {
+      transformation = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, transformation, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  transformation_ = transformation;
+  // @@protoc_insertion_point(field_set_allocated:substrait.UpdateRel.TransformExpression.transformation)
+}
+
+// int32 column_target = 2;
+inline void UpdateRel_TransformExpression::clear_column_target() {
+  column_target_ = 0;
+}
+inline int32_t UpdateRel_TransformExpression::_internal_column_target() const {
+  return column_target_;
+}
+inline int32_t UpdateRel_TransformExpression::column_target() const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.TransformExpression.column_target)
+  return _internal_column_target();
+}
+inline void UpdateRel_TransformExpression::_internal_set_column_target(int32_t value) {
+  
+  column_target_ = value;
+}
+inline void UpdateRel_TransformExpression::set_column_target(int32_t value) {
+  _internal_set_column_target(value);
+  // @@protoc_insertion_point(field_set:substrait.UpdateRel.TransformExpression.column_target)
+}
+
+// -------------------------------------------------------------------
+
+// UpdateRel
+
+// .substrait.NamedTable named_table = 1;
+inline bool UpdateRel::_internal_has_named_table() const {
+  return update_type_case() == kNamedTable;
+}
+inline bool UpdateRel::has_named_table() const {
+  return _internal_has_named_table();
+}
+inline void UpdateRel::set_has_named_table() {
+  _oneof_case_[0] = kNamedTable;
+}
+inline void UpdateRel::clear_named_table() {
+  if (_internal_has_named_table()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete update_type_.named_table_;
+    }
+    clear_has_update_type();
+  }
+}
+inline ::substrait::NamedTable* UpdateRel::release_named_table() {
+  // @@protoc_insertion_point(field_release:substrait.UpdateRel.named_table)
+  if (_internal_has_named_table()) {
+    clear_has_update_type();
+      ::substrait::NamedTable* temp = update_type_.named_table_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    update_type_.named_table_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::NamedTable& UpdateRel::_internal_named_table() const {
+  return _internal_has_named_table()
+      ? *update_type_.named_table_
+      : reinterpret_cast< ::substrait::NamedTable&>(::substrait::_NamedTable_default_instance_);
+}
+inline const ::substrait::NamedTable& UpdateRel::named_table() const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.named_table)
+  return _internal_named_table();
+}
+inline ::substrait::NamedTable* UpdateRel::unsafe_arena_release_named_table() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.UpdateRel.named_table)
+  if (_internal_has_named_table()) {
+    clear_has_update_type();
+    ::substrait::NamedTable* temp = update_type_.named_table_;
+    update_type_.named_table_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void UpdateRel::unsafe_arena_set_allocated_named_table(::substrait::NamedTable* named_table) {
+  clear_update_type();
+  if (named_table) {
+    set_has_named_table();
+    update_type_.named_table_ = named_table;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.UpdateRel.named_table)
+}
+inline ::substrait::NamedTable* UpdateRel::_internal_mutable_named_table() {
+  if (!_internal_has_named_table()) {
+    clear_update_type();
+    set_has_named_table();
+    update_type_.named_table_ = CreateMaybeMessage< ::substrait::NamedTable >(GetArenaForAllocation());
+  }
+  return update_type_.named_table_;
+}
+inline ::substrait::NamedTable* UpdateRel::mutable_named_table() {
+  ::substrait::NamedTable* _msg = _internal_mutable_named_table();
+  // @@protoc_insertion_point(field_mutable:substrait.UpdateRel.named_table)
+  return _msg;
+}
+
+// .substrait.NamedStruct table_schema = 2;
+inline bool UpdateRel::_internal_has_table_schema() const {
+  return this != internal_default_instance() && table_schema_ != nullptr;
+}
+inline bool UpdateRel::has_table_schema() const {
+  return _internal_has_table_schema();
+}
+inline const ::substrait::NamedStruct& UpdateRel::_internal_table_schema() const {
+  const ::substrait::NamedStruct* p = table_schema_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::NamedStruct&>(
+      ::substrait::_NamedStruct_default_instance_);
+}
+inline const ::substrait::NamedStruct& UpdateRel::table_schema() const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.table_schema)
+  return _internal_table_schema();
+}
+inline void UpdateRel::unsafe_arena_set_allocated_table_schema(
+    ::substrait::NamedStruct* table_schema) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(table_schema_);
+  }
+  table_schema_ = table_schema;
+  if (table_schema) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.UpdateRel.table_schema)
+}
+inline ::substrait::NamedStruct* UpdateRel::release_table_schema() {
+  
+  ::substrait::NamedStruct* temp = table_schema_;
+  table_schema_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::NamedStruct* UpdateRel::unsafe_arena_release_table_schema() {
+  // @@protoc_insertion_point(field_release:substrait.UpdateRel.table_schema)
+  
+  ::substrait::NamedStruct* temp = table_schema_;
+  table_schema_ = nullptr;
+  return temp;
+}
+inline ::substrait::NamedStruct* UpdateRel::_internal_mutable_table_schema() {
+  
+  if (table_schema_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::NamedStruct>(GetArenaForAllocation());
+    table_schema_ = p;
+  }
+  return table_schema_;
+}
+inline ::substrait::NamedStruct* UpdateRel::mutable_table_schema() {
+  ::substrait::NamedStruct* _msg = _internal_mutable_table_schema();
+  // @@protoc_insertion_point(field_mutable:substrait.UpdateRel.table_schema)
+  return _msg;
+}
+inline void UpdateRel::set_allocated_table_schema(::substrait::NamedStruct* table_schema) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(table_schema_);
+  }
+  if (table_schema) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
+            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(table_schema));
+    if (message_arena != submessage_arena) {
+      table_schema = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, table_schema, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  table_schema_ = table_schema;
+  // @@protoc_insertion_point(field_set_allocated:substrait.UpdateRel.table_schema)
+}
+
+// .substrait.Expression condition = 3;
+inline bool UpdateRel::_internal_has_condition() const {
+  return this != internal_default_instance() && condition_ != nullptr;
+}
+inline bool UpdateRel::has_condition() const {
+  return _internal_has_condition();
+}
+inline void UpdateRel::clear_condition() {
+  if (GetArenaForAllocation() == nullptr && condition_ != nullptr) {
+    delete condition_;
+  }
+  condition_ = nullptr;
+}
+inline const ::substrait::Expression& UpdateRel::_internal_condition() const {
+  const ::substrait::Expression* p = condition_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression&>(
+      ::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& UpdateRel::condition() const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.condition)
+  return _internal_condition();
+}
+inline void UpdateRel::unsafe_arena_set_allocated_condition(
+    ::substrait::Expression* condition) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(condition_);
+  }
+  condition_ = condition;
+  if (condition) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.UpdateRel.condition)
+}
+inline ::substrait::Expression* UpdateRel::release_condition() {
+  
+  ::substrait::Expression* temp = condition_;
+  condition_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression* UpdateRel::unsafe_arena_release_condition() {
+  // @@protoc_insertion_point(field_release:substrait.UpdateRel.condition)
+  
+  ::substrait::Expression* temp = condition_;
+  condition_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression* UpdateRel::_internal_mutable_condition() {
+  
+  if (condition_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression>(GetArenaForAllocation());
+    condition_ = p;
+  }
+  return condition_;
+}
+inline ::substrait::Expression* UpdateRel::mutable_condition() {
+  ::substrait::Expression* _msg = _internal_mutable_condition();
+  // @@protoc_insertion_point(field_mutable:substrait.UpdateRel.condition)
+  return _msg;
+}
+inline void UpdateRel::set_allocated_condition(::substrait::Expression* condition) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete condition_;
+  }
+  if (condition) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression>::GetOwningArena(condition);
+    if (message_arena != submessage_arena) {
+      condition = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, condition, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  condition_ = condition;
+  // @@protoc_insertion_point(field_set_allocated:substrait.UpdateRel.condition)
+}
+
+// repeated .substrait.UpdateRel.TransformExpression transformations = 4;
+inline int UpdateRel::_internal_transformations_size() const {
+  return transformations_.size();
+}
+inline int UpdateRel::transformations_size() const {
+  return _internal_transformations_size();
+}
+inline void UpdateRel::clear_transformations() {
+  transformations_.Clear();
+}
+inline ::substrait::UpdateRel_TransformExpression* UpdateRel::mutable_transformations(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.UpdateRel.transformations)
+  return transformations_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::UpdateRel_TransformExpression >*
+UpdateRel::mutable_transformations() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.UpdateRel.transformations)
+  return &transformations_;
+}
+inline const ::substrait::UpdateRel_TransformExpression& UpdateRel::_internal_transformations(int index) const {
+  return transformations_.Get(index);
+}
+inline const ::substrait::UpdateRel_TransformExpression& UpdateRel::transformations(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.UpdateRel.transformations)
+  return _internal_transformations(index);
+}
+inline ::substrait::UpdateRel_TransformExpression* UpdateRel::_internal_add_transformations() {
+  return transformations_.Add();
+}
+inline ::substrait::UpdateRel_TransformExpression* UpdateRel::add_transformations() {
+  ::substrait::UpdateRel_TransformExpression* _add = _internal_add_transformations();
+  // @@protoc_insertion_point(field_add:substrait.UpdateRel.transformations)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::UpdateRel_TransformExpression >&
+UpdateRel::transformations() const {
+  // @@protoc_insertion_point(field_list:substrait.UpdateRel.transformations)
+  return transformations_;
+}
+
+inline bool UpdateRel::has_update_type() const {
+  return update_type_case() != UPDATE_TYPE_NOT_SET;
+}
+inline void UpdateRel::clear_has_update_type() {
+  _oneof_case_[0] = UPDATE_TYPE_NOT_SET;
+}
+inline UpdateRel::UpdateTypeCase UpdateRel::update_type_case() const {
+  return UpdateRel::UpdateTypeCase(_oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
+// NamedTable
+
+// repeated string names = 1;
+inline int NamedTable::_internal_names_size() const {
+  return names_.size();
+}
+inline int NamedTable::names_size() const {
+  return _internal_names_size();
+}
+inline void NamedTable::clear_names() {
+  names_.Clear();
+}
+inline std::string* NamedTable::add_names() {
+  std::string* _s = _internal_add_names();
+  // @@protoc_insertion_point(field_add_mutable:substrait.NamedTable.names)
+  return _s;
+}
+inline const std::string& NamedTable::_internal_names(int index) const {
+  return names_.Get(index);
+}
+inline const std::string& NamedTable::names(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.NamedTable.names)
+  return _internal_names(index);
+}
+inline std::string* NamedTable::mutable_names(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.NamedTable.names)
+  return names_.Mutable(index);
+}
+inline void NamedTable::set_names(int index, const std::string& value) {
+  names_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:substrait.NamedTable.names)
+}
+inline void NamedTable::set_names(int index, std::string&& value) {
+  names_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:substrait.NamedTable.names)
+}
+inline void NamedTable::set_names(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  names_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:substrait.NamedTable.names)
+}
+inline void NamedTable::set_names(int index, const char* value, size_t size) {
+  names_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:substrait.NamedTable.names)
+}
+inline std::string* NamedTable::_internal_add_names() {
+  return names_.Add();
+}
+inline void NamedTable::add_names(const std::string& value) {
+  names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:substrait.NamedTable.names)
+}
+inline void NamedTable::add_names(std::string&& value) {
+  names_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:substrait.NamedTable.names)
+}
+inline void NamedTable::add_names(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:substrait.NamedTable.names)
+}
+inline void NamedTable::add_names(const char* value, size_t size) {
+  names_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:substrait.NamedTable.names)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+NamedTable::names() const {
+  // @@protoc_insertion_point(field_list:substrait.NamedTable.names)
+  return names_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+NamedTable::mutable_names() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.NamedTable.names)
+  return &names_;
+}
+
+// .substrait.extensions.AdvancedExtension advanced_extension = 10;
+inline bool NamedTable::_internal_has_advanced_extension() const {
+  return this != internal_default_instance() && advanced_extension_ != nullptr;
+}
+inline bool NamedTable::has_advanced_extension() const {
+  return _internal_has_advanced_extension();
+}
+inline const ::substrait::extensions::AdvancedExtension& NamedTable::_internal_advanced_extension() const {
+  const ::substrait::extensions::AdvancedExtension* p = advanced_extension_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::extensions::AdvancedExtension&>(
+      ::substrait::extensions::_AdvancedExtension_default_instance_);
+}
+inline const ::substrait::extensions::AdvancedExtension& NamedTable::advanced_extension() const {
+  // @@protoc_insertion_point(field_get:substrait.NamedTable.advanced_extension)
+  return _internal_advanced_extension();
+}
+inline void NamedTable::unsafe_arena_set_allocated_advanced_extension(
+    ::substrait::extensions::AdvancedExtension* advanced_extension) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension_);
+  }
+  advanced_extension_ = advanced_extension;
+  if (advanced_extension) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.NamedTable.advanced_extension)
+}
+inline ::substrait::extensions::AdvancedExtension* NamedTable::release_advanced_extension() {
+  
+  ::substrait::extensions::AdvancedExtension* temp = advanced_extension_;
+  advanced_extension_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::extensions::AdvancedExtension* NamedTable::unsafe_arena_release_advanced_extension() {
+  // @@protoc_insertion_point(field_release:substrait.NamedTable.advanced_extension)
+  
+  ::substrait::extensions::AdvancedExtension* temp = advanced_extension_;
+  advanced_extension_ = nullptr;
+  return temp;
+}
+inline ::substrait::extensions::AdvancedExtension* NamedTable::_internal_mutable_advanced_extension() {
+  
+  if (advanced_extension_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::extensions::AdvancedExtension>(GetArenaForAllocation());
+    advanced_extension_ = p;
+  }
+  return advanced_extension_;
+}
+inline ::substrait::extensions::AdvancedExtension* NamedTable::mutable_advanced_extension() {
+  ::substrait::extensions::AdvancedExtension* _msg = _internal_mutable_advanced_extension();
+  // @@protoc_insertion_point(field_mutable:substrait.NamedTable.advanced_extension)
+  return _msg;
+}
+inline void NamedTable::set_allocated_advanced_extension(::substrait::extensions::AdvancedExtension* advanced_extension) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension_);
+  }
+  if (advanced_extension) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
+            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension));
+    if (message_arena != submessage_arena) {
+      advanced_extension = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, advanced_extension, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  advanced_extension_ = advanced_extension;
+  // @@protoc_insertion_point(field_set_allocated:substrait.NamedTable.advanced_extension)
+}
+
 // -------------------------------------------------------------------
 
 // ComparisonJoinKey_ComparisonType
@@ -53000,6 +54366,12 @@ inline void ReferenceRel::set_subtree_ordinal(int32_t value) {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -53036,6 +54408,11 @@ template <> struct is_proto_enum< ::substrait::WriteRel_WriteOp> : ::std::true_t
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::substrait::WriteRel_WriteOp>() {
   return ::substrait::WriteRel_WriteOp_descriptor();
+}
+template <> struct is_proto_enum< ::substrait::WriteRel_CreateMode> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::substrait::WriteRel_CreateMode>() {
+  return ::substrait::WriteRel_CreateMode_descriptor();
 }
 template <> struct is_proto_enum< ::substrait::WriteRel_OutputMode> : ::std::true_type {};
 template <>
