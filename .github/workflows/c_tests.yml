@@ -1,3 +1,5 @@
+name: C Unit tests
+
 on: [push, pull_request,repository_dispatch]
 
 defaults:
