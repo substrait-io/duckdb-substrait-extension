@@ -29,6 +29,9 @@ release_js: release
 debug_r: debug
 release_r: release
 
+release_c_unit_test:
+	EXT_RELEASE_FLAGS=-DSUBSTRAIT_EXTENSION_TEST_EXE=ON $(MAKE) release
+
 %_python: export BUILD_PYTHON=1
 %_python: export BUILD_FTS=1
 %_python: export BUILD_VISUALIZER=1
