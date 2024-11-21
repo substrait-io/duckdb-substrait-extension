@@ -615,23 +615,28 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		scan = rel->Alias(name);
 	} else if (sget.has_virtual_table()) {
 		// We need to handle a virtual table as a LogicalExpressionGet
-		auto literal_values = sget.virtual_table().values();
-		vector<vector<Value>> expression_rows;
-		for (auto &row : literal_values) {
-			auto values = row.fields();
-			vector<Value> expression_row;
-			for (const auto &value : values) {
-				expression_row.emplace_back(TransformLiteralToValue(value));
+		if (!sget.virtual_table().values().empty()) {
+			auto literal_values = sget.virtual_table().values();
+			vector<vector<Value>> expression_rows;
+			for (auto &row : literal_values) {
+				auto values = row.fields();
+				vector<Value> expression_row;
+				for (const auto &value : values) {
+					expression_row.emplace_back(TransformLiteralToValue(value));
+				}
+				expression_rows.emplace_back(expression_row);
 			}
-			expression_rows.emplace_back(expression_row);
-		}
-		vector<string> column_names;
-		if (acquire_lock) {
-			scan = make_shared_ptr<ValueRelation>(context, expression_rows, column_names);
+			vector<string> column_names;
+			if (acquire_lock) {
+				scan = make_shared_ptr<ValueRelation>(context, expression_rows, column_names);
 
+			} else {
+				scan = make_shared_ptr<ValueRelation>(context_wrapper, expression_rows, column_names);
+			}
 		} else {
-			scan = make_shared_ptr<ValueRelation>(context_wrapper, expression_rows, column_names);
+			scan = GetValuesExpression(sget.virtual_table().expressions());
 		}
+
 	} else {
 		throw NotImplementedException("Unsupported type of read operator for substrait");
 	}
@@ -653,6 +658,26 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		scan = make_shared_ptr<ProjectionRelation>(std::move(scan), std::move(expressions), std::move(aliases));
 	}
 
+	return scan;
+}
+
+shared_ptr<Relation> SubstraitToDuckDB::GetValuesExpression(const google::protobuf::RepeatedPtrField<substrait::Expression_Nested_Struct> &expression_rows) {
+	vector<vector<unique_ptr<ParsedExpression>>> expressions;
+	for (auto &row : expression_rows) {
+		vector<unique_ptr<ParsedExpression>> expression_row;
+		for (const auto &expr : row.fields()) {
+			expression_row.emplace_back(TransformExpr(expr));
+		}
+		expressions.emplace_back(std::move(expression_row));
+	}
+	vector<string> column_names;
+	shared_ptr<Relation> scan;
+	if (acquire_lock) {
+		scan = make_shared_ptr<ValueRelation>(context, std::move(expressions), column_names);
+	} else {
+		auto context_wrapper = make_shared_ptr<RelationContextWrapper>(context);
+		scan = make_shared_ptr<ValueRelation>(context_wrapper, std::move(expressions), column_names);
+	}
 	return scan;
 }
 
