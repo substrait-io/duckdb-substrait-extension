@@ -320,3 +320,41 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
+
+TEST_CASE("Test C CTAS with create_on_conflict via Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	auto res1 = ExecuteViaSubstraitJSON(con, "CREATE TABLE employee_salaries AS "
+		"SELECT employee_id, salary FROM employees"
+	);
+
+	auto result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+
+	REQUIRE_NO_FAIL(ExecuteViaSubstraitJSON(con, "CREATE TABLE IF NOT EXISTS employee_salaries AS "
+		"SELECT employee_id, department_id, salary FROM employees"));
+
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+	auto res3 = ExecuteViaSubstraitJSON(con, "CREATE TABLE employee_salaries AS "
+		"SELECT employee_id, department_id, salary FROM employees");
+	REQUIRE_FAIL(res3);
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+	REQUIRE_NO_FAIL(ExecuteViaSubstraitJSON(con, "CREATE OR REPLACE TABLE employee_salaries AS "
+		"SELECT name, salary FROM employees"));
+
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+}
+

@@ -1437,6 +1437,19 @@ substrait::Rel *DuckDBToSubstrait::TransformIntersect(LogicalOperator &dop) {
 	return rel;
 }
 
+substrait::WriteRel_CreateMode DuckDBToSubstrait::TransformOnCreateConflict(OnCreateConflict on_conflict) {
+	switch(on_conflict) {
+	case OnCreateConflict::ERROR_ON_CONFLICT:
+		return substrait::WriteRel_CreateMode::WriteRel_CreateMode_CREATE_MODE_ERROR_IF_EXISTS;
+	case OnCreateConflict::IGNORE_ON_CONFLICT:
+		return substrait::WriteRel_CreateMode::WriteRel_CreateMode_CREATE_MODE_IGNORE_IF_EXISTS;
+	case OnCreateConflict::REPLACE_ON_CONFLICT:
+		return substrait::WriteRel_CreateMode::WriteRel_CreateMode_CREATE_MODE_REPLACE_IF_EXISTS;
+	default:
+		throw NotImplementedException("Unknown OnCreateConflict type " + to_string((int)on_conflict));
+	}
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformCreateTable(LogicalOperator &dop) {
 	auto rel = new substrait::Rel();
 	auto &create_table = dop.Cast<LogicalCreateTable>();
@@ -1468,7 +1481,7 @@ substrait::Rel *DuckDBToSubstrait::TransformCreateTable(LogicalOperator &dop) {
 	auto named_table = write->mutable_named_table();
 	named_table->add_names(create_info.schema);
 	named_table->add_names(create_info.table);
-
+	write->set_create_mode(TransformOnCreateConflict(create_info.on_conflict));
 	return rel;
 }
 
