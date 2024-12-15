@@ -859,11 +859,46 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto &dproj = dop.Cast<LogicalProjection>();
+
+	auto child_column_count = dop.children[0]->types.size();
+	auto num_passthrough_columns = 0;
+	auto need_output_mapping = true;
+	if (child_column_count <= dproj.expressions.size()) {
+		// check if the projection is just pass through of input columns with no reordering
+		auto exp_col_idx = 0;
+		auto is_passthrough = true;
+		for (auto &dexpr : dproj.expressions) {
+			if (dexpr->type != ExpressionType::BOUND_REF) {
+				is_passthrough = false;
+				break;
+			}
+			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
+			if (dref.index != exp_col_idx) {
+				is_passthrough = false;
+				break;
+			}
+			exp_col_idx++;
+		}
+		if (is_passthrough && child_column_count == exp_col_idx) {
+			// skip the projection
+			return TransformOp(*dop.children[0]);
+		}
+		if (child_column_count == exp_col_idx) {
+			// all input columns are projected, no need for output mapping
+			num_passthrough_columns = child_column_count;
+			need_output_mapping = false;
+		}
+	}
+
+	// num_passthrough_columns = 0; // TODO remove this
+	// add remaining columns as expressions. These are other than the input columns in same order
 	auto sproj = res->mutable_project();
 	sproj->set_allocated_input(TransformOp(*dop.children[0]));
-
-	for (auto &dexpr : dproj.expressions) {
-		TransformExpr(*dexpr, *sproj->add_expressions());
+	for (int i = num_passthrough_columns; i < dproj.expressions.size(); i++) {
+		TransformExpr(*dproj.expressions[i], *sproj->add_expressions());
+	}
+	if (need_output_mapping) {
+		// TODO
 	}
 	return res;
 }
