@@ -72,6 +72,7 @@ private:
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
+        static substrait::WriteRel_CreateMode TransformOnCreateConflict(OnCreateConflict on_conflict);
 	static substrait::Rel *TransformDummyScan();
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;

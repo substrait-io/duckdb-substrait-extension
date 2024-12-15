@@ -725,6 +725,19 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformSetOp(const substrait::Rel &sop
 	return make_shared_ptr<SetOpRelation>(std::move(lhs), std::move(rhs), type);
 }
 
+OnCreateConflict SubstraitToDuckDB::TransformCreateMode(substrait::WriteRel_CreateMode mode) {
+	switch (mode) {
+	case substrait::WriteRel::CREATE_MODE_ERROR_IF_EXISTS:
+		return OnCreateConflict::ERROR_ON_CONFLICT;
+	case substrait::WriteRel::CREATE_MODE_IGNORE_IF_EXISTS:
+		return OnCreateConflict::IGNORE_ON_CONFLICT;
+	case substrait::WriteRel::CREATE_MODE_REPLACE_IF_EXISTS:
+		return OnCreateConflict::REPLACE_ON_CONFLICT;
+	default:
+		throw NotImplementedException("Unsupported on conflict type " + to_string(mode));
+	}
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &sop) {
 	auto &swrite = sop.write();
 	auto &nobj = swrite.named_table();
@@ -738,9 +751,13 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		schema_name = nobj.names(0);
 	}
 	auto input = TransformOp(swrite.input());
+	auto on_conflict = OnCreateConflict::ERROR_ON_CONFLICT;
+	if (swrite.create_mode()) {
+		on_conflict = TransformCreateMode(swrite.create_mode());
+	}
 	switch (swrite.op()) {
         case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
-	        return input->CreateRel(schema_name, table_name);
+	        return input->CreateRel(schema_name, table_name, false, on_conflict);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
         case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
@@ -841,7 +858,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformRootOp(const substrait::RelRoot
 		case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS: {
 			const auto create_table = static_cast<CreateTableRelation *>(child.get());
 			auto proj = make_shared_ptr<ProjectionRelation>(create_table->child, std::move(expressions), aliases);
-			return proj->CreateRel(create_table->schema_name, create_table->table_name);
+			return proj->CreateRel(create_table->schema_name, create_table->table_name, create_table->temporary, create_table->on_conflict);
 		}
 		default:
 			return child;
