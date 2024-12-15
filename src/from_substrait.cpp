@@ -498,6 +498,12 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	vector<unique_ptr<ParsedExpression>> expressions;
 	RootNameIterator iterator(names);
 
+	auto input_rel = TransformOp(sop.project().input());
+	auto num_input_columns = input_rel->Columns().size();
+	for (int i = 1; i <= num_input_columns; i++) {
+		expressions.push_back(make_uniq<PositionalReferenceExpression>(i));
+	}
+
 	for (auto &sexpr : sop.project().expressions()) {
 		expressions.push_back(TransformExpr(sexpr, &iterator));
 	}
@@ -506,8 +512,7 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	for (size_t i = 0; i < expressions.size(); i++) {
 		mock_aliases.push_back("expr_" + to_string(i));
 	}
-	return make_shared_ptr<ProjectionRelation>(TransformOp(sop.project().input()), std::move(expressions),
-	                                           std::move(mock_aliases));
+	return make_shared_ptr<ProjectionRelation>(input_rel, std::move(expressions), std::move(mock_aliases));
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
