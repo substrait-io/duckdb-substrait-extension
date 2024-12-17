@@ -1,26 +1,14 @@
 #include "test_helpers.hpp"
 #include "test_substrait_c_utils.hpp"
-// #include <nlohmann/json.hpp>
 
 using namespace duckdb;
 using namespace std;
-// using json = nlohmann::json;
 
 
 duckdb::unique_ptr<QueryResult> ExecuteViaSubstrait(Connection &con, const string &sql) {
 	auto proto = con.GetSubstrait(sql);
 	return con.FromSubstrait(proto);
 }
-
-// std::string PrettyPrintJson(const std::string &input) {
-// 	try {
-// 		json parsed_json = json::parse(input);
-// 		return parsed_json.dump(4); // Indentation of 4 spaces
-// 	} catch (const json::parse_error& e) {
-// 		std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-// 		return "";
-// 	}
-// }
 
 duckdb::unique_ptr<QueryResult> ExecuteViaSubstraitJSON(Connection &con, const string &sql) {
 	auto json_str = con.GetSubstraitJSON(sql);

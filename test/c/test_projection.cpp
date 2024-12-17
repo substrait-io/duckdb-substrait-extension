@@ -35,18 +35,19 @@ TEST_CASE("Test C Project 1 input column 1 transformation with Substrait API", "
 
 	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"multiply:i32_i32"}}],"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}]}}]}},"names":["i","isquare"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto json_str = con.GetSubstraitJSON("SELECT i, i *i as isquare FROM integers");
-	// REQUIRE(json_str == expected_json_str);
+	REQUIRE(json_str == expected_json_str);
 	auto result = con.FromSubstraitJSON(json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {10, 20, 30}));
 	REQUIRE(CHECK_COLUMN(result, 1, {100, 400, 900}));
 }
 
-TEST_CASE("Test C Project single column with Substrait API", "[substrait-api]") {
+TEST_CASE("Test C Project two columns with Substrait API", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
 	CreateEmployeeTable(con);
 
+	// TODO should this have any projection?
 	auto json_str = con.GetSubstraitJSON("SELECT name, salary FROM employees");
 	// REQUIRE(json_str == expected_json_str);
 	auto result = con.FromSubstraitJSON(json_str);
