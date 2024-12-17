@@ -1,17 +1,6 @@
 name: Bug report
 description: Create a report to help us improve
 body:
-  - type: checkboxes
-    attributes:
-      label: The substrait integration is experimental. Support is currently only available on request.
-      options:
-        - label: I have permission to ask for support.
-          required: true
-  
-  - type: markdown
-    attributes:
-      value: If you have not done so, [contact us prior to opening an issue](https://duckdblabs.com/contact/). If you open an issue without doing so, we will close it without further review.
- 
   - type: textarea
     attributes:
       label: What happens?
@@ -58,8 +47,6 @@ body:
   - type: markdown
     attributes:
       value: |
-        If the above is not given and is not obvious from your GitHub profile page, we might close your issue without further review. Please refer to the [reasoning behind this rule](https://berthub.eu/articles/posts/anonymous-help/) if you have questions.
-
         # Before Submitting
 
   - type: checkboxes
@@ -71,12 +58,12 @@ body:
         * **Other Platforms**: You can find links to binaries [here](https://duckdb.org/docs/installation/) or compile from source.
 
       options:
-        - label: I agree
+        - label: I have
           required: true
 
   - type: checkboxes
     attributes:
       label: Have you tried the steps to reproduce? Do they include all relevant data and configuration? Does the issue you report still appear there?
       options:
-        - label: I agree
+        - label: I have
           required: true
