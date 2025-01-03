@@ -73,6 +73,7 @@ private:
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
+	substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;
 	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;
@@ -134,6 +135,7 @@ private:
 	                                     substrait::Expression *value);
 	static std::string &RemapFunctionName(std::string &function_name);
 	static bool IsExtractFunction(const string &function_name);
+
 
 	//! Creates a Conjunction
 	template <typename T, typename FUNC>

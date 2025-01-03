@@ -56,17 +56,35 @@ TEST_CASE("Test C Project two passthrough columns with Substrait API", "[substra
 	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
 }
 
-TEST_CASE("Test C Project one passthrough column one transformation with Substrait API", "[substrait-api]") {
+TEST_CASE("Test C Project one passthrough column one transformation with many input columns", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
 	CreateEmployeeTable(con);
 
-	// TODO make this work
 	auto json_str = con.GetSubstraitJSON("SELECT name, salary * 1.2 as new_salary FROM employees");
-	// auto expected_json_str = R"()";
-	// REQUIRE(json_str == expected_json_str);
+	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic_decimal.yaml"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"multiply:decimal_decimal"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[0,2]}},"input":{"read":{"baseSchema":{"names":["employee_id","name","department_id","salary"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{"field":1},{"field":3}]},"maintainSingularStruct":true},"namedTable":{"names":["employees"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"decimal":{"scale":3,"precision":12,"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}},{"value":{"literal":{"decimal":{"value":"DAAAAAAAAAAAAAAAAAAAAA==","precision":12,"scale":1}}}}]}}]}},"names":["name","new_salary"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	REQUIRE(json_str == expected_json_str);
 	auto result = con.FromSubstraitJSON(json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
 	REQUIRE(CHECK_COLUMN(result, 1, {144000, 96000, 60000, 114000, 72000}));
+}
+
+TEST_CASE("Test C Project on Join with Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+	CreateDepartmentsTable(con);
+
+	auto result = ExecuteViaSubstraitJSON(con,
+		"SELECT e.employee_id, e.name, d.department_name "
+		"FROM employees e "
+		"JOIN departments d "
+		"ON e.department_id = d.department_id"
+	);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
+	REQUIRE(CHECK_COLUMN(result, 2, {"HR", "Engineering", "HR", "Finance", "Engineering"}));
 }

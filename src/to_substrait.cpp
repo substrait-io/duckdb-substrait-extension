@@ -19,6 +19,8 @@
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/execution/index/art/art_key.hpp"
 
+#include <fmt/format.h>
+
 namespace duckdb {
 const std::unordered_map<std::string, std::string> DuckDBToSubstrait::function_names_remap = {
     {"mod", "modulus"},
@@ -856,6 +858,15 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 	return res;
 }
 
+substrait::RelCommon *DuckDBToSubstrait::CreateOutputMapping(vector<int32_t> vector) {
+	auto rel_common = new substrait::RelCommon();
+	auto output_mapping = rel_common->mutable_emit()->mutable_output_mapping();
+	for (auto &col_idx : vector) {
+		output_mapping->Add(col_idx);
+	}
+	return rel_common;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto &dproj = dop.Cast<LogicalProjection>();
@@ -872,6 +883,7 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 				is_passthrough = false;
 				break;
 			}
+			num_passthrough_columns++;
 			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
 			if (dref.index != exp_col_idx) {
 				is_passthrough = false;
@@ -890,15 +902,26 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 		}
 	}
 
-	// num_passthrough_columns = 0; // TODO remove this
-	// add remaining columns as expressions. These are other than the input columns in same order
 	auto sproj = res->mutable_project();
 	sproj->set_allocated_input(TransformOp(*dop.children[0]));
-	for (int i = num_passthrough_columns; i < dproj.expressions.size(); i++) {
-		TransformExpr(*dproj.expressions[i], *sproj->add_expressions());
+	auto t_index = 0;
+	vector<int32_t> output_mapping;
+	for (auto &dexpr : dproj.expressions) {
+		switch (dexpr->type) {
+		case ExpressionType::BOUND_REF: {
+			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
+			output_mapping.push_back(dref.index);
+			break;
+		}
+		default:
+			TransformExpr(*dexpr.get(), *sproj->add_expressions());
+			output_mapping.push_back(child_column_count + t_index);
+			t_index++;
+		}
 	}
 	if (need_output_mapping) {
-		// TODO
+		auto rel_common = CreateOutputMapping(output_mapping);
+		sproj->set_allocated_common(rel_common);
 	}
 	return res;
 }
@@ -1033,6 +1056,13 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 		}
 	}
 
+	auto child_column_count =  dop.children[0]->types.size() +  dop.children[1]->types.size();
+	vector<int32_t> output_mapping;
+	for (idx_t i = 0; i < projection->expressions_size(); i++) {
+		output_mapping.push_back(child_column_count + i);
+	}
+	auto rel_common = CreateOutputMapping(output_mapping);
+	projection->set_allocated_common(rel_common);
 	projection->set_allocated_input(res);
 	return proj_rel;
 }
