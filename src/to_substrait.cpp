@@ -698,7 +698,7 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 	auto s_expr = new substrait::Expression();
 	auto s_scalar = s_expr->mutable_scalar_function();
 	auto &constant_filter = dfilter.Cast<ConstantFilter>();
-	*s_scalar->mutable_output_type() = DuckToSubstraitType(return_type);
+	*s_scalar->mutable_output_type() = DuckToSubstraitType(LogicalTypeId::BOOLEAN);
 	auto s_arg = s_scalar->add_arguments();
 	CreateFieldRef(s_arg->mutable_value(), col_idx);
 	s_arg = s_scalar->add_arguments();
@@ -740,6 +740,8 @@ substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, Logi
 		return TransformConjuctionAndFilter(col_idx, column_type, dfilter, return_type);
 	case TableFilterType::CONSTANT_COMPARISON:
 		return TransformConstantComparisonFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::OPTIONAL_FILTER:
+		return nullptr;
 	default:
 		throw InternalException("Unsupported table filter type");
 	}
