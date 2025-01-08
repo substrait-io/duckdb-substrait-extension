@@ -73,7 +73,9 @@ private:
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
-	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
+	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
+	//! Methods to transform different LogicalGe:75
+	//t Types (e.g., Table, Parquet)
 	//! To Substrait;
 	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;
 	void TransformParquetScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, BindInfo &bind_info,
