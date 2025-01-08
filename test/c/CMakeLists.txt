@@ -12,7 +12,7 @@ include_directories(../../duckdb/src/include)
 include_directories(../../duckdb/test/include)
 include_directories(../../duckdb/third_party/catch)
 
-set(ALL_SOURCES test_substrait_c_api.cpp)
+set(ALL_SOURCES test_substrait_c_api.cpp test_substrait_c_utils.cpp)
 
 
 add_library_unity(test_substrait OBJECT ${ALL_SOURCES})
