@@ -500,22 +500,59 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformFilterOp(const substrait::Rel &
 	return make_shared_ptr<FilterRelation>(TransformOp(sfilter.input()), TransformExpr(sfilter.condition()));
 }
 
+const google::protobuf::RepeatedField<int32_t>& GetOutputMapping(const substrait::Rel &sop) {
+	const substrait::RelCommon* common = nullptr;
+	switch (sop.rel_type_case()) {
+	case substrait::Rel::RelTypeCase::kJoin:
+		common = &sop.join().common();
+		break;
+	case substrait::Rel::RelTypeCase::kProject:
+		common = &sop.project().common();
+		break;
+	default:
+		throw InternalException("Unsupported relation type " + to_string(sop.rel_type_case()));
+	}
+	if (!common->has_emit()) {
+		static google::protobuf::RepeatedField<int32_t> empty_mapping;
+		return empty_mapping;
+	}
+	return common->emit().output_mapping();
+}
+
 shared_ptr<Relation>
 SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
                                       const google::protobuf::RepeatedPtrField<std::string> *names) {
 	vector<unique_ptr<ParsedExpression>> expressions;
 	RootNameIterator iterator(names);
 
-	for (auto &sexpr : sop.project().expressions()) {
-		expressions.push_back(TransformExpr(sexpr, &iterator));
+	auto input_rel = TransformOp(sop.project().input());
+
+	auto mapping = GetOutputMapping(sop);
+	auto num_input_columns = input_rel->Columns().size();
+	if (mapping.empty()) {
+		for (int i = 1; i <= num_input_columns; i++) {
+			expressions.push_back(make_uniq<PositionalReferenceExpression>(i));
+		}
+
+		for (auto &sexpr : sop.project().expressions()) {
+			expressions.push_back(TransformExpr(sexpr, &iterator));
+		}
+	} else {
+		expressions.resize(mapping.size());
+		for (size_t i = 0; i < mapping.size(); i++) {
+			if (mapping[i] < num_input_columns) {
+				expressions[i] = make_uniq<PositionalReferenceExpression>(mapping[i] + 1);
+			} else {
+				expressions[i] = TransformExpr(sop.project().expressions(mapping[i] - num_input_columns), &iterator);
+			}
+		}
 	}
 
 	vector<string> mock_aliases;
 	for (size_t i = 0; i < expressions.size(); i++) {
 		mock_aliases.push_back("expr_" + to_string(i));
 	}
-	return make_shared_ptr<ProjectionRelation>(TransformOp(sop.project().input()), std::move(expressions),
-	                                           std::move(mock_aliases));
+	return make_shared_ptr<ProjectionRelation>(input_rel, std::move(expressions), std::move(mock_aliases));
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
