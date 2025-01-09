@@ -925,6 +925,10 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 		}
 	}
 	if (need_output_mapping) {
+		if (sproj->expressions_size() == 0) {
+			// atleast one expression should be there, add zeroth column as dummy expression
+			CreateFieldRef(sproj->add_expressions(), 0);
+		}
 		auto rel_common = CreateOutputMapping(output_mapping);
 		sproj->set_allocated_common(rel_common);
 	}

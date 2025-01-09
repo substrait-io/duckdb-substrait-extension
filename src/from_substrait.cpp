@@ -903,6 +903,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformRootOp(const substrait::RelRoot
 	if (first_projection_or_table) {
 		vector<ColumnDefinition> *column_definitions = &first_projection_or_table->Cast<ProjectionRelation>().columns;
 		int32_t i = 0;
+		if (column_definitions->size() != column_names.size()) {
+			throw InvalidInputException("Number of column names and column definitions do not match");
+		}
 		for (auto &column : *column_definitions) {
 			aliases.push_back(column_names[i++]);
 			auto column_type = column.GetType();
