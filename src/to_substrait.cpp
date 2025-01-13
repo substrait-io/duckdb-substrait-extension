@@ -876,7 +876,6 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto &dproj = dop.Cast<LogicalProjection>();
 
 	auto child_column_count = dop.children[0]->types.size();
-	auto num_passthrough_columns = 0;
 	auto need_output_mapping = true;
 	if (child_column_count <= dproj.expressions.size()) {
 		// check if the projection is just pass through of input columns with no reordering
@@ -887,7 +886,6 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 				is_passthrough = false;
 				break;
 			}
-			num_passthrough_columns++;
 			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
 			if (dref.index != exp_col_idx) {
 				is_passthrough = false;
@@ -901,7 +899,6 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 		}
 		if (child_column_count == exp_col_idx) {
 			// all input columns are projected, no need for output mapping
-			num_passthrough_columns = child_column_count;
 			need_output_mapping = false;
 		}
 	}
@@ -1054,18 +1051,20 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 			djoin.right_projection_map.push_back(i);
 		}
 	}
+	// TODO this projection seems redundant but from_substrait does not work without it
 	auto proj_rel = new substrait::Rel();
 	auto projection = proj_rel->mutable_project();
+	auto child_column_count =  dop.children[0]->types.size();
 	for (auto left_idx : djoin.left_projection_map) {
 		CreateFieldRef(projection->add_expressions(), left_idx);
 	}
 	if (djoin.join_type != JoinType::SEMI) {
+		child_column_count += dop.children[1]->types.size();
 		for (auto right_idx : djoin.right_projection_map) {
 			CreateFieldRef(projection->add_expressions(), right_idx + left_col_count);
 		}
 	}
 
-	auto child_column_count =  dop.children[0]->types.size() +  dop.children[1]->types.size();
 	vector<int32_t> output_mapping;
 	for (idx_t i = 0; i < projection->expressions_size(); i++) {
 		output_mapping.push_back(child_column_count + i);
