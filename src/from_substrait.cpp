@@ -1,5 +1,7 @@
 #include "from_substrait.hpp"
 
+#include <cinttypes>
+
 #include "duckdb/common/types/value.hpp"
 #include "duckdb/parser/expression/list.hpp"
 #include "duckdb/main/connection.hpp"
@@ -19,23 +21,22 @@
 #include "duckdb/main/table_description.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_catalog_entry.hpp"
-#include "duckdb/common/helper.hpp"
 
 #include "duckdb/main/relation.hpp"
-#include "duckdb/main/relation/create_table_relation.hpp"
-#include <duckdb/main/relation/delete_relation.hpp>
-#include "duckdb/main/relation/table_relation.hpp"
-#include "duckdb/main/relation/table_function_relation.hpp"
-#include "duckdb/main/relation/value_relation.hpp"
-#include "duckdb/main/relation/view_relation.hpp"
 #include "duckdb/main/relation/aggregate_relation.hpp"
+#include "duckdb/main/relation/create_table_relation.hpp"
 #include "duckdb/main/relation/cross_product_relation.hpp"
+#include <duckdb/main/relation/delete_relation.hpp>
 #include "duckdb/main/relation/filter_relation.hpp"
 #include "duckdb/main/relation/join_relation.hpp"
 #include "duckdb/main/relation/limit_relation.hpp"
 #include "duckdb/main/relation/order_relation.hpp"
 #include "duckdb/main/relation/projection_relation.hpp"
 #include "duckdb/main/relation/setop_relation.hpp"
+#include "duckdb/main/relation/table_function_relation.hpp"
+#include "duckdb/main/relation/table_relation.hpp"
+#include "duckdb/main/relation/value_relation.hpp"
+#include "duckdb/main/relation/view_relation.hpp"
 
 namespace duckdb {
 const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_names_remap = {
@@ -636,7 +637,33 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		} else {
 			scan = GetValuesExpression(sget.virtual_table().expressions());
 		}
-
+	} else if (sget.has_iceberg_table()) {
+		if (sget.iceberg_table().direct().metadata_uri().empty()) {
+			throw InvalidInputException("Metadata file missing in iceberg table read in substrait");
+		}
+		string name = "iceberg_" + StringUtil::GenerateRandomName();
+		named_parameter_map_t named_parameters({{"allow_moved_paths", Value::BOOLEAN(true)}});
+		vector<Value> parameters {sget.iceberg_table().direct().metadata_uri()};
+		if (sget.iceberg_table().direct().has_snapshot_id()) {
+			auto str = sget.iceberg_table().direct().snapshot_id();
+			int64_t snapshot_id = strtoimax(str.c_str(), nullptr, 10);
+			if (snapshot_id == 0) {
+				throw InvalidInputException("Invalid snapshot id: " + sget.iceberg_table().direct().snapshot_id());
+			}
+			parameters.push_back(Value::UBIGINT(snapshot_id));
+		} else if (sget.iceberg_table().direct().has_snapshot_timestamp()) {
+			parameters.push_back( Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
+		}
+		shared_ptr<TableFunctionRelation> scan_rel;
+		if (acquire_lock) {
+			scan_rel = make_shared_ptr<TableFunctionRelation>(context, "iceberg_scan", parameters,
+									  std::move(named_parameters));
+		} else {
+			scan_rel = make_shared_ptr<TableFunctionRelation>(context_wrapper, "iceberg_scan", parameters,
+									  std::move(named_parameters));
+		}
+		auto rel = static_cast<Relation *>(scan_rel.get());
+		scan = rel->Alias(name);
 	} else {
 		throw NotImplementedException("Unsupported type of read operator for substrait");
 	}

@@ -320,3 +320,281 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
+
+TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg][interesting]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+        const string plan_json = R"plan(
+		{
+		  "extensionUris" : [ {
+		    "extensionUriAnchor" : 1,
+		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
+		  } ],
+		  "extensions" : [ {
+		    "extensionFunction" : {
+		      "extensionUriReference" : 1,
+		      "functionAnchor" : 1,
+		      "name" : "count"
+		    }
+		  } ],
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "aggregate" : {
+		              "input" : {
+		                "read" : {
+		                  "baseSchema" : {
+		                    "names" : [ "fruit", "count" ],
+		                    "struct" : {
+		                      "types" : [ {
+		                        "string" : {
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      }, {
+		                        "decimal" : {
+		                          "scale" : 0,
+		                          "precision" : 10,
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      } ],
+		                      "nullability" : "NULLABILITY_REQUIRED"
+		                    }
+		                  },
+		                  "icebergTable" : {
+		                    "direct" : {
+		                      "metadataUri" : "data/iceberg",
+		                    }
+		                  }
+		                }
+		              },
+		              "groupings" : [ { } ],
+		              "measures" : [ {
+		                "measure" : {
+		                  "functionReference" : 1,
+		                  "outputType" : {
+		                    "i64" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  }
+		                }
+		              } ]
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "count_star()" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {3}));
+}
+
+TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg][interesting]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+        const string plan_json = R"plan(
+		{
+		  "extensionUris" : [ {
+		    "extensionUriAnchor" : 1,
+		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
+		  } ],
+		  "extensions" : [ {
+		    "extensionFunction" : {
+		      "extensionUriReference" : 1,
+		      "functionAnchor" : 1,
+		      "name" : "count"
+		    }
+		  } ],
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "aggregate" : {
+		              "input" : {
+		                "read" : {
+		                  "baseSchema" : {
+		                    "names" : [ "fruit", "count" ],
+		                    "struct" : {
+		                      "types" : [ {
+		                        "string" : {
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      }, {
+		                        "decimal" : {
+		                          "scale" : 0,
+		                          "precision" : 10,
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      } ],
+		                      "nullability" : "NULLABILITY_REQUIRED"
+		                    }
+		                  },
+		                  "icebergTable" : {
+		                    "direct" : {
+		                      "metadataUri" : "data/iceberg",
+		                      "snapshotId" : "8939038009417308793",
+		                    }
+		                  }
+		                }
+		              },
+		              "groupings" : [ { } ],
+		              "measures" : [ {
+		                "measure" : {
+		                  "functionReference" : 1,
+		                  "outputType" : {
+		                    "i64" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  }
+		                }
+		              } ]
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "count_star()" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {2}));
+}
+
+TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg][interesting]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+        const string plan_json = R"plan(
+		{
+		  "extensionUris" : [ {
+		    "extensionUriAnchor" : 1,
+		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
+		  } ],
+		  "extensions" : [ {
+		    "extensionFunction" : {
+		      "extensionUriReference" : 1,
+		      "functionAnchor" : 1,
+		      "name" : "count"
+		    }
+		  } ],
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "aggregate" : {
+		              "input" : {
+		                "read" : {
+		                  "baseSchema" : {
+		                    "names" : [ "fruit", "count" ],
+		                    "struct" : {
+		                      "types" : [ {
+		                        "string" : {
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      }, {
+		                        "decimal" : {
+		                          "scale" : 0,
+		                          "precision" : 10,
+		                          "nullability" : "NULLABILITY_NULLABLE"
+		                        }
+		                      } ],
+		                      "nullability" : "NULLABILITY_REQUIRED"
+		                    }
+		                  },
+		                  "icebergTable" : {
+		                    "direct" : {
+		                      "metadataUri" : "data/iceberg",
+		                      "snapshotTimestamp" : 1737019454940000,
+		                    }
+		                  }
+		                }
+		              },
+		              "groupings" : [ { } ],
+		              "measures" : [ {
+		                "measure" : {
+		                  "functionReference" : 1,
+		                  "outputType" : {
+		                    "i64" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  }
+		                }
+		              } ]
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "count_star()" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {2}));
+}

@@ -1,0 +1,81 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "50ad32d7-efff-4cee-964c-2c9618ac50dd",
+  "location" : "/tmp/data/iceberg/example",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1737019454470,
+  "last-column-id" : 2,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "fruit",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 2,
+      "name" : "count",
+      "required" : false,
+      "type" : "decimal(10, 0)"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ ]
+  } ],
+  "last-partition-id" : 999,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "david",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : 8939038009417308793,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 8939038009417308793,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 8939038009417308793,
+    "timestamp-ms" : 1737019454470,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1737019416507",
+      "added-data-files" : "2",
+      "added-records" : "2",
+      "added-files-size" : "1388",
+      "changed-partition-count" : "1",
+      "total-records" : "2",
+      "total-files-size" : "1388",
+      "total-data-files" : "2",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0",
+      "engine-version" : "3.5.4",
+      "app-id" : "local-1737019416507",
+      "engine-name" : "spark",
+      "iceberg-version" : "Apache Iceberg 1.7.1 (commit 4a432839233f2343a9eae8255532f911f06358ef)"
+    },
+    "manifest-list" : "/tmp/data/iceberg/example/metadata/snap-8939038009417308793-1-8ac6b23e-79bf-4101-9a93-a4eb4bef0747.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "partition-statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1737019454470,
+    "snapshot-id" : 8939038009417308793
+  } ],
+  "metadata-log" : [ {
+    "timestamp-ms" : 1737019448716,
+    "metadata-file" : "/tmp/data/iceberg/example/metadata/v1.metadata.json"
+  } ]
+}
