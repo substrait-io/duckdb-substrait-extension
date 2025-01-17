@@ -346,57 +346,45 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-		        "project" : {
-		          "input" : {
-		            "aggregate" : {
-		              "input" : {
-		                "read" : {
-		                  "baseSchema" : {
-		                    "names" : [ "fruit", "count" ],
-		                    "struct" : {
-		                      "types" : [ {
-		                        "string" : {
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      }, {
-		                        "decimal" : {
-		                          "scale" : 0,
-		                          "precision" : 10,
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      } ],
-		                      "nullability" : "NULLABILITY_REQUIRED"
-		                    }
-		                  },
-		                  "icebergTable" : {
-		                    "direct" : {
-		                      "metadataUri" : "data/iceberg",
-		                    }
-		                  }
-		                }
-		              },
-		              "groupings" : [ { } ],
-		              "measures" : [ {
-		                "measure" : {
-		                  "functionReference" : 1,
-		                  "outputType" : {
-		                    "i64" : {
-		                      "nullability" : "NULLABILITY_NULLABLE"
-		                    }
-		                  }
-		                }
-		              } ]
-		            }
-		          },
-		          "expressions" : [ {
-		            "selection" : {
-		              "directReference" : {
-		                "structField" : { }
-		              },
-		              "rootReference" : { }
-		            }
-		          } ]
-		        }
+	            "aggregate" : {
+	              "input" : {
+	                "read" : {
+	                  "baseSchema" : {
+	                    "names" : [ "fruit", "count" ],
+	                    "struct" : {
+	                      "types" : [ {
+	                        "string" : {
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      }, {
+	                        "decimal" : {
+	                          "scale" : 0,
+	                          "precision" : 10,
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      } ],
+	                      "nullability" : "NULLABILITY_REQUIRED"
+	                    }
+	                  },
+	                  "icebergTable" : {
+	                    "direct" : {
+	                      "metadataUri" : "data/iceberg",
+	                    }
+	                  }
+	                }
+	              },
+	              "groupings" : [ { } ],
+	              "measures" : [ {
+	                "measure" : {
+	                  "functionReference" : 1,
+	                  "outputType" : {
+	                    "i64" : {
+	                      "nullability" : "NULLABILITY_NULLABLE"
+	                    }
+	                  }
+	                }
+	              } ]
+	            }
 		      },
 		      "names" : [ "count_star()" ]
 		    }
@@ -438,58 +426,46 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-		        "project" : {
-		          "input" : {
-		            "aggregate" : {
-		              "input" : {
-		                "read" : {
-		                  "baseSchema" : {
-		                    "names" : [ "fruit", "count" ],
-		                    "struct" : {
-		                      "types" : [ {
-		                        "string" : {
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      }, {
-		                        "decimal" : {
-		                          "scale" : 0,
-		                          "precision" : 10,
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      } ],
-		                      "nullability" : "NULLABILITY_REQUIRED"
-		                    }
-		                  },
-		                  "icebergTable" : {
-		                    "direct" : {
-		                      "metadataUri" : "data/iceberg",
-		                      "snapshotId" : "8939038009417308793",
-		                    }
-		                  }
-		                }
-		              },
-		              "groupings" : [ { } ],
-		              "measures" : [ {
-		                "measure" : {
-		                  "functionReference" : 1,
-		                  "outputType" : {
-		                    "i64" : {
-		                      "nullability" : "NULLABILITY_NULLABLE"
-		                    }
-		                  }
-		                }
-		              } ]
-		            }
-		          },
-		          "expressions" : [ {
-		            "selection" : {
-		              "directReference" : {
-		                "structField" : { }
-		              },
-		              "rootReference" : { }
-		            }
-		          } ]
-		        }
+	            "aggregate" : {
+	              "input" : {
+	                "read" : {
+	                  "baseSchema" : {
+	                    "names" : [ "fruit", "count" ],
+	                    "struct" : {
+	                      "types" : [ {
+	                        "string" : {
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      }, {
+	                        "decimal" : {
+	                          "scale" : 0,
+	                          "precision" : 10,
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      } ],
+	                      "nullability" : "NULLABILITY_REQUIRED"
+	                    }
+	                  },
+	                  "icebergTable" : {
+	                    "direct" : {
+	                      "metadataUri" : "data/iceberg",
+	                      "snapshotId" : "8939038009417308793",
+	                    }
+	                  }
+	                }
+	              },
+	              "groupings" : [ { } ],
+	              "measures" : [ {
+	                "measure" : {
+	                  "functionReference" : 1,
+	                  "outputType" : {
+	                    "i64" : {
+	                      "nullability" : "NULLABILITY_NULLABLE"
+	                    }
+	                  }
+	                }
+	              } ]
+	            }
 		      },
 		      "names" : [ "count_star()" ]
 		    }
@@ -531,58 +507,46 @@ TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[su
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-		        "project" : {
-		          "input" : {
-		            "aggregate" : {
-		              "input" : {
-		                "read" : {
-		                  "baseSchema" : {
-		                    "names" : [ "fruit", "count" ],
-		                    "struct" : {
-		                      "types" : [ {
-		                        "string" : {
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      }, {
-		                        "decimal" : {
-		                          "scale" : 0,
-		                          "precision" : 10,
-		                          "nullability" : "NULLABILITY_NULLABLE"
-		                        }
-		                      } ],
-		                      "nullability" : "NULLABILITY_REQUIRED"
-		                    }
-		                  },
-		                  "icebergTable" : {
-		                    "direct" : {
-		                      "metadataUri" : "data/iceberg",
-		                      "snapshotTimestamp" : 1737019454940000,
-		                    }
-		                  }
-		                }
-		              },
-		              "groupings" : [ { } ],
-		              "measures" : [ {
-		                "measure" : {
-		                  "functionReference" : 1,
-		                  "outputType" : {
-		                    "i64" : {
-		                      "nullability" : "NULLABILITY_NULLABLE"
-		                    }
-		                  }
-		                }
-		              } ]
-		            }
-		          },
-		          "expressions" : [ {
-		            "selection" : {
-		              "directReference" : {
-		                "structField" : { }
-		              },
-		              "rootReference" : { }
-		            }
-		          } ]
-		        }
+	            "aggregate" : {
+	              "input" : {
+	                "read" : {
+	                  "baseSchema" : {
+	                    "names" : [ "fruit", "count" ],
+	                    "struct" : {
+	                      "types" : [ {
+	                        "string" : {
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      }, {
+	                        "decimal" : {
+	                          "scale" : 0,
+	                          "precision" : 10,
+	                          "nullability" : "NULLABILITY_NULLABLE"
+	                        }
+	                      } ],
+	                      "nullability" : "NULLABILITY_REQUIRED"
+	                    }
+	                  },
+	                  "icebergTable" : {
+	                    "direct" : {
+	                      "metadataUri" : "data/iceberg",
+	                      "snapshotTimestamp" : 1737019454940000,
+	                    }
+	                  }
+	                }
+	              },
+	              "groupings" : [ { } ],
+	              "measures" : [ {
+	                "measure" : {
+	                  "functionReference" : 1,
+	                  "outputType" : {
+	                    "i64" : {
+	                      "nullability" : "NULLABILITY_NULLABLE"
+	                    }
+	                  }
+	                }
+	              } ]
+	            }
 		      },
 		      "names" : [ "count_star()" ]
 		    }

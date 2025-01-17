@@ -21,22 +21,23 @@
 #include "duckdb/main/table_description.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_catalog_entry.hpp"
+#include "duckdb/common/helper.hpp"
 
 #include "duckdb/main/relation.hpp"
-#include "duckdb/main/relation/aggregate_relation.hpp"
 #include "duckdb/main/relation/create_table_relation.hpp"
-#include "duckdb/main/relation/cross_product_relation.hpp"
 #include <duckdb/main/relation/delete_relation.hpp>
+#include "duckdb/main/relation/table_relation.hpp"
+#include "duckdb/main/relation/table_function_relation.hpp"
+#include "duckdb/main/relation/value_relation.hpp"
+#include "duckdb/main/relation/view_relation.hpp"
+#include "duckdb/main/relation/aggregate_relation.hpp"
+#include "duckdb/main/relation/cross_product_relation.hpp"
 #include "duckdb/main/relation/filter_relation.hpp"
 #include "duckdb/main/relation/join_relation.hpp"
 #include "duckdb/main/relation/limit_relation.hpp"
 #include "duckdb/main/relation/order_relation.hpp"
 #include "duckdb/main/relation/projection_relation.hpp"
 #include "duckdb/main/relation/setop_relation.hpp"
-#include "duckdb/main/relation/table_function_relation.hpp"
-#include "duckdb/main/relation/table_relation.hpp"
-#include "duckdb/main/relation/value_relation.hpp"
-#include "duckdb/main/relation/view_relation.hpp"
 
 namespace duckdb {
 const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_names_remap = {
