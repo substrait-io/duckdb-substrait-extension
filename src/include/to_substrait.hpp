@@ -72,7 +72,7 @@ private:
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
-	static vector<LogicalType>::__alloc_traits::size_type GetColumnCount(LogicalOperator &dop);
+	static vector<LogicalType>::size_type GetColumnCount(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
 	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
 	//! Methods to transform different LogicalGe:75
