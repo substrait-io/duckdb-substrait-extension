@@ -330,24 +330,13 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
-        const string plan_json = R"plan(
+	const string plan_json = R"plan(
 		{
-		  "extensionUris" : [ {
-		    "extensionUriAnchor" : 1,
-		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
-		  } ],
-		  "extensions" : [ {
-		    "extensionFunction" : {
-		      "extensionUriReference" : 1,
-		      "functionAnchor" : 1,
-		      "name" : "count"
-		    }
-		  } ],
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-	            "aggregate" : {
-	              "input" : {
+		        "project" : {
+		          "input" : {
 	                "read" : {
 	                  "baseSchema" : {
 	                    "names" : [ "fruit", "count" ],
@@ -372,21 +361,27 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 	                    }
 	                  }
 	                }
-	              },
-	              "groupings" : [ { } ],
-	              "measures" : [ {
-	                "measure" : {
-	                  "functionReference" : 1,
-	                  "outputType" : {
-	                    "i64" : {
-	                      "nullability" : "NULLABILITY_NULLABLE"
-	                    }
-	                  }
-	                }
-	              } ]
-	            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+                  }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+                          "field": 1
+                        }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
 		      },
-		      "names" : [ "count_star()" ]
+		      "names" : [ "fruit", "count" ]
 		    }
 		  } ],
 		  "version" : {
@@ -398,7 +393,8 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 
 	auto result = con.FromSubstraitJSON(plan_json);
 
-	REQUIRE(CHECK_COLUMN(result, 0, {3}));
+	REQUIRE(CHECK_COLUMN(result, 0, {"cranberry", "apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {3, 1, 2}));
 }
 
 TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg][interesting]") {
@@ -410,24 +406,13 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
-        const string plan_json = R"plan(
+	const string plan_json = R"plan(
 		{
-		  "extensionUris" : [ {
-		    "extensionUriAnchor" : 1,
-		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
-		  } ],
-		  "extensions" : [ {
-		    "extensionFunction" : {
-		      "extensionUriReference" : 1,
-		      "functionAnchor" : 1,
-		      "name" : "count"
-		    }
-		  } ],
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-	            "aggregate" : {
-	              "input" : {
+		        "project" : {
+		          "input" : {
 	                "read" : {
 	                  "baseSchema" : {
 	                    "names" : [ "fruit", "count" ],
@@ -449,25 +434,31 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 	                  "icebergTable" : {
 	                    "direct" : {
 	                      "metadataUri" : "data/iceberg",
-	                      "snapshotId" : "8939038009417308793",
+		                  "snapshotId" : "8939038009417308793",
 	                    }
 	                  }
 	                }
-	              },
-	              "groupings" : [ { } ],
-	              "measures" : [ {
-	                "measure" : {
-	                  "functionReference" : 1,
-	                  "outputType" : {
-	                    "i64" : {
-	                      "nullability" : "NULLABILITY_NULLABLE"
-	                    }
-	                  }
-	                }
-	              } ]
-	            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+                  }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+                          "field": 1
+                        }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
 		      },
-		      "names" : [ "count_star()" ]
+		      "names" : [ "fruit", "count" ]
 		    }
 		  } ],
 		  "version" : {
@@ -479,7 +470,8 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 
 	auto result = con.FromSubstraitJSON(plan_json);
 
-	REQUIRE(CHECK_COLUMN(result, 0, {2}));
+	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }
 
 TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg][interesting]") {
@@ -491,24 +483,13 @@ TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[su
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
-        const string plan_json = R"plan(
+	const string plan_json = R"plan(
 		{
-		  "extensionUris" : [ {
-		    "extensionUriAnchor" : 1,
-		    "uri" : "https://github.com/substrait-io/substrait/blob/main/extensions/functions_aggregate_generic.yaml"
-		  } ],
-		  "extensions" : [ {
-		    "extensionFunction" : {
-		      "extensionUriReference" : 1,
-		      "functionAnchor" : 1,
-		      "name" : "count"
-		    }
-		  } ],
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
-	            "aggregate" : {
-	              "input" : {
+		        "project" : {
+		          "input" : {
 	                "read" : {
 	                  "baseSchema" : {
 	                    "names" : [ "fruit", "count" ],
@@ -534,21 +515,27 @@ TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[su
 	                    }
 	                  }
 	                }
-	              },
-	              "groupings" : [ { } ],
-	              "measures" : [ {
-	                "measure" : {
-	                  "functionReference" : 1,
-	                  "outputType" : {
-	                    "i64" : {
-	                      "nullability" : "NULLABILITY_NULLABLE"
-	                    }
-	                  }
-	                }
-	              } ]
-	            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+                  }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+                          "field": 1
+                        }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
 		      },
-		      "names" : [ "count_star()" ]
+		      "names" : [ "fruit", "count" ]
 		    }
 		  } ],
 		  "version" : {
@@ -560,5 +547,6 @@ TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[su
 
 	auto result = con.FromSubstraitJSON(plan_json);
 
-	REQUIRE(CHECK_COLUMN(result, 0, {2}));
+	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }
