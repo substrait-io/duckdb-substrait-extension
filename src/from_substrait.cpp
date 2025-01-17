@@ -820,14 +820,24 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	auto input = TransformOp(swrite.input());
 	switch (swrite.op()) {
-        case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
-	        return input->CreateRel(schema_name, table_name);
+    case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
+	    return input->CreateRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
-		auto filter = std::move(input.get()->Cast<FilterRelation>());
-		auto context = filter.child->Cast<TableRelation>().context;
-		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+		switch (input->type) {
+		case RelationType::PROJECTION_RELATION: {
+			auto project = std::move(input.get()->Cast<ProjectionRelation>());
+			auto filter = std::move(project.child->Cast<FilterRelation>());
+        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+		}
+		case RelationType::FILTER_RELATION: {
+			auto filter = std::move(input.get()->Cast<FilterRelation>());
+			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+		}
+		default:
+			throw NotImplementedException("Unsupported relation type for delete operation");
+		}
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation " + to_string(swrite.op()));

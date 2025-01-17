@@ -853,10 +853,17 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 
 	if (!dfilter.projection_map.empty()) {
 		auto projection = new substrait::Rel();
-		projection->mutable_project()->set_allocated_input(res);
+		auto sproj = projection->mutable_project();
+		sproj->set_allocated_input(res);
+		auto child_column_count = GetColumnCount(*dop.children[0]);
+		auto t_index = 0;
+		vector<int32_t> output_mapping;
 		for (auto col_idx : dfilter.projection_map) {
-			CreateFieldRef(projection->mutable_project()->add_expressions(), col_idx);
+			CreateFieldRef(sproj->add_expressions(), col_idx);
+			output_mapping.push_back(child_column_count + t_index);
 		}
+		auto rel_common = CreateOutputMapping(output_mapping);
+		sproj->set_allocated_common(rel_common);
 		res = projection;
 	}
 	return res;
@@ -875,7 +882,7 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto &dproj = dop.Cast<LogicalProjection>();
 
-	auto child_column_count = dop.children[0]->types.size();
+	auto child_column_count = GetColumnCount(*dop.children[0]);
 	auto need_output_mapping = true;
 	if (child_column_count <= dproj.expressions.size()) {
 		// check if the projection is just pass through of input columns with no reordering
@@ -1054,12 +1061,12 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	// TODO this projection seems redundant but from_substrait does not work without it
 	auto proj_rel = new substrait::Rel();
 	auto projection = proj_rel->mutable_project();
-	auto child_column_count =  dop.children[0]->types.size();
+	auto child_column_count = GetColumnCount(*dop.children[0]);
 	for (auto left_idx : djoin.left_projection_map) {
 		CreateFieldRef(projection->add_expressions(), left_idx);
 	}
 	if (djoin.join_type != JoinType::SEMI) {
-		child_column_count += dop.children[1]->types.size();
+		child_column_count += GetColumnCount(*dop.children[1]);
 		for (auto right_idx : djoin.right_projection_map) {
 			CreateFieldRef(projection->add_expressions(), right_idx + left_col_count);
 		}
@@ -1401,6 +1408,25 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 			projection->set_allocated_select(select);
 			sget->set_allocated_projection(projection);
 		}
+	} else if (!dget.GetColumnIds().empty()) {
+		auto &column_ids = dget.GetColumnIds();
+		vector<int> column_indices;
+		for (auto &column_id : column_ids) {
+			if (!column_id.IsRowIdColumn()) {
+				column_indices.push_back(column_id.GetPrimaryIndex());
+			}
+		}
+		if (!column_indices.empty() && column_indices.size() < dget.returned_types.size()) {
+			auto projection = new substrait::Expression_MaskExpression();
+			projection->set_maintain_singular_struct(true);
+			auto select = new substrait::Expression_MaskExpression_StructSelect();
+			for (auto col_idx : column_indices) {
+				auto struct_item = select->add_struct_items();
+				struct_item->set_field(static_cast<int32_t>(col_idx));
+			}
+			projection->set_allocated_select(select);
+			sget->set_allocated_projection(projection);
+		}
 	}
 
 	// Add Table Schema
@@ -1616,6 +1642,10 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	substrait::Rel *input = TransformOp(*logical_delete.children[0]);
 	writeRel->set_allocated_input(input);
 	return rel;
+}
+
+vector<LogicalType>::__alloc_traits::size_type DuckDBToSubstrait::GetColumnCount(LogicalOperator &dop) {
+	return dop.types.size();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
