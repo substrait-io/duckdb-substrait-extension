@@ -51,7 +51,7 @@ struct TableStruct_substrait_2falgebra_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[124]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[126]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -353,6 +353,12 @@ extern ReadRelDefaultTypeInternal _ReadRel_default_instance_;
 class ReadRel_ExtensionTable;
 struct ReadRel_ExtensionTableDefaultTypeInternal;
 extern ReadRel_ExtensionTableDefaultTypeInternal _ReadRel_ExtensionTable_default_instance_;
+class ReadRel_IcebergTable;
+struct ReadRel_IcebergTableDefaultTypeInternal;
+extern ReadRel_IcebergTableDefaultTypeInternal _ReadRel_IcebergTable_default_instance_;
+class ReadRel_IcebergTable_MetadataFileRead;
+struct ReadRel_IcebergTable_MetadataFileReadDefaultTypeInternal;
+extern ReadRel_IcebergTable_MetadataFileReadDefaultTypeInternal _ReadRel_IcebergTable_MetadataFileRead_default_instance_;
 class ReadRel_LocalFiles;
 struct ReadRel_LocalFilesDefaultTypeInternal;
 extern ReadRel_LocalFilesDefaultTypeInternal _ReadRel_LocalFiles_default_instance_;
@@ -531,6 +537,8 @@ template<> ::substrait::NestedLoopJoinRel* Arena::CreateMaybeMessage<::substrait
 template<> ::substrait::ProjectRel* Arena::CreateMaybeMessage<::substrait::ProjectRel>(Arena*);
 template<> ::substrait::ReadRel* Arena::CreateMaybeMessage<::substrait::ReadRel>(Arena*);
 template<> ::substrait::ReadRel_ExtensionTable* Arena::CreateMaybeMessage<::substrait::ReadRel_ExtensionTable>(Arena*);
+template<> ::substrait::ReadRel_IcebergTable* Arena::CreateMaybeMessage<::substrait::ReadRel_IcebergTable>(Arena*);
+template<> ::substrait::ReadRel_IcebergTable_MetadataFileRead* Arena::CreateMaybeMessage<::substrait::ReadRel_IcebergTable_MetadataFileRead>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles>(Arena*);
 template<> ::substrait::ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions* Arena::CreateMaybeMessage<::substrait::ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions>(Arena*);
@@ -2805,6 +2813,385 @@ class ReadRel_NamedTable final :
 };
 // -------------------------------------------------------------------
 
+class ReadRel_IcebergTable_MetadataFileRead final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ReadRel.IcebergTable.MetadataFileRead) */ {
+ public:
+  inline ReadRel_IcebergTable_MetadataFileRead() : ReadRel_IcebergTable_MetadataFileRead(nullptr) {}
+  ~ReadRel_IcebergTable_MetadataFileRead() override;
+  explicit constexpr ReadRel_IcebergTable_MetadataFileRead(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ReadRel_IcebergTable_MetadataFileRead(const ReadRel_IcebergTable_MetadataFileRead& from);
+  ReadRel_IcebergTable_MetadataFileRead(ReadRel_IcebergTable_MetadataFileRead&& from) noexcept
+    : ReadRel_IcebergTable_MetadataFileRead() {
+    *this = ::std::move(from);
+  }
+
+  inline ReadRel_IcebergTable_MetadataFileRead& operator=(const ReadRel_IcebergTable_MetadataFileRead& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ReadRel_IcebergTable_MetadataFileRead& operator=(ReadRel_IcebergTable_MetadataFileRead&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ReadRel_IcebergTable_MetadataFileRead& default_instance() {
+    return *internal_default_instance();
+  }
+  enum SnapshotCase {
+    kSnapshotId = 2,
+    kSnapshotTimestamp = 3,
+    SNAPSHOT_NOT_SET = 0,
+  };
+
+  static inline const ReadRel_IcebergTable_MetadataFileRead* internal_default_instance() {
+    return reinterpret_cast<const ReadRel_IcebergTable_MetadataFileRead*>(
+               &_ReadRel_IcebergTable_MetadataFileRead_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    9;
+
+  friend void swap(ReadRel_IcebergTable_MetadataFileRead& a, ReadRel_IcebergTable_MetadataFileRead& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ReadRel_IcebergTable_MetadataFileRead* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ReadRel_IcebergTable_MetadataFileRead* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ReadRel_IcebergTable_MetadataFileRead* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ReadRel_IcebergTable_MetadataFileRead>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ReadRel_IcebergTable_MetadataFileRead& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ReadRel_IcebergTable_MetadataFileRead& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ReadRel_IcebergTable_MetadataFileRead* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ReadRel.IcebergTable.MetadataFileRead";
+  }
+  protected:
+  explicit ReadRel_IcebergTable_MetadataFileRead(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMetadataUriFieldNumber = 1,
+    kSnapshotIdFieldNumber = 2,
+    kSnapshotTimestampFieldNumber = 3,
+  };
+  // string metadata_uri = 1;
+  void clear_metadata_uri();
+  const std::string& metadata_uri() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_metadata_uri(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_metadata_uri();
+  PROTOBUF_NODISCARD std::string* release_metadata_uri();
+  void set_allocated_metadata_uri(std::string* metadata_uri);
+  private:
+  const std::string& _internal_metadata_uri() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_metadata_uri(const std::string& value);
+  std::string* _internal_mutable_metadata_uri();
+  public:
+
+  // string snapshot_id = 2;
+  bool has_snapshot_id() const;
+  private:
+  bool _internal_has_snapshot_id() const;
+  public:
+  void clear_snapshot_id();
+  const std::string& snapshot_id() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_snapshot_id(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_snapshot_id();
+  PROTOBUF_NODISCARD std::string* release_snapshot_id();
+  void set_allocated_snapshot_id(std::string* snapshot_id);
+  private:
+  const std::string& _internal_snapshot_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_snapshot_id(const std::string& value);
+  std::string* _internal_mutable_snapshot_id();
+  public:
+
+  // int64 snapshot_timestamp = 3;
+  bool has_snapshot_timestamp() const;
+  private:
+  bool _internal_has_snapshot_timestamp() const;
+  public:
+  void clear_snapshot_timestamp();
+  int64_t snapshot_timestamp() const;
+  void set_snapshot_timestamp(int64_t value);
+  private:
+  int64_t _internal_snapshot_timestamp() const;
+  void _internal_set_snapshot_timestamp(int64_t value);
+  public:
+
+  void clear_snapshot();
+  SnapshotCase snapshot_case() const;
+  // @@protoc_insertion_point(class_scope:substrait.ReadRel.IcebergTable.MetadataFileRead)
+ private:
+  class _Internal;
+  void set_has_snapshot_id();
+  void set_has_snapshot_timestamp();
+
+  inline bool has_snapshot() const;
+  inline void clear_has_snapshot();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr metadata_uri_;
+  union SnapshotUnion {
+    constexpr SnapshotUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr snapshot_id_;
+    int64_t snapshot_timestamp_;
+  } snapshot_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ReadRel_IcebergTable final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ReadRel.IcebergTable) */ {
+ public:
+  inline ReadRel_IcebergTable() : ReadRel_IcebergTable(nullptr) {}
+  ~ReadRel_IcebergTable() override;
+  explicit constexpr ReadRel_IcebergTable(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ReadRel_IcebergTable(const ReadRel_IcebergTable& from);
+  ReadRel_IcebergTable(ReadRel_IcebergTable&& from) noexcept
+    : ReadRel_IcebergTable() {
+    *this = ::std::move(from);
+  }
+
+  inline ReadRel_IcebergTable& operator=(const ReadRel_IcebergTable& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ReadRel_IcebergTable& operator=(ReadRel_IcebergTable&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ReadRel_IcebergTable& default_instance() {
+    return *internal_default_instance();
+  }
+  enum TableTypeCase {
+    kDirect = 1,
+    TABLE_TYPE_NOT_SET = 0,
+  };
+
+  static inline const ReadRel_IcebergTable* internal_default_instance() {
+    return reinterpret_cast<const ReadRel_IcebergTable*>(
+               &_ReadRel_IcebergTable_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    10;
+
+  friend void swap(ReadRel_IcebergTable& a, ReadRel_IcebergTable& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ReadRel_IcebergTable* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ReadRel_IcebergTable* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ReadRel_IcebergTable* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ReadRel_IcebergTable>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ReadRel_IcebergTable& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ReadRel_IcebergTable& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ReadRel_IcebergTable* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ReadRel.IcebergTable";
+  }
+  protected:
+  explicit ReadRel_IcebergTable(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  typedef ReadRel_IcebergTable_MetadataFileRead MetadataFileRead;
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kDirectFieldNumber = 1,
+  };
+  // .substrait.ReadRel.IcebergTable.MetadataFileRead direct = 1;
+  bool has_direct() const;
+  private:
+  bool _internal_has_direct() const;
+  public:
+  void clear_direct();
+  const ::substrait::ReadRel_IcebergTable_MetadataFileRead& direct() const;
+  PROTOBUF_NODISCARD ::substrait::ReadRel_IcebergTable_MetadataFileRead* release_direct();
+  ::substrait::ReadRel_IcebergTable_MetadataFileRead* mutable_direct();
+  void set_allocated_direct(::substrait::ReadRel_IcebergTable_MetadataFileRead* direct);
+  private:
+  const ::substrait::ReadRel_IcebergTable_MetadataFileRead& _internal_direct() const;
+  ::substrait::ReadRel_IcebergTable_MetadataFileRead* _internal_mutable_direct();
+  public:
+  void unsafe_arena_set_allocated_direct(
+      ::substrait::ReadRel_IcebergTable_MetadataFileRead* direct);
+  ::substrait::ReadRel_IcebergTable_MetadataFileRead* unsafe_arena_release_direct();
+
+  void clear_table_type();
+  TableTypeCase table_type_case() const;
+  // @@protoc_insertion_point(class_scope:substrait.ReadRel.IcebergTable)
+ private:
+  class _Internal;
+  void set_has_direct();
+
+  inline bool has_table_type() const;
+  inline void clear_has_table_type();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  union TableTypeUnion {
+    constexpr TableTypeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    ::substrait::ReadRel_IcebergTable_MetadataFileRead* direct_;
+  } table_type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class ReadRel_VirtualTable final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ReadRel.VirtualTable) */ {
  public:
@@ -2853,7 +3240,7 @@ class ReadRel_VirtualTable final :
                &_ReadRel_VirtualTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    11;
 
   friend void swap(ReadRel_VirtualTable& a, ReadRel_VirtualTable& b) {
     a.Swap(&b);
@@ -3028,7 +3415,7 @@ class ReadRel_ExtensionTable final :
                &_ReadRel_ExtensionTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    12;
 
   friend void swap(ReadRel_ExtensionTable& a, ReadRel_ExtensionTable& b) {
     a.Swap(&b);
@@ -3182,7 +3569,7 @@ class ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions& a, ReadRel_LocalFiles_FileOrFiles_ParquetReadOptions& b) {
     a.Swap(&b);
@@ -3300,7 +3687,7 @@ class ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions& a, ReadRel_LocalFiles_FileOrFiles_ArrowReadOptions& b) {
     a.Swap(&b);
@@ -3418,7 +3805,7 @@ class ReadRel_LocalFiles_FileOrFiles_OrcReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_OrcReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    15;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_OrcReadOptions& a, ReadRel_LocalFiles_FileOrFiles_OrcReadOptions& b) {
     a.Swap(&b);
@@ -3536,7 +3923,7 @@ class ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    16;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions& a, ReadRel_LocalFiles_FileOrFiles_DwrfReadOptions& b) {
     a.Swap(&b);
@@ -3655,7 +4042,7 @@ class ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions final :
                &_ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    17;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& a, ReadRel_LocalFiles_FileOrFiles_DelimiterSeparatedTextReadOptions& b) {
     a.Swap(&b);
@@ -3899,7 +4286,7 @@ class ReadRel_LocalFiles_FileOrFiles final :
                &_ReadRel_LocalFiles_FileOrFiles_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    18;
 
   friend void swap(ReadRel_LocalFiles_FileOrFiles& a, ReadRel_LocalFiles_FileOrFiles& b) {
     a.Swap(&b);
@@ -4303,7 +4690,7 @@ class ReadRel_LocalFiles final :
                &_ReadRel_LocalFiles_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    19;
 
   friend void swap(ReadRel_LocalFiles& a, ReadRel_LocalFiles& b) {
     a.Swap(&b);
@@ -4480,6 +4867,7 @@ class ReadRel final :
     kLocalFiles = 6,
     kNamedTable = 7,
     kExtensionTable = 8,
+    kIcebergTable = 9,
     READ_TYPE_NOT_SET = 0,
   };
 
@@ -4488,7 +4876,7 @@ class ReadRel final :
                &_ReadRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    20;
 
   friend void swap(ReadRel& a, ReadRel& b) {
     a.Swap(&b);
@@ -4560,6 +4948,7 @@ class ReadRel final :
   // nested types ----------------------------------------------------
 
   typedef ReadRel_NamedTable NamedTable;
+  typedef ReadRel_IcebergTable IcebergTable;
   typedef ReadRel_VirtualTable VirtualTable;
   typedef ReadRel_ExtensionTable ExtensionTable;
   typedef ReadRel_LocalFiles LocalFiles;
@@ -4577,6 +4966,7 @@ class ReadRel final :
     kLocalFilesFieldNumber = 6,
     kNamedTableFieldNumber = 7,
     kExtensionTableFieldNumber = 8,
+    kIcebergTableFieldNumber = 9,
   };
   // .substrait.RelCommon common = 1;
   bool has_common() const;
@@ -4758,6 +5148,24 @@ class ReadRel final :
       ::substrait::ReadRel_ExtensionTable* extension_table);
   ::substrait::ReadRel_ExtensionTable* unsafe_arena_release_extension_table();
 
+  // .substrait.ReadRel.IcebergTable iceberg_table = 9;
+  bool has_iceberg_table() const;
+  private:
+  bool _internal_has_iceberg_table() const;
+  public:
+  void clear_iceberg_table();
+  const ::substrait::ReadRel_IcebergTable& iceberg_table() const;
+  PROTOBUF_NODISCARD ::substrait::ReadRel_IcebergTable* release_iceberg_table();
+  ::substrait::ReadRel_IcebergTable* mutable_iceberg_table();
+  void set_allocated_iceberg_table(::substrait::ReadRel_IcebergTable* iceberg_table);
+  private:
+  const ::substrait::ReadRel_IcebergTable& _internal_iceberg_table() const;
+  ::substrait::ReadRel_IcebergTable* _internal_mutable_iceberg_table();
+  public:
+  void unsafe_arena_set_allocated_iceberg_table(
+      ::substrait::ReadRel_IcebergTable* iceberg_table);
+  ::substrait::ReadRel_IcebergTable* unsafe_arena_release_iceberg_table();
+
   void clear_read_type();
   ReadTypeCase read_type_case() const;
   // @@protoc_insertion_point(class_scope:substrait.ReadRel)
@@ -4767,6 +5175,7 @@ class ReadRel final :
   void set_has_local_files();
   void set_has_named_table();
   void set_has_extension_table();
+  void set_has_iceberg_table();
 
   inline bool has_read_type() const;
   inline void clear_has_read_type();
@@ -4787,6 +5196,7 @@ class ReadRel final :
     ::substrait::ReadRel_LocalFiles* local_files_;
     ::substrait::ReadRel_NamedTable* named_table_;
     ::substrait::ReadRel_ExtensionTable* extension_table_;
+    ::substrait::ReadRel_IcebergTable* iceberg_table_;
   } read_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -4843,7 +5253,7 @@ class ProjectRel final :
                &_ProjectRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    21;
 
   friend void swap(ProjectRel& a, ProjectRel& b) {
     a.Swap(&b);
@@ -5058,7 +5468,7 @@ class JoinRel final :
                &_JoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    22;
 
   friend void swap(JoinRel& a, JoinRel& b) {
     a.Swap(&b);
@@ -5376,7 +5786,7 @@ class CrossRel final :
                &_CrossRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    23;
 
   friend void swap(CrossRel& a, CrossRel& b) {
     a.Swap(&b);
@@ -5586,12 +5996,24 @@ class FetchRel final :
   static const FetchRel& default_instance() {
     return *internal_default_instance();
   }
+  enum OffsetModeCase {
+    kOffset = 3,
+    kOffsetExpr = 5,
+    OFFSET_MODE_NOT_SET = 0,
+  };
+
+  enum CountModeCase {
+    kCount = 4,
+    kCountExpr = 6,
+    COUNT_MODE_NOT_SET = 0,
+  };
+
   static inline const FetchRel* internal_default_instance() {
     return reinterpret_cast<const FetchRel*>(
                &_FetchRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    24;
 
   friend void swap(FetchRel& a, FetchRel& b) {
     a.Swap(&b);
@@ -5669,7 +6091,9 @@ class FetchRel final :
     kInputFieldNumber = 2,
     kAdvancedExtensionFieldNumber = 10,
     kOffsetFieldNumber = 3,
+    kOffsetExprFieldNumber = 5,
     kCountFieldNumber = 4,
+    kCountExprFieldNumber = 6,
   };
   // .substrait.RelCommon common = 1;
   bool has_common() const;
@@ -5725,27 +6149,85 @@ class FetchRel final :
       ::substrait::extensions::AdvancedExtension* advanced_extension);
   ::substrait::extensions::AdvancedExtension* unsafe_arena_release_advanced_extension();
 
-  // int64 offset = 3;
-  void clear_offset();
-  int64_t offset() const;
-  void set_offset(int64_t value);
+  // int64 offset = 3 [deprecated = true];
+  PROTOBUF_DEPRECATED bool has_offset() const;
+  private:
+  bool _internal_has_offset() const;
+  public:
+  PROTOBUF_DEPRECATED void clear_offset();
+  PROTOBUF_DEPRECATED int64_t offset() const;
+  PROTOBUF_DEPRECATED void set_offset(int64_t value);
   private:
   int64_t _internal_offset() const;
   void _internal_set_offset(int64_t value);
   public:
 
-  // int64 count = 4;
-  void clear_count();
-  int64_t count() const;
-  void set_count(int64_t value);
+  // .substrait.Expression offset_expr = 5;
+  bool has_offset_expr() const;
+  private:
+  bool _internal_has_offset_expr() const;
+  public:
+  void clear_offset_expr();
+  const ::substrait::Expression& offset_expr() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_offset_expr();
+  ::substrait::Expression* mutable_offset_expr();
+  void set_allocated_offset_expr(::substrait::Expression* offset_expr);
+  private:
+  const ::substrait::Expression& _internal_offset_expr() const;
+  ::substrait::Expression* _internal_mutable_offset_expr();
+  public:
+  void unsafe_arena_set_allocated_offset_expr(
+      ::substrait::Expression* offset_expr);
+  ::substrait::Expression* unsafe_arena_release_offset_expr();
+
+  // int64 count = 4 [deprecated = true];
+  PROTOBUF_DEPRECATED bool has_count() const;
+  private:
+  bool _internal_has_count() const;
+  public:
+  PROTOBUF_DEPRECATED void clear_count();
+  PROTOBUF_DEPRECATED int64_t count() const;
+  PROTOBUF_DEPRECATED void set_count(int64_t value);
   private:
   int64_t _internal_count() const;
   void _internal_set_count(int64_t value);
   public:
 
+  // .substrait.Expression count_expr = 6;
+  bool has_count_expr() const;
+  private:
+  bool _internal_has_count_expr() const;
+  public:
+  void clear_count_expr();
+  const ::substrait::Expression& count_expr() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_count_expr();
+  ::substrait::Expression* mutable_count_expr();
+  void set_allocated_count_expr(::substrait::Expression* count_expr);
+  private:
+  const ::substrait::Expression& _internal_count_expr() const;
+  ::substrait::Expression* _internal_mutable_count_expr();
+  public:
+  void unsafe_arena_set_allocated_count_expr(
+      ::substrait::Expression* count_expr);
+  ::substrait::Expression* unsafe_arena_release_count_expr();
+
+  void clear_offset_mode();
+  OffsetModeCase offset_mode_case() const;
+  void clear_count_mode();
+  CountModeCase count_mode_case() const;
   // @@protoc_insertion_point(class_scope:substrait.FetchRel)
  private:
   class _Internal;
+  void set_has_offset();
+  void set_has_offset_expr();
+  void set_has_count();
+  void set_has_count_expr();
+
+  inline bool has_offset_mode() const;
+  inline void clear_has_offset_mode();
+
+  inline bool has_count_mode() const;
+  inline void clear_has_count_mode();
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
@@ -5753,9 +6235,21 @@ class FetchRel final :
   ::substrait::RelCommon* common_;
   ::substrait::Rel* input_;
   ::substrait::extensions::AdvancedExtension* advanced_extension_;
-  int64_t offset_;
-  int64_t count_;
+  union OffsetModeUnion {
+    constexpr OffsetModeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    int64_t offset_;
+    ::substrait::Expression* offset_expr_;
+  } offset_mode_;
+  union CountModeUnion {
+    constexpr CountModeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    int64_t count_;
+    ::substrait::Expression* count_expr_;
+  } count_mode_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[2];
+
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
 };
 // -------------------------------------------------------------------
@@ -5808,7 +6302,7 @@ class AggregateRel_Grouping final :
                &_AggregateRel_Grouping_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    25;
 
   friend void swap(AggregateRel_Grouping& a, AggregateRel_Grouping& b) {
     a.Swap(&b);
@@ -5988,7 +6482,7 @@ class AggregateRel_Measure final :
                &_AggregateRel_Measure_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    26;
 
   friend void swap(AggregateRel_Measure& a, AggregateRel_Measure& b) {
     a.Swap(&b);
@@ -6163,7 +6657,7 @@ class AggregateRel final :
                &_AggregateRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    27;
 
   friend void swap(AggregateRel& a, AggregateRel& b) {
     a.Swap(&b);
@@ -6421,7 +6915,7 @@ class ConsistentPartitionWindowRel_WindowRelFunction final :
                &_ConsistentPartitionWindowRel_WindowRelFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    28;
 
   friend void swap(ConsistentPartitionWindowRel_WindowRelFunction& a, ConsistentPartitionWindowRel_WindowRelFunction& b) {
     a.Swap(&b);
@@ -6700,7 +7194,7 @@ class ConsistentPartitionWindowRel final :
                &_ConsistentPartitionWindowRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    29;
 
   friend void swap(ConsistentPartitionWindowRel& a, ConsistentPartitionWindowRel& b) {
     a.Swap(&b);
@@ -6957,7 +7451,7 @@ class SortRel final :
                &_SortRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    30;
 
   friend void swap(SortRel& a, SortRel& b) {
     a.Swap(&b);
@@ -7172,7 +7666,7 @@ class FilterRel final :
                &_FilterRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    31;
 
   friend void swap(FilterRel& a, FilterRel& b) {
     a.Swap(&b);
@@ -7387,7 +7881,7 @@ class SetRel final :
                &_SetRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    32;
 
   friend void swap(SetRel& a, SetRel& b) {
     a.Swap(&b);
@@ -7637,7 +8131,7 @@ class ExtensionSingleRel final :
                &_ExtensionSingleRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    33;
 
   friend void swap(ExtensionSingleRel& a, ExtensionSingleRel& b) {
     a.Swap(&b);
@@ -7832,7 +8326,7 @@ class ExtensionLeafRel final :
                &_ExtensionLeafRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    34;
 
   friend void swap(ExtensionLeafRel& a, ExtensionLeafRel& b) {
     a.Swap(&b);
@@ -8007,7 +8501,7 @@ class ExtensionMultiRel final :
                &_ExtensionMultiRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    35;
 
   friend void swap(ExtensionMultiRel& a, ExtensionMultiRel& b) {
     a.Swap(&b);
@@ -8202,7 +8696,7 @@ class ExchangeRel_ScatterFields final :
                &_ExchangeRel_ScatterFields_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    36;
 
   friend void swap(ExchangeRel_ScatterFields& a, ExchangeRel_ScatterFields& b) {
     a.Swap(&b);
@@ -8357,7 +8851,7 @@ class ExchangeRel_SingleBucketExpression final :
                &_ExchangeRel_SingleBucketExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    37;
 
   friend void swap(ExchangeRel_SingleBucketExpression& a, ExchangeRel_SingleBucketExpression& b) {
     a.Swap(&b);
@@ -8512,7 +9006,7 @@ class ExchangeRel_MultiBucketExpression final :
                &_ExchangeRel_MultiBucketExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    38;
 
   friend void swap(ExchangeRel_MultiBucketExpression& a, ExchangeRel_MultiBucketExpression& b) {
     a.Swap(&b);
@@ -8677,7 +9171,7 @@ class ExchangeRel_Broadcast final :
                &_ExchangeRel_Broadcast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    39;
 
   friend void swap(ExchangeRel_Broadcast& a, ExchangeRel_Broadcast& b) {
     a.Swap(&b);
@@ -8796,7 +9290,7 @@ class ExchangeRel_RoundRobin final :
                &_ExchangeRel_RoundRobin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    40;
 
   friend void swap(ExchangeRel_RoundRobin& a, ExchangeRel_RoundRobin& b) {
     a.Swap(&b);
@@ -8948,7 +9442,7 @@ class ExchangeRel_ExchangeTarget final :
                &_ExchangeRel_ExchangeTarget_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    41;
 
   friend void swap(ExchangeRel_ExchangeTarget& a, ExchangeRel_ExchangeTarget& b) {
     a.Swap(&b);
@@ -9170,7 +9664,7 @@ class ExchangeRel final :
                &_ExchangeRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    42;
 
   friend void swap(ExchangeRel& a, ExchangeRel& b) {
     a.Swap(&b);
@@ -9525,7 +10019,7 @@ class ExpandRel_ExpandField final :
                &_ExpandRel_ExpandField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    43;
 
   friend void swap(ExpandRel_ExpandField& a, ExpandRel_ExpandField& b) {
     a.Swap(&b);
@@ -9713,7 +10207,7 @@ class ExpandRel_SwitchingField final :
                &_ExpandRel_SwitchingField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    44;
 
   friend void swap(ExpandRel_SwitchingField& a, ExpandRel_SwitchingField& b) {
     a.Swap(&b);
@@ -9868,7 +10362,7 @@ class ExpandRel final :
                &_ExpandRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    45;
 
   friend void swap(ExpandRel& a, ExpandRel& b) {
     a.Swap(&b);
@@ -10066,7 +10560,7 @@ class RelRoot final :
                &_RelRoot_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    46;
 
   friend void swap(RelRoot& a, RelRoot& b) {
     a.Swap(&b);
@@ -10273,7 +10767,7 @@ class Rel final :
                &_Rel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    47;
 
   friend void swap(Rel& a, Rel& b) {
     a.Swap(&b);
@@ -10881,7 +11375,7 @@ class NamedObjectWrite final :
                &_NamedObjectWrite_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    48;
 
   friend void swap(NamedObjectWrite& a, NamedObjectWrite& b) {
     a.Swap(&b);
@@ -11062,7 +11556,7 @@ class ExtensionObject final :
                &_ExtensionObject_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    49;
 
   friend void swap(ExtensionObject& a, ExtensionObject& b) {
     a.Swap(&b);
@@ -11223,7 +11717,7 @@ class DdlRel final :
                &_DdlRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    50;
 
   friend void swap(DdlRel& a, DdlRel& b) {
     a.Swap(&b);
@@ -11589,7 +12083,7 @@ class WriteRel final :
                &_WriteRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    51;
 
   friend void swap(WriteRel& a, WriteRel& b) {
     a.Swap(&b);
@@ -11974,7 +12468,7 @@ class UpdateRel_TransformExpression final :
                &_UpdateRel_TransformExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    52;
 
   friend void swap(UpdateRel_TransformExpression& a, UpdateRel_TransformExpression& b) {
     a.Swap(&b);
@@ -12145,7 +12639,7 @@ class UpdateRel final :
                &_UpdateRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    53;
 
   friend void swap(UpdateRel& a, UpdateRel& b) {
     a.Swap(&b);
@@ -12374,7 +12868,7 @@ class NamedTable final :
                &_NamedTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    54;
 
   friend void swap(NamedTable& a, NamedTable& b) {
     a.Swap(&b);
@@ -12561,7 +13055,7 @@ class ComparisonJoinKey_ComparisonType final :
                &_ComparisonJoinKey_ComparisonType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    55;
 
   friend void swap(ComparisonJoinKey_ComparisonType& a, ComparisonJoinKey_ComparisonType& b) {
     a.Swap(&b);
@@ -12739,7 +13233,7 @@ class ComparisonJoinKey final :
                &_ComparisonJoinKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    56;
 
   friend void swap(ComparisonJoinKey& a, ComparisonJoinKey& b) {
     a.Swap(&b);
@@ -12970,7 +13464,7 @@ class HashJoinRel final :
                &_HashJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    57;
 
   friend void swap(HashJoinRel& a, HashJoinRel& b) {
     a.Swap(&b);
@@ -13328,7 +13822,7 @@ class MergeJoinRel final :
                &_MergeJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    58;
 
   friend void swap(MergeJoinRel& a, MergeJoinRel& b) {
     a.Swap(&b);
@@ -13686,7 +14180,7 @@ class NestedLoopJoinRel final :
                &_NestedLoopJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    59;
 
   friend void swap(NestedLoopJoinRel& a, NestedLoopJoinRel& b) {
     a.Swap(&b);
@@ -13991,7 +14485,7 @@ class FunctionArgument final :
                &_FunctionArgument_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    60;
 
   friend void swap(FunctionArgument& a, FunctionArgument& b) {
     a.Swap(&b);
@@ -14200,7 +14694,7 @@ class FunctionOption final :
                &_FunctionOption_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    61;
 
   friend void swap(FunctionOption& a, FunctionOption& b) {
     a.Swap(&b);
@@ -14376,7 +14870,7 @@ class Expression_Enum_Empty final :
                &_Expression_Enum_Empty_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    62;
 
   friend void swap(Expression_Enum_Empty& a, Expression_Enum_Empty& b) {
     a.Swap(&b);
@@ -14501,7 +14995,7 @@ class Expression_Enum final :
                &_Expression_Enum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    63;
 
   friend void swap(Expression_Enum& a, Expression_Enum& b) {
     a.Swap(&b);
@@ -14691,7 +15185,7 @@ class Expression_Literal_VarChar final :
                &_Expression_Literal_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    64;
 
   friend void swap(Expression_Literal_VarChar& a, Expression_Literal_VarChar& b) {
     a.Swap(&b);
@@ -14853,7 +15347,7 @@ class Expression_Literal_Decimal final :
                &_Expression_Literal_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    65;
 
   friend void swap(Expression_Literal_Decimal& a, Expression_Literal_Decimal& b) {
     a.Swap(&b);
@@ -15026,7 +15520,7 @@ class Expression_Literal_PrecisionTimestamp final :
                &_Expression_Literal_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    66;
 
   friend void swap(Expression_Literal_PrecisionTimestamp& a, Expression_Literal_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -15183,7 +15677,7 @@ class Expression_Literal_Map_KeyValue final :
                &_Expression_Literal_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    67;
 
   friend void swap(Expression_Literal_Map_KeyValue& a, Expression_Literal_Map_KeyValue& b) {
     a.Swap(&b);
@@ -15358,7 +15852,7 @@ class Expression_Literal_Map final :
                &_Expression_Literal_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    68;
 
   friend void swap(Expression_Literal_Map& a, Expression_Literal_Map& b) {
     a.Swap(&b);
@@ -15515,7 +16009,7 @@ class Expression_Literal_IntervalYearToMonth final :
                &_Expression_Literal_IntervalYearToMonth_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    69;
 
   friend void swap(Expression_Literal_IntervalYearToMonth& a, Expression_Literal_IntervalYearToMonth& b) {
     a.Swap(&b);
@@ -15678,7 +16172,7 @@ class Expression_Literal_IntervalDayToSecond final :
                &_Expression_Literal_IntervalDayToSecond_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    70;
 
   friend void swap(Expression_Literal_IntervalDayToSecond& a, Expression_Literal_IntervalDayToSecond& b) {
     a.Swap(&b);
@@ -15889,7 +16383,7 @@ class Expression_Literal_IntervalCompound final :
                &_Expression_Literal_IntervalCompound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    71;
 
   friend void swap(Expression_Literal_IntervalCompound& a, Expression_Literal_IntervalCompound& b) {
     a.Swap(&b);
@@ -16064,7 +16558,7 @@ class Expression_Literal_Struct final :
                &_Expression_Literal_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    72;
 
   friend void swap(Expression_Literal_Struct& a, Expression_Literal_Struct& b) {
     a.Swap(&b);
@@ -16219,7 +16713,7 @@ class Expression_Literal_List final :
                &_Expression_Literal_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    73;
 
   friend void swap(Expression_Literal_List& a, Expression_Literal_List& b) {
     a.Swap(&b);
@@ -16380,7 +16874,7 @@ class Expression_Literal_UserDefined final :
                &_Expression_Literal_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    74;
 
   friend void swap(Expression_Literal_UserDefined& a, Expression_Literal_UserDefined& b) {
     a.Swap(&b);
@@ -16633,7 +17127,7 @@ class Expression_Literal final :
                &_Expression_Literal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    75;
 
   friend void swap(Expression_Literal& a, Expression_Literal& b) {
     a.Swap(&b);
@@ -17387,7 +17881,7 @@ class Expression_Nested_Map_KeyValue final :
                &_Expression_Nested_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    76;
 
   friend void swap(Expression_Nested_Map_KeyValue& a, Expression_Nested_Map_KeyValue& b) {
     a.Swap(&b);
@@ -17562,7 +18056,7 @@ class Expression_Nested_Map final :
                &_Expression_Nested_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    77;
 
   friend void swap(Expression_Nested_Map& a, Expression_Nested_Map& b) {
     a.Swap(&b);
@@ -17719,7 +18213,7 @@ class Expression_Nested_Struct final :
                &_Expression_Nested_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    78;
 
   friend void swap(Expression_Nested_Struct& a, Expression_Nested_Struct& b) {
     a.Swap(&b);
@@ -17874,7 +18368,7 @@ class Expression_Nested_List final :
                &_Expression_Nested_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    79;
 
   friend void swap(Expression_Nested_List& a, Expression_Nested_List& b) {
     a.Swap(&b);
@@ -18036,7 +18530,7 @@ class Expression_Nested final :
                &_Expression_Nested_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    80;
 
   friend void swap(Expression_Nested& a, Expression_Nested& b) {
     a.Swap(&b);
@@ -18271,7 +18765,7 @@ class Expression_ScalarFunction final :
                &_Expression_ScalarFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    81;
 
   friend void swap(Expression_ScalarFunction& a, Expression_ScalarFunction& b) {
     a.Swap(&b);
@@ -18497,7 +18991,7 @@ class Expression_WindowFunction_Bound_Preceding final :
                &_Expression_WindowFunction_Bound_Preceding_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    82;
 
   friend void swap(Expression_WindowFunction_Bound_Preceding& a, Expression_WindowFunction_Bound_Preceding& b) {
     a.Swap(&b);
@@ -18643,7 +19137,7 @@ class Expression_WindowFunction_Bound_Following final :
                &_Expression_WindowFunction_Bound_Following_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    83;
 
   friend void swap(Expression_WindowFunction_Bound_Following& a, Expression_WindowFunction_Bound_Following& b) {
     a.Swap(&b);
@@ -18788,7 +19282,7 @@ class Expression_WindowFunction_Bound_CurrentRow final :
                &_Expression_WindowFunction_Bound_CurrentRow_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    84;
 
   friend void swap(Expression_WindowFunction_Bound_CurrentRow& a, Expression_WindowFunction_Bound_CurrentRow& b) {
     a.Swap(&b);
@@ -18906,7 +19400,7 @@ class Expression_WindowFunction_Bound_Unbounded final :
                &_Expression_WindowFunction_Bound_Unbounded_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    85;
 
   friend void swap(Expression_WindowFunction_Bound_Unbounded& a, Expression_WindowFunction_Bound_Unbounded& b) {
     a.Swap(&b);
@@ -19033,7 +19527,7 @@ class Expression_WindowFunction_Bound final :
                &_Expression_WindowFunction_Bound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    86;
 
   friend void swap(Expression_WindowFunction_Bound& a, Expression_WindowFunction_Bound& b) {
     a.Swap(&b);
@@ -19268,7 +19762,7 @@ class Expression_WindowFunction final :
                &_Expression_WindowFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    87;
 
   friend void swap(Expression_WindowFunction& a, Expression_WindowFunction& b) {
     a.Swap(&b);
@@ -19641,7 +20135,7 @@ class Expression_IfThen_IfClause final :
                &_Expression_IfThen_IfClause_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    88;
 
   friend void swap(Expression_IfThen_IfClause& a, Expression_IfThen_IfClause& b) {
     a.Swap(&b);
@@ -19816,7 +20310,7 @@ class Expression_IfThen final :
                &_Expression_IfThen_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    89;
 
   friend void swap(Expression_IfThen& a, Expression_IfThen& b) {
     a.Swap(&b);
@@ -19993,7 +20487,7 @@ class Expression_Cast final :
                &_Expression_Cast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    90;
 
   friend void swap(Expression_Cast& a, Expression_Cast& b) {
     a.Swap(&b);
@@ -20211,7 +20705,7 @@ class Expression_SwitchExpression_IfValue final :
                &_Expression_SwitchExpression_IfValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    91;
 
   friend void swap(Expression_SwitchExpression_IfValue& a, Expression_SwitchExpression_IfValue& b) {
     a.Swap(&b);
@@ -20386,7 +20880,7 @@ class Expression_SwitchExpression final :
                &_Expression_SwitchExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    92;
 
   friend void swap(Expression_SwitchExpression& a, Expression_SwitchExpression& b) {
     a.Swap(&b);
@@ -20583,7 +21077,7 @@ class Expression_SingularOrList final :
                &_Expression_SingularOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    93;
 
   friend void swap(Expression_SingularOrList& a, Expression_SingularOrList& b) {
     a.Swap(&b);
@@ -20758,7 +21252,7 @@ class Expression_MultiOrList_Record final :
                &_Expression_MultiOrList_Record_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    94;
 
   friend void swap(Expression_MultiOrList_Record& a, Expression_MultiOrList_Record& b) {
     a.Swap(&b);
@@ -20913,7 +21407,7 @@ class Expression_MultiOrList final :
                &_Expression_MultiOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    95;
 
   friend void swap(Expression_MultiOrList& a, Expression_MultiOrList& b) {
     a.Swap(&b);
@@ -21090,7 +21584,7 @@ class Expression_EmbeddedFunction_PythonPickleFunction final :
                &_Expression_EmbeddedFunction_PythonPickleFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    96;
 
   friend void swap(Expression_EmbeddedFunction_PythonPickleFunction& a, Expression_EmbeddedFunction_PythonPickleFunction& b) {
     a.Swap(&b);
@@ -21267,7 +21761,7 @@ class Expression_EmbeddedFunction_WebAssemblyFunction final :
                &_Expression_EmbeddedFunction_WebAssemblyFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    97;
 
   friend void swap(Expression_EmbeddedFunction_WebAssemblyFunction& a, Expression_EmbeddedFunction_WebAssemblyFunction& b) {
     a.Swap(&b);
@@ -21450,7 +21944,7 @@ class Expression_EmbeddedFunction final :
                &_Expression_EmbeddedFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    98;
 
   friend void swap(Expression_EmbeddedFunction& a, Expression_EmbeddedFunction& b) {
     a.Swap(&b);
@@ -21681,7 +22175,7 @@ class Expression_ReferenceSegment_MapKey final :
                &_Expression_ReferenceSegment_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    99;
 
   friend void swap(Expression_ReferenceSegment_MapKey& a, Expression_ReferenceSegment_MapKey& b) {
     a.Swap(&b);
@@ -21856,7 +22350,7 @@ class Expression_ReferenceSegment_StructField final :
                &_Expression_ReferenceSegment_StructField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    100;
 
   friend void swap(Expression_ReferenceSegment_StructField& a, Expression_ReferenceSegment_StructField& b) {
     a.Swap(&b);
@@ -22022,7 +22516,7 @@ class Expression_ReferenceSegment_ListElement final :
                &_Expression_ReferenceSegment_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    101;
 
   friend void swap(Expression_ReferenceSegment_ListElement& a, Expression_ReferenceSegment_ListElement& b) {
     a.Swap(&b);
@@ -22195,7 +22689,7 @@ class Expression_ReferenceSegment final :
                &_Expression_ReferenceSegment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    102;
 
   friend void swap(Expression_ReferenceSegment& a, Expression_ReferenceSegment& b) {
     a.Swap(&b);
@@ -22415,7 +22909,7 @@ class Expression_MaskExpression_Select final :
                &_Expression_MaskExpression_Select_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    103;
 
   friend void swap(Expression_MaskExpression_Select& a, Expression_MaskExpression_Select& b) {
     a.Swap(&b);
@@ -22624,7 +23118,7 @@ class Expression_MaskExpression_StructSelect final :
                &_Expression_MaskExpression_StructSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    104;
 
   friend void swap(Expression_MaskExpression_StructSelect& a, Expression_MaskExpression_StructSelect& b) {
     a.Swap(&b);
@@ -22779,7 +23273,7 @@ class Expression_MaskExpression_StructItem final :
                &_Expression_MaskExpression_StructItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    105;
 
   friend void swap(Expression_MaskExpression_StructItem& a, Expression_MaskExpression_StructItem& b) {
     a.Swap(&b);
@@ -22945,7 +23439,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListElement final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    106;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& b) {
     a.Swap(&b);
@@ -23091,7 +23585,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    107;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& b) {
     a.Swap(&b);
@@ -23254,7 +23748,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    108;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem& a, Expression_MaskExpression_ListSelect_ListSelectItem& b) {
     a.Swap(&b);
@@ -23445,7 +23939,7 @@ class Expression_MaskExpression_ListSelect final :
                &_Expression_MaskExpression_ListSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    109;
 
   friend void swap(Expression_MaskExpression_ListSelect& a, Expression_MaskExpression_ListSelect& b) {
     a.Swap(&b);
@@ -23622,7 +24116,7 @@ class Expression_MaskExpression_MapSelect_MapKey final :
                &_Expression_MaskExpression_MapSelect_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    108;
+    110;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKey& a, Expression_MaskExpression_MapSelect_MapKey& b) {
     a.Swap(&b);
@@ -23773,7 +24267,7 @@ class Expression_MaskExpression_MapSelect_MapKeyExpression final :
                &_Expression_MaskExpression_MapSelect_MapKeyExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    109;
+    111;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKeyExpression& a, Expression_MaskExpression_MapSelect_MapKeyExpression& b) {
     a.Swap(&b);
@@ -23930,7 +24424,7 @@ class Expression_MaskExpression_MapSelect final :
                &_Expression_MaskExpression_MapSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    110;
+    112;
 
   friend void swap(Expression_MaskExpression_MapSelect& a, Expression_MaskExpression_MapSelect& b) {
     a.Swap(&b);
@@ -24141,7 +24635,7 @@ class Expression_MaskExpression final :
                &_Expression_MaskExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    111;
+    113;
 
   friend void swap(Expression_MaskExpression& a, Expression_MaskExpression& b) {
     a.Swap(&b);
@@ -24312,7 +24806,7 @@ class Expression_FieldReference_RootReference final :
                &_Expression_FieldReference_RootReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    112;
+    114;
 
   friend void swap(Expression_FieldReference_RootReference& a, Expression_FieldReference_RootReference& b) {
     a.Swap(&b);
@@ -24431,7 +24925,7 @@ class Expression_FieldReference_OuterReference final :
                &_Expression_FieldReference_OuterReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    113;
+    115;
 
   friend void swap(Expression_FieldReference_OuterReference& a, Expression_FieldReference_OuterReference& b) {
     a.Swap(&b);
@@ -24590,7 +25084,7 @@ class Expression_FieldReference final :
                &_Expression_FieldReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    114;
+    116;
 
   friend void swap(Expression_FieldReference& a, Expression_FieldReference& b) {
     a.Swap(&b);
@@ -24853,7 +25347,7 @@ class Expression_Subquery_Scalar final :
                &_Expression_Subquery_Scalar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    115;
+    117;
 
   friend void swap(Expression_Subquery_Scalar& a, Expression_Subquery_Scalar& b) {
     a.Swap(&b);
@@ -25008,7 +25502,7 @@ class Expression_Subquery_InPredicate final :
                &_Expression_Subquery_InPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    116;
+    118;
 
   friend void swap(Expression_Subquery_InPredicate& a, Expression_Subquery_InPredicate& b) {
     a.Swap(&b);
@@ -25183,7 +25677,7 @@ class Expression_Subquery_SetPredicate final :
                &_Expression_Subquery_SetPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    117;
+    119;
 
   friend void swap(Expression_Subquery_SetPredicate& a, Expression_Subquery_SetPredicate& b) {
     a.Swap(&b);
@@ -25381,7 +25875,7 @@ class Expression_Subquery_SetComparison final :
                &_Expression_Subquery_SetComparison_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    118;
+    120;
 
   friend void swap(Expression_Subquery_SetComparison& a, Expression_Subquery_SetComparison& b) {
     a.Swap(&b);
@@ -25658,7 +26152,7 @@ class Expression_Subquery final :
                &_Expression_Subquery_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    119;
+    121;
 
   friend void swap(Expression_Subquery& a, Expression_Subquery& b) {
     a.Swap(&b);
@@ -25909,7 +26403,7 @@ class Expression final :
                &_Expression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    120;
+    122;
 
   friend void swap(Expression& a, Expression& b) {
     a.Swap(&b);
@@ -26329,7 +26823,7 @@ class SortField final :
                &_SortField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    121;
+    123;
 
   friend void swap(SortField& a, SortField& b) {
     a.Swap(&b);
@@ -26565,7 +27059,7 @@ class AggregateFunction final :
                &_AggregateFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    122;
+    124;
 
   friend void swap(AggregateFunction& a, AggregateFunction& b) {
     a.Swap(&b);
@@ -26865,7 +27359,7 @@ class ReferenceRel final :
                &_ReferenceRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    123;
+    125;
 
   friend void swap(ReferenceRel& a, ReferenceRel& b) {
     a.Swap(&b);
@@ -28309,6 +28803,277 @@ inline void ReadRel_NamedTable::set_allocated_advanced_extension(::substrait::ex
   // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.NamedTable.advanced_extension)
 }
 
+// -------------------------------------------------------------------
+
+// ReadRel_IcebergTable_MetadataFileRead
+
+// string metadata_uri = 1;
+inline void ReadRel_IcebergTable_MetadataFileRead::clear_metadata_uri() {
+  metadata_uri_.ClearToEmpty();
+}
+inline const std::string& ReadRel_IcebergTable_MetadataFileRead::metadata_uri() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.IcebergTable.MetadataFileRead.metadata_uri)
+  return _internal_metadata_uri();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ReadRel_IcebergTable_MetadataFileRead::set_metadata_uri(ArgT0&& arg0, ArgT... args) {
+ 
+ metadata_uri_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.IcebergTable.MetadataFileRead.metadata_uri)
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::mutable_metadata_uri() {
+  std::string* _s = _internal_mutable_metadata_uri();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.IcebergTable.MetadataFileRead.metadata_uri)
+  return _s;
+}
+inline const std::string& ReadRel_IcebergTable_MetadataFileRead::_internal_metadata_uri() const {
+  return metadata_uri_.Get();
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::_internal_set_metadata_uri(const std::string& value) {
+  
+  metadata_uri_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::_internal_mutable_metadata_uri() {
+  
+  return metadata_uri_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::release_metadata_uri() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.IcebergTable.MetadataFileRead.metadata_uri)
+  return metadata_uri_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::set_allocated_metadata_uri(std::string* metadata_uri) {
+  if (metadata_uri != nullptr) {
+    
+  } else {
+    
+  }
+  metadata_uri_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), metadata_uri,
+      GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (metadata_uri_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
+    metadata_uri_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.IcebergTable.MetadataFileRead.metadata_uri)
+}
+
+// string snapshot_id = 2;
+inline bool ReadRel_IcebergTable_MetadataFileRead::_internal_has_snapshot_id() const {
+  return snapshot_case() == kSnapshotId;
+}
+inline bool ReadRel_IcebergTable_MetadataFileRead::has_snapshot_id() const {
+  return _internal_has_snapshot_id();
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::set_has_snapshot_id() {
+  _oneof_case_[0] = kSnapshotId;
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::clear_snapshot_id() {
+  if (_internal_has_snapshot_id()) {
+    snapshot_.snapshot_id_.Destroy(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+    clear_has_snapshot();
+  }
+}
+inline const std::string& ReadRel_IcebergTable_MetadataFileRead::snapshot_id() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_id)
+  return _internal_snapshot_id();
+}
+template <typename ArgT0, typename... ArgT>
+inline void ReadRel_IcebergTable_MetadataFileRead::set_snapshot_id(ArgT0&& arg0, ArgT... args) {
+  if (!_internal_has_snapshot_id()) {
+    clear_snapshot();
+    set_has_snapshot_id();
+    snapshot_.snapshot_id_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  }
+  snapshot_.snapshot_id_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_id)
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::mutable_snapshot_id() {
+  std::string* _s = _internal_mutable_snapshot_id();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_id)
+  return _s;
+}
+inline const std::string& ReadRel_IcebergTable_MetadataFileRead::_internal_snapshot_id() const {
+  if (_internal_has_snapshot_id()) {
+    return snapshot_.snapshot_id_.Get();
+  }
+  return ::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited();
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::_internal_set_snapshot_id(const std::string& value) {
+  if (!_internal_has_snapshot_id()) {
+    clear_snapshot();
+    set_has_snapshot_id();
+    snapshot_.snapshot_id_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  }
+  snapshot_.snapshot_id_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::_internal_mutable_snapshot_id() {
+  if (!_internal_has_snapshot_id()) {
+    clear_snapshot();
+    set_has_snapshot_id();
+    snapshot_.snapshot_id_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  }
+  return snapshot_.snapshot_id_.Mutable(
+      ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ReadRel_IcebergTable_MetadataFileRead::release_snapshot_id() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_id)
+  if (_internal_has_snapshot_id()) {
+    clear_has_snapshot();
+    return snapshot_.snapshot_id_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+  } else {
+    return nullptr;
+  }
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::set_allocated_snapshot_id(std::string* snapshot_id) {
+  if (has_snapshot()) {
+    clear_snapshot();
+  }
+  if (snapshot_id != nullptr) {
+    set_has_snapshot_id();
+    snapshot_.snapshot_id_.UnsafeSetDefault(snapshot_id);
+    ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArenaForAllocation();
+    if (arena != nullptr) {
+      arena->Own(snapshot_id);
+    }
+  }
+  // @@protoc_insertion_point(field_set_allocated:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_id)
+}
+
+// int64 snapshot_timestamp = 3;
+inline bool ReadRel_IcebergTable_MetadataFileRead::_internal_has_snapshot_timestamp() const {
+  return snapshot_case() == kSnapshotTimestamp;
+}
+inline bool ReadRel_IcebergTable_MetadataFileRead::has_snapshot_timestamp() const {
+  return _internal_has_snapshot_timestamp();
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::set_has_snapshot_timestamp() {
+  _oneof_case_[0] = kSnapshotTimestamp;
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::clear_snapshot_timestamp() {
+  if (_internal_has_snapshot_timestamp()) {
+    snapshot_.snapshot_timestamp_ = int64_t{0};
+    clear_has_snapshot();
+  }
+}
+inline int64_t ReadRel_IcebergTable_MetadataFileRead::_internal_snapshot_timestamp() const {
+  if (_internal_has_snapshot_timestamp()) {
+    return snapshot_.snapshot_timestamp_;
+  }
+  return int64_t{0};
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::_internal_set_snapshot_timestamp(int64_t value) {
+  if (!_internal_has_snapshot_timestamp()) {
+    clear_snapshot();
+    set_has_snapshot_timestamp();
+  }
+  snapshot_.snapshot_timestamp_ = value;
+}
+inline int64_t ReadRel_IcebergTable_MetadataFileRead::snapshot_timestamp() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_timestamp)
+  return _internal_snapshot_timestamp();
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::set_snapshot_timestamp(int64_t value) {
+  _internal_set_snapshot_timestamp(value);
+  // @@protoc_insertion_point(field_set:substrait.ReadRel.IcebergTable.MetadataFileRead.snapshot_timestamp)
+}
+
+inline bool ReadRel_IcebergTable_MetadataFileRead::has_snapshot() const {
+  return snapshot_case() != SNAPSHOT_NOT_SET;
+}
+inline void ReadRel_IcebergTable_MetadataFileRead::clear_has_snapshot() {
+  _oneof_case_[0] = SNAPSHOT_NOT_SET;
+}
+inline ReadRel_IcebergTable_MetadataFileRead::SnapshotCase ReadRel_IcebergTable_MetadataFileRead::snapshot_case() const {
+  return ReadRel_IcebergTable_MetadataFileRead::SnapshotCase(_oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
+// ReadRel_IcebergTable
+
+// .substrait.ReadRel.IcebergTable.MetadataFileRead direct = 1;
+inline bool ReadRel_IcebergTable::_internal_has_direct() const {
+  return table_type_case() == kDirect;
+}
+inline bool ReadRel_IcebergTable::has_direct() const {
+  return _internal_has_direct();
+}
+inline void ReadRel_IcebergTable::set_has_direct() {
+  _oneof_case_[0] = kDirect;
+}
+inline void ReadRel_IcebergTable::clear_direct() {
+  if (_internal_has_direct()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete table_type_.direct_;
+    }
+    clear_has_table_type();
+  }
+}
+inline ::substrait::ReadRel_IcebergTable_MetadataFileRead* ReadRel_IcebergTable::release_direct() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.IcebergTable.direct)
+  if (_internal_has_direct()) {
+    clear_has_table_type();
+      ::substrait::ReadRel_IcebergTable_MetadataFileRead* temp = table_type_.direct_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    table_type_.direct_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::ReadRel_IcebergTable_MetadataFileRead& ReadRel_IcebergTable::_internal_direct() const {
+  return _internal_has_direct()
+      ? *table_type_.direct_
+      : reinterpret_cast< ::substrait::ReadRel_IcebergTable_MetadataFileRead&>(::substrait::_ReadRel_IcebergTable_MetadataFileRead_default_instance_);
+}
+inline const ::substrait::ReadRel_IcebergTable_MetadataFileRead& ReadRel_IcebergTable::direct() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.IcebergTable.direct)
+  return _internal_direct();
+}
+inline ::substrait::ReadRel_IcebergTable_MetadataFileRead* ReadRel_IcebergTable::unsafe_arena_release_direct() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.ReadRel.IcebergTable.direct)
+  if (_internal_has_direct()) {
+    clear_has_table_type();
+    ::substrait::ReadRel_IcebergTable_MetadataFileRead* temp = table_type_.direct_;
+    table_type_.direct_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ReadRel_IcebergTable::unsafe_arena_set_allocated_direct(::substrait::ReadRel_IcebergTable_MetadataFileRead* direct) {
+  clear_table_type();
+  if (direct) {
+    set_has_direct();
+    table_type_.direct_ = direct;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ReadRel.IcebergTable.direct)
+}
+inline ::substrait::ReadRel_IcebergTable_MetadataFileRead* ReadRel_IcebergTable::_internal_mutable_direct() {
+  if (!_internal_has_direct()) {
+    clear_table_type();
+    set_has_direct();
+    table_type_.direct_ = CreateMaybeMessage< ::substrait::ReadRel_IcebergTable_MetadataFileRead >(GetArenaForAllocation());
+  }
+  return table_type_.direct_;
+}
+inline ::substrait::ReadRel_IcebergTable_MetadataFileRead* ReadRel_IcebergTable::mutable_direct() {
+  ::substrait::ReadRel_IcebergTable_MetadataFileRead* _msg = _internal_mutable_direct();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.IcebergTable.direct)
+  return _msg;
+}
+
+inline bool ReadRel_IcebergTable::has_table_type() const {
+  return table_type_case() != TABLE_TYPE_NOT_SET;
+}
+inline void ReadRel_IcebergTable::clear_has_table_type() {
+  _oneof_case_[0] = TABLE_TYPE_NOT_SET;
+}
+inline ReadRel_IcebergTable::TableTypeCase ReadRel_IcebergTable::table_type_case() const {
+  return ReadRel_IcebergTable::TableTypeCase(_oneof_case_[0]);
+}
 // -------------------------------------------------------------------
 
 // ReadRel_VirtualTable
@@ -30573,6 +31338,80 @@ inline ::substrait::ReadRel_ExtensionTable* ReadRel::mutable_extension_table() {
   return _msg;
 }
 
+// .substrait.ReadRel.IcebergTable iceberg_table = 9;
+inline bool ReadRel::_internal_has_iceberg_table() const {
+  return read_type_case() == kIcebergTable;
+}
+inline bool ReadRel::has_iceberg_table() const {
+  return _internal_has_iceberg_table();
+}
+inline void ReadRel::set_has_iceberg_table() {
+  _oneof_case_[0] = kIcebergTable;
+}
+inline void ReadRel::clear_iceberg_table() {
+  if (_internal_has_iceberg_table()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete read_type_.iceberg_table_;
+    }
+    clear_has_read_type();
+  }
+}
+inline ::substrait::ReadRel_IcebergTable* ReadRel::release_iceberg_table() {
+  // @@protoc_insertion_point(field_release:substrait.ReadRel.iceberg_table)
+  if (_internal_has_iceberg_table()) {
+    clear_has_read_type();
+      ::substrait::ReadRel_IcebergTable* temp = read_type_.iceberg_table_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    read_type_.iceberg_table_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::ReadRel_IcebergTable& ReadRel::_internal_iceberg_table() const {
+  return _internal_has_iceberg_table()
+      ? *read_type_.iceberg_table_
+      : reinterpret_cast< ::substrait::ReadRel_IcebergTable&>(::substrait::_ReadRel_IcebergTable_default_instance_);
+}
+inline const ::substrait::ReadRel_IcebergTable& ReadRel::iceberg_table() const {
+  // @@protoc_insertion_point(field_get:substrait.ReadRel.iceberg_table)
+  return _internal_iceberg_table();
+}
+inline ::substrait::ReadRel_IcebergTable* ReadRel::unsafe_arena_release_iceberg_table() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.ReadRel.iceberg_table)
+  if (_internal_has_iceberg_table()) {
+    clear_has_read_type();
+    ::substrait::ReadRel_IcebergTable* temp = read_type_.iceberg_table_;
+    read_type_.iceberg_table_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ReadRel::unsafe_arena_set_allocated_iceberg_table(::substrait::ReadRel_IcebergTable* iceberg_table) {
+  clear_read_type();
+  if (iceberg_table) {
+    set_has_iceberg_table();
+    read_type_.iceberg_table_ = iceberg_table;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.ReadRel.iceberg_table)
+}
+inline ::substrait::ReadRel_IcebergTable* ReadRel::_internal_mutable_iceberg_table() {
+  if (!_internal_has_iceberg_table()) {
+    clear_read_type();
+    set_has_iceberg_table();
+    read_type_.iceberg_table_ = CreateMaybeMessage< ::substrait::ReadRel_IcebergTable >(GetArenaForAllocation());
+  }
+  return read_type_.iceberg_table_;
+}
+inline ::substrait::ReadRel_IcebergTable* ReadRel::mutable_iceberg_table() {
+  ::substrait::ReadRel_IcebergTable* _msg = _internal_mutable_iceberg_table();
+  // @@protoc_insertion_point(field_mutable:substrait.ReadRel.iceberg_table)
+  return _msg;
+}
+
 inline bool ReadRel::has_read_type() const {
   return read_type_case() != READ_TYPE_NOT_SET;
 }
@@ -31996,44 +32835,228 @@ inline void FetchRel::set_allocated_input(::substrait::Rel* input) {
   // @@protoc_insertion_point(field_set_allocated:substrait.FetchRel.input)
 }
 
-// int64 offset = 3;
+// int64 offset = 3 [deprecated = true];
+inline bool FetchRel::_internal_has_offset() const {
+  return offset_mode_case() == kOffset;
+}
+inline bool FetchRel::has_offset() const {
+  return _internal_has_offset();
+}
+inline void FetchRel::set_has_offset() {
+  _oneof_case_[0] = kOffset;
+}
 inline void FetchRel::clear_offset() {
-  offset_ = int64_t{0};
+  if (_internal_has_offset()) {
+    offset_mode_.offset_ = int64_t{0};
+    clear_has_offset_mode();
+  }
 }
 inline int64_t FetchRel::_internal_offset() const {
-  return offset_;
+  if (_internal_has_offset()) {
+    return offset_mode_.offset_;
+  }
+  return int64_t{0};
+}
+inline void FetchRel::_internal_set_offset(int64_t value) {
+  if (!_internal_has_offset()) {
+    clear_offset_mode();
+    set_has_offset();
+  }
+  offset_mode_.offset_ = value;
 }
 inline int64_t FetchRel::offset() const {
   // @@protoc_insertion_point(field_get:substrait.FetchRel.offset)
   return _internal_offset();
-}
-inline void FetchRel::_internal_set_offset(int64_t value) {
-  
-  offset_ = value;
 }
 inline void FetchRel::set_offset(int64_t value) {
   _internal_set_offset(value);
   // @@protoc_insertion_point(field_set:substrait.FetchRel.offset)
 }
 
-// int64 count = 4;
+// .substrait.Expression offset_expr = 5;
+inline bool FetchRel::_internal_has_offset_expr() const {
+  return offset_mode_case() == kOffsetExpr;
+}
+inline bool FetchRel::has_offset_expr() const {
+  return _internal_has_offset_expr();
+}
+inline void FetchRel::set_has_offset_expr() {
+  _oneof_case_[0] = kOffsetExpr;
+}
+inline void FetchRel::clear_offset_expr() {
+  if (_internal_has_offset_expr()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete offset_mode_.offset_expr_;
+    }
+    clear_has_offset_mode();
+  }
+}
+inline ::substrait::Expression* FetchRel::release_offset_expr() {
+  // @@protoc_insertion_point(field_release:substrait.FetchRel.offset_expr)
+  if (_internal_has_offset_expr()) {
+    clear_has_offset_mode();
+      ::substrait::Expression* temp = offset_mode_.offset_expr_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    offset_mode_.offset_expr_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression& FetchRel::_internal_offset_expr() const {
+  return _internal_has_offset_expr()
+      ? *offset_mode_.offset_expr_
+      : reinterpret_cast< ::substrait::Expression&>(::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& FetchRel::offset_expr() const {
+  // @@protoc_insertion_point(field_get:substrait.FetchRel.offset_expr)
+  return _internal_offset_expr();
+}
+inline ::substrait::Expression* FetchRel::unsafe_arena_release_offset_expr() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.FetchRel.offset_expr)
+  if (_internal_has_offset_expr()) {
+    clear_has_offset_mode();
+    ::substrait::Expression* temp = offset_mode_.offset_expr_;
+    offset_mode_.offset_expr_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void FetchRel::unsafe_arena_set_allocated_offset_expr(::substrait::Expression* offset_expr) {
+  clear_offset_mode();
+  if (offset_expr) {
+    set_has_offset_expr();
+    offset_mode_.offset_expr_ = offset_expr;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.FetchRel.offset_expr)
+}
+inline ::substrait::Expression* FetchRel::_internal_mutable_offset_expr() {
+  if (!_internal_has_offset_expr()) {
+    clear_offset_mode();
+    set_has_offset_expr();
+    offset_mode_.offset_expr_ = CreateMaybeMessage< ::substrait::Expression >(GetArenaForAllocation());
+  }
+  return offset_mode_.offset_expr_;
+}
+inline ::substrait::Expression* FetchRel::mutable_offset_expr() {
+  ::substrait::Expression* _msg = _internal_mutable_offset_expr();
+  // @@protoc_insertion_point(field_mutable:substrait.FetchRel.offset_expr)
+  return _msg;
+}
+
+// int64 count = 4 [deprecated = true];
+inline bool FetchRel::_internal_has_count() const {
+  return count_mode_case() == kCount;
+}
+inline bool FetchRel::has_count() const {
+  return _internal_has_count();
+}
+inline void FetchRel::set_has_count() {
+  _oneof_case_[1] = kCount;
+}
 inline void FetchRel::clear_count() {
-  count_ = int64_t{0};
+  if (_internal_has_count()) {
+    count_mode_.count_ = int64_t{0};
+    clear_has_count_mode();
+  }
 }
 inline int64_t FetchRel::_internal_count() const {
-  return count_;
+  if (_internal_has_count()) {
+    return count_mode_.count_;
+  }
+  return int64_t{0};
+}
+inline void FetchRel::_internal_set_count(int64_t value) {
+  if (!_internal_has_count()) {
+    clear_count_mode();
+    set_has_count();
+  }
+  count_mode_.count_ = value;
 }
 inline int64_t FetchRel::count() const {
   // @@protoc_insertion_point(field_get:substrait.FetchRel.count)
   return _internal_count();
 }
-inline void FetchRel::_internal_set_count(int64_t value) {
-  
-  count_ = value;
-}
 inline void FetchRel::set_count(int64_t value) {
   _internal_set_count(value);
   // @@protoc_insertion_point(field_set:substrait.FetchRel.count)
+}
+
+// .substrait.Expression count_expr = 6;
+inline bool FetchRel::_internal_has_count_expr() const {
+  return count_mode_case() == kCountExpr;
+}
+inline bool FetchRel::has_count_expr() const {
+  return _internal_has_count_expr();
+}
+inline void FetchRel::set_has_count_expr() {
+  _oneof_case_[1] = kCountExpr;
+}
+inline void FetchRel::clear_count_expr() {
+  if (_internal_has_count_expr()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete count_mode_.count_expr_;
+    }
+    clear_has_count_mode();
+  }
+}
+inline ::substrait::Expression* FetchRel::release_count_expr() {
+  // @@protoc_insertion_point(field_release:substrait.FetchRel.count_expr)
+  if (_internal_has_count_expr()) {
+    clear_has_count_mode();
+      ::substrait::Expression* temp = count_mode_.count_expr_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    count_mode_.count_expr_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression& FetchRel::_internal_count_expr() const {
+  return _internal_has_count_expr()
+      ? *count_mode_.count_expr_
+      : reinterpret_cast< ::substrait::Expression&>(::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& FetchRel::count_expr() const {
+  // @@protoc_insertion_point(field_get:substrait.FetchRel.count_expr)
+  return _internal_count_expr();
+}
+inline ::substrait::Expression* FetchRel::unsafe_arena_release_count_expr() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.FetchRel.count_expr)
+  if (_internal_has_count_expr()) {
+    clear_has_count_mode();
+    ::substrait::Expression* temp = count_mode_.count_expr_;
+    count_mode_.count_expr_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void FetchRel::unsafe_arena_set_allocated_count_expr(::substrait::Expression* count_expr) {
+  clear_count_mode();
+  if (count_expr) {
+    set_has_count_expr();
+    count_mode_.count_expr_ = count_expr;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.FetchRel.count_expr)
+}
+inline ::substrait::Expression* FetchRel::_internal_mutable_count_expr() {
+  if (!_internal_has_count_expr()) {
+    clear_count_mode();
+    set_has_count_expr();
+    count_mode_.count_expr_ = CreateMaybeMessage< ::substrait::Expression >(GetArenaForAllocation());
+  }
+  return count_mode_.count_expr_;
+}
+inline ::substrait::Expression* FetchRel::mutable_count_expr() {
+  ::substrait::Expression* _msg = _internal_mutable_count_expr();
+  // @@protoc_insertion_point(field_mutable:substrait.FetchRel.count_expr)
+  return _msg;
 }
 
 // .substrait.extensions.AdvancedExtension advanced_extension = 10;
@@ -32122,6 +33145,24 @@ inline void FetchRel::set_allocated_advanced_extension(::substrait::extensions::
   // @@protoc_insertion_point(field_set_allocated:substrait.FetchRel.advanced_extension)
 }
 
+inline bool FetchRel::has_offset_mode() const {
+  return offset_mode_case() != OFFSET_MODE_NOT_SET;
+}
+inline void FetchRel::clear_has_offset_mode() {
+  _oneof_case_[0] = OFFSET_MODE_NOT_SET;
+}
+inline bool FetchRel::has_count_mode() const {
+  return count_mode_case() != COUNT_MODE_NOT_SET;
+}
+inline void FetchRel::clear_has_count_mode() {
+  _oneof_case_[1] = COUNT_MODE_NOT_SET;
+}
+inline FetchRel::OffsetModeCase FetchRel::offset_mode_case() const {
+  return FetchRel::OffsetModeCase(_oneof_case_[0]);
+}
+inline FetchRel::CountModeCase FetchRel::count_mode_case() const {
+  return FetchRel::CountModeCase(_oneof_case_[1]);
+}
 // -------------------------------------------------------------------
 
 // AggregateRel_Grouping
@@ -54126,6 +55167,10 @@ inline void ReferenceRel::set_subtree_ordinal(int32_t value) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
