@@ -643,7 +643,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			throw InvalidInputException("Metadata file missing in iceberg table read in substrait");
 		}
 		string name = "iceberg_" + StringUtil::GenerateRandomName();
-		named_parameter_map_t named_parameters({{"allow_moved_paths", Value::BOOLEAN(true)}});
+		named_parameter_map_t named_parameters({});
 		vector<Value> parameters {sget.iceberg_table().direct().metadata_uri()};
 		if (sget.iceberg_table().direct().has_snapshot_id()) {
 			auto str = sget.iceberg_table().direct().snapshot_id();

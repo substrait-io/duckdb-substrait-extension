@@ -321,7 +321,7 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
 
-TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg][interesting]") {
+TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -357,7 +357,7 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 	                  },
 	                  "icebergTable" : {
 	                    "direct" : {
-	                      "metadataUri" : "data/iceberg",
+	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
 	                    }
 	                  }
 	                }
@@ -397,7 +397,7 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 	REQUIRE(CHECK_COLUMN(result, 1, {3, 1, 2}));
 }
 
-TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg][interesting]") {
+TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -433,8 +433,8 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 	                  },
 	                  "icebergTable" : {
 	                    "direct" : {
-	                      "metadataUri" : "data/iceberg",
-		                  "snapshotId" : "8939038009417308793",
+	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                  "snapshotId" : "4118182924578855064",
 	                    }
 	                  }
 	                }
@@ -474,7 +474,7 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }
 
-TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg][interesting]") {
+TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -510,8 +510,8 @@ TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[su
 	                  },
 	                  "icebergTable" : {
 	                    "direct" : {
-	                      "metadataUri" : "data/iceberg",
-	                      "snapshotTimestamp" : 1737019454940000,
+	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+	                      "snapshotTimestamp" : 1737171409298000,
 	                    }
 	                  }
 	                }
