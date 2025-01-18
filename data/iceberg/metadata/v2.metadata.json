@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "50ad32d7-efff-4cee-964c-2c9618ac50dd",
-  "location" : "/tmp/data/iceberg/example",
+  "table-uuid" : "78e034b7-424d-4de8-a08a-6ad817ad2edb",
+  "location" : "iceberg",
   "last-sequence-number" : 1,
-  "last-updated-ms" : 1737019454470,
+  "last-updated-ms" : 1737171409298,
   "last-column-id" : 2,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -36,20 +36,20 @@
     "owner" : "david",
     "write.parquet.compression-codec" : "zstd"
   },
-  "current-snapshot-id" : 8939038009417308793,
+  "current-snapshot-id" : 4118182924578855064,
   "refs" : {
     "main" : {
-      "snapshot-id" : 8939038009417308793,
+      "snapshot-id" : 4118182924578855064,
       "type" : "branch"
     }
   },
   "snapshots" : [ {
     "sequence-number" : 1,
-    "snapshot-id" : 8939038009417308793,
-    "timestamp-ms" : 1737019454470,
+    "snapshot-id" : 4118182924578855064,
+    "timestamp-ms" : 1737171409298,
     "summary" : {
       "operation" : "append",
-      "spark.app.id" : "local-1737019416507",
+      "spark.app.id" : "local-1737171362701",
       "added-data-files" : "2",
       "added-records" : "2",
       "added-files-size" : "1388",
@@ -61,21 +61,21 @@
       "total-position-deletes" : "0",
       "total-equality-deletes" : "0",
       "engine-version" : "3.5.4",
-      "app-id" : "local-1737019416507",
+      "app-id" : "local-1737171362701",
       "engine-name" : "spark",
       "iceberg-version" : "Apache Iceberg 1.7.1 (commit 4a432839233f2343a9eae8255532f911f06358ef)"
     },
-    "manifest-list" : "/tmp/data/iceberg/example/metadata/snap-8939038009417308793-1-8ac6b23e-79bf-4101-9a93-a4eb4bef0747.avro",
+    "manifest-list" : "iceberg/metadata/snap-4118182924578855064-1-7ccac08a-42e7-4aef-b0b6-cf5365ac2df4.avro",
     "schema-id" : 0
   } ],
   "statistics" : [ ],
   "partition-statistics" : [ ],
   "snapshot-log" : [ {
-    "timestamp-ms" : 1737019454470,
-    "snapshot-id" : 8939038009417308793
+    "timestamp-ms" : 1737171409298,
+    "snapshot-id" : 4118182924578855064
   } ],
   "metadata-log" : [ {
-    "timestamp-ms" : 1737019448716,
-    "metadata-file" : "/tmp/data/iceberg/example/metadata/v1.metadata.json"
+    "timestamp-ms" : 1737171374941,
+    "metadata-file" : "iceberg/metadata/v1.metadata.json"
   } ]
 }

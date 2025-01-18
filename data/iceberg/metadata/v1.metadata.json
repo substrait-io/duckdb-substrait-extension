@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "50ad32d7-efff-4cee-964c-2c9618ac50dd",
-  "location" : "/tmp/data/iceberg/example",
+  "table-uuid" : "78e034b7-424d-4de8-a08a-6ad817ad2edb",
+  "location" : "iceberg",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1737019448716,
+  "last-updated-ms" : 1737171374941,
   "last-column-id" : 2,
   "current-schema-id" : 0,
   "schemas" : [ {
