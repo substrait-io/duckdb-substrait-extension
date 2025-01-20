@@ -347,30 +347,30 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		      "input" : {
 		        "project" : {
 		          "input" : {
-	                "read" : {
-	                  "baseSchema" : {
-	                    "names" : [ "fruit", "count" ],
-	                    "struct" : {
-	                      "types" : [ {
-	                        "string" : {
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      }, {
-	                        "decimal" : {
-	                          "scale" : 0,
-	                          "precision" : 10,
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      } ],
-	                      "nullability" : "NULLABILITY_REQUIRED"
-	                    }
-	                  },
-	                  "icebergTable" : {
-	                    "direct" : {
-	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
-	                    }
-	                  }
-	                }
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                }
+		              }
+		            }
 		          },
 		          "expressions" : [ {
 		            "selection" : {
@@ -379,12 +379,12 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		              },
 		              "rootReference" : { }
 		            }
-                  }, {
+		          }, {
 		            "selection" : {
 		              "directReference" : {
 		                "structField" : {
-                          "field": 1
-                        }
+		                  "field": 1
+		                }
 		              },
 		              "rootReference" : { }
 		            }
@@ -423,31 +423,31 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		      "input" : {
 		        "project" : {
 		          "input" : {
-	                "read" : {
-	                  "baseSchema" : {
-	                    "names" : [ "fruit", "count" ],
-	                    "struct" : {
-	                      "types" : [ {
-	                        "string" : {
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      }, {
-	                        "decimal" : {
-	                          "scale" : 0,
-	                          "precision" : 10,
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      } ],
-	                      "nullability" : "NULLABILITY_REQUIRED"
-	                    }
-	                  },
-	                  "icebergTable" : {
-	                    "direct" : {
-	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
 		                  "snapshotId" : "4118182924578855064",
-	                    }
-	                  }
-	                }
+		                }
+		              }
+		            }
 		          },
 		          "expressions" : [ {
 		            "selection" : {
@@ -456,12 +456,12 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		              },
 		              "rootReference" : { }
 		            }
-                  }, {
+		          }, {
 		            "selection" : {
 		              "directReference" : {
 		                "structField" : {
-                          "field": 1
-                        }
+		                  "field": 1
+		                }
 		              },
 		              "rootReference" : { }
 		            }
@@ -500,31 +500,31 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		      "input" : {
 		        "project" : {
 		          "input" : {
-	                "read" : {
-	                  "baseSchema" : {
-	                    "names" : [ "fruit", "count" ],
-	                    "struct" : {
-	                      "types" : [ {
-	                        "string" : {
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      }, {
-	                        "decimal" : {
-	                          "scale" : 0,
-	                          "precision" : 10,
-	                          "nullability" : "NULLABILITY_NULLABLE"
-	                        }
-	                      } ],
-	                      "nullability" : "NULLABILITY_REQUIRED"
-	                    }
-	                  },
-	                  "icebergTable" : {
-	                    "direct" : {
-	                      "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
-	                      "snapshotTimestamp" : 1737171409298000,
-	                    }
-	                  }
-	                }
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                  "snapshotTimestamp" : 1737171409298000,
+		                }
+		              }
+		            }
 		          },
 		          "expressions" : [ {
 		            "selection" : {
@@ -533,12 +533,12 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		              },
 		              "rootReference" : { }
 		            }
-                  }, {
+		          }, {
 		            "selection" : {
 		              "directReference" : {
 		                "structField" : {
-                          "field": 1
-                        }
+		                  "field": 1
+		                }
 		              },
 		              "rootReference" : { }
 		            }
