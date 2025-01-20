@@ -9,6 +9,16 @@
 using namespace duckdb;
 using namespace std;
 
+struct DataDirectoryFixture {
+	DataDirectoryFixture() {
+		TestChangeDirectory("data");
+	}
+
+	~DataDirectoryFixture() {
+		TestChangeDirectory("..");
+	}
+};
+
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
   Connection con(db);
@@ -321,7 +331,7 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
 
-TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg]") {
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -397,7 +407,7 @@ TEST_CASE("Test C Iceberg Substrait with Substrait API", "[substrait-api][iceber
 	REQUIRE(CHECK_COLUMN(result, 1, {3, 1, 2}));
 }
 
-TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -474,7 +484,7 @@ TEST_CASE("Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait
 	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }
 
-TEST_CASE("Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg]") {
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
