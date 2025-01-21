@@ -335,8 +335,6 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	CreateEmployeeTable(con);
-
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
@@ -410,8 +408,6 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-
-	CreateEmployeeTable(con);
 
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
@@ -487,8 +483,6 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-
-	CreateEmployeeTable(con);
 
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
