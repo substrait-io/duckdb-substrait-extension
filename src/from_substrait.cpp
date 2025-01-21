@@ -648,7 +648,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		if (sget.iceberg_table().direct().has_snapshot_id()) {
 			auto str = sget.iceberg_table().direct().snapshot_id();
 			int64_t snapshot_id = strtoimax(str.c_str(), nullptr, 10);
-			if (snapshot_id == 0) {
+			if (snapshot_id <= 0 || snapshot_id == std::numeric_limits<int64_t>::max()) {
 				throw InvalidInputException("Invalid snapshot id: " + sget.iceberg_table().direct().snapshot_id());
 			}
 			parameters.push_back(Value::UBIGINT(snapshot_id));
