@@ -9,6 +9,16 @@
 using namespace duckdb;
 using namespace std;
 
+struct DataDirectoryFixture {
+	DataDirectoryFixture() {
+		TestChangeDirectory("data");
+	}
+
+	~DataDirectoryFixture() {
+		TestChangeDirectory("..");
+	}
+};
+
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
   Connection con(db);
@@ -319,4 +329,228 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   auto result = con.FromSubstraitJSON(json);
   REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
+}
+
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+	const string plan_json = R"plan(
+		{
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                }
+		              }
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+		                  "field": 1
+		                }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "fruit", "count" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {"cranberry", "apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {3, 1, 2}));
+}
+
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+	const string plan_json = R"plan(
+		{
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                  "snapshotId" : "4118182924578855064",
+		                }
+		              }
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+		                  "field": 1
+		                }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "fruit", "count" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
+}
+
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timestamp with Substrait API", "[substrait-api][iceberg]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+	const string plan_json = R"plan(
+		{
+		  "relations" : [ {
+		    "root" : {
+		      "input" : {
+		        "project" : {
+		          "input" : {
+		            "read" : {
+		              "baseSchema" : {
+		                "names" : [ "fruit", "count" ],
+		                "struct" : {
+		                  "types" : [ {
+		                    "string" : {
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                   }, {
+		                    "decimal" : {
+		                      "scale" : 0,
+		                      "precision" : 10,
+		                      "nullability" : "NULLABILITY_NULLABLE"
+		                    }
+		                  } ],
+		                  "nullability" : "NULLABILITY_REQUIRED"
+		                }
+		              },
+		              "icebergTable" : {
+		                "direct" : {
+		                  "metadataUri" : "../data/iceberg/metadata/v3.metadata.json",
+		                  "snapshotTimestamp" : 1737171409298000,
+		                }
+		              }
+		            }
+		          },
+		          "expressions" : [ {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : { }
+		              },
+		              "rootReference" : { }
+		            }
+		          }, {
+		            "selection" : {
+		              "directReference" : {
+		                "structField" : {
+		                  "field": 1
+		                }
+		              },
+		              "rootReference" : { }
+		            }
+		          } ]
+		        }
+		      },
+		      "names" : [ "fruit", "count" ]
+		    }
+		  } ],
+		  "version" : {
+		    "minorNumber" : 53,
+		    "producer" : "DuckDB"
+		  }
+		}
+		)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }

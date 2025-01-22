@@ -1,5 +1,7 @@
 #include "from_substrait.hpp"
 
+#include <cinttypes>
+
 #include "duckdb/common/types/value.hpp"
 #include "duckdb/parser/expression/list.hpp"
 #include "duckdb/main/connection.hpp"
@@ -636,7 +638,33 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		} else {
 			scan = GetValuesExpression(sget.virtual_table().expressions());
 		}
-
+	} else if (sget.has_iceberg_table()) {
+		if (sget.iceberg_table().direct().metadata_uri().empty()) {
+			throw InvalidInputException("Metadata file missing in iceberg table read in substrait");
+		}
+		string name = "iceberg_" + StringUtil::GenerateRandomName();
+		named_parameter_map_t named_parameters({});
+		vector<Value> parameters {sget.iceberg_table().direct().metadata_uri()};
+		if (sget.iceberg_table().direct().has_snapshot_id()) {
+			auto str = sget.iceberg_table().direct().snapshot_id();
+			int64_t snapshot_id = strtoimax(str.c_str(), nullptr, 10);
+			if (snapshot_id <= 0 || snapshot_id == std::numeric_limits<int64_t>::max()) {
+				throw InvalidInputException("Invalid snapshot id: " + sget.iceberg_table().direct().snapshot_id());
+			}
+			parameters.push_back(Value::UBIGINT(snapshot_id));
+		} else if (sget.iceberg_table().direct().has_snapshot_timestamp()) {
+			parameters.push_back( Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
+		}
+		shared_ptr<TableFunctionRelation> scan_rel;
+		if (acquire_lock) {
+			scan_rel = make_shared_ptr<TableFunctionRelation>(context, "iceberg_scan", parameters,
+									  std::move(named_parameters));
+		} else {
+			scan_rel = make_shared_ptr<TableFunctionRelation>(context_wrapper, "iceberg_scan", parameters,
+									  std::move(named_parameters));
+		}
+		auto rel = static_cast<Relation *>(scan_rel.get());
+		scan = rel->Alias(name);
 	} else {
 		throw NotImplementedException("Unsupported type of read operator for substrait");
 	}
