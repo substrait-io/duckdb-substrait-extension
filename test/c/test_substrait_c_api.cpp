@@ -382,8 +382,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	                }
 	              }
 	            },
-                "expressions": [
-                  {
+	            "expressions": [
+	              {
 	                "scalarFunction": {
 	                  "functionReference": 1,
 	                  "arguments": [
@@ -414,8 +414,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	                    }
 	                  }
 	                }
-                  }
-                ]
+	              }
+	            ]
 	          }
 	        },
 	        "names": [
