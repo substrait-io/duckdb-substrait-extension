@@ -167,8 +167,10 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		interval.micros = literal.interval_day_to_second().microseconds();
 		return Value::INTERVAL(interval);
 	}
+	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
+		return {literal.var_char().value()};
 	default:
-		throw InternalException(to_string(literal.literal_type_case()));
+		throw SyntaxException("literals of this type number are not implemented: " + to_string(literal.literal_type_case()));
 	}
 }
 
