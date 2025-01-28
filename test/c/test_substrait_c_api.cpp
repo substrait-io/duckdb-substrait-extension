@@ -331,6 +331,107 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 1, {4, 8}));
 }
 
+TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[substrait-api][literal]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
+
+	const string plan_json = R"plan(
+	{
+	  "version": {
+	    "minorNumber": 53,
+	    "producer": "substrait-go v3.5.0 darwin/arm64"
+	  },
+	  "extensionUris": [
+	    {
+	      "extensionUriAnchor": 1,
+	      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/functions_comparison.yaml"
+	    }
+	  ],
+	  "extensions": [
+	    {
+	      "extensionFunction": {
+	        "extensionUriReference": 1,
+	        "functionAnchor": 1,
+	        "name": "equal"
+	      }
+	    }
+	  ],
+	  "relations": [
+	    {
+	      "root": {
+	        "input": {
+	          "project": {
+	            "input": {
+	              "read": {
+	                "common": {
+	                  "direct": {}
+	                },
+	                "virtualTable": {
+	                  "values": [
+	                    {
+	                      "fields": [
+	                        {
+	                          "i32": 42
+	                        }
+	                      ]
+	                    }
+	                  ]
+	                }
+	              }
+	            },
+	            "expressions": [
+	              {
+	                "scalarFunction": {
+	                  "functionReference": 1,
+	                  "arguments": [
+	                    {
+	                      "value": {
+	                        "literal": {
+	                          "varChar": {
+	                            "value": "a",
+	                            "length": 1
+	                          }
+	                        }
+	                      }
+	                    },
+	                    {
+	                      "value": {
+	                        "literal": {
+	                          "varChar": {
+	                            "value": " a",
+	                            "length": 2
+	                          }
+	                        }
+	                      }
+	                    }
+	                  ],
+	                  "outputType": {
+	                    "bool": {
+	                      "nullability": "NULLABILITY_REQUIRED"
+	                    }
+	                  }
+	                }
+	              }
+	            ]
+	          }
+	        },
+	        "names": [
+	          "result"
+	        ]
+	      }
+	    }
+	  ]
+	}
+	)plan";
+
+	auto result = con.FromSubstraitJSON(plan_json);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {false}));
+}
+
 TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait API", "[substrait-api][iceberg]") {
 	DuckDB db(nullptr);
 	Connection con(db);
