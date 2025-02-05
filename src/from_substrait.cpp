@@ -700,6 +700,10 @@ shared_ptr<Relation> SubstraitToDuckDB::GetValuesExpression(const google::protob
 		}
 		expressions.emplace_back(std::move(expression_row));
 	}
+	if (expressions.size() == 1 && expressions[0].empty()) {
+		// add a dummy row, as DuckDB does not support zero column ValueRelation
+		expressions[0].emplace_back(make_uniq<ConstantExpression>(Value::BOOLEAN(true)));
+	}
 	vector<string> column_names;
 	shared_ptr<Relation> scan;
 	if (acquire_lock) {
