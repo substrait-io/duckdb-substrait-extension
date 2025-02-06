@@ -655,3 +655,23 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana"}));
 	REQUIRE(CHECK_COLUMN(result, 1, {1, 2}));
 }
+
+TEST_CASE("Test C Project SELECT 1", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto json_str = con.GetSubstraitJSON("SELECT 1");
+	REQUIRE(json_str == expected_json_str);
+	auto result = con.FromSubstraitJSON(json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {1}));
+}
+
+TEST_CASE("Test C Project on empty virtual table for SELECT 1", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto json_str = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
+	auto result = con.FromSubstraitJSON(json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {1}));
+}
