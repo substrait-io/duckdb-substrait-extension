@@ -712,6 +712,9 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 	case ExpressionType::COMPARE_EQUAL:
 		function_id = RegisterFunction("equal", args_types);
 		break;
+	case ExpressionType::COMPARE_NOTEQUAL:
+		function_id = RegisterFunction("not_equal", args_types);
+		break;
 	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
 		function_id = RegisterFunction("lte", args_types);
 		break;
@@ -723,6 +726,9 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 		break;
 	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
 		function_id = RegisterFunction("gte", args_types);
+		break;
+	case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
+		function_id = RegisterFunction("is_not_distinct_from", args_types);
 		break;
 	default:
 		throw InternalException(ExpressionTypeToString(constant_filter.comparison_type));
@@ -1319,11 +1325,15 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		auto &column_ids = dget.GetColumnIds();
 		for (auto col_idx : dget.projection_ids) {
 			auto struct_item = select->add_struct_items();
-			struct_item->set_field(static_cast<int32_t>(column_ids[col_idx].GetPrimaryIndex()));
+			if (!column_ids[col_idx].IsRowIdColumn()) {
+				struct_item->set_field(static_cast<int32_t>(column_ids[col_idx].GetPrimaryIndex()));
+			}
 			// FIXME do we need to set the child? if yes, to what?
 		}
-		projection->set_allocated_select(select);
-		sget->set_allocated_projection(projection);
+		if (select->struct_items_size() != 0) {
+			projection->set_allocated_select(select);
+			sget->set_allocated_projection(projection);
+		}
 	}
 
 	// Add Table Schema
