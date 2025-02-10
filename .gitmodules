@@ -2,9 +2,6 @@
 	path = duckdb
 	url = https://github.com/duckdb/duckdb
 	branch = main
-[submodule "duckdb-r"]
-	path = duckdb-r
-	url = https://github.com/duckdb/duckdb-r
 [submodule "substrait"]
 	path = substrait
 	url = https://github.com/substrait-io/substrait
