@@ -341,12 +341,12 @@ TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
 
   auto json = GetSubstraitJSON(con,"select * from (values (1, 2),(3, 4))");
   REQUIRE(!json.empty());
-  std::cout << json << std::endl;
 
   auto result = FromSubstraitJSON(con,json);
   REQUIRE(CHECK_COLUMN(result, 0, {1, 3}));
   REQUIRE(CHECK_COLUMN(result, 1, {2, 4}));
 }
+
 
 TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   DuckDB db(nullptr);
@@ -354,7 +354,6 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
 
   auto json = GetSubstraitJSON(con,"select * from (values (1+1,2+2),(3+3,4+4)) as temp(a,b)");
   REQUIRE(!json.empty());
-  std::cout << json << std::endl;
 
   auto result = FromSubstraitJSON(con,json);
   REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
@@ -701,7 +700,15 @@ TEST_CASE("Test C Project on empty virtual table for SELECT 1", "[substrait-api]
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	auto json_str = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
+	auto json_str = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQAAAAAAAAAAAAAAAAAAAA==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
 	auto result = FromSubstraitJSON(con,json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {1}));
+}
+
+TEST_CASE("Test C VirtualTable with bad input Literal", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto json_plan = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
+	REQUIRE_THROWS(FromSubstraitJSON(con,json_plan));
 }
