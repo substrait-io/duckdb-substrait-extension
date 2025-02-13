@@ -347,18 +347,6 @@ TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
   REQUIRE(CHECK_COLUMN(result, 1, {2, 4}));
 }
 
-TEST_CASE("Test C VirtualTable with bad input Literal", "[substrait-api]") {
-	DuckDB db(nullptr);
-	Connection con(db);
-
-	auto json_plan = R"({"relations":[{"root":{"input":{"project":{"input":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"decimal":{"value":"pAYAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"TgcAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]},{"fields":[{"literal":{"decimal":{"value":"+AcAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"AQ==","precision":4,"scale":0}}}]}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"names":["col0","col1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
-	REQUIRE_THROWS(FromSubstraitJSON(con,json_plan));
-
-	json_plan = R"({"relations":[{"root":{"input":{"project":{"input":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"decimal":{"value":"pAYAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"TgcAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]},{"fields":[{"literal":{"decimal":{"value":"+AcAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"oggAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"names":["col0","col1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
-	auto result = FromSubstraitJSON(con,json_plan);
-	REQUIRE(CHECK_COLUMN(result, 0, {170, 204}));
-	REQUIRE(CHECK_COLUMN(result, 1, {187, 221}));
-}
 
 TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
   DuckDB db(nullptr);
@@ -712,7 +700,15 @@ TEST_CASE("Test C Project on empty virtual table for SELECT 1", "[substrait-api]
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	auto json_str = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
+	auto json_str = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQAAAAAAAAAAAAAAAAAAAA==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
 	auto result = FromSubstraitJSON(con,json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {1}));
+}
+
+TEST_CASE("Test C VirtualTable with bad input Literal", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto json_plan = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
+	REQUIRE_THROWS(FromSubstraitJSON(con,json_plan));
 }
