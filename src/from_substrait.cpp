@@ -114,6 +114,10 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		return {literal.string()};
 	case substrait::Expression_Literal::LiteralTypeCase::kDecimal: {
 		const auto &substrait_decimal = literal.decimal();
+		if (substrait_decimal.value().size() != 16) {
+			throw InvalidInputException("Decimal value must have 16 bytes, but has " +
+			                            std::to_string(substrait_decimal.value().size()));
+		}
 		auto raw_value = reinterpret_cast<const uint64_t *>(substrait_decimal.value().c_str());
 		hugeint_t substrait_value {};
 		substrait_value.lower = raw_value[0];

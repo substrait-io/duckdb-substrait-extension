@@ -341,11 +341,23 @@ TEST_CASE("Test C VirtualTable input Literal", "[substrait-api]") {
 
   auto json = GetSubstraitJSON(con,"select * from (values (1, 2),(3, 4))");
   REQUIRE(!json.empty());
-  std::cout << json << std::endl;
 
   auto result = FromSubstraitJSON(con,json);
   REQUIRE(CHECK_COLUMN(result, 0, {1, 3}));
   REQUIRE(CHECK_COLUMN(result, 1, {2, 4}));
+}
+
+TEST_CASE("Test C VirtualTable with bad input Literal", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto json_plan = R"({"relations":[{"root":{"input":{"project":{"input":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"decimal":{"value":"pAYAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"TgcAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]},{"fields":[{"literal":{"decimal":{"value":"+AcAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"AQ==","precision":4,"scale":0}}}]}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"names":["col0","col1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	REQUIRE_THROWS(FromSubstraitJSON(con,json_plan));
+
+	json_plan = R"({"relations":[{"root":{"input":{"project":{"input":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"decimal":{"value":"pAYAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"TgcAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]},{"fields":[{"literal":{"decimal":{"value":"+AcAAAAAAAAAAAAAAAAAAA==","precision":11,"scale":1}}},{"literal":{"decimal":{"value":"oggAAAAAAAAAAAAAAAAAAA==","precision":4,"scale":1}}}]}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"names":["col0","col1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto result = FromSubstraitJSON(con,json_plan);
+	REQUIRE(CHECK_COLUMN(result, 0, {170, 204}));
+	REQUIRE(CHECK_COLUMN(result, 1, {187, 221}));
 }
 
 TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
@@ -354,7 +366,6 @@ TEST_CASE("Test C VirtualTable input Expression", "[substrait-api]") {
 
   auto json = GetSubstraitJSON(con,"select * from (values (1+1,2+2),(3+3,4+4)) as temp(a,b)");
   REQUIRE(!json.empty());
-  std::cout << json << std::endl;
 
   auto result = FromSubstraitJSON(con,json);
   REQUIRE(CHECK_COLUMN(result, 0, {2, 6}));
