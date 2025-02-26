@@ -25,6 +25,21 @@ TEST_CASE("Test C Project input columns with Substrait API", "[substrait-api]") 
 	REQUIRE(CHECK_COLUMN(result, 0, {10, 20, 30}));
 }
 
+TEST_CASE("Test C Project input columns with limit Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (10), (20), (30)"));
+	CreateEmployeeTable(con);
+
+	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"equal:i64_i64"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[5]}},"input":{"sort":{"input":{"project":{"common":{"emit":{"outputMapping":[2,0,3,1,4]}},"input":{"project":{"common":{"emit":{"outputMapping":[5,6]}},"input":{"join":{"left":{"project":{"common":{"emit":{"outputMapping":[2,1,3,0,4]}},"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"right":{"project":{"common":{"emit":{"outputMapping":[1,0,2]}},"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"offset":"0","count":"2"}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"expression":{"scalarFunction":{"functionReference":1,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":6}},"rootReference":{}}}}]}},"type":"JOIN_TYPE_LEFT_SEMI"}},"expressions":[{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":3}},"rootReference":{}}}]}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"sorts":[{"expr":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},"direction":"SORT_DIRECTION_ASC_NULLS_LAST"}]}},"expressions":[{"selection":{"directReference":{"structField":{"field":3}},"rootReference":{}}}]}},"names":["i"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto json_str = GetSubstraitJSON(con, "SELECT * FROM integers limit 2");
+	REQUIRE(json_str == expected_json_str);
+	auto result = FromSubstraitJSON(con, json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {10, 20}));
+}
+
 TEST_CASE("Test C Project 1 input column 1 transformation with Substrait API", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
