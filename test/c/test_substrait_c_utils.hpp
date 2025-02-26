@@ -11,5 +11,9 @@ void CreateDepartmentsTable(Connection& con);
 
 duckdb::unique_ptr<QueryResult>  ExecuteViaSubstraitJSON(Connection &con, const std::string &query);
 duckdb::unique_ptr<QueryResult>  ExecuteViaSubstrait(Connection &con, const std::string &query);
+string GetSubstrait(Connection &con,const string &query);
+string GetSubstraitJSON(Connection &con,const string &query);
+duckdb::unique_ptr<QueryResult> FromSubstrait(Connection &con, const string &proto);
+duckdb::unique_ptr<QueryResult> FromSubstraitJSON(Connection &con, const string &proto);
 
 #endif
