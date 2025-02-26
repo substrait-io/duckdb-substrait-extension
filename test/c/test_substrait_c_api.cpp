@@ -22,34 +22,6 @@ struct DataDirectoryFixture {
 	}
 };
 
-string GetSubstrait(Connection &con,const string &query) {
-    duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait", params)->Execute();
-	auto protobuf = result->FetchRaw()->GetValue(0, 0);
-	return protobuf.GetValueUnsafe<string_t>().GetString();
-}
-
-string GetSubstraitJSON(Connection &con,const string &query) {
-    duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait_json", params)->Execute();
-	auto protobuf = result->FetchRaw()->GetValue(0, 0);
-	return protobuf.GetValueUnsafe<string_t>().GetString();
-}
-
-duckdb::unique_ptr<QueryResult> FromSubstrait(Connection &con, const string &proto) {
-    duckdb::vector<Value> params;
-	params.emplace_back(Value::BLOB_RAW(proto));
-	return con.TableFunction("from_substrait", params)->Execute();
-}
-
-duckdb::unique_ptr<QueryResult> FromSubstraitJSON(Connection &con, const string &proto) {
-    duckdb::vector<Value> params;
-	params.emplace_back(proto);
-	return con.TableFunction("from_substrait_json", params)->Execute();
-}
-
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
   Connection con(db);
@@ -644,7 +616,7 @@ TEST_CASE("Test C Project SELECT 1", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto json_str = GetSubstraitJSON(con,"SELECT 1");
 	REQUIRE(json_str == expected_json_str);
 	auto result = FromSubstraitJSON(con,json_str);

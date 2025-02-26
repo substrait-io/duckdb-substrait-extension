@@ -4,6 +4,35 @@
 using namespace duckdb;
 using namespace std;
 
+
+string GetSubstrait(Connection &con,const string &query) {
+	duckdb::vector<Value> params;
+	params.emplace_back(query);
+	auto result = con.TableFunction("get_substrait", params)->Execute();
+	auto protobuf = result->FetchRaw()->GetValue(0, 0);
+	return protobuf.GetValueUnsafe<string_t>().GetString();
+}
+
+string GetSubstraitJSON(Connection &con,const string &query) {
+	duckdb::vector<Value> params;
+	params.emplace_back(query);
+	auto result = con.TableFunction("get_substrait_json", params)->Execute();
+	auto protobuf = result->FetchRaw()->GetValue(0, 0);
+	return protobuf.GetValueUnsafe<string_t>().GetString();
+}
+
+duckdb::unique_ptr<QueryResult> FromSubstrait(Connection &con, const string &proto) {
+	duckdb::vector<Value> params;
+	params.emplace_back(Value::BLOB_RAW(proto));
+	return con.TableFunction("from_substrait", params)->Execute();
+}
+
+duckdb::unique_ptr<QueryResult> FromSubstraitJSON(Connection &con, const string &proto) {
+	duckdb::vector<Value> params;
+	params.emplace_back(proto);
+	return con.TableFunction("from_substrait_json", params)->Execute();
+}
+
 duckdb::unique_ptr<QueryResult> ExecuteViaSubstrait(Connection &con, const string &sql) {
 	auto proto = GetSubstrait(con, sql);
 	return FromSubstrait(con,proto);
