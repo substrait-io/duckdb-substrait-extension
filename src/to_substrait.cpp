@@ -1003,6 +1003,24 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 	for (auto &dordf : dord.orders) {
 		TransformOrder(dordf, *sord->add_sorts());
 	}
+
+	if (!dord.projection_map.empty()) {
+		auto proj_rel = new substrait::Rel();
+		auto projection = proj_rel->mutable_project();
+		auto child_column_count = GetColumnCount(*dop.children[0]);
+		for (auto &col_idx : dord.projection_map) {
+			CreateFieldRef(projection->add_expressions(), col_idx);
+		}
+		vector<int32_t> output_mapping;
+		for (idx_t i = 0; i < projection->expressions_size(); i++) {
+			output_mapping.push_back(child_column_count + i);
+		}
+		auto rel_common = CreateOutputMapping(output_mapping);
+		projection->set_allocated_common(rel_common);
+		projection->set_allocated_input(res);
+		return proj_rel;
+	}
+
 	return res;
 }
 
