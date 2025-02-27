@@ -861,6 +861,7 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 		for (auto col_idx : dfilter.projection_map) {
 			CreateFieldRef(sproj->add_expressions(), col_idx);
 			output_mapping.push_back(child_column_count + t_index);
+			++t_index;
 		}
 		auto rel_common = CreateOutputMapping(output_mapping);
 		sproj->set_allocated_common(rel_common);
