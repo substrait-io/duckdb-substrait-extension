@@ -853,23 +853,89 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 
 	if (!dfilter.projection_map.empty()) {
 		auto projection = new substrait::Rel();
-		projection->mutable_project()->set_allocated_input(res);
+		auto sproj = projection->mutable_project();
+		sproj->set_allocated_input(res);
+		auto child_column_count = GetColumnCount(*dop.children[0]);
+		auto t_index = 0;
+		vector<int32_t> output_mapping;
 		for (auto col_idx : dfilter.projection_map) {
-			CreateFieldRef(projection->mutable_project()->add_expressions(), col_idx);
+			CreateFieldRef(sproj->add_expressions(), col_idx);
+			output_mapping.push_back(child_column_count + t_index);
+			++t_index;
 		}
+		auto rel_common = CreateOutputMapping(output_mapping);
+		sproj->set_allocated_common(rel_common);
 		res = projection;
 	}
 	return res;
 }
 
+substrait::RelCommon *DuckDBToSubstrait::CreateOutputMapping(vector<int32_t> vector) {
+	auto rel_common = new substrait::RelCommon();
+	auto output_mapping = rel_common->mutable_emit()->mutable_output_mapping();
+	for (auto &col_idx : vector) {
+		output_mapping->Add(col_idx);
+	}
+	return rel_common;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto &dproj = dop.Cast<LogicalProjection>();
+
+	auto child_column_count = GetColumnCount(*dop.children[0]);
+	auto need_output_mapping = true;
+	if (child_column_count <= dproj.expressions.size()) {
+		// check if the projection is just pass through of input columns with no reordering
+		auto exp_col_idx = 0;
+		auto is_passthrough = true;
+		for (auto &dexpr : dproj.expressions) {
+			if (dexpr->type != ExpressionType::BOUND_REF) {
+				is_passthrough = false;
+				break;
+			}
+			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
+			if (dref.index != exp_col_idx) {
+				is_passthrough = false;
+				break;
+			}
+			exp_col_idx++;
+		}
+		if (is_passthrough && child_column_count == exp_col_idx) {
+			// skip the projection
+			return TransformOp(*dop.children[0]);
+		}
+		if (child_column_count == exp_col_idx) {
+			// all input columns are projected, no need for output mapping
+			need_output_mapping = false;
+		}
+	}
+
 	auto sproj = res->mutable_project();
 	sproj->set_allocated_input(TransformOp(*dop.children[0]));
 
+	auto t_index = 0;
+	vector<int32_t> output_mapping;
 	for (auto &dexpr : dproj.expressions) {
-		TransformExpr(*dexpr, *sproj->add_expressions());
+		switch (dexpr->type) {
+		case ExpressionType::BOUND_REF: {
+			auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
+			output_mapping.push_back(dref.index);
+			break;
+		}
+		default:
+			TransformExpr(*dexpr.get(), *sproj->add_expressions());
+			output_mapping.push_back(child_column_count + t_index);
+			t_index++;
+		}
+	}
+	if (need_output_mapping) {
+		if (sproj->expressions_size() == 0) {
+			// atleast one expression should be there, add zeroth column as dummy expression
+			CreateFieldRef(sproj->add_expressions(), 0);
+		}
+		auto rel_common = CreateOutputMapping(output_mapping);
+		sproj->set_allocated_common(rel_common);
 	}
 	return res;
 }
@@ -938,6 +1004,24 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 	for (auto &dordf : dord.orders) {
 		TransformOrder(dordf, *sord->add_sorts());
 	}
+
+	if (!dord.projection_map.empty()) {
+		auto proj_rel = new substrait::Rel();
+		auto projection = proj_rel->mutable_project();
+		auto child_column_count = GetColumnCount(*dop.children[0]);
+		for (auto &col_idx : dord.projection_map) {
+			CreateFieldRef(projection->add_expressions(), col_idx);
+		}
+		vector<int32_t> output_mapping;
+		for (idx_t i = 0; i < projection->expressions_size(); i++) {
+			output_mapping.push_back(child_column_count + i);
+		}
+		auto rel_common = CreateOutputMapping(output_mapping);
+		projection->set_allocated_common(rel_common);
+		projection->set_allocated_input(res);
+		return proj_rel;
+	}
+
 	return res;
 }
 
@@ -993,17 +1077,26 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 			djoin.right_projection_map.push_back(i);
 		}
 	}
+	// TODO this projection seems redundant but from_substrait does not work without it
 	auto proj_rel = new substrait::Rel();
 	auto projection = proj_rel->mutable_project();
+	auto child_column_count = GetColumnCount(*dop.children[0]);
 	for (auto left_idx : djoin.left_projection_map) {
 		CreateFieldRef(projection->add_expressions(), left_idx);
 	}
 	if (djoin.join_type != JoinType::SEMI) {
+		child_column_count += GetColumnCount(*dop.children[1]);
 		for (auto right_idx : djoin.right_projection_map) {
 			CreateFieldRef(projection->add_expressions(), right_idx + left_col_count);
 		}
 	}
 
+	vector<int32_t> output_mapping;
+	for (idx_t i = 0; i < projection->expressions_size(); i++) {
+		output_mapping.push_back(child_column_count + i);
+	}
+	auto rel_common = CreateOutputMapping(output_mapping);
+	projection->set_allocated_common(rel_common);
 	projection->set_allocated_input(res);
 	return proj_rel;
 }
@@ -1334,6 +1427,25 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 			projection->set_allocated_select(select);
 			sget->set_allocated_projection(projection);
 		}
+	} else if (!dget.GetColumnIds().empty()) {
+		auto &column_ids = dget.GetColumnIds();
+		vector<int> column_indices;
+		for (auto &column_id : column_ids) {
+			if (!column_id.IsRowIdColumn()) {
+				column_indices.push_back(column_id.GetPrimaryIndex());
+			}
+		}
+		if (!column_indices.empty() && column_indices.size() < dget.returned_types.size()) {
+			auto projection = new substrait::Expression_MaskExpression();
+			projection->set_maintain_singular_struct(true);
+			auto select = new substrait::Expression_MaskExpression_StructSelect();
+			for (auto col_idx : column_indices) {
+				auto struct_item = select->add_struct_items();
+				struct_item->set_field(static_cast<int32_t>(col_idx));
+			}
+			projection->set_allocated_select(select);
+			sget->set_allocated_projection(projection);
+		}
 	}
 
 	// Add Table Schema
@@ -1548,6 +1660,10 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	substrait::Rel *input = TransformOp(*logical_delete.children[0]);
 	writeRel->set_allocated_input(input);
 	return rel;
+}
+
+vector<LogicalType>::size_type DuckDBToSubstrait::GetColumnCount(LogicalOperator &dop) {
+	return dop.types.size();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
