@@ -320,6 +320,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	      "root": {
 	        "input": {
 	          "project": {
+	            "common": {
+	              "emit": {
+				    "outputMapping": [ 1 ]
+				  }
+	            },
 	            "input": {
 	              "read": {
 	                "common": {
@@ -401,6 +406,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
@@ -475,6 +485,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
@@ -550,6 +565,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
