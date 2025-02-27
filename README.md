@@ -26,7 +26,7 @@ To use the newly-built extension, run the bundled `duckdb` shell:
 And load the extension like so:
 
 ```sql
-LOAD 'build/release/substrait.duckdb_extension';
+LOAD 'build/release/extension/substrait/substrait.duckdb_extension';
 ```
 
 ## Usage
