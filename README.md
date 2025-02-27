@@ -26,7 +26,7 @@ To use the newly-built extension, run the bundled `duckdb` shell:
 And load the extension like so:
 
 ```sql
-LOAD 'build/release/substrait.duckdb_extension';
+LOAD 'build/release/extension/substrait/substrait.duckdb_extension';
 ```
 
 ## Usage
@@ -118,6 +118,7 @@ con.load_extension("substrait")
 With the extension loaded, you can now use the functions provided by this extension such as `get_substrait`:
 
 ```python
+# Insert some data first
 con.sql("CREATE TABLE crossfit (exercise text, difficulty_level int);")
 con.sql("INSERT INTO crossfit VALUES ('Push Ups', 3), ('Pull Ups', 5) , (' Push Jerk', 7), ('Bar Muscle Up', 10);")
 
