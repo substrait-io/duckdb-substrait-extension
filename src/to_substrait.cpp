@@ -1037,9 +1037,6 @@ void PrintRelAsJson(substrait::Rel * rel) {
 		Printer::Print("pb MessageToJsonString failed");
 	}
 
-	if (i == 24 ) {
-		Printer::Print("TO debug");
-	}
 	Printer::Print(std::to_string(i) + "==>\n" + json_output);
 	++i;
 }
