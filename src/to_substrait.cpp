@@ -1025,6 +1025,25 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 	return res;
 }
 
+void PrintRelAsJson(substrait::Rel * rel) {
+	static int i;
+	std::string json_output;
+	google::protobuf::util::JsonPrintOptions options;
+	options.add_whitespace = false;  // Pretty-print with indentation
+	options.always_print_primitive_fields = true;  // Print even if default values
+
+	auto status = google::protobuf::util::MessageToJsonString(*rel, &json_output, options);
+	if (!status.ok()) {
+		Printer::Print("pb MessageToJsonString failed");
+	}
+
+	if (i == 24 ) {
+		Printer::Print("TO debug");
+	}
+	Printer::Print(std::to_string(i) + "==>\n" + json_output);
+	++i;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto sjoin = res->mutable_join();
@@ -1435,7 +1454,7 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 				column_indices.push_back(column_id.GetPrimaryIndex());
 			}
 		}
-		if (!column_indices.empty() && column_indices.size() < dget.returned_types.size()) {
+		if (!column_indices.empty()) {
 			auto projection = new substrait::Expression_MaskExpression();
 			projection->set_maintain_singular_struct(true);
 			auto select = new substrait::Expression_MaskExpression_StructSelect();

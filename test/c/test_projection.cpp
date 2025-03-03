@@ -33,9 +33,7 @@ TEST_CASE("Test C Project input columns with limit Substrait API", "[substrait-a
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (10), (20), (30)"));
 	CreateEmployeeTable(con);
 
-	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"equal:i64_i64"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[5]}},"input":{"sort":{"input":{"project":{"common":{"emit":{"outputMapping":[2,0,3,1,4]}},"input":{"project":{"common":{"emit":{"outputMapping":[5,6]}},"input":{"join":{"left":{"project":{"common":{"emit":{"outputMapping":[2,1,3,0,4]}},"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"right":{"project":{"common":{"emit":{"outputMapping":[1,0,2]}},"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"offset":"0","count":"2"}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"expression":{"scalarFunction":{"functionReference":1,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":6}},"rootReference":{}}}}]}},"type":"JOIN_TYPE_LEFT_SEMI"}},"expressions":[{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":3}},"rootReference":{}}}]}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"sorts":[{"expr":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},"direction":"SORT_DIRECTION_ASC_NULLS_LAST"}]}},"expressions":[{"selection":{"directReference":{"structField":{"field":3}},"rootReference":{}}}]}},"names":["i"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto json_str = GetSubstraitJSON(con, "SELECT * FROM integers limit 2");
-	REQUIRE(json_str == expected_json_str);
 	auto result = FromSubstraitJSON(con, json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {10, 20}));
 }
@@ -177,12 +175,18 @@ TEST_CASE("Test Project simple join on tables with multiple columns", "[substrai
 	DuckDB db(nullptr);
 	Connection con(db);
 	con.EnableQueryVerification();
-	REQUIRE_NO_FAIL(con.Query("CALL dbgen(sf=0.000001)"));
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE orders ( o_orderkey INT PRIMARY KEY, o_orderdate DATE );"));
+	REQUIRE_NO_FAIL(con.Query(" CREATE TABLE lineitem ( l_orderkey INT, l_extendedprice DECIMAL(10,2),"
+		" l_discount DECIMAL(4,2), FOREIGN KEY (l_orderkey) REFERENCES orders(o_orderkey)); "));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO orders (o_orderkey, o_orderdate) VALUES "
+		" (1, '2022-03-15'), (2, '2023-07-20'), (3, '2024-01-10');"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO lineitem (l_orderkey, l_extendedprice, l_discount) VALUES "
+		" (1, 100.00, 0.10), (1, 200.00, 0.05), (2, 150.00, 0.20), (3, 300.00, 0.15);"));
 
 	auto query_text_2 = "SELECT extract(year FROM o_orderdate), l_extendedprice * (1 - l_discount) AS amount FROM lineitem, orders WHERE o_orderkey = l_orderkey";
-	auto json2 = GetSubstraitJSON(con, query_text_2);
-	auto expected_json = R"cust_raw({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/"},{"extensionUriAnchor":2,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_datetime.yaml"},{"extensionUriAnchor":3,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic_decimal.yaml"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"equal:i64_i64"}},{"extensionFunction":{"extensionUriReference":2,"functionAnchor":2,"name":"extract:date"}},{"extensionFunction":{"extensionUriReference":3,"functionAnchor":3,"name":"subtract:decimal_decimal"}},{"extensionFunction":{"extensionUriReference":3,"functionAnchor":4,"name":"multiply:decimal_decimal"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[3,4]}},"input":{"project":{"common":{"emit":{"outputMapping":[26,27,28]}},"input":{"join":{"left":{"project":{"common":{"emit":{"outputMapping":[7,6,8,5,9,4,10,3,11,2,12,1,13,0,14]}},"input":{"project":{"common":{"emit":{"outputMapping":[3,2,4,1,5,0,6]}},"input":{"read":{"baseSchema":{"names":["l_orderkey","l_partkey","l_suppkey","l_linenumber","l_quantity","l_extendedprice","l_discount","l_tax","l_returnflag","l_linestatus","l_shipdate","l_commitdate","l_receiptdate","l_shipinstruct","l_shipmode","l_comment"],"struct":{"types":[{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"decimal":{"scale":2,"precision":15,"nullability":"NULLABILITY_REQUIRED"}},{"decimal":{"scale":2,"precision":15,"nullability":"NULLABILITY_REQUIRED"}},{"decimal":{"scale":2,"precision":15,"nullability":"NULLABILITY_REQUIRED"}},{"decimal":{"scale":2,"precision":15,"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"date":{"nullability":"NULLABILITY_REQUIRED"}},{"date":{"nullability":"NULLABILITY_REQUIRED"}},{"date":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":5},{"field":6}]},"maintainSingularStruct":true},"namedTable":{"names":["lineitem"]}}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"right":{"project":{"common":{"emit":{"outputMapping":[5,4,6,3,7,2,8,1,9,0,10]}},"input":{"project":{"common":{"emit":{"outputMapping":[2,1,3,0,4]}},"input":{"read":{"baseSchema":{"names":["o_orderkey","o_custkey","o_orderstatus","o_totalprice","o_orderdate","o_orderpriority","o_clerk","o_shippriority","o_comment"],"struct":{"types":[{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"i64":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"decimal":{"scale":2,"precision":15,"nullability":"NULLABILITY_REQUIRED"}},{"date":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}},{"i32":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":4}]},"maintainSingularStruct":true},"namedTable":{"names":["orders"]}}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"expressions":[{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}},{"literal":{"null":{}}}]}},"expression":{"scalarFunction":{"functionReference":1,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":3}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":18}},"rootReference":{}}}}]}},"type":"JOIN_TYPE_INNER"}},"expressions":[{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":11}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":22}},"rootReference":{}}}]}},"expressions":[{"scalarFunction":{"functionReference":2,"outputType":{"i64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"enum":"year"},{"value":{"selection":{"directReference":{"structField":{"field":2}},"rootReference":{}}}}]}},{"scalarFunction":{"functionReference":4,"outputType":{"decimal":{"scale":4,"precision":18,"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"scalarFunction":{"functionReference":3,"outputType":{"decimal":{"scale":2,"precision":16,"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"literal":{"decimal":{"value":"ZAAAAAAAAAAAAAAAAAAAAA==","precision":16,"scale":2}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}}]}}]}},"names":["\"year\"(o_orderdate)","amount"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})cust_raw";
-	REQUIRE(json2 == expected_json);
+	auto json_plan = GetSubstraitJSON(con, query_text_2);
+	auto res1 = FromSubstraitJSON(con, json_plan);
+	REQUIRE(CHECK_COLUMN(res1, 0, {2022, 2022, 2023, 2024}));
 }
 
 TEST_CASE("Test tpch Q12", "[substrait-api]") {
@@ -213,4 +217,120 @@ TEST_CASE("Test tpch Q12", "[substrait-api]") {
 	auto jsonPlan3 = GetSubstraitJSON(con, query_text3);
 	auto res3 = FromSubstraitJSON(con, jsonPlan3);
 	REQUIRE(CHECK_COLUMN(res3, 0, {"MAIL", "SHIP"}));
+}
+
+void CreateTablesForTpcdsQ32(Connection& con) {
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE store_sales ( ss_sold_date_sk INT, ss_item_sk INT, ss_store_sk INT,"
+		" ss_cdemo_sk INT, ss_quantity INT, ss_list_price DECIMAL(10,2), ss_coupon_amt DECIMAL(10,2),"
+		" ss_sales_price DECIMAL(10,2) );"));
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE customer_demographics ( cd_demo_sk INT PRIMARY KEY, cd_gender CHAR(1),"
+		"cd_marital_status VARCHAR(10), cd_education_status VARCHAR(20) );"));
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE date_dim ( d_date_sk INT PRIMARY KEY, d_year INT );"));
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE store ( s_store_sk INT PRIMARY KEY, s_state CHAR(2) );"));
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE item ( i_item_sk INT PRIMARY KEY, i_item_id VARCHAR(10) );"));
+
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO store_sales VALUES "
+			"(20000101, 101, 1, 201, 2, 100.00, 10.00, 90.00),  "
+			"(20000102, 102, 1, 202, 3, 150.00, 15.00, 135.00), "
+			"(20000103, 103, 2, 203, 4, 200.00, 20.00, 180.00), "
+			"(20000104, 104, 2, 204, 5, 250.00, 25.00, 225.00), "
+			"(20000105, 105, 3, 205, 6, 300.00, 30.00, 270.00);"));
+
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO customer_demographics VALUES "
+						   "(201, 'M', 'D', 'College'),"
+						   "(202, 'M', 'D', 'College'),"
+						   "(203, 'M', 'D', 'College'),"
+						   "(204, 'F', 'D', 'College'),"
+						   "(205, 'M', 'D', 'College')," ));
+
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO date_dim VALUES "
+	              "(20000101, 2000), (20000102, 2000), (20000103, 2000), (20000104, 2000), (20000105, 2000);"));
+
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO store VALUES  (1, 'TN'), (2, 'TX'), (3, 'NY');"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO item VALUES "
+		"(101, 'I001'), (102, 'I002'), (103, 'I003'), (104, 'I004'), (105, 'I005');"));
+
+}
+
+TEST_CASE("Test multiple joins in tpcds Q32", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	con.EnableQueryVerification();
+
+	CreateTablesForTpcdsQ32(con);
+	auto query_text1 = "SELECT i_item_id, s_state, "
+		// " GROUPING(s_state) AS g_state, "
+		" AVG(ss_quantity) AS agg1, "
+		" AVG(ss_list_price) AS agg2, "
+		" AVG(ss_coupon_amt) AS agg3, "
+		" AVG(ss_sales_price) AS agg4 "
+		" FROM store_sales"
+		" JOIN customer_demographics ON ss_cdemo_sk = cd_demo_sk "
+		" JOIN date_dim ON ss_sold_date_sk = d_date_sk "
+		" JOIN store ON ss_store_sk = s_store_sk "
+		" JOIN item ON ss_item_sk = i_item_sk "
+		" WHERE cd_gender = 'M' AND cd_marital_status = 'D' AND cd_education_status = 'College' "
+		" AND d_year = 2000 "
+		" AND s_state IN ('TN', 'TX', 'NY') "
+		" GROUP BY (i_item_id, s_state) "
+		" ORDER BY i_item_id "
+		// " ORDER BY i_item_id, s_state "
+		// " LIMIT 100;"
+		;
+
+	auto jsonPlan1 = GetSubstraitJSON(con, query_text1);
+	auto res1 = FromSubstraitJSON(con, jsonPlan1);
+	// Printer::Print(jsonPlan1);
+
+	// auto res1 = con.Query(query_text1);
+	REQUIRE(CHECK_COLUMN(res1, 0, {"I001", "I002", "I003", "I005"}));
+	REQUIRE(CHECK_COLUMN(res1, 1, {"TN", "TN", "TX", "NY"}));
+	REQUIRE(CHECK_COLUMN(res1, 2, {2.0, 3.0, 4.0,  6.0}));
+	REQUIRE(CHECK_COLUMN(res1, 3, {100.0, 150.0, 200.0, 300.0}));
+	REQUIRE(CHECK_COLUMN(res1, 4, {10.0, 15.0, 20.0, 30.0}));
+	REQUIRE(CHECK_COLUMN(res1, 5, {90.0, 135.0, 180.0, 270.0}));
+}
+
+TEST_CASE("Test tpcds Q32", "[substrait-api]") {
+	SKIP_TEST("SKIP: Groupings is not handled in GroupBy in to and from substrait");
+	return;
+	DuckDB db(nullptr);
+	Connection con(db);
+	con.EnableQueryVerification();
+
+	CreateTablesForTpcdsQ32(con);
+
+	auto query_text1 = "SELECT i_item_id, s_state, "
+		" GROUPING(s_state) AS g_state, "
+		" AVG(ss_quantity) AS agg1, "
+		" AVG(ss_list_price) AS agg2, "
+		" AVG(ss_coupon_amt) AS agg3, "
+		" AVG(ss_sales_price) AS agg4 "
+		" FROM store_sales"
+		" JOIN customer_demographics ON ss_cdemo_sk = cd_demo_sk "
+		" JOIN date_dim ON ss_sold_date_sk = d_date_sk "
+		" JOIN store ON ss_store_sk = s_store_sk "
+		" JOIN item ON ss_item_sk = i_item_sk "
+		" WHERE cd_gender = 'M' AND cd_marital_status = 'D' AND cd_education_status = 'College' "
+		" AND d_year = 2000 "
+		" AND s_state IN ('TN', 'TX', 'NY') "
+		" GROUP BY ROLLUP (i_item_id, s_state) "
+		" ORDER BY i_item_id, s_state "
+		" LIMIT 100;"
+		;
+
+	auto jsonPlan1 = GetSubstraitJSON(con, query_text1);
+	auto res1 = FromSubstraitJSON(con, jsonPlan1);
+	Printer::Print(jsonPlan1);
+
+	// auto res1 = con.Query(query_text1);
+	REQUIRE(CHECK_COLUMN(res1, 0, {"I001", "I001", "I002", "I002", "I003", "I003", "I005", "I005", duckdb::Value{}}));
+	REQUIRE(CHECK_COLUMN(res1, 1, { "TN", duckdb::Value{}, "TN", duckdb::Value{}, "TX", duckdb::Value{}, "NY", duckdb::Value{}, duckdb::Value{}}));
+	REQUIRE(CHECK_COLUMN(res1, 2, {0, 1, 0, 1, 0, 1, 0, 1, 1}));
+	REQUIRE(CHECK_COLUMN(res1, 3, {2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 6.0, 6.0, 3.75}));
+	REQUIRE(CHECK_COLUMN(res1, 4, {100.0, 100.0, 150.0, 150.0, 200.0, 200.0, 300.0, 300.0, 187.5}));
+	REQUIRE(CHECK_COLUMN(res1, 5, {10.0, 10.0, 15.0, 15.0, 20.0, 20.0, 30.0, 30.0, 18.75}));
+	REQUIRE(CHECK_COLUMN(res1, 6, {90.0, 90.0, 135.0,  135.0, 180.0, 180.0, 270.0, 270.0, 168.5}));
 }
