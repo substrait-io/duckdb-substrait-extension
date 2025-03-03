@@ -772,8 +772,14 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	auto table_idx = nobj.names_size() - 1;
 	auto table_name = nobj.names(table_idx);
 	string schema_name;
+	string catalog_name;
 	if (table_idx > 0) {
-		schema_name = nobj.names(0);
+		if (table_idx == 1) {
+			schema_name = nobj.names(0);
+		} else {
+			catalog_name = nobj.names(0);
+			schema_name = nobj.names(1);
+		}
 	}
 	auto input = TransformOp(swrite.input());
 	switch (swrite.op()) {
@@ -784,7 +790,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
         case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
         	auto filter = std::move(input.get()->Cast<FilterRelation>());
         	auto context = filter.child->Cast<TableRelation>().context;
-        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
+        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
         }
 	default:
 		throw NotImplementedException("Unsupported write operation " + to_string(swrite.op()));
