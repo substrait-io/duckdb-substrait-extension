@@ -1537,6 +1537,7 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	writeRel->set_output(substrait::WriteRel::OUTPUT_MODE_NO_OUTPUT);
 
 	auto named_table = writeRel->mutable_named_table();
+	named_table->add_names(table.schema.catalog.GetName());
 	named_table->add_names(table.schema.name);
 	named_table->add_names(table.name);
 
