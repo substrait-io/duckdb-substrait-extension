@@ -787,11 +787,11 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	        return input->CreateRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
-    case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
-        auto filter = std::move(input.get()->Cast<FilterRelation>());
-        auto context = filter.child->Cast<TableRelation>().context;
-        return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
-    }
+	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
+		auto filter = std::move(input.get()->Cast<FilterRelation>());
+		auto context = filter.child->Cast<TableRelation>().context;
+		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+	}
 	default:
 		throw NotImplementedException("Unsupported write operation " + to_string(swrite.op()));
 	}
