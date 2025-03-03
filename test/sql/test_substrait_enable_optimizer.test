@@ -56,7 +56,7 @@ CALL get_substrait('select * from tbl where v LIKE ''duck%''');
 query I
 CALL get_substrait('select * from tbl where v LIKE ''duck%''', enable_optimizer=true);
 ----
-<REGEX>:.*starts_with:string_string.*
+<REGEX>:.*gte:string_string.*
 
 # Finally, the user can disable specific optimizers when generating Substrait by changing the connection-level settings.
 statement ok
@@ -133,7 +133,7 @@ CALL get_substrait_json('select * from tbl_json where v LIKE ''duck%''');
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''duck%''', enable_optimizer=true);
 ----
-<REGEX>:.*starts_with:string_string.*
+<REGEX>:.*gte:string_string.*
 
 # Finally, the user can disable specific optimizers when generating Substrait by changing the connection-level settings.
 statement ok
