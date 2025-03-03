@@ -500,18 +500,52 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformFilterOp(const substrait::Rel &
 	return make_shared_ptr<FilterRelation>(TransformOp(sfilter.input()), TransformExpr(sfilter.condition()));
 }
 
-const google::protobuf::RepeatedField<int32_t>& GetOutputMapping(const substrait::Rel &sop) {
-	const substrait::RelCommon* common = nullptr;
+const substrait::RelCommon* GetCommon(const substrait::Rel &sop) {
+	const substrait::RelCommon * common;
 	switch (sop.rel_type_case()) {
+	case substrait::Rel::RelTypeCase::kRead:
+		return &sop.read().common();
+	case substrait::Rel::RelTypeCase::kFilter:
+		return &sop.filter().common();
+	case substrait::Rel::RelTypeCase::kFetch:
+		return &sop.fetch().common();
+	case substrait::Rel::RelTypeCase::kAggregate:
+		return &sop.aggregate().common();
+	case substrait::Rel::RelTypeCase::kSort:
+		return &sop.sort().common();
 	case substrait::Rel::RelTypeCase::kJoin:
-		common = &sop.join().common();
-		break;
+		return &sop.join().common();
 	case substrait::Rel::RelTypeCase::kProject:
-		common = &sop.project().common();
-		break;
+		return &sop.project().common();
+	case substrait::Rel::RelTypeCase::kSet:
+		return &sop.set().common();
+	case substrait::Rel::RelTypeCase::kExtensionSingle:
+		return &sop.extension_single().common();
+	case substrait::Rel::RelTypeCase::kExtensionMulti:
+		return &sop.extension_multi().common();
+	case substrait::Rel::RelTypeCase::kExtensionLeaf:
+		return &sop.extension_leaf().common();
+	case substrait::Rel::RelTypeCase::kCross:
+		return &sop.cross().common();
+	case substrait::Rel::RelTypeCase::kHashJoin:
+		return &sop.hash_join().common();
+	case substrait::Rel::RelTypeCase::kMergeJoin:
+		return &sop.merge_join().common();
+	case substrait::Rel::RelTypeCase::kNestedLoopJoin:
+		return &sop.nested_loop_join().common();
+	case substrait::Rel::RelTypeCase::kWindow:
+		return &sop.window().common();
+	case substrait::Rel::RelTypeCase::kExchange:
+		return &sop.exchange().common();
+	case substrait::Rel::RelTypeCase::kExpand:
+		return &sop.expand().common();
 	default:
 		throw InternalException("Unsupported relation type " + to_string(sop.rel_type_case()));
 	}
+}
+
+const google::protobuf::RepeatedField<int32_t>& GetOutputMapping(const substrait::Rel &sop) {
+	const substrait::RelCommon* common = GetCommon(sop);
 	if (!common->has_emit()) {
 		static google::protobuf::RepeatedField<int32_t> empty_mapping;
 		return empty_mapping;
