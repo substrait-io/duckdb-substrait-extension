@@ -74,6 +74,7 @@ private:
 	                                        const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformAggregateOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformReadOp(const substrait::Rel &sop);
+	shared_ptr<Relation> GetValueRelationWithSingleBoolColumn();
 	shared_ptr<Relation> GetValuesExpression(const google::protobuf::RepeatedPtrField<substrait::Expression_Nested_Struct> &expression_rows);
 	shared_ptr<Relation> TransformSortOp(const substrait::Rel &sop,
 	                                     const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);

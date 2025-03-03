@@ -559,10 +559,23 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	vector<unique_ptr<ParsedExpression>> expressions;
 	RootNameIterator iterator(names);
 
-	auto input_rel = TransformOp(sop.project().input());
+	auto &input = sop.project().input();
+	auto hasZeroColumnVirtualTable = false;
+	shared_ptr<Relation> input_rel;
+	size_t num_input_columns = 0;
+	if (sop.project().input().rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
+		auto &sget = sop.project().input().read();
+		if (sget.has_virtual_table() && sget.virtual_table().values().empty()) {
+			hasZeroColumnVirtualTable = true;
+			input_rel = GetValueRelationWithSingleBoolColumn();
+		}
+	}
+	if (!hasZeroColumnVirtualTable) {
+		input_rel = TransformOp(input);
+		num_input_columns = input_rel->Columns().size();
+	}
 
 	auto mapping = GetOutputMapping(sop);
-	auto num_input_columns = input_rel->Columns().size();
 	if (mapping.empty()) {
 		for (int i = 1; i <= num_input_columns; i++) {
 			expressions.push_back(make_uniq<PositionalReferenceExpression>(i));
@@ -763,6 +776,23 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		scan = make_shared_ptr<ProjectionRelation>(std::move(scan), std::move(expressions), std::move(aliases));
 	}
 
+	return scan;
+}
+
+shared_ptr<Relation> SubstraitToDuckDB::GetValueRelationWithSingleBoolColumn() {
+	vector<vector<unique_ptr<ParsedExpression>>> expressions;
+	vector<unique_ptr<ParsedExpression>> expression_row;
+	expressions.emplace_back(std::move(expression_row));
+	Value result(LogicalType::BOOLEAN);
+	expressions[0].emplace_back(make_uniq<ConstantExpression>(result));
+	vector<string> column_names;
+	shared_ptr<Relation> scan;
+	if (acquire_lock) {
+		scan = make_shared_ptr<ValueRelation>(context, std::move(expressions), column_names);
+	} else {
+		auto context_wrapper = make_shared_ptr<RelationContextWrapper>(context);
+		scan = make_shared_ptr<ValueRelation>(context_wrapper, std::move(expressions), column_names);
+	}
 	return scan;
 }
 
