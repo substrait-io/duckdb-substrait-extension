@@ -44,7 +44,6 @@ TEST_CASE("Test C Project 1 input column 1 transformation with Substrait API", "
 
 	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (10), (20), (30)"));
-	CreateEmployeeTable(con);
 
 	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"multiply:i32_i32"}}],"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}]}}]}},"names":["i","isquare"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto json_str = GetSubstraitJSON(con, "SELECT i, i *i as isquare FROM integers");
@@ -54,7 +53,7 @@ TEST_CASE("Test C Project 1 input column 1 transformation with Substrait API", "
 	REQUIRE(CHECK_COLUMN(result, 1, {100, 400, 900}));
 }
 
-TEST_CASE("Test C Project all columns with Substrait API", "[substrait-api]") {
+TEST_CASE("Test C ReadRel projection clause with all columns using Substrait API", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -71,7 +70,7 @@ TEST_CASE("Test C Project all columns with Substrait API", "[substrait-api]") {
 	REQUIRE(CHECK_COLUMN(result, 3, {120000, 80000, 50000, 95000, 60000}));
 }
 
-TEST_CASE("Test C Project two passthrough columns with Substrait API", "[substrait-api]") {
+TEST_CASE("Test C ReadRel projection clause with two passthrough columns with Substrait API", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -86,7 +85,7 @@ TEST_CASE("Test C Project two passthrough columns with Substrait API", "[substra
 	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
 }
 
-TEST_CASE("Test C Project two passthrough columns with filter", "[substrait-api]") {
+TEST_CASE("Test C ReadRel projection clause with two passthrough columns and filter", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -101,7 +100,22 @@ TEST_CASE("Test C Project two passthrough columns with filter", "[substrait-api]
 	REQUIRE(CHECK_COLUMN(result, 1, {120000, 50000 }));
 }
 
-TEST_CASE("Test C Project 1 passthrough column, 1 transformation with column elimination", "[substrait-api]") {
+TEST_CASE("Test C Projection with two passthrough columns, 1 transfomration and filter", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	auto json_str = GetSubstraitJSON(con, "SELECT name, salary, salary * 1.2 as new_salary FROM employees where department_id = 1");
+	auto expected_json_str = R"({"extensionUris":[{"extensionUriAnchor":1,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/"},{"extensionUriAnchor":2,"uri":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic_decimal.yaml"}],"extensions":[{"extensionFunction":{"extensionUriReference":1,"functionAnchor":1,"name":"equal:i32_i32"}},{"extensionFunction":{"extensionUriReference":2,"functionAnchor":2,"name":"multiply:decimal_decimal"}}],"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["employee_id","name","department_id","salary"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"filter":{"scalarFunction":{"functionReference":1,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":2}},"rootReference":{}}}},{"value":{"literal":{"i32":1}}}]}},"projection":{"select":{"structItems":[{"field":1},{"field":3}]},"maintainSingularStruct":true},"namedTable":{"names":["employees"]}}},"expressions":[{"scalarFunction":{"functionReference":2,"outputType":{"decimal":{"scale":3,"precision":12,"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}},{"value":{"literal":{"decimal":{"value":"DAAAAAAAAAAAAAAAAAAAAA==","precision":12,"scale":1}}}}]}}]}},"names":["name","salary","new_salary"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	REQUIRE(json_str == expected_json_str);
+	auto result = FromSubstraitJSON(con, json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {"John Doe", "Alice Johnson" }));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 50000 }));
+	REQUIRE(CHECK_COLUMN(result, 2, {144000, 60000 }));
+}
+
+TEST_CASE("Test C Projection with 1 passthrough column, 1 transformation and one column elimination", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -115,7 +129,7 @@ TEST_CASE("Test C Project 1 passthrough column, 1 transformation with column eli
 	REQUIRE(CHECK_COLUMN(result, 1, {144000, 96000, 60000, 114000, 72000}));
 }
 
-TEST_CASE("Test C Project 1 passthrough column and 1 aggregate transformation", "[substrait-api]") {
+TEST_CASE("Test C ReadRel projection clause 1 passthrough column and 1 aggregate transformation", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -137,15 +151,16 @@ TEST_CASE("Test C Project on Join with Substrait API", "[substrait-api]") {
 	CreateDepartmentsTable(con);
 
 	auto result = ExecuteViaSubstraitJSON(con,
-		"SELECT e.employee_id, e.name, d.department_name "
+		"SELECT e.employee_id, e.salary * 1.2 as new_salary, e.name, d.department_name "
 		"FROM employees e "
 		"JOIN departments d "
 		"ON e.department_id = d.department_id"
 	);
 
 	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
-	REQUIRE(CHECK_COLUMN(result, 1, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
-	REQUIRE(CHECK_COLUMN(result, 2, {"HR", "Engineering", "HR", "Finance", "Engineering"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {144000, 96000, 60000, 114000, 72000}));
+	REQUIRE(CHECK_COLUMN(result, 2, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
+	REQUIRE(CHECK_COLUMN(result, 3, {"HR", "Engineering", "HR", "Finance", "Engineering"}));
 }
 
 TEST_CASE("Test Project with bad plan", "[substrait-api]") {
@@ -155,8 +170,10 @@ TEST_CASE("Test Project with bad plan", "[substrait-api]") {
 	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
 
+	// Plan with one column name and a project with 2 output columns (one input column, one expression) and with direct mapping
 	auto query_json =  R"({"relations":[{"root":{"input":{"project":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"count":"5"}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["i"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
-	REQUIRE_THROWS(FromSubstraitJSON(con, query_json));
+	auto exception_matcher = R"({"exception_type":"Invalid Input","exception_message":"Number of column names less than number of column definitions"})";
+	REQUIRE_THROWS_WITH(FromSubstraitJSON(con, query_json), exception_matcher);
 }
 
 TEST_CASE("Test Project with duplicate columns", "[substrait-api]") {
@@ -169,6 +186,7 @@ TEST_CASE("Test Project with duplicate columns", "[substrait-api]") {
 	auto query_json =  R"({"relations":[{"root":{"input":{"project":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["i"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["integers"]}}},"count":"5"}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["i", "integers"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto res1 = FromSubstraitJSON(con, query_json);
 	REQUIRE(CHECK_COLUMN(res1, 0, {1, 2, 3, Value()}));
+	REQUIRE(CHECK_COLUMN(res1, 1, {1, 2, 3, Value()}));
 }
 
 TEST_CASE("Test Project simple join on tables with multiple columns", "[substrait-api]") {

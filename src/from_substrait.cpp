@@ -539,6 +539,9 @@ const substrait::RelCommon* GetCommon(const substrait::Rel &sop) {
 		return &sop.exchange().common();
 	case substrait::Rel::RelTypeCase::kExpand:
 		return &sop.expand().common();
+	case substrait::Rel::RelTypeCase::kWrite:
+	case substrait::Rel::RelTypeCase::kUpdate:
+	case substrait::Rel::RelTypeCase::kDdl:
 	default:
 		throw InternalException("Unsupported relation type " + to_string(sop.rel_type_case()));
 	}
