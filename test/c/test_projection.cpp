@@ -312,8 +312,8 @@ TEST_CASE("Test multiple joins in tpcds Q32", "[substrait-api]") {
 }
 
 TEST_CASE("Test tpcds Q32", "[substrait-api]") {
-	SKIP_TEST("SKIP: Groupings is not handled in GroupBy in to and from substrait");
-	return;
+	// SKIP_TEST("SKIP: Groupings is not handled in GroupBy in to and from substrait");
+	// return;
 	DuckDB db(nullptr);
 	Connection con(db);
 	con.EnableQueryVerification();
@@ -339,11 +339,11 @@ TEST_CASE("Test tpcds Q32", "[substrait-api]") {
 		" LIMIT 100;"
 		;
 
-	auto jsonPlan1 = GetSubstraitJSON(con, query_text1);
-	auto res1 = FromSubstraitJSON(con, jsonPlan1);
-	Printer::Print(jsonPlan1);
+	REQUIRE_THROWS(GetSubstraitJSON(con, query_text1)); // TODO enable this after supporting grouping_sets
+	// auto res1 = FromSubstraitJSON(con, jsonPlan1);
+	// Printer::Print(jsonPlan1);
 
-	// auto res1 = con.Query(query_text1);
+	auto res1 = con.Query(query_text1);
 	REQUIRE(CHECK_COLUMN(res1, 0, {"I001", "I001", "I002", "I002", "I003", "I003", "I005", "I005", duckdb::Value{}}));
 	REQUIRE(CHECK_COLUMN(res1, 1, { "TN", duckdb::Value{}, "TN", duckdb::Value{}, "TX", duckdb::Value{}, "NY", duckdb::Value{}, duckdb::Value{}}));
 	REQUIRE(CHECK_COLUMN(res1, 2, {0, 1, 0, 1, 0, 1, 0, 1, 1}));

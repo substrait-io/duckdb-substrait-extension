@@ -1122,6 +1122,9 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	auto &daggr = dop.Cast<LogicalAggregate>();
 	auto saggr = res->mutable_aggregate();
 	saggr->set_allocated_input(TransformOp(*dop.children[0]));
+	if (!daggr.grouping_functions.empty()) {
+		throw NotImplementedException("Grouping functions not supported yet");
+	}
 	// we only do a single grouping set for now
 	auto sgrp = saggr->add_groupings();
 	for (auto &dgrp : daggr.groups) {
