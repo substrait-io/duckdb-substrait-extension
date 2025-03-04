@@ -72,7 +72,10 @@ private:
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
+	static vector<LogicalType>::size_type GetColumnCount(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
+	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
+	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping);
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;
 	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;

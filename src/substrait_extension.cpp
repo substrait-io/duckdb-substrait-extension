@@ -180,6 +180,7 @@ static void VerifySubstraitRoundtrip(unique_ptr<LogicalOperator> &query_plan, Cl
 	if (!ColumnDataCollection::ResultEquals(actual_col_coll, subs_col_coll, error_message)) {
 		query_plan->Print();
 		sub_relation->Print();
+		Printer::Print(serialized);
 		actual_col_coll.Print();
 		subs_col_coll.Print();
 		throw InternalException("The query result of DuckDB's query plan does not match Substrait : " + error_message);

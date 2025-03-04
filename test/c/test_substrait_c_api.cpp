@@ -3,6 +3,7 @@
 #include "duckdb/main/connection_manager.hpp"
 #include "duckdb/main/relation/table_function_relation.hpp"
 #include "duckdb/main/relation/value_relation.hpp"
+#include "test_substrait_c_utils.hpp"
 
 #include <chrono>
 #include <thread>
@@ -20,34 +21,6 @@ struct DataDirectoryFixture {
 		TestChangeDirectory("..");
 	}
 };
-
-string GetSubstrait(Connection &con,const string &query) {
-    duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait", params)->Execute();
-	auto protobuf = result->FetchRaw()->GetValue(0, 0);
-	return protobuf.GetValueUnsafe<string_t>().GetString();
-}
-
-string GetSubstraitJSON(Connection &con,const string &query) {
-    duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait_json", params)->Execute();
-	auto protobuf = result->FetchRaw()->GetValue(0, 0);
-	return protobuf.GetValueUnsafe<string_t>().GetString();
-}
-
-duckdb::unique_ptr<QueryResult> FromSubstrait(Connection &con, const string &proto) {
-    duckdb::vector<Value> params;
-	params.emplace_back(Value::BLOB_RAW(proto));
-	return con.TableFunction("from_substrait", params)->Execute();
-}
-
-duckdb::unique_ptr<QueryResult> FromSubstraitJSON(Connection &con, const string &proto) {
-    duckdb::vector<Value> params;
-	params.emplace_back(proto);
-	return con.TableFunction("from_substrait_json", params)->Execute();
-}
 
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
@@ -85,52 +58,6 @@ TEST_CASE("Test C Get and To Json-Substrait API", "[substrait-api]") {
   REQUIRE_THROWS(GetSubstraitJSON(con,"select * from p"));
 
   REQUIRE_THROWS(FromSubstraitJSON(con,"this is not valid"));
-}
-
-duckdb::unique_ptr<QueryResult> ExecuteViaSubstrait(Connection &con, const string &sql) {
-  auto proto = GetSubstrait(con, sql);
-  return FromSubstrait(con,proto);
-}
-
-duckdb::unique_ptr<QueryResult> ExecuteViaSubstraitJSON(Connection &con, const string &sql) {
-  auto json_str = GetSubstraitJSON(con,sql);
-  return FromSubstraitJSON(con,json_str);
-}
-
-void CreateEmployeeTable(Connection& con) {
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE employees ("
-					  "employee_id INTEGER PRIMARY KEY, "
-					  "name VARCHAR(100), "
-					  "department_id INTEGER, "
-					  "salary DECIMAL(10, 2))"));
-
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO employees VALUES "
-						  "(1, 'John Doe', 1, 120000), "
-						  "(2, 'Jane Smith', 2, 80000), "
-						  "(3, 'Alice Johnson', 1, 50000), "
-						  "(4, 'Bob Brown', 3, 95000), "
-						  "(5, 'Charlie Black', 2, 60000)"));
-}
-
-void CreatePartTimeEmployeeTable(Connection& con) {
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE part_time_employees ("
-					  "id INTEGER PRIMARY KEY, "
-					  "name VARCHAR(100), "
-					  "department_id INTEGER, "
-					  "hourly_rate DECIMAL(10, 2))"));
-
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO part_time_employees VALUES "
-						  "(6, 'David White', 1, 30000), "
-						  "(7, 'Eve Green', 2, 40000)"));
-}
-
-void CreateDepartmentsTable(Connection& con) {
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE departments (department_id INTEGER PRIMARY KEY, department_name VARCHAR(100))"));
-
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO departments VALUES "
-						  "(1, 'HR'), "
-						  "(2, 'Engineering'), "
-						  "(3, 'Finance')"));
 }
 
 TEST_CASE("Test C CTAS Select columns with Substrait API", "[substrait-api]") {
@@ -393,6 +320,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	      "root": {
 	        "input": {
 	          "project": {
+	            "common": {
+	              "emit": {
+				    "outputMapping": [ 1 ]
+				  }
+	            },
 	            "input": {
 	              "read": {
 	                "common": {
@@ -474,6 +406,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
@@ -548,6 +485,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
@@ -623,6 +565,11 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		    "root" : {
 		      "input" : {
 		        "project" : {
+	              "common": {
+	                "emit": {
+				 	    "outputMapping": [ 2, 3 ]
+				 	  }
+	              },
 		          "input" : {
 		            "read" : {
 		              "baseSchema" : {
@@ -689,7 +636,7 @@ TEST_CASE("Test C Project SELECT 1", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
 	auto json_str = GetSubstraitJSON(con,"SELECT 1");
 	REQUIRE(json_str == expected_json_str);
 	auto result = FromSubstraitJSON(con,json_str);

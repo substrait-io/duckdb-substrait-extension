@@ -12,11 +12,11 @@ PRAGMA enable_verification
 query I
 CALL get_substrait_json('select * from parquet_scan(''data/bug-17/test_table.parquet'') ')
 ----
-{"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["r","a","b"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"localFiles":{"items":[{"uriFile":"data/bug-17/test_table.parquet","parquet":{}}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["r","a","b"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}}
+{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["r","a","b"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"localFiles":{"items":[{"uriFile":"data/bug-17/test_table.parquet","parquet":{}}]}}},"names":["r","a","b"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}}
 
 
 query I
-CALL from_substrait_json('{"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["r"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"localFiles":{"items":[{"uriFile":"data/bug-17/test_table.parquet","parquet":{}}]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["r"]}}],"version":{"minorNumber":48,"producer":"DuckDB"}}')
+CALL from_substrait_json('{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["r"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"localFiles":{"items":[{"uriFile":"data/bug-17/test_table.parquet","parquet":{}}]}}},"names":["r"]}}],"version":{"minorNumber":48,"producer":"DuckDB"}}')
 ----
 {'a': 1, 'b': b}
 
@@ -38,7 +38,7 @@ create table mytesttable as from parquet_scan('data/bug-17/test_table.parquet');
 query I
 CALL get_substrait_json('select * from mytesttable ')
 ----
-{"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["r","a","b"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["mytesttable"]}}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["r","a","b"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}}
+{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["r","a","b"],"struct":{"types":[{"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["mytesttable"]}}},"names":["r","a","b"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}}
 
 statement ok
 CALL get_substrait ('select r from mytesttable ')
