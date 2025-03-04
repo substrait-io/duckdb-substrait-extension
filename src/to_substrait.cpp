@@ -879,41 +879,28 @@ substrait::RelCommon *DuckDBToSubstrait::CreateOutputMapping(vector<int32_t> vec
 	return rel_common;
 }
 
-bool DuckDBToSubstrait::IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count) {
+bool DuckDBToSubstrait::IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping) {
 	// check if the projection is just pass through of input columns with no reordering
+	needs_output_mapping = true;
+	auto isPassThrough = true;
 	if (child_column_count > dproj.expressions.size()) {
 		return false;
 	}
 	idx_t exp_col_idx = 0;
 	for (auto &dexpr : dproj.expressions) {
 		if (dexpr->type != ExpressionType::BOUND_REF) {
-			return false;
-		}
-		auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
-		if (dref.index != exp_col_idx) {
-			return false;
-		}
-		exp_col_idx++;
-	}
-	return child_column_count == exp_col_idx;
-}
-
-bool DuckDBToSubstrait::NeedsOutputMapping(LogicalProjection &dproj, idx_t child_column_count) {
-	if (child_column_count > dproj.expressions.size()) {
-		return true;
-	}
-	idx_t exp_col_idx = 0;
-	for (auto &dexpr : dproj.expressions) {
-		if (dexpr->type != ExpressionType::BOUND_REF) {
+			isPassThrough = false;
 			break;
 		}
 		auto &dref = dexpr.get()->Cast<BoundReferenceExpression>();
 		if (dref.index != exp_col_idx) {
+			isPassThrough = false;
 			break;
 		}
 		exp_col_idx++;
 	}
-	return child_column_count != exp_col_idx;
+	needs_output_mapping = child_column_count != exp_col_idx;
+	return child_column_count == exp_col_idx && isPassThrough;
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
@@ -921,11 +908,11 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 	auto &dproj = dop.Cast<LogicalProjection>();
 
 	auto child_column_count = GetColumnCount(*dop.children[0]);
-	if (IsPassthroughProjection(dproj, child_column_count)) {
+	auto need_output_mapping = true;
+	if (IsPassthroughProjection(dproj, child_column_count, need_output_mapping)) {
 		// skip the projection
 		return TransformOp(*dop.children[0]);
 	}
-	auto need_output_mapping = NeedsOutputMapping(dproj, child_column_count);
 
 	auto sproj = res->mutable_project();
 	sproj->set_allocated_input(TransformOp(*dop.children[0]));

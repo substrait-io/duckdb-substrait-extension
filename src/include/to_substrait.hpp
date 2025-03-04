@@ -75,10 +75,8 @@ private:
 	static vector<LogicalType>::size_type GetColumnCount(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
 	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
-	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count);
-	static bool NeedsOutputMapping(LogicalProjection &dproj, idx_t child_column_count);
-	//! Methods to transform different LogicalGe:75
-	//t Types (e.g., Table, Parquet)
+	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping);
+	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;
 	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;
 	void TransformParquetScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, BindInfo &bind_info,
