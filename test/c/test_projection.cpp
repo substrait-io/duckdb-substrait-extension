@@ -163,6 +163,29 @@ TEST_CASE("Test C Project on Join with Substrait API", "[substrait-api]") {
 	REQUIRE(CHECK_COLUMN(result, 3, {"HR", "Engineering", "HR", "Finance", "Engineering"}));
 }
 
+TEST_CASE("Test C Project on Join with duplicate columns Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+	CreateDepartmentsTable(con);
+
+	auto result = ExecuteViaSubstraitJSON(con,
+		"SELECT e.employee_id, e.salary, e.salary, e.name, e.department_id, d.department_id, d.department_name "
+		"FROM employees e "
+		"JOIN departments d "
+		"ON e.department_id = d.department_id"
+	);
+
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+	REQUIRE(CHECK_COLUMN(result, 2, {120000, 80000, 50000, 95000, 60000}));
+	REQUIRE(CHECK_COLUMN(result, 3, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
+	REQUIRE(CHECK_COLUMN(result, 4, {1, 2, 1, 3, 2}));
+	REQUIRE(CHECK_COLUMN(result, 5, {1, 2, 1, 3, 2}));
+	REQUIRE(CHECK_COLUMN(result, 6, {"HR", "Engineering", "HR", "Finance", "Engineering"}));
+}
+
 TEST_CASE("Test Project with bad plan", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
