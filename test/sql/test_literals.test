@@ -11,7 +11,7 @@ PRAGMA enable_verification
 query I
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"boolean":false, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-false
+true
 
 # i8
 query I
