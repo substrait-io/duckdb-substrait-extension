@@ -23,7 +23,7 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"i16":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 3
+Not implemented Error: literals of this type are not implemented: i16
 
 # i32
 query I
@@ -59,13 +59,13 @@ abc
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"binary":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 13
+Not implemented Error: literals of this type are not implemented: binary
 
 # timestamp
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 14
+Not implemented Error: literals of this type are not implemented: timestamp
 
 # date
 query I
@@ -101,13 +101,13 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_compound":{"interval_year_to_month":{"years":3,"months":2}, "interval_day_to_second":{"days":3,"seconds":2,"precision":9,"subseconds":23}}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 36
+Not implemented Error: literals of this type are not implemented: interval_compound
 
 # fixed char
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fixed_char":"abcd", "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 21
+Not implemented Error: literals of this type are not implemented: fixed_char
 
 # var char
 query I
@@ -119,7 +119,7 @@ abcd
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fixed_binary":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 23
+Not implemented Error: literals of this type are not implemented: fixed_binary
 
 # decimal invalid
 statement error
@@ -137,37 +137,37 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp":{"value":9999,"precision":3}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 34
+Not implemented Error: literals of this type are not implemented: precision_timestamp
 
 # precision timestamp tz
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp_tz":{"value":9999,"precision":3}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 35
+Not implemented Error: literals of this type are not implemented: precision_timestamp_tz
 
 # struct
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"struct":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 25
+Not implemented Error: literals of this type are not implemented: struct
 
 # map
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"map":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 26
+Not implemented Error: literals of this type are not implemented: map
 
 # timestamp_tz
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp_tz":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 27
+Not implemented Error: literals of this type are not implemented: timestamp_tz
 
 # uuid
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"uuid":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 28
+Not implemented Error: literals of this type are not implemented: uuid
 
 # null i8
 query I
@@ -179,22 +179,22 @@ NULL
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"list":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 30
+Not implemented Error: literals of this type are not implemented: list
 
 # empty list
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"empty_list":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 31
+Not implemented Error: literals of this type are not implemented: empty_list
 
 # empty map
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"empty_map":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 32
+Not implemented Error: literals of this type are not implemented: empty_map
 
 # user defined
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"user_defined":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type number are not implemented: 33
+Not implemented Error: literals of this type are not implemented: user_defined
