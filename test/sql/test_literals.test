@@ -1,0 +1,200 @@
+# name: test/sql/test_types.test
+# description: Test type usage in substrait
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+# boolean
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"boolean":false, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+false
+
+# i8
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"i8":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+123
+
+# i16
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"i16":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: i16
+
+# i32
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"i32":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+123
+
+# i64
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"i64":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+123
+
+# fp32
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fp32":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+123.0
+
+# fp64
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fp64":123, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+123.0
+
+# string
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"string":"abc", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+abc
+
+# binary
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"binary":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: binary
+
+# timestamp
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: timestamp
+
+# date
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"date":9999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+1997-05-18
+
+# time
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"time":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+00:01:39.999999
+
+# interval year to month (wrong, should include be 38 months)
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_year_to_month":{"years":3,"months":2}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+2 months
+
+# interval day to second (deprecated microseconds) (wrong, should include seconds)
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_day_to_second":{"days":3,"seconds":2,"microseconds":23}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+3 days 00:00:00.000023
+
+# interval day to second (precision) (wrong, should include seconds and subseconds)
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_day_to_second":{"days":3,"seconds":2,"precision":9,"subseconds":23}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+3 days
+
+# interval compound
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_compound":{"interval_year_to_month":{"years":3,"months":2}, "interval_day_to_second":{"days":3,"seconds":2,"precision":9,"subseconds":23}}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: interval_compound
+
+# fixed char
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fixed_char":"abcd", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: fixed_char
+
+# var char
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"var_char":{"value":"abcd","length":4}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+abcd
+
+# fixed binary
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"fixed_binary":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: fixed_binary
+
+# decimal invalid
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Invalid Input Error: Decimal value must have 16 bytes, but has 1
+
+# decimal ok
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQAAAAAAAAAAAAAAAAAAAA==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+1
+
+# precision timestamp
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp":{"value":9999,"precision":3}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: precision_timestamp
+
+# precision timestamp tz
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp_tz":{"value":9999,"precision":3}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: precision_timestamp_tz
+
+# struct
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"struct":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: struct
+
+# map
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"map":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: map
+
+# timestamp_tz
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp_tz":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: timestamp_tz
+
+# uuid
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"uuid":"XDAwXDAxXDAy", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: uuid
+
+# null i8
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"null":{"i8":{"nullability":"NULLABILITY_REQUIRED"}}}}]}}, "names":["?column?"]}}]}')
+----
+NULL
+
+# list
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"list":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: list
+
+# empty list
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"empty_list":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: empty_list
+
+# empty map
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"empty_map":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: empty_map
+
+# user defined
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"user_defined":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Not implemented Error: literals of this type are not implemented: user_defined
