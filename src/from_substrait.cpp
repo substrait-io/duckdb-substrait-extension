@@ -137,7 +137,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		case PhysicalType::INT128:
 			return Value::DECIMAL(substrait_value, substrait_decimal.precision(), substrait_decimal.scale());
 		default:
-			throw InternalException("Not accepted internal type for decimal");
+			throw NotImplementedException("Unsupported internal type for decimal: " + decimal_type.ToString());
 		}
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kBoolean: {
@@ -174,7 +174,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
 		return {literal.var_char().value()};
 	default:
-		throw SyntaxException("literals of this type number are not implemented: " + to_string(literal.literal_type_case()));
+		throw NotImplementedException("literals of this type number are not implemented: " + to_string(literal.literal_type_case()));
 	}
 }
 
@@ -184,7 +184,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformLiteralExpr(const subst
 
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const substrait::Expression &sexpr) {
 	if (!sexpr.selection().has_direct_reference() || !sexpr.selection().direct_reference().has_struct_field()) {
-		throw InternalException("Can only have direct struct references in selections");
+		throw SyntaxException("Can only have direct struct references in selections");
 	}
 	return make_uniq<PositionalReferenceExpression>(sexpr.selection().direct_reference().struct_field().field() + 1);
 }
@@ -322,7 +322,7 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 	case substrait::Type::KindCase::kFp64:
 		return {LogicalTypeId::DOUBLE};
 	default:
-		throw NotImplementedException("Substrait type not yet supported");
+		throw NotImplementedException("Substrait type not yet supported: " + to_string(s_type.kind_case()));
 	}
 }
 
@@ -408,13 +408,13 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::E
 		return TransformNested(sexpr, iterator);
 	case substrait::Expression::RexTypeCase::kSubquery:
 	default:
-		throw InternalException("Unsupported expression type " + to_string(sexpr.rex_type_case()));
+		throw NotImplementedException("Unsupported expression type " + to_string(sexpr.rex_type_case()));
 	}
 }
 
 string SubstraitToDuckDB::FindFunction(uint64_t id) {
 	if (functions_map.find(id) == functions_map.end()) {
-		throw InternalException("Could not find aggregate function " + to_string(id));
+		throw NotImplementedException("Could not find aggregate function " + to_string(id));
 	}
 	return functions_map[id];
 }
@@ -442,7 +442,7 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 		dnullorder = OrderByNullType::NULLS_LAST;
 		break;
 	default:
-		throw InternalException("Unsupported ordering " + to_string(sordf.direction()));
+		throw NotImplementedException("Unsupported ordering " + to_string(sordf.direction()));
 	}
 
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
@@ -472,7 +472,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 		djointype = JoinType::OUTER;
 		break;
 	default:
-		throw InternalException("Unsupported join type");
+		throw NotImplementedException("Unsupported join type: " + to_string(sjoin.type()));
 	}
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
 	return make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
@@ -543,7 +543,7 @@ const substrait::RelCommon* GetCommon(const substrait::Rel &sop) {
 	case substrait::Rel::RelTypeCase::kUpdate:
 	case substrait::Rel::RelTypeCase::kDdl:
 	default:
-		throw InternalException("Unsupported relation type " + to_string(sop.rel_type_case()));
+		throw NotImplementedException("Unsupported relation type " + to_string(sop.rel_type_case()));
 	}
 }
 
@@ -931,7 +931,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 	case substrait::Rel::RelTypeCase::kWrite:
 		return TransformWriteOp(sop);
 	default:
-		throw InternalException("Unsupported relation type " + to_string(sop.rel_type_case()));
+		throw NotImplementedException("Unsupported relation type " + to_string(sop.rel_type_case()));
 	}
 }
 
