@@ -1,0 +1,30 @@
+name: SQL Unit tests
+
+on: [push, pull_request,repository_dispatch]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unitTests:
+    name: SQL unit tests
+    runs-on: macos-latest
+    env:
+      GEN: ninja
+
+    steps:
+    - name: Install Ninja
+      run: brew install ninja
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: true
+
+    - name: Build Substrait
+      run: make release
+
+    - name: Run SQL unit tests
+      run: make test
+
