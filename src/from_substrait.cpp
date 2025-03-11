@@ -900,11 +900,11 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		case RelationType::PROJECTION_RELATION: {
 			auto project = std::move(input.get()->Cast<ProjectionRelation>());
 			auto filter = std::move(project.child->Cast<FilterRelation>());
-        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
 		}
 		case RelationType::FILTER_RELATION: {
 			auto filter = std::move(input.get()->Cast<FilterRelation>());
-			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
 		}
 		default:
 			throw NotImplementedException("Unsupported relation type for delete operation");
