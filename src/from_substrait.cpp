@@ -575,9 +575,13 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	size_t num_input_columns = 0;
 	if (sop.project().input().rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
 		auto &sget = sop.project().input().read();
-		if (sget.has_virtual_table() && sget.virtual_table().values().empty()) {
-			hasZeroColumnVirtualTable = true;
-			input_rel = GetValueRelationWithSingleBoolColumn();
+		if (sget.has_virtual_table()) {
+			auto virtual_table = sget.virtual_table();
+			if ((virtual_table.values().empty() && virtual_table.expressions().empty()) ||
+			    (virtual_table.expressions().size() > 0 && virtual_table.expressions(0).fields().empty())) {
+				hasZeroColumnVirtualTable = true;
+				input_rel = GetValueRelationWithSingleBoolColumn();
+			}
 		}
 	}
 	if (!hasZeroColumnVirtualTable) {
