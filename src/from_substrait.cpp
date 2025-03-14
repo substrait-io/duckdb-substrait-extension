@@ -575,9 +575,13 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	size_t num_input_columns = 0;
 	if (sop.project().input().rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
 		auto &sget = sop.project().input().read();
-		if (sget.has_virtual_table() && sget.virtual_table().values().empty()) {
-			hasZeroColumnVirtualTable = true;
-			input_rel = GetValueRelationWithSingleBoolColumn();
+		if (sget.has_virtual_table()) {
+			auto virtual_table = sget.virtual_table();
+			if ((virtual_table.values().empty() && virtual_table.expressions().empty()) ||
+			    (virtual_table.expressions().size() > 0 && virtual_table.expressions(0).fields().empty())) {
+				hasZeroColumnVirtualTable = true;
+				input_rel = GetValueRelationWithSingleBoolColumn();
+			}
 		}
 	}
 	if (!hasZeroColumnVirtualTable) {
@@ -900,11 +904,11 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		case RelationType::PROJECTION_RELATION: {
 			auto project = std::move(input.get()->Cast<ProjectionRelation>());
 			auto filter = std::move(project.child->Cast<FilterRelation>());
-        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
 		}
 		case RelationType::FILTER_RELATION: {
 			auto filter = std::move(input.get()->Cast<FilterRelation>());
-			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
 		}
 		default:
 			throw NotImplementedException("Unsupported relation type for delete operation");

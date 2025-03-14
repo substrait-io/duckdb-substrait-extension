@@ -659,3 +659,12 @@ TEST_CASE("Test C VirtualTable with bad input Literal", "[substrait-api]") {
 	auto json_plan = R"({"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"decimal":{"value":"AQ==", "precision":1}, "nullable":true}}]}}, "names":["?column?"]}}]})";
 	REQUIRE_THROWS(FromSubstraitJSON(con,json_plan));
 }
+
+TEST_CASE("Test C Project with VirtualTable", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	auto json_plan = R"({"version":{"minorNumber":29, "producer":"substrait-go darwin/arm64"}, "relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"names":["c1", "c2"], "struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}, {"fp64":{"nullability":"NULLABILITY_NULLABLE"}}], "nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{"fields":[{"literal":{"fp64":1, "nullable":true}}, {"literal":{"fp64":2, "nullable":true}}]}]}}}, "expressions":[{"literal":{"fp64":42}}]}}, "names":["p1"]}}]})";
+	auto result = FromSubstraitJSON(con,json_plan);
+	REQUIRE(CHECK_COLUMN(result, 0, {42}));
+}
