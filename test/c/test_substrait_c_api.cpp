@@ -291,7 +291,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg FROM core_nightly;"));
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
 	const string plan_json = R"plan(
@@ -397,7 +397,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg FROM core_nightly;"));
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
 	const string plan_json = R"plan(
@@ -476,7 +476,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg FROM core_nightly;"));
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
 	const string plan_json = R"plan(
@@ -556,7 +556,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg FROM core_nightly;"));
+	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
 	const string plan_json = R"plan(
