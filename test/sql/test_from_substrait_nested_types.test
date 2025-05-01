@@ -1,0 +1,208 @@
+# name: test/sql/test_from_substrait_nested_types.test
+# description: Test from_substrait with nested types (LIST, MAP, STRUCT)
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+# Test with LIST type
+statement ok
+CREATE TABLE list_test (
+    id INTEGER,
+    name VARCHAR,
+    tags VARCHAR[]
+);
+
+statement ok
+INSERT INTO list_test VALUES
+    (1, 'Alice', ['tag1', 'tag2', 'tag3']),
+    (2, 'Bob', ['tag1', 'tag4']),
+    (3, 'Charlie', ['tag2', 'tag5', 'tag6']);
+
+# Simple selection with list column
+query ITT
+SELECT * FROM list_test
+----
+1	Alice	[tag1, tag2, tag3]
+2	Bob	[tag1, tag4]
+3	Charlie	[tag2, tag5, tag6]
+
+# Test list type with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19, 
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "tags"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"list": {
+                  "type": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["list_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "tags"]
+    }
+  }]
+}')
+----
+1	Alice	[tag1, tag2, tag3]
+2	Bob	[tag1, tag4]
+3	Charlie	[tag2, tag5, tag6]
+
+# Test with MAP type
+statement ok
+CREATE TABLE map_test (
+    id INTEGER,
+    name VARCHAR,
+    properties MAP(VARCHAR, VARCHAR)
+);
+
+statement ok
+INSERT INTO map_test VALUES
+    (1, 'Alice', MAP {'color': 'red', 'size': 'small'}),
+    (2, 'Bob', MAP {'color': 'blue', 'size': 'medium'}),
+    (3, 'Charlie', MAP {'color': 'green', 'size': 'large'});
+
+# Simple selection with map column
+query ITT
+SELECT * FROM map_test
+----
+1	Alice	{color=red, size=small}
+2	Bob	{color=blue, size=medium}
+3	Charlie	{color=green, size=large}
+
+# Test with map type
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19, 
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "properties"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"map": {
+                  "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                  "value": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["map_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "properties"]
+    }
+  }]
+}')
+----
+1	Alice	{color=red, size=small}
+2	Bob	{color=blue, size=medium}
+3	Charlie	{color=green, size=large}
+
+# Test with combined nested types
+statement ok
+CREATE TABLE nested_test (
+    id INTEGER,
+    name VARCHAR,
+    tags VARCHAR[],
+    attributes MAP(VARCHAR, INTEGER)
+);
+
+statement ok
+INSERT INTO nested_test VALUES
+    (1, 'Alice', ['tag1', 'tag2', 'tag3'], MAP(['size', 'age'], [10, 30])),
+    (2, 'Bob', ['tag1', 'tag4'], MAP(['size', 'age'], [20, 25])),
+    (3, 'Charlie', ['tag2', 'tag5', 'tag6'], MAP(['size', 'age'], [15, 35]));
+
+# Simple selection with combined nested types
+query ITTT
+SELECT * FROM nested_test
+----
+1	Alice	[tag1, tag2, tag3]	{size=10, age=30}
+2	Bob	[tag1, tag4]	{size=20, age=25}
+3	Charlie	[tag2, tag5, tag6]	{size=15, age=35}
+
+# Test with combined nested types using from_substrait_json
+query ITTT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19, 
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "tags", "attributes"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"list": {
+                  "type": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                  "nullability": "NULLABILITY_NULLABLE"
+                }},
+                {"map": {
+                  "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                  "value": {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["nested_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "tags", "attributes"]
+    }
+  }]
+}')
+----
+1	Alice	[tag1, tag2, tag3]	{size=10, age=30}
+2	Bob	[tag1, tag4]	{size=20, age=25}
+3	Charlie	[tag2, tag5, tag6]	{size=15, age=35}
+
+# Clean up
+statement ok
+DROP TABLE list_test;
+
+statement ok
+DROP TABLE map_test;
+
+statement ok
+DROP TABLE nested_test;

@@ -1,0 +1,42 @@
+# name: test/sql/test_map_type.test
+# description: Test MAP type support in substrait extension
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE map_test (
+    id INTEGER,
+    name VARCHAR,
+    properties MAP(VARCHAR, VARCHAR)
+);
+
+statement ok
+INSERT INTO map_test VALUES
+    (1, 'Alice', MAP {'color': 'red', 'size': 'small'}),
+    (2, 'Bob', MAP {'color': 'blue', 'size': 'medium'}),
+    (3, 'Charlie', MAP {'color': 'green', 'size': 'large'});
+
+statement ok
+CALL get_substrait('SELECT id, name, properties FROM map_test');
+
+statement ok
+CALL get_substrait('SELECT id, name, properties[''color''] FROM map_test');
+
+statement ok
+CALL get_substrait('SELECT id, name FROM map_test WHERE properties[''color''] = ''blue''');
+
+statement ok
+CREATE VIEW map_view AS SELECT id, properties FROM map_test;
+
+statement ok
+CALL get_substrait('SELECT * FROM map_view');
+
+statement ok
+DROP VIEW map_view;
+
+statement ok
+DROP TABLE map_test;

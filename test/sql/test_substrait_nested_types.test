@@ -1,0 +1,46 @@
+# name: test/sql/test_substrait_nested_types.test
+# description: Test nested type support in substrait extension (LIST, MAP, ARRAY)
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE nested_test (
+    id INTEGER,
+    name VARCHAR,
+    tags VARCHAR[],
+    attributes MAP(VARCHAR, INTEGER)
+);
+
+statement ok
+INSERT INTO nested_test VALUES
+    (1, 'Alice', ['tag1', 'tag2', 'tag3'], MAP(['size', 'age'], [10, 30])),
+    (2, 'Bob', ['tag1', 'tag4'], MAP(['size', 'age'], [20, 25])),
+    (3, 'Charlie', ['tag2', 'tag5', 'tag6'], MAP(['size', 'age'], [15, 35]));
+
+statement ok
+CALL get_substrait('SELECT id, name, tags FROM nested_test')
+
+statement ok
+CALL get_substrait('SELECT id, name, attributes FROM nested_test')
+
+statement ok
+CALL get_substrait('SELECT id, name, tags, attributes FROM nested_test')
+
+statement ok
+CALL get_substrait('SELECT id, name FROM nested_test WHERE tags[1] = ''tag1''')
+
+statement ok
+CALL get_substrait('SELECT id, name FROM nested_test WHERE attributes[''size''] > 15')
+
+statement ok
+CALL get_substrait('SELECT id, name, tags[1] FROM nested_test')
+
+statement ok
+CALL get_substrait('SELECT id, name, attributes[''size''] FROM nested_test')
+
+statement ok
+DROP TABLE nested_test;

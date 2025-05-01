@@ -327,7 +327,7 @@ INSERT INTO enums VALUES ('red'), ('black');
 statement ok
 CALL get_substrait('SELECT e FROM enums WHERE e = ''red'' ');
 
-# Nested types are not yet integrated
+# HUGEINT is not yet integrated
 # statement ok
 # create table all_types AS SELECT * FROM test_all_types();
 

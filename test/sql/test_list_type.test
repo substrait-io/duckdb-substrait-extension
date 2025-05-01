@@ -1,0 +1,51 @@
+# name: test/sql/test_list_type.test
+# description: Test LIST type support in substrait extension
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE list_test (
+    id INTEGER,
+    name VARCHAR,
+    tags VARCHAR[]
+);
+
+statement ok
+INSERT INTO list_test VALUES
+    (1, 'Alice', ['tag1', 'tag2', 'tag3']),
+    (2, 'Bob', ['tag1', 'tag4']),
+    (3, 'Charlie', ['tag2', 'tag5', 'tag6']);
+
+statement ok
+CALL get_substrait('SELECT id, name, tags FROM list_test');
+
+statement ok
+CALL get_substrait('SELECT id, name, tags[1] FROM list_test');
+
+statement ok
+CALL get_substrait('SELECT id, name FROM list_test WHERE tags[1] = ''tag1''');
+
+statement ok
+CREATE TABLE complex_list_test (
+    id INTEGER,
+    numbers INTEGER[],
+    nested VARCHAR[][]
+);
+
+statement ok
+INSERT INTO complex_list_test VALUES
+    (1, [1, 2, 3], [['a', 'b'], ['c', 'd']]),
+    (2, [4, 5, 6], [['e', 'f'], ['g', 'h']]);
+
+statement ok
+CALL get_substrait('SELECT id, numbers, nested FROM complex_list_test');
+
+statement ok
+DROP TABLE complex_list_test;
+
+statement ok
+DROP TABLE list_test;

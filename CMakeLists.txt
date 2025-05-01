@@ -107,11 +107,11 @@ add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})
 
 set(PARAMETERS "-warnings")
 build_loadable_extension(${TARGET_NAME} ${PARAMETERS} ${EXTENSION_SOURCES})
-IF (DEFINED ENV{SKIP_SUBSTRAIT_C_TESTS})
-    message(STATUS "Skipping substrait c tests")
-ELSE()
-    add_subdirectory("test/c")
-ENDIF()
+if(DEFINED ENV{SKIP_SUBSTRAIT_C_TESTS})
+  message(STATUS "Skipping substrait c tests")
+else()
+  add_subdirectory("test/c")
+endif()
 
 install(
   TARGETS ${EXTENSION_NAME}

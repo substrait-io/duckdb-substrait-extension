@@ -174,8 +174,9 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
 		return {literal.var_char().value()};
 	default:
-		throw NotImplementedException("literals of this type are not implemented: %s",
-			substrait::Expression_Literal::GetDescriptor()->FindFieldByNumber(literal.literal_type_case())->name());
+		throw NotImplementedException(
+		    "literals of this type are not implemented: %s",
+		    substrait::Expression_Literal::GetDescriptor()->FindFieldByNumber(literal.literal_type_case())->name());
 	}
 }
 
@@ -305,6 +306,8 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 	switch (s_type.kind_case()) {
 	case substrait::Type::KindCase::kBool:
 		return {LogicalTypeId::BOOLEAN};
+	case substrait::Type::KindCase::kI8:
+		return {LogicalTypeId::TINYINT};
 	case substrait::Type::KindCase::kI16:
 		return {LogicalTypeId::SMALLINT};
 	case substrait::Type::KindCase::kI32:
@@ -317,14 +320,50 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 	}
 	case substrait::Type::KindCase::kDate:
 		return {LogicalTypeId::DATE};
+	case substrait::Type::KindCase::kTime:
+		return {LogicalTypeId::TIME};
 	case substrait::Type::KindCase::kVarchar:
 	case substrait::Type::KindCase::kString:
 		return {LogicalTypeId::VARCHAR};
+	case substrait::Type::KindCase::kBinary:
+		return {LogicalTypeId::BLOB};
+	case substrait::Type::KindCase::kFp32:
+		return {LogicalTypeId::FLOAT};
 	case substrait::Type::KindCase::kFp64:
 		return {LogicalTypeId::DOUBLE};
+	case substrait::Type::KindCase::kTimestamp:
+		return {LogicalTypeId::TIMESTAMP};
+	case substrait::Type::KindCase::kList: {
+		auto &s_list_type = s_type.list();
+		auto element_type = SubstraitToDuckType(s_list_type.type());
+		return LogicalType::LIST(element_type);
+	}
+	case substrait::Type::KindCase::kMap: {
+		auto &s_map_type = s_type.map();
+		auto key_type = SubstraitToDuckType(s_map_type.key());
+		auto value_type = SubstraitToDuckType(s_map_type.value());
+		return LogicalType::MAP(key_type, value_type);
+	}
+	case substrait::Type::KindCase::kStruct: {
+		auto &s_struct_type = s_type.struct_();
+		child_list_t<LogicalType> children;
+
+		for (idx_t i = 0; i < s_struct_type.types_size(); i++) {
+			auto field_name = "f" + std::to_string(i);
+			auto field_type = SubstraitToDuckType(s_struct_type.types(i));
+			children.push_back(make_pair(field_name, field_type));
+		}
+
+		return LogicalType::STRUCT(children);
+	}
+	case substrait::Type::KindCase::kUuid:
+		return {LogicalTypeId::UUID};
+	case substrait::Type::KindCase::kIntervalDay:
+	case substrait::Type::KindCase::kIntervalYear:
+		return {LogicalTypeId::INTERVAL};
 	default:
 		throw NotImplementedException("Substrait type not yet supported: %s",
-			substrait::Type::GetDescriptor()->FindFieldByNumber(s_type.kind_case())->name());
+		                              substrait::Type::GetDescriptor()->FindFieldByNumber(s_type.kind_case())->name());
 	}
 }
 
@@ -378,9 +417,10 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformNested(const substrait:
 	} else if (nested_expression.has_map()) {
 		auto &map_expression = nested_expression.map();
 		vector<unique_ptr<ParsedExpression>> children;
-		auto key_value = map_expression.key_values();
-		children.emplace_back(TransformExpr(key_value[0].key()));
-		children.emplace_back(TransformExpr(key_value[0].value()));
+		for (auto &key_value_pair : map_expression.key_values()) {
+			children.emplace_back(TransformExpr(key_value_pair.key()));
+			children.emplace_back(TransformExpr(key_value_pair.value()));
+		}
 		return make_uniq<FunctionExpression>("map", std::move(children));
 
 	} else {
@@ -410,15 +450,15 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::E
 		return TransformNested(sexpr, iterator);
 	case substrait::Expression::RexTypeCase::kSubquery:
 	default:
-		throw NotImplementedException("Unsupported expression type %s",
-			substrait::Expression::GetDescriptor()->FindFieldByNumber(sexpr.rex_type_case())->name());
+		throw NotImplementedException(
+		    "Unsupported expression type %s",
+		    substrait::Expression::GetDescriptor()->FindFieldByNumber(sexpr.rex_type_case())->name());
 	}
 }
 
 string SubstraitToDuckDB::FindFunction(uint64_t id) {
 	if (functions_map.find(id) == functions_map.end()) {
-		throw NotImplementedException("Could not find aggregate function %s",
-			to_string(id));
+		throw NotImplementedException("Could not find aggregate function %s", to_string(id));
 	}
 	return functions_map[id];
 }
@@ -446,8 +486,9 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 		dnullorder = OrderByNullType::NULLS_LAST;
 		break;
 	default:
-		throw NotImplementedException("Unsupported ordering %s",
-			substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name());
+		throw NotImplementedException(
+		    "Unsupported ordering %s",
+		    substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name());
 	}
 
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
@@ -478,7 +519,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 		break;
 	default:
 		throw NotImplementedException("Unsupported join type: %s",
-			substrait::JoinRel::GetDescriptor()->FindFieldByNumber(sjoin.type())->name());
+		                              substrait::JoinRel::GetDescriptor()->FindFieldByNumber(sjoin.type())->name());
 	}
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
 	return make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
@@ -506,8 +547,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformFilterOp(const substrait::Rel &
 	return make_shared_ptr<FilterRelation>(TransformOp(sfilter.input()), TransformExpr(sfilter.condition()));
 }
 
-const substrait::RelCommon* GetCommon(const substrait::Rel &sop) {
-	const substrait::RelCommon * common;
+const substrait::RelCommon *GetCommon(const substrait::Rel &sop) {
+	const substrait::RelCommon *common;
 	switch (sop.rel_type_case()) {
 	case substrait::Rel::RelTypeCase::kRead:
 		return &sop.read().common();
@@ -550,12 +591,12 @@ const substrait::RelCommon* GetCommon(const substrait::Rel &sop) {
 	case substrait::Rel::RelTypeCase::kDdl:
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-			substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
+		                              substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
 	}
 }
 
-const google::protobuf::RepeatedField<int32_t>& GetOutputMapping(const substrait::Rel &sop) {
-	const substrait::RelCommon* common = GetCommon(sop);
+const google::protobuf::RepeatedField<int32_t> &GetOutputMapping(const substrait::Rel &sop) {
+	const substrait::RelCommon *common = GetCommon(sop);
 	if (!common->has_emit()) {
 		static google::protobuf::RepeatedField<int32_t> empty_mapping;
 		return empty_mapping;
@@ -757,15 +798,15 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			}
 			parameters.push_back(Value::UBIGINT(snapshot_id));
 		} else if (sget.iceberg_table().direct().has_snapshot_timestamp()) {
-			parameters.push_back( Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
+			parameters.push_back(Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
 		}
 		shared_ptr<TableFunctionRelation> scan_rel;
 		if (acquire_lock) {
 			scan_rel = make_shared_ptr<TableFunctionRelation>(context, "iceberg_scan", parameters,
-									  std::move(named_parameters));
+			                                                  std::move(named_parameters));
 		} else {
 			scan_rel = make_shared_ptr<TableFunctionRelation>(context_wrapper, "iceberg_scan", parameters,
-									  std::move(named_parameters));
+			                                                  std::move(named_parameters));
 		}
 		auto rel = static_cast<Relation *>(scan_rel.get());
 		scan = rel->Alias(name);
@@ -810,7 +851,8 @@ shared_ptr<Relation> SubstraitToDuckDB::GetValueRelationWithSingleBoolColumn() {
 	return scan;
 }
 
-shared_ptr<Relation> SubstraitToDuckDB::GetValuesExpression(const google::protobuf::RepeatedPtrField<substrait::Expression_Nested_Struct> &expression_rows) {
+shared_ptr<Relation> SubstraitToDuckDB::GetValuesExpression(
+    const google::protobuf::RepeatedPtrField<substrait::Expression_Nested_Struct> &expression_rows) {
 	vector<vector<unique_ptr<ParsedExpression>>> expressions;
 	for (auto &row : expression_rows) {
 		vector<unique_ptr<ParsedExpression>> expression_row;
@@ -852,7 +894,7 @@ static SetOperationType TransformSetOperationType(substrait::SetRel_SetOp setop)
 	}
 	default: {
 		throw NotImplementedException("SetOperationType transform not implemented for SetRel_SetOp type %s",
-			substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name());
+		                              substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name());
 	}
 	}
 }
@@ -895,8 +937,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	auto input = TransformOp(swrite.input());
 	switch (swrite.op()) {
-    case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
-	    return input->CreateRel(schema_name, table_name);
+	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS:
+		return input->CreateRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
@@ -904,11 +946,13 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		case RelationType::PROJECTION_RELATION: {
 			auto project = std::move(input.get()->Cast<ProjectionRelation>());
 			auto filter = std::move(project.child->Cast<FilterRelation>());
-        	return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
+			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name,
+			                                       table_name);
 		}
 		case RelationType::FILTER_RELATION: {
 			auto filter = std::move(input.get()->Cast<FilterRelation>());
-			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name, table_name);
+			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), schema_name,
+			                                       table_name);
 		}
 		default:
 			throw NotImplementedException("Unsupported relation type for delete operation");
@@ -916,7 +960,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",
-			substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name());
+		                              substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name());
 	}
 }
 
@@ -945,7 +989,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		return TransformWriteOp(sop);
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-			substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
+		                              substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
 	}
 }
 
