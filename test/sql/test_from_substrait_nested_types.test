@@ -33,7 +33,7 @@ SELECT * FROM list_test
 query ITT
 CALL from_substrait_json('{
   "version": {
-    "minorNumber": 19, 
+    "minorNumber": 19,
     "producer": "DuckDB"
   },
   "relations": [{
@@ -94,7 +94,7 @@ SELECT * FROM map_test
 query ITT
 CALL from_substrait_json('{
   "version": {
-    "minorNumber": 19, 
+    "minorNumber": 19,
     "producer": "DuckDB"
   },
   "relations": [{
@@ -157,7 +157,7 @@ SELECT * FROM nested_test
 query ITTT
 CALL from_substrait_json('{
   "version": {
-    "minorNumber": 19, 
+    "minorNumber": 19,
     "producer": "DuckDB"
   },
   "relations": [{
@@ -197,6 +197,560 @@ CALL from_substrait_json('{
 2	Bob	[tag1, tag4]	{size=20, age=25}
 3	Charlie	[tag2, tag5, tag6]	{size=15, age=35}
 
+# Test with STRUCT containing nested fields
+statement ok
+CREATE TABLE struct_test (
+    id INTEGER,
+    name VARCHAR,
+    profile STRUCT(
+        age INTEGER,
+        email VARCHAR,
+        active BOOLEAN
+    )
+);
+
+statement ok
+INSERT INTO struct_test VALUES
+    (1, 'Alice', {age: 30, email: 'alice@example.com', active: true}),
+    (2, 'Bob', {age: 25, email: 'bob@example.com', active: false}),
+    (3, 'Charlie', {age: 35, email: 'charlie@example.com', active: true});
+
+# Simple selection with struct column
+query ITT
+SELECT * FROM struct_test
+----
+1	Alice	{'age': 30, 'email': alice@example.com, 'active': true}
+2	Bob	{'age': 25, 'email': bob@example.com, 'active': false}
+3	Charlie	{'age': 35, 'email': charlie@example.com, 'active': true}
+
+# Test struct type with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "profile"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "type_variation_reference": 0,
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["struct_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "profile"]
+    }
+  }],
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 1,
+        "name": "struct"
+      }
+    }
+  ]
+}')
+----
+1	Alice	{'age': 30, 'email': alice@example.com, 'active': true}
+2	Bob	{'age': 25, 'email': bob@example.com, 'active': false}
+3	Charlie	{'age': 35, 'email': charlie@example.com, 'active': true}
+
+# Test with List of Structs
+statement ok
+CREATE TABLE list_of_structs_test (
+    id INTEGER,
+    name VARCHAR,
+    contacts STRUCT(name VARCHAR, phone VARCHAR, type VARCHAR)[]
+);
+
+statement ok
+INSERT INTO list_of_structs_test VALUES
+    (1, 'Alice', [{name: 'Bob', phone: '555-1234', type: 'friend'}, {name: 'Charlie', phone: '555-5678', type: 'family'}]),
+    (2, 'Bob', [{name: 'Alice', phone: '555-8765', type: 'friend'}, {name: 'David', phone: '555-4321', type: 'work'}]),
+    (3, 'Charlie', [{name: 'Alice', phone: '555-8765', type: 'family'}, {name: 'Eve', phone: '555-9999', type: 'work'}]);
+
+# Simple selection with list of structs
+query ITT
+SELECT * FROM list_of_structs_test
+----
+1	Alice	[{'name': Bob, 'phone': 555-1234, 'type': friend}, {'name': Charlie, 'phone': 555-5678, 'type': family}]
+2	Bob	[{'name': Alice, 'phone': 555-8765, 'type': friend}, {'name': David, 'phone': 555-4321, 'type': work}]
+3	Charlie	[{'name': Alice, 'phone': 555-8765, 'type': family}, {'name': Eve, 'phone': 555-9999, 'type': work}]
+
+# Test list of structs with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "contacts"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"list": {
+                  "type": {
+                    "struct": {
+                      "types": [
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}}
+                      ],
+                      "type_variation_reference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["list_of_structs_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "contacts"]
+    }
+  }],
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 1,
+        "name": "struct"
+      }
+    }
+  ]
+}')
+----
+1	Alice	[{'name': Bob, 'phone': 555-1234, 'type': friend}, {'name': Charlie, 'phone': 555-5678, 'type': family}]
+2	Bob	[{'name': Alice, 'phone': 555-8765, 'type': friend}, {'name': David, 'phone': 555-4321, 'type': work}]
+3	Charlie	[{'name': Alice, 'phone': 555-8765, 'type': family}, {'name': Eve, 'phone': 555-9999, 'type': work}]
+
+# Test with Map of Structs
+statement ok
+CREATE TABLE map_of_structs_test (
+    id INTEGER,
+    name VARCHAR,
+    properties MAP(VARCHAR, STRUCT(value INTEGER, unit VARCHAR))
+);
+
+statement ok
+INSERT INTO map_of_structs_test VALUES
+    (1, 'Alice', MAP(['height', 'weight'], [{value: 175, unit: 'cm'}, {value: 65, unit: 'kg'}])),
+    (2, 'Bob', MAP(['height', 'weight'], [{value: 180, unit: 'cm'}, {value: 75, unit: 'kg'}])),
+    (3, 'Charlie', MAP(['height', 'weight'], [{value: 170, unit: 'cm'}, {value: 70, unit: 'kg'}]));
+
+# Simple selection with map of structs
+query ITT
+SELECT * FROM map_of_structs_test
+----
+1	Alice	{height={'value': 175, 'unit': cm}, weight={'value': 65, 'unit': kg}}
+2	Bob	{height={'value': 180, 'unit': cm}, weight={'value': 75, 'unit': kg}}
+3	Charlie	{height={'value': 170, 'unit': cm}, weight={'value': 70, 'unit': kg}}
+
+# Test map of structs with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "properties"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"map": {
+                  "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                  "value": {
+                    "struct": {
+                      "types": [
+                        {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}}
+                      ],
+                      "type_variation_reference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["map_of_structs_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "properties"]
+    }
+  }],
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 1,
+        "name": "struct"
+      }
+    }
+  ]
+}')
+----
+1	Alice	{height={'value': 175, 'unit': cm}, weight={'value': 65, 'unit': kg}}
+2	Bob	{height={'value': 180, 'unit': cm}, weight={'value': 75, 'unit': kg}}
+3	Charlie	{height={'value': 170, 'unit': cm}, weight={'value': 70, 'unit': kg}}
+
+# Test with Struct containing List and Map (deeply nested types)
+statement ok
+CREATE TABLE complex_nested_test (
+    id INTEGER,
+    name VARCHAR,
+    user_data STRUCT(
+        tags VARCHAR[],
+        preferences MAP(VARCHAR, VARCHAR),
+        contact STRUCT(email VARCHAR, phone VARCHAR)
+    )
+);
+
+statement ok
+INSERT INTO complex_nested_test VALUES
+    (1, 'Alice', {
+        tags: ['tech', 'art', 'travel'],
+        preferences: MAP(['theme', 'language'], ['dark', 'en']),
+        contact: {email: 'alice@example.com', phone: '555-1234'}
+    }),
+    (2, 'Bob', {
+        tags: ['sports', 'music'],
+        preferences: MAP(['theme', 'language'], ['light', 'fr']),
+        contact: {email: 'bob@example.com', phone: '555-5678'}
+    }),
+    (3, 'Charlie', {
+        tags: ['food', 'travel', 'photography'],
+        preferences: MAP(['theme', 'language'], ['auto', 'es']),
+        contact: {email: 'charlie@example.com', phone: '555-9012'}
+    });
+
+# Simple selection with deeply nested types
+query ITT
+SELECT * FROM complex_nested_test
+----
+1	Alice	{'tags': [tech, art, travel], 'preferences': {theme=dark, language=en}, 'contact': {'email': alice@example.com, 'phone': 555-1234}}
+2	Bob	{'tags': [sports, music], 'preferences': {theme=light, language=fr}, 'contact': {'email': bob@example.com, 'phone': 555-5678}}
+3	Charlie	{'tags': [food, travel, photography], 'preferences': {theme=auto, language=es}, 'contact': {'email': charlie@example.com, 'phone': 555-9012}}
+
+# Test deeply nested types with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "user_data"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"struct": {
+                  "types": [
+                    {"list": {
+                      "type": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }},
+                    {"map": {
+                      "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                      "value": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }},
+                    {"struct": {
+                      "types": [
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}}
+                      ],
+                      "type_variation_reference": 0,
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }}
+                  ],
+                  "type_variation_reference": 0,
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["complex_nested_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "user_data"]
+    }
+  }],
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 1,
+        "name": "struct"
+      }
+    }
+  ]
+}')
+----
+1	Alice	{'tags': [tech, art, travel], 'preferences': {theme=dark, language=en}, 'contact': {'email': alice@example.com, 'phone': 555-1234}}
+2	Bob	{'tags': [sports, music], 'preferences': {theme=light, language=fr}, 'contact': {'email': bob@example.com, 'phone': 555-5678}}
+3	Charlie	{'tags': [food, travel, photography], 'preferences': {theme=auto, language=es}, 'contact': {'email': charlie@example.com, 'phone': 555-9012}}
+
+# Test with List of Maps (another form of deep nesting)
+statement ok
+CREATE TABLE list_of_maps_test (
+    id INTEGER,
+    name VARCHAR,
+    yearly_expenses MAP(VARCHAR, INTEGER)[]
+);
+
+statement ok
+INSERT INTO list_of_maps_test VALUES
+    (1, 'Alice', [
+        MAP(['rent', 'food', 'transport'], [1500, 500, 200]),
+        MAP(['rent', 'food', 'transport'], [1600, 550, 250])
+    ]),
+    (2, 'Bob', [
+        MAP(['rent', 'food', 'transport'], [1200, 600, 150]),
+        MAP(['rent', 'food', 'transport'], [1200, 650, 180])
+    ]);
+
+# Simple selection with list of maps
+query ITT
+SELECT * FROM list_of_maps_test
+----
+1	Alice	[{rent=1500, food=500, transport=200}, {rent=1600, food=550, transport=250}]
+2	Bob	[{rent=1200, food=600, transport=150}, {rent=1200, food=650, transport=180}]
+
+# Test list of maps with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "yearly_expenses"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"list": {
+                  "type": {
+                    "map": {
+                      "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                      "value": {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["list_of_maps_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "yearly_expenses"]
+    }
+  }]
+}')
+----
+1	Alice	[{rent=1500, food=500, transport=200}, {rent=1600, food=550, transport=250}]
+2	Bob	[{rent=1200, food=600, transport=150}, {rent=1200, food=650, transport=180}]
+
+# Test with triple-nested types: Map of List of Structs
+statement ok
+CREATE TABLE triple_nested_test (
+    id INTEGER,
+    name VARCHAR,
+    categories MAP(VARCHAR, STRUCT(name VARCHAR, value INTEGER, tags VARCHAR[])[])
+);
+
+statement ok
+INSERT INTO triple_nested_test VALUES
+    (1, 'Alice', MAP([
+        'electronics',
+        'clothing'
+    ], [
+        [
+            {name: 'laptop', value: 1200, tags: ['tech', 'work']},
+            {name: 'phone', value: 800, tags: ['tech', 'mobile']}
+        ],
+        [
+            {name: 'shirt', value: 50, tags: ['casual', 'cotton']},
+            {name: 'pants', value: 70, tags: ['formal', 'wool']}
+        ]
+    ])),
+    (2, 'Bob', MAP([
+        'sports',
+        'books'
+    ], [
+        [
+            {name: 'tennis', value: 200, tags: ['outdoor', 'racket']},
+            {name: 'swimming', value: 150, tags: ['water', 'pool']}
+        ],
+        [
+            {name: 'fiction', value: 30, tags: ['novel', 'fantasy']},
+            {name: 'biography', value: 25, tags: ['history', 'factual']}
+        ]
+    ]));
+
+# Simple selection with triple-nested types
+query ITT
+SELECT * FROM triple_nested_test
+----
+1	Alice	{electronics=[{'name': laptop, 'value': 1200, 'tags': [tech, work]}, {'name': phone, 'value': 800, 'tags': [tech, mobile]}], clothing=[{'name': shirt, 'value': 50, 'tags': [casual, cotton]}, {'name': pants, 'value': 70, 'tags': [formal, wool]}]}
+2	Bob	{sports=[{'name': tennis, 'value': 200, 'tags': [outdoor, racket]}, {'name': swimming, 'value': 150, 'tags': [water, pool]}], books=[{'name': fiction, 'value': 30, 'tags': [novel, fantasy]}, {'name': biography, 'value': 25, 'tags': [history, factual]}]}
+
+# Test triple-nested types with from_substrait_json
+query ITT
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "categories"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"map": {
+                  "key": {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                  "value": {
+                    "list": {
+                      "type": {
+                        "struct": {
+                          "types": [
+                            {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                            {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+                            {"list": {
+                              "type": {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }}
+                          ],
+                          "type_variation_reference": 0,
+                          "nullability": "NULLABILITY_NULLABLE"
+                        }
+                      },
+                      "nullability": "NULLABILITY_NULLABLE"
+                    }
+                  },
+                  "nullability": "NULLABILITY_NULLABLE"
+                }}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["triple_nested_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "categories"]
+    }
+  }],
+  "extension_uris": [
+    {
+      "extension_uri_anchor": 1,
+      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+    }
+  ],
+  "extensions": [
+    {
+      "extension_function": {
+        "extension_uri_reference": 1,
+        "function_anchor": 1,
+        "name": "struct"
+      }
+    }
+  ]
+}')
+----
+1	Alice	{electronics=[{'name': laptop, 'value': 1200, 'tags': [tech, work]}, {'name': phone, 'value': 800, 'tags': [tech, mobile]}], clothing=[{'name': shirt, 'value': 50, 'tags': [casual, cotton]}, {'name': pants, 'value': 70, 'tags': [formal, wool]}]}
+2	Bob	{sports=[{'name': tennis, 'value': 200, 'tags': [outdoor, racket]}, {'name': swimming, 'value': 150, 'tags': [water, pool]}], books=[{'name': fiction, 'value': 30, 'tags': [novel, fantasy]}, {'name': biography, 'value': 25, 'tags': [history, factual]}]}
+
 # Clean up
 statement ok
 DROP TABLE list_test;
@@ -206,3 +760,21 @@ DROP TABLE map_test;
 
 statement ok
 DROP TABLE nested_test;
+
+statement ok
+DROP TABLE struct_test;
+
+statement ok
+DROP TABLE list_of_structs_test;
+
+statement ok
+DROP TABLE map_of_structs_test;
+
+statement ok
+DROP TABLE complex_nested_test;
+
+statement ok
+DROP TABLE list_of_maps_test;
+
+statement ok
+DROP TABLE triple_nested_test;
