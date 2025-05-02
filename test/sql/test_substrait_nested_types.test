@@ -1,5 +1,5 @@
 # name: test/sql/test_substrait_nested_types.test
-# description: Test nested type support in substrait extension (LIST, MAP, ARRAY)
+# description: Test nested type support in substrait extension (LIST, MAP)
 # group: [sql]
 
 require substrait
