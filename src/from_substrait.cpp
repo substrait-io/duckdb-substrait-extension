@@ -359,7 +359,6 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 	case substrait::Type::KindCase::kUuid:
 		return {LogicalTypeId::UUID};
 	case substrait::Type::KindCase::kIntervalDay:
-	case substrait::Type::KindCase::kIntervalYear:
 		return {LogicalTypeId::INTERVAL};
 	default:
 		throw NotImplementedException("Substrait type not yet supported: %s",
