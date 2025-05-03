@@ -1,0 +1,123 @@
+# name: test/sql/test_from_substrait_basic.test
+# description: Test from_substrait basic functionality
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE basic_test (id INTEGER, name VARCHAR, age INTEGER);
+
+statement ok
+INSERT INTO basic_test VALUES 
+    (1, 'Alice', 30),
+    (2, 'Bob', 25),
+    (3, 'Charlie', 35);
+
+# First get a substrait plan for later comparison
+statement ok
+CALL get_substrait('SELECT * FROM basic_test')
+
+# Test using JSON format with from_substrait_json
+# This tests a simple query returning all rows
+query III
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19, 
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id", "name", "age"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {
+            "names": ["basic_test"]
+          }
+        }
+      },
+      "names": ["id", "name", "age"]
+    }
+  }]
+}')
+----
+1	Alice	30
+2	Bob	25
+3	Charlie	35
+
+# Test with a filter
+query III
+CALL from_substrait_json('{
+  "version": {
+    "minorNumber": 19, 
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "filter": {
+          "input": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "name", "age"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"varchar": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {
+                "names": ["basic_test"]
+              }
+            }
+          },
+          "condition": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}},
+                {"value": {"literal": {"i32": 25, "nullable": false}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          }
+        }
+      },
+      "names": ["id", "name", "age"]
+    }
+  }],
+  "extensions": [
+    {"extensionFunction": {"extensionUriReference": 0, "functionAnchor": 1, "name": "gt"}}
+  ],
+  "extensionUris": [
+    {"extensionUriAnchor": 0, "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/functions_comparison.yaml"}
+  ]
+}')
+----
+1	Alice	30
+3	Charlie	35
+
+# Test with direct SQL for comparison
+query III
+SELECT * FROM basic_test WHERE age > 28 ORDER BY id
+----
+1	Alice	30
+3	Charlie	35
+
+statement ok
+DROP TABLE basic_test;

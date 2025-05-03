@@ -289,7 +289,7 @@ struct FromSubstraitFunctionData : public TableFunctionData {
 };
 
 static unique_ptr<FunctionData> SubstraitBind(ClientContext &context, TableFunctionBindInput &input,
-					      vector<LogicalType> &return_types, vector<string> &names, bool is_json) {
+                                              vector<LogicalType> &return_types, vector<string> &names, bool is_json) {
 	auto result = make_uniq<FromSubstraitFunctionData>();
 	result->conn = make_uniq<Connection>(*context.db);
 	if (input.inputs[0].IsNull()) {
@@ -306,12 +306,12 @@ static unique_ptr<FunctionData> SubstraitBind(ClientContext &context, TableFunct
 }
 
 static unique_ptr<FunctionData> FromSubstraitBind(ClientContext &context, TableFunctionBindInput &input,
-						  vector<LogicalType> &return_types, vector<string> &names) {
+                                                  vector<LogicalType> &return_types, vector<string> &names) {
 	return SubstraitBind(context, input, return_types, names, false);
 }
 
 static unique_ptr<FunctionData> FromSubstraitBindJSON(ClientContext &context, TableFunctionBindInput &input,
-						      vector<LogicalType> &return_types, vector<string> &names) {
+                                                      vector<LogicalType> &return_types, vector<string> &names) {
 	return SubstraitBind(context, input, return_types, names, true);
 }
 
@@ -366,7 +366,8 @@ void InitializeFromSubstraitJSON(const Connection &con) {
 	auto &catalog = Catalog::GetSystemCatalog(*con.context);
 	// create the from_substrait table function that allows us to get a query
 	// result from a substrait plan
-	TableFunction from_sub_func_json("from_substrait_json", {LogicalType::VARCHAR}, FromSubFunction, FromSubstraitBindJSON);
+	TableFunction from_sub_func_json("from_substrait_json", {LogicalType::VARCHAR}, FromSubFunction,
+	                                 FromSubstraitBindJSON);
 	from_sub_func_json.bind_replace = FromSubstraitBindReplaceJSON;
 	CreateTableFunctionInfo from_sub_info_json(from_sub_func_json);
 	catalog.CreateTableFunction(*con.context, from_sub_info_json);
