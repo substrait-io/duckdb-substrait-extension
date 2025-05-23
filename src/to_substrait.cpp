@@ -1,23 +1,24 @@
 #include "to_substrait.hpp"
 
+#include "duckdb/catalog/catalog_entry/duck_table_entry.hpp"
 #include "duckdb/common/constants.hpp"
 #include "duckdb/common/enums/expression_type.hpp"
 #include "duckdb/common/types/value.hpp"
+#include "duckdb/execution/index/art/art_key.hpp"
 #include "duckdb/function/table/table_scan.hpp"
+#include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/planner/expression/list.hpp"
 #include "duckdb/planner/filter/conjunction_filter.hpp"
 #include "duckdb/planner/filter/constant_filter.hpp"
+#include "duckdb/planner/filter/expression_filter.hpp"
 #include "duckdb/planner/joinside.hpp"
 #include "duckdb/planner/operator/list.hpp"
+#include "duckdb/planner/operator/logical_set_operation.hpp"
 #include "duckdb/planner/table_filter.hpp"
 #include "duckdb/storage/statistics/base_statistics.hpp"
-#include "duckdb/catalog/catalog_entry/duck_table_entry.hpp"
-#include "duckdb/planner/operator/logical_set_operation.hpp"
 #include "google/protobuf/util/json_util.h"
 #include "substrait/algebra.pb.h"
 #include "substrait/plan.pb.h"
-#include "duckdb/parser/constraints/not_null_constraint.hpp"
-#include "duckdb/execution/index/art/art_key.hpp"
 
 namespace duckdb {
 const std::unordered_map<std::string, std::string> DuckDBToSubstrait::function_names_remap = {
@@ -737,6 +738,13 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 	return s_expr;
 }
 
+substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, LogicalType &column_type,
+								   TableFilter &dfilter,
+								   LogicalType &return_type) {
+	auto &expression_filter = dfilter.Cast<ExpressionFilter>();
+	return TransformFilter(col_idx, column_type, expression_filter, return_type);
+}
+
 substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, LogicalType &column_type,
                                                           TableFilter &dfilter, LogicalType &return_type) {
 	switch (dfilter.filter_type) {
@@ -748,8 +756,16 @@ substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, Logi
 		return TransformConstantComparisonFilter(col_idx, column_type, dfilter, return_type);
 	case TableFilterType::OPTIONAL_FILTER:
 		return nullptr;
-	default:
-		throw InternalException("Unsupported table filter type");
+        case TableFilterType::EXPRESSION_FILTER:
+		return TransformExpressionFilter(col_idx, column_type, dfilter, return_type);
+        case TableFilterType::IS_NULL:
+        case TableFilterType::CONJUNCTION_OR:
+        case TableFilterType::STRUCT_EXTRACT:
+        case TableFilterType::IN_FILTER:
+        case TableFilterType::DYNAMIC_FILTER:
+        default:
+		throw InternalException("Unsupported table filter type: %s",
+			EnumUtil::ToString(dfilter.filter_type));
 	}
 }
 

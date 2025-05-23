@@ -127,6 +127,8 @@ private:
 	                                                    TableFilter &dfilter, LogicalType &return_type);
 	substrait::Expression *TransformConstantComparisonFilter(uint64_t col_idx, const LogicalType &column_type,
 	                                                         TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformExpressionFilter(uint64_t col_idx, LogicalType &column_type,
+							 TableFilter &dfilter, LogicalType &return_type);
 
 	//! Transforms DuckDB Join Conditions to Substrait Expression
 	substrait::Expression *TransformJoinCond(const JoinCondition &dcond, uint64_t left_ncol);
