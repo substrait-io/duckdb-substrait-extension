@@ -741,8 +741,10 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, LogicalType &column_type,
 								   TableFilter &dfilter,
 								   LogicalType &return_type) {
-	auto &expression_filter = dfilter.Cast<ExpressionFilter>();
-	return TransformFilter(col_idx, column_type, expression_filter, return_type);
+	auto expression = new substrait::Expression();
+	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
+	TransformExpr(*expr_filter.expr, *expression, col_idx);
+	return expression;
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, LogicalType &column_type,
