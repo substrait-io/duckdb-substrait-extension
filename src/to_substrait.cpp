@@ -743,8 +743,13 @@ substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col
                                                                     LogicalType &return_type) {
 	auto s_expr = new substrait::Expression();
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
-	// Transform the expression directly - it should be self-contained
-	TransformExpr(*expr_filter.expr, *s_expr);
+
+	// Create a proper column reference for the ToExpression method
+	auto column_ref = make_uniq<BoundReferenceExpression>(column_type, col_idx);
+	auto bound_expr = expr_filter.ToExpression(*column_ref);
+
+	// Transform the properly bound expression
+	TransformExpr(*bound_expr, *s_expr);
 	return s_expr;
 }
 
