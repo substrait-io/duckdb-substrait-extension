@@ -1,0 +1,43 @@
+# name: test/sql/test_substrait_issue_01.test
+# description: Test get_substrait on issue#1
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+create table t (a int)
+
+statement ok
+INSERT INTO t VALUES (1), (2), (3), (NULL);
+
+# is null
+statement ok
+CALL get_substrait('select * FROM t WHERE a IS NULL')
+
+# is not null
+statement ok
+CALL get_substrait('select * FROM t WHERE a IS NOT NULL')
+
+# conjunction or
+statement ok
+CALL get_substrait('select * FROM t WHERE a = 1 OR a = 2')
+
+# in
+statement ok
+CALL get_substrait('select * FROM t WHERE a IN (1, 2, 3)')
+
+statement ok
+DROP TABLE t
+
+# struct extract
+statement ok
+CREATE TABLE people (person STRUCT(name VARCHAR, age INTEGER))
+
+statement ok
+SELECT * FROM people WHERE person.age > 30
+
+statement ok
+DROP TABLE people

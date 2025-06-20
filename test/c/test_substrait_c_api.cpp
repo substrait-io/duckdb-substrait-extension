@@ -291,6 +291,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	DuckDB db(nullptr);
 	Connection con(db);
 
+	// Iceberg requires AVRO.  Remove after AVRO auto-loads.
 	REQUIRE_NO_FAIL(con.Query("INSTALL avro;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD avro;"));
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
