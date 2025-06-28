@@ -133,6 +133,7 @@ private:
 		substrait::Expression *TransformStructExtractFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 		substrait::Expression *TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 		substrait::Expression *TransformInFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 
 
 	//! Transforms DuckDB Join Conditions to Substrait Expression

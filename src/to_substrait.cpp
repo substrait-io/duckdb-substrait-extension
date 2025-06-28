@@ -12,6 +12,7 @@
 #include "duckdb/planner/filter/constant_filter.hpp"
 #include "duckdb/planner/filter/expression_filter.hpp"
 #include "duckdb/planner/filter/in_filter.hpp"
+#include "duckdb/planner/filter/dynamic_filter.hpp"
 #include "duckdb/planner/filter/struct_filter.hpp"
 #include "duckdb/planner/joinside.hpp"
 #include "duckdb/planner/operator/list.hpp"
@@ -798,6 +799,15 @@ substrait::Expression *DuckDBToSubstrait::TransformInFilter(uint64_t col_idx, co
 	return s_expr;
 }
 
+substrait::Expression *DuckDBToSubstrait::TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
+	auto &dynamic_filter = dfilter.Cast<DynamicFilter>();
+	if (!dynamic_filter.filter_data || !dynamic_filter.filter_data->filter) {
+		throw InternalException("Dynamic filter data or inner filter is null");
+	}
+	// Dynamic filter wraps a ConstantFilter, so we transform the inner filter
+	return TransformConstantComparisonFilter(col_idx, column_type, *dynamic_filter.filter_data->filter, return_type);
+}
+
 substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
 	auto s_expr = new substrait::Expression();
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
@@ -814,24 +824,26 @@ substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col
 substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, const LogicalType &column_type,
                                                           const TableFilter &dfilter, const LogicalType &return_type) {
 	switch (dfilter.filter_type) {
-	case TableFilterType::IS_NOT_NULL:
-		return TransformIsNotNullFilter(col_idx, column_type, dfilter, return_type);
 	case TableFilterType::CONJUNCTION_AND:
 		return TransformConjunctionAndFilter(col_idx, column_type, dfilter, return_type);
-	case TableFilterType::CONSTANT_COMPARISON:
-		return TransformConstantComparisonFilter(col_idx, column_type, dfilter, return_type);
-	case TableFilterType::OPTIONAL_FILTER:
-		return nullptr;
-        case TableFilterType::IS_NULL:
-		return TransformIsNullFilter(col_idx, column_type, dfilter, return_type);
-        case TableFilterType::EXPRESSION_FILTER:
-		return TransformExpressionFilter(col_idx, column_type, dfilter, return_type);
-        case TableFilterType::STRUCT_EXTRACT:
-		return TransformStructExtractFilter(col_idx, column_type, dfilter, return_type);
-	case TableFilterType::IN_FILTER:
-		return TransformInFilter(col_idx, column_type, dfilter, return_type);
 	case TableFilterType::CONJUNCTION_OR:
 		return TransformConjunctionOrFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::CONSTANT_COMPARISON:
+		return TransformConstantComparisonFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::DYNAMIC_FILTER:
+		return TransformDynamicFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::EXPRESSION_FILTER:
+		return TransformExpressionFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::IN_FILTER:
+		return TransformInFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::IS_NOT_NULL:
+		return TransformIsNotNullFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::IS_NULL:
+		return TransformIsNullFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::OPTIONAL_FILTER:
+		return nullptr;
+        case TableFilterType::STRUCT_EXTRACT:
+		return TransformStructExtractFilter(col_idx, column_type, dfilter, return_type);
         default:
 		throw NotImplementedException("Unsupported table filter type: %s",
 			EnumUtil::ToString(dfilter.filter_type));
