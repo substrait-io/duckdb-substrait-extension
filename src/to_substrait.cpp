@@ -781,6 +781,23 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 	return s_expr;
 }
 
+substrait::Expression *DuckDBToSubstrait::TransformInFilter(uint64_t col_idx, const LogicalType &column_type,
+                                                            const TableFilter &dfilter, const LogicalType &return_type) {
+	auto s_expr = new substrait::Expression();
+	auto &in_filter = dfilter.Cast<InFilter>();
+	auto singular_or_list = s_expr->mutable_singular_or_list();
+
+	// Set the input expression (the column being filtered)
+	CreateFieldRef(singular_or_list->mutable_value(), col_idx);
+
+	// Add the options (the values in the IN list)
+	        for (auto &constant_value : in_filter.values) {
+		TransformConstant(constant_value, *singular_or_list->add_options());
+	}
+
+	return s_expr;
+}
+
 substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
 	auto s_expr = new substrait::Expression();
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
@@ -811,6 +828,8 @@ substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, cons
 		return TransformExpressionFilter(col_idx, column_type, dfilter, return_type);
         case TableFilterType::STRUCT_EXTRACT:
 		return TransformStructExtractFilter(col_idx, column_type, dfilter, return_type);
+	case TableFilterType::IN_FILTER:
+		return TransformInFilter(col_idx, column_type, dfilter, return_type);
 	case TableFilterType::CONJUNCTION_OR:
 		return TransformConjunctionOrFilter(col_idx, column_type, dfilter, return_type);
         default:
