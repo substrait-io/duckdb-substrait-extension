@@ -113,20 +113,28 @@ private:
 	void TransformNotExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformCaseExpression(Expression &dexpr, substrait::Expression &sexpr);
 	void TransformInExpression(Expression &dexpr, substrait::Expression &sexpr);
-
 	//! Transforms a DuckDB Logical Type into a Substrait Type
 	static substrait::Type DuckToSubstraitType(const LogicalType &type, BaseStatistics *column_statistics = nullptr,
 	                                           bool not_null = false);
 
 	//! Methods to transform DuckDB Filters to Substrait Expression
-	substrait::Expression *TransformFilter(uint64_t col_idx, LogicalType &column_type, TableFilter &dfilter,
-	                                       LogicalType &return_type);
+	substrait::Expression *TransformFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter,
+	                                       const LogicalType &return_type);
 	substrait::Expression *TransformIsNotNullFilter(uint64_t col_idx, const LogicalType &column_type,
-	                                                TableFilter &dfilter, const LogicalType &return_type);
-	substrait::Expression *TransformConjuctionAndFilter(uint64_t col_idx, LogicalType &column_type,
-	                                                    TableFilter &dfilter, LogicalType &return_type);
-	substrait::Expression *TransformConstantComparisonFilter(uint64_t col_idx, const LogicalType &column_type,
-	                                                         TableFilter &dfilter, const LogicalType &return_type);
+	                                                const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformIsNullFilter(uint64_t col_idx, const LogicalType &column_type,
+	                                             const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformConjunctionAndFilter(uint64_t col_idx, const LogicalType &column_type,
+	                                                     const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformConjunctionOrFilter(uint64_t col_idx, const LogicalType &column_type,
+	                                                    const TableFilter &dfilter, const LogicalType &return_type);
+		substrait::Expression *TransformConstantComparisonFilter(uint64_t col_idx, const LogicalType &column_type,
+	                                                         const TableFilter &dfilter, const LogicalType &return_type);
+		substrait::Expression *TransformStructExtractFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+		substrait::Expression *TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+		substrait::Expression *TransformInFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+
 
 	//! Transforms DuckDB Join Conditions to Substrait Expression
 	substrait::Expression *TransformJoinCond(const JoinCondition &dcond, uint64_t left_ncol);
@@ -140,10 +148,14 @@ private:
 
 	//! Creates a Conjunction
 	template <typename T, typename FUNC>
-	substrait::Expression *CreateConjunction(T &source, const FUNC f) {
+	substrait::Expression *CreateConjunction(T &source, const FUNC f, const string &name = "and") {
 		substrait::Expression *res = nullptr;
 		for (auto &ele : source) {
 			auto child_expression = f(ele);
+			// Skip null expressions (filters that cannot be pushed down)
+			if (!child_expression) {
+				continue;
+			}
 			if (!res) {
 				res = child_expression;
 			} else {
@@ -155,7 +167,7 @@ private:
 				vector<::substrait::Type> args_types {DuckToSubstraitType(boolean_type),
 				                                      DuckToSubstraitType(boolean_type)};
 
-				scalar_fun->set_function_reference(RegisterFunction("and", args_types));
+				scalar_fun->set_function_reference(RegisterFunction(name, args_types));
 				*scalar_fun->mutable_output_type() = DuckToSubstraitType(boolean_type);
 				AllocateFunctionArgument(scalar_fun, res);
 				AllocateFunctionArgument(scalar_fun, child_expression);

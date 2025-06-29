@@ -26,6 +26,4 @@ jobs:
       run: make release_c_unit_test
 
     - name: Run C unit tests
-      # Disabled until iceberg can be loaded/installed again.
-      if: false
       run: ./build/release/extension/substrait/test/c/test_substrait_exe

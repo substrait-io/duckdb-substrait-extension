@@ -291,6 +291,9 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	DuckDB db(nullptr);
 	Connection con(db);
 
+	// Iceberg requires AVRO.  Remove after AVRO auto-loads.
+	REQUIRE_NO_FAIL(con.Query("INSTALL avro;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD avro;"));
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
@@ -397,6 +400,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 	DuckDB db(nullptr);
 	Connection con(db);
 
+	REQUIRE_NO_FAIL(con.Query("INSTALL avro;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD avro;"));
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
@@ -476,6 +481,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 	DuckDB db(nullptr);
 	Connection con(db);
 
+	REQUIRE_NO_FAIL(con.Query("INSTALL avro;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD avro;"));
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 
@@ -556,6 +563,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 	DuckDB db(nullptr);
 	Connection con(db);
 
+	REQUIRE_NO_FAIL(con.Query("INSTALL avro;"));
+	REQUIRE_NO_FAIL(con.Query("LOAD avro;"));
 	REQUIRE_NO_FAIL(con.Query("INSTALL iceberg;"));
 	REQUIRE_NO_FAIL(con.Query("LOAD iceberg;"));
 

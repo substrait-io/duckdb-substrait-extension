@@ -795,9 +795,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			if (snapshot_id <= 0 || snapshot_id == std::numeric_limits<int64_t>::max()) {
 				throw InvalidInputException("Invalid snapshot id: " + sget.iceberg_table().direct().snapshot_id());
 			}
-			parameters.push_back(Value::UBIGINT(snapshot_id));
+			named_parameters.emplace("snapshot_from_id", Value::UBIGINT(snapshot_id));
 		} else if (sget.iceberg_table().direct().has_snapshot_timestamp()) {
-			parameters.push_back(Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
+			named_parameters.emplace("snapshot_from_timestamp",
+				Value::TIMESTAMP(timestamp_t(sget.iceberg_table().direct().snapshot_timestamp())));
 		}
 		shared_ptr<TableFunctionRelation> scan_rel;
 		if (acquire_lock) {
