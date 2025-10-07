@@ -57,7 +57,7 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		disabled_optimizers.insert(OptimizerType::COMPRESSED_MATERIALIZATION);
 		disabled_optimizers.insert(OptimizerType::MATERIALIZED_CTE);
 		// If error(varchar) gets implemented in substrait this can be removed
-		context.config.scalar_subquery_error_on_multiple_rows = false;
+		// Note: scalar_subquery_error_on_multiple_rows moved to session setting in DuckDB 1.4
 		DBConfig::GetConfig(context).options.disabled_optimizers = disabled_optimizers;
 	}
 
@@ -329,61 +329,50 @@ static void FromSubFunction(ClientContext &context, TableFunctionInput &data_p, 
 	output.Move(*result_chunk);
 }
 
-void InitializeGetSubstrait(const Connection &con) {
-	auto &catalog = Catalog::GetSystemCatalog(*con.context);
+void InitializeGetSubstrait(ExtensionLoader &loader) {
 	// create the get_substrait table function that allows us to get a substrait
 	// binary from a valid SQL Query
 	TableFunction to_sub_func("get_substrait", {LogicalType::VARCHAR}, ToSubFunction, ToSubstraitBind);
 	to_sub_func.named_parameters["enable_optimizer"] = LogicalType::BOOLEAN;
 	to_sub_func.named_parameters["strict"] = LogicalType::BOOLEAN;
 	CreateTableFunctionInfo to_sub_info(to_sub_func);
-	catalog.CreateTableFunction(*con.context, to_sub_info);
+	loader.RegisterFunction(to_sub_info);
 }
 
-void InitializeGetSubstraitJSON(const Connection &con) {
-	auto &catalog = Catalog::GetSystemCatalog(*con.context);
+void InitializeGetSubstraitJSON(ExtensionLoader &loader) {
 	// create the get_substrait table function that allows us to get a substrait
 	// JSON from a valid SQL Query
 	TableFunction get_substrait_json("get_substrait_json", {LogicalType::VARCHAR}, ToJsonFunction, ToJsonBind);
 
 	get_substrait_json.named_parameters["enable_optimizer"] = LogicalType::BOOLEAN;
 	CreateTableFunctionInfo get_substrait_json_info(get_substrait_json);
-	catalog.CreateTableFunction(*con.context, get_substrait_json_info);
+	loader.RegisterFunction(get_substrait_json_info);
 }
 
-void InitializeFromSubstrait(const Connection &con) {
-	auto &catalog = Catalog::GetSystemCatalog(*con.context);
-
+void InitializeFromSubstrait(ExtensionLoader &loader) {
 	// create the from_substrait table function that allows us to get a query
 	// result from a substrait plan
 	TableFunction from_sub_func("from_substrait", {LogicalType::BLOB}, FromSubFunction, FromSubstraitBind);
 	from_sub_func.bind_replace = FromSubstraitBindReplace;
 	CreateTableFunctionInfo from_sub_info(from_sub_func);
-	catalog.CreateTableFunction(*con.context, from_sub_info);
+	loader.RegisterFunction(from_sub_info);
 }
 
-void InitializeFromSubstraitJSON(const Connection &con) {
-	auto &catalog = Catalog::GetSystemCatalog(*con.context);
+void InitializeFromSubstraitJSON(ExtensionLoader &loader) {
 	// create the from_substrait table function that allows us to get a query
 	// result from a substrait plan
 	TableFunction from_sub_func_json("from_substrait_json", {LogicalType::VARCHAR}, FromSubFunction,
 	                                 FromSubstraitBindJSON);
 	from_sub_func_json.bind_replace = FromSubstraitBindReplaceJSON;
 	CreateTableFunctionInfo from_sub_info_json(from_sub_func_json);
-	catalog.CreateTableFunction(*con.context, from_sub_info_json);
+	loader.RegisterFunction(from_sub_info_json);
 }
 
-void SubstraitExtension::Load(DuckDB &db) {
-	Connection con(db);
-	con.BeginTransaction();
-
-	InitializeGetSubstrait(con);
-	InitializeGetSubstraitJSON(con);
-
-	InitializeFromSubstrait(con);
-	InitializeFromSubstraitJSON(con);
-
-	con.Commit();
+void SubstraitExtension::Load(ExtensionLoader &loader) {
+	InitializeGetSubstrait(loader);
+	InitializeGetSubstraitJSON(loader);
+	InitializeFromSubstrait(loader);
+	InitializeFromSubstraitJSON(loader);
 }
 
 std::string SubstraitExtension::Name() {
@@ -395,8 +384,10 @@ std::string SubstraitExtension::Name() {
 extern "C" {
 
 DUCKDB_EXTENSION_API void substrait_init(duckdb::DatabaseInstance &db) {
-	duckdb::DuckDB db_wrapper(db);
-	db_wrapper.LoadExtension<duckdb::SubstraitExtension>();
+	// In DuckDB 1.4, we manually instantiate and load the extension
+	duckdb::SubstraitExtension extension;
+	duckdb::ExtensionLoader loader(db, "substrait");
+	extension.Load(loader);
 }
 
 DUCKDB_EXTENSION_API const char *substrait_version() {
