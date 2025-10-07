@@ -390,6 +390,11 @@ DUCKDB_EXTENSION_API void substrait_init(duckdb::DatabaseInstance &db) {
 	extension.Load(loader);
 }
 
+// C++ extension entry point for loadable extensions
+DUCKDB_EXTENSION_API void substrait_duckdb_cpp_init(duckdb::DatabaseInstance &db) {
+	substrait_init(db);
+}
+
 DUCKDB_EXTENSION_API const char *substrait_version() {
 	return duckdb::DuckDB::LibraryVersion();
 }
