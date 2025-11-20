@@ -33,6 +33,7 @@
 #include <google/protobuf/unknown_field_set.h>
 #include "substrait/algebra.pb.h"
 #include "substrait/extensions/extensions.pb.h"
+#include "substrait/type.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 #define PROTOBUF_INTERNAL_EXPORT_substrait_2fplan_2eproto
@@ -48,7 +49,7 @@ struct TableStruct_substrait_2fplan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[4]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -56,6 +57,9 @@ struct TableStruct_substrait_2fplan_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2fplan_2eproto;
 namespace substrait {
+class DynamicParameterBinding;
+struct DynamicParameterBindingDefaultTypeInternal;
+extern DynamicParameterBindingDefaultTypeInternal _DynamicParameterBinding_default_instance_;
 class Plan;
 struct PlanDefaultTypeInternal;
 extern PlanDefaultTypeInternal _Plan_default_instance_;
@@ -70,6 +74,7 @@ struct VersionDefaultTypeInternal;
 extern VersionDefaultTypeInternal _Version_default_instance_;
 }  // namespace substrait
 PROTOBUF_NAMESPACE_OPEN
+template<> ::substrait::DynamicParameterBinding* Arena::CreateMaybeMessage<::substrait::DynamicParameterBinding>(Arena*);
 template<> ::substrait::Plan* Arena::CreateMaybeMessage<::substrait::Plan>(Arena*);
 template<> ::substrait::PlanRel* Arena::CreateMaybeMessage<::substrait::PlanRel>(Arena*);
 template<> ::substrait::PlanVersion* Arena::CreateMaybeMessage<::substrait::PlanVersion>(Arena*);
@@ -399,25 +404,28 @@ class Plan final :
     kExtensionsFieldNumber = 2,
     kRelationsFieldNumber = 3,
     kExpectedTypeUrlsFieldNumber = 5,
+    kParameterBindingsFieldNumber = 7,
+    kExtensionUrnsFieldNumber = 8,
+    kTypeAliasesFieldNumber = 9,
     kAdvancedExtensionsFieldNumber = 4,
     kVersionFieldNumber = 6,
   };
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
-  int extension_uris_size() const;
+  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
+  PROTOBUF_DEPRECATED int extension_uris_size() const;
   private:
   int _internal_extension_uris_size() const;
   public:
-  void clear_extension_uris();
-  ::substrait::extensions::SimpleExtensionURI* mutable_extension_uris(int index);
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
+  PROTOBUF_DEPRECATED void clear_extension_uris();
+  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* mutable_extension_uris(int index);
+  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
       mutable_extension_uris();
   private:
   const ::substrait::extensions::SimpleExtensionURI& _internal_extension_uris(int index) const;
   ::substrait::extensions::SimpleExtensionURI* _internal_add_extension_uris();
   public:
-  const ::substrait::extensions::SimpleExtensionURI& extension_uris(int index) const;
-  ::substrait::extensions::SimpleExtensionURI* add_extension_uris();
-  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
+  PROTOBUF_DEPRECATED const ::substrait::extensions::SimpleExtensionURI& extension_uris(int index) const;
+  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* add_extension_uris();
+  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
       extension_uris() const;
 
   // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
@@ -480,6 +488,60 @@ class Plan final :
   std::string* _internal_add_expected_type_urls();
   public:
 
+  // repeated .substrait.DynamicParameterBinding parameter_bindings = 7;
+  int parameter_bindings_size() const;
+  private:
+  int _internal_parameter_bindings_size() const;
+  public:
+  void clear_parameter_bindings();
+  ::substrait::DynamicParameterBinding* mutable_parameter_bindings(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::DynamicParameterBinding >*
+      mutable_parameter_bindings();
+  private:
+  const ::substrait::DynamicParameterBinding& _internal_parameter_bindings(int index) const;
+  ::substrait::DynamicParameterBinding* _internal_add_parameter_bindings();
+  public:
+  const ::substrait::DynamicParameterBinding& parameter_bindings(int index) const;
+  ::substrait::DynamicParameterBinding* add_parameter_bindings();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::DynamicParameterBinding >&
+      parameter_bindings() const;
+
+  // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+  int extension_urns_size() const;
+  private:
+  int _internal_extension_urns_size() const;
+  public:
+  void clear_extension_urns();
+  ::substrait::extensions::SimpleExtensionURN* mutable_extension_urns(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURN >*
+      mutable_extension_urns();
+  private:
+  const ::substrait::extensions::SimpleExtensionURN& _internal_extension_urns(int index) const;
+  ::substrait::extensions::SimpleExtensionURN* _internal_add_extension_urns();
+  public:
+  const ::substrait::extensions::SimpleExtensionURN& extension_urns(int index) const;
+  ::substrait::extensions::SimpleExtensionURN* add_extension_urns();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURN >&
+      extension_urns() const;
+
+  // repeated .substrait.TypeAlias type_aliases = 9;
+  int type_aliases_size() const;
+  private:
+  int _internal_type_aliases_size() const;
+  public:
+  void clear_type_aliases();
+  ::substrait::TypeAlias* mutable_type_aliases(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias >*
+      mutable_type_aliases();
+  private:
+  const ::substrait::TypeAlias& _internal_type_aliases(int index) const;
+  ::substrait::TypeAlias* _internal_add_type_aliases();
+  public:
+  const ::substrait::TypeAlias& type_aliases(int index) const;
+  ::substrait::TypeAlias* add_type_aliases();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias >&
+      type_aliases() const;
+
   // .substrait.extensions.AdvancedExtension advanced_extensions = 4;
   bool has_advanced_extensions() const;
   private:
@@ -527,6 +589,9 @@ class Plan final :
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionDeclaration > extensions_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::PlanRel > relations_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> expected_type_urls_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::DynamicParameterBinding > parameter_bindings_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURN > extension_urns_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias > type_aliases_;
   ::substrait::extensions::AdvancedExtension* advanced_extensions_;
   ::substrait::Version* version_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -887,6 +952,172 @@ class Version final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2fplan_2eproto;
 };
+// -------------------------------------------------------------------
+
+class DynamicParameterBinding final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DynamicParameterBinding) */ {
+ public:
+  inline DynamicParameterBinding() : DynamicParameterBinding(nullptr) {}
+  ~DynamicParameterBinding() override;
+  explicit constexpr DynamicParameterBinding(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  DynamicParameterBinding(const DynamicParameterBinding& from);
+  DynamicParameterBinding(DynamicParameterBinding&& from) noexcept
+    : DynamicParameterBinding() {
+    *this = ::std::move(from);
+  }
+
+  inline DynamicParameterBinding& operator=(const DynamicParameterBinding& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DynamicParameterBinding& operator=(DynamicParameterBinding&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DynamicParameterBinding& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const DynamicParameterBinding* internal_default_instance() {
+    return reinterpret_cast<const DynamicParameterBinding*>(
+               &_DynamicParameterBinding_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(DynamicParameterBinding& a, DynamicParameterBinding& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(DynamicParameterBinding* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DynamicParameterBinding* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DynamicParameterBinding* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<DynamicParameterBinding>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const DynamicParameterBinding& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const DynamicParameterBinding& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(DynamicParameterBinding* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.DynamicParameterBinding";
+  }
+  protected:
+  explicit DynamicParameterBinding(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kValueFieldNumber = 2,
+    kParameterAnchorFieldNumber = 1,
+  };
+  // .substrait.Expression.Literal value = 2;
+  bool has_value() const;
+  private:
+  bool _internal_has_value() const;
+  public:
+  void clear_value();
+  const ::substrait::Expression_Literal& value() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Literal* release_value();
+  ::substrait::Expression_Literal* mutable_value();
+  void set_allocated_value(::substrait::Expression_Literal* value);
+  private:
+  const ::substrait::Expression_Literal& _internal_value() const;
+  ::substrait::Expression_Literal* _internal_mutable_value();
+  public:
+  void unsafe_arena_set_allocated_value(
+      ::substrait::Expression_Literal* value);
+  ::substrait::Expression_Literal* unsafe_arena_release_value();
+
+  // uint32 parameter_anchor = 1;
+  void clear_parameter_anchor();
+  uint32_t parameter_anchor() const;
+  void set_parameter_anchor(uint32_t value);
+  private:
+  uint32_t _internal_parameter_anchor() const;
+  void _internal_set_parameter_anchor(uint32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.DynamicParameterBinding)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::Expression_Literal* value_;
+  uint32_t parameter_anchor_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2fplan_2eproto;
+};
 // ===================================================================
 
 
@@ -1133,7 +1364,7 @@ inline void Plan::set_allocated_version(::substrait::Version* version) {
   // @@protoc_insertion_point(field_set_allocated:substrait.Plan.version)
 }
 
-// repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+// repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
 inline int Plan::_internal_extension_uris_size() const {
   return extension_uris_.size();
 }
@@ -1168,6 +1399,43 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions:
 Plan::extension_uris() const {
   // @@protoc_insertion_point(field_list:substrait.Plan.extension_uris)
   return extension_uris_;
+}
+
+// repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+inline int Plan::_internal_extension_urns_size() const {
+  return extension_urns_.size();
+}
+inline int Plan::extension_urns_size() const {
+  return _internal_extension_urns_size();
+}
+inline ::substrait::extensions::SimpleExtensionURN* Plan::mutable_extension_urns(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.Plan.extension_urns)
+  return extension_urns_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURN >*
+Plan::mutable_extension_urns() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.Plan.extension_urns)
+  return &extension_urns_;
+}
+inline const ::substrait::extensions::SimpleExtensionURN& Plan::_internal_extension_urns(int index) const {
+  return extension_urns_.Get(index);
+}
+inline const ::substrait::extensions::SimpleExtensionURN& Plan::extension_urns(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.Plan.extension_urns)
+  return _internal_extension_urns(index);
+}
+inline ::substrait::extensions::SimpleExtensionURN* Plan::_internal_add_extension_urns() {
+  return extension_urns_.Add();
+}
+inline ::substrait::extensions::SimpleExtensionURN* Plan::add_extension_urns() {
+  ::substrait::extensions::SimpleExtensionURN* _add = _internal_add_extension_urns();
+  // @@protoc_insertion_point(field_add:substrait.Plan.extension_urns)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURN >&
+Plan::extension_urns() const {
+  // @@protoc_insertion_point(field_list:substrait.Plan.extension_urns)
+  return extension_urns_;
 }
 
 // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
@@ -1406,6 +1674,83 @@ inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
 Plan::mutable_expected_type_urls() {
   // @@protoc_insertion_point(field_mutable_list:substrait.Plan.expected_type_urls)
   return &expected_type_urls_;
+}
+
+// repeated .substrait.DynamicParameterBinding parameter_bindings = 7;
+inline int Plan::_internal_parameter_bindings_size() const {
+  return parameter_bindings_.size();
+}
+inline int Plan::parameter_bindings_size() const {
+  return _internal_parameter_bindings_size();
+}
+inline void Plan::clear_parameter_bindings() {
+  parameter_bindings_.Clear();
+}
+inline ::substrait::DynamicParameterBinding* Plan::mutable_parameter_bindings(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.Plan.parameter_bindings)
+  return parameter_bindings_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::DynamicParameterBinding >*
+Plan::mutable_parameter_bindings() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.Plan.parameter_bindings)
+  return &parameter_bindings_;
+}
+inline const ::substrait::DynamicParameterBinding& Plan::_internal_parameter_bindings(int index) const {
+  return parameter_bindings_.Get(index);
+}
+inline const ::substrait::DynamicParameterBinding& Plan::parameter_bindings(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.Plan.parameter_bindings)
+  return _internal_parameter_bindings(index);
+}
+inline ::substrait::DynamicParameterBinding* Plan::_internal_add_parameter_bindings() {
+  return parameter_bindings_.Add();
+}
+inline ::substrait::DynamicParameterBinding* Plan::add_parameter_bindings() {
+  ::substrait::DynamicParameterBinding* _add = _internal_add_parameter_bindings();
+  // @@protoc_insertion_point(field_add:substrait.Plan.parameter_bindings)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::DynamicParameterBinding >&
+Plan::parameter_bindings() const {
+  // @@protoc_insertion_point(field_list:substrait.Plan.parameter_bindings)
+  return parameter_bindings_;
+}
+
+// repeated .substrait.TypeAlias type_aliases = 9;
+inline int Plan::_internal_type_aliases_size() const {
+  return type_aliases_.size();
+}
+inline int Plan::type_aliases_size() const {
+  return _internal_type_aliases_size();
+}
+inline ::substrait::TypeAlias* Plan::mutable_type_aliases(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.Plan.type_aliases)
+  return type_aliases_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias >*
+Plan::mutable_type_aliases() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.Plan.type_aliases)
+  return &type_aliases_;
+}
+inline const ::substrait::TypeAlias& Plan::_internal_type_aliases(int index) const {
+  return type_aliases_.Get(index);
+}
+inline const ::substrait::TypeAlias& Plan::type_aliases(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.Plan.type_aliases)
+  return _internal_type_aliases(index);
+}
+inline ::substrait::TypeAlias* Plan::_internal_add_type_aliases() {
+  return type_aliases_.Add();
+}
+inline ::substrait::TypeAlias* Plan::add_type_aliases() {
+  ::substrait::TypeAlias* _add = _internal_add_type_aliases();
+  // @@protoc_insertion_point(field_add:substrait.Plan.type_aliases)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias >&
+Plan::type_aliases() const {
+  // @@protoc_insertion_point(field_list:substrait.Plan.type_aliases)
+  return type_aliases_;
 }
 
 // -------------------------------------------------------------------
@@ -1668,9 +2013,121 @@ inline void Version::set_allocated_producer(std::string* producer) {
   // @@protoc_insertion_point(field_set_allocated:substrait.Version.producer)
 }
 
+// -------------------------------------------------------------------
+
+// DynamicParameterBinding
+
+// uint32 parameter_anchor = 1;
+inline void DynamicParameterBinding::clear_parameter_anchor() {
+  parameter_anchor_ = 0u;
+}
+inline uint32_t DynamicParameterBinding::_internal_parameter_anchor() const {
+  return parameter_anchor_;
+}
+inline uint32_t DynamicParameterBinding::parameter_anchor() const {
+  // @@protoc_insertion_point(field_get:substrait.DynamicParameterBinding.parameter_anchor)
+  return _internal_parameter_anchor();
+}
+inline void DynamicParameterBinding::_internal_set_parameter_anchor(uint32_t value) {
+  
+  parameter_anchor_ = value;
+}
+inline void DynamicParameterBinding::set_parameter_anchor(uint32_t value) {
+  _internal_set_parameter_anchor(value);
+  // @@protoc_insertion_point(field_set:substrait.DynamicParameterBinding.parameter_anchor)
+}
+
+// .substrait.Expression.Literal value = 2;
+inline bool DynamicParameterBinding::_internal_has_value() const {
+  return this != internal_default_instance() && value_ != nullptr;
+}
+inline bool DynamicParameterBinding::has_value() const {
+  return _internal_has_value();
+}
+inline const ::substrait::Expression_Literal& DynamicParameterBinding::_internal_value() const {
+  const ::substrait::Expression_Literal* p = value_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression_Literal&>(
+      ::substrait::_Expression_Literal_default_instance_);
+}
+inline const ::substrait::Expression_Literal& DynamicParameterBinding::value() const {
+  // @@protoc_insertion_point(field_get:substrait.DynamicParameterBinding.value)
+  return _internal_value();
+}
+inline void DynamicParameterBinding::unsafe_arena_set_allocated_value(
+    ::substrait::Expression_Literal* value) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(value_);
+  }
+  value_ = value;
+  if (value) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DynamicParameterBinding.value)
+}
+inline ::substrait::Expression_Literal* DynamicParameterBinding::release_value() {
+  
+  ::substrait::Expression_Literal* temp = value_;
+  value_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression_Literal* DynamicParameterBinding::unsafe_arena_release_value() {
+  // @@protoc_insertion_point(field_release:substrait.DynamicParameterBinding.value)
+  
+  ::substrait::Expression_Literal* temp = value_;
+  value_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression_Literal* DynamicParameterBinding::_internal_mutable_value() {
+  
+  if (value_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression_Literal>(GetArenaForAllocation());
+    value_ = p;
+  }
+  return value_;
+}
+inline ::substrait::Expression_Literal* DynamicParameterBinding::mutable_value() {
+  ::substrait::Expression_Literal* _msg = _internal_mutable_value();
+  // @@protoc_insertion_point(field_mutable:substrait.DynamicParameterBinding.value)
+  return _msg;
+}
+inline void DynamicParameterBinding::set_allocated_value(::substrait::Expression_Literal* value) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(value_);
+  }
+  if (value) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
+            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(value));
+    if (message_arena != submessage_arena) {
+      value = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, value, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  value_ = value;
+  // @@protoc_insertion_point(field_set_allocated:substrait.DynamicParameterBinding.value)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

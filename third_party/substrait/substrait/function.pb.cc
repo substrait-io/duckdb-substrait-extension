@@ -433,9 +433,9 @@ const char descriptor_table_protodef_substrait_2ffunction_2eproto[] PROTOBUF_SEC
   "\n\014TypeArgument\022*\n\004type\030\001 \001(\0132\034.substrait"
   ".ParameterizedType\0321\n\014EnumArgument\022\017\n\007op"
   "tions\030\001 \003(\t\022\020\n\010optional\030\002 \001(\010B\017\n\rargumen"
-  "t_kindBW\n\022io.substrait.protoP\001Z*github.c"
-  "om/substrait-io/substrait-go/proto\252\002\022Sub"
-  "strait.Protobufb\006proto3"
+  "t_kindBf\n\022io.substrait.protoP\001Z9github.c"
+  "om/substrait-io/substrait-protobuf/go/su"
+  "bstraitpb\252\002\022Substrait.Protobufb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2ffunction_2eproto_deps[3] = {
   &::descriptor_table_substrait_2fparameterized_5ftypes_2eproto,
@@ -444,7 +444,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2ffunction_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2ffunction_2eproto = {
-  false, false, 2983, descriptor_table_protodef_substrait_2ffunction_2eproto, "substrait/function.proto", 
+  false, false, 2998, descriptor_table_protodef_substrait_2ffunction_2eproto, "substrait/function.proto", 
   &descriptor_table_substrait_2ffunction_2eproto_once, descriptor_table_substrait_2ffunction_2eproto_deps, 3, 12,
   schemas, file_default_instances, TableStruct_substrait_2ffunction_2eproto::offsets,
   file_level_metadata_substrait_2ffunction_2eproto, file_level_enum_descriptors_substrait_2ffunction_2eproto, file_level_service_descriptors_substrait_2ffunction_2eproto,

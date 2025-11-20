@@ -48,7 +48,7 @@ struct TableStruct_substrait_2ftype_5fexpressions_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[19]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[20]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -86,6 +86,9 @@ extern DerivationExpression_ExpressionMapDefaultTypeInternal _DerivationExpressi
 class DerivationExpression_ExpressionNamedStruct;
 struct DerivationExpression_ExpressionNamedStructDefaultTypeInternal;
 extern DerivationExpression_ExpressionNamedStructDefaultTypeInternal _DerivationExpression_ExpressionNamedStruct_default_instance_;
+class DerivationExpression_ExpressionPrecisionTime;
+struct DerivationExpression_ExpressionPrecisionTimeDefaultTypeInternal;
+extern DerivationExpression_ExpressionPrecisionTimeDefaultTypeInternal _DerivationExpression_ExpressionPrecisionTime_default_instance_;
 class DerivationExpression_ExpressionPrecisionTimestamp;
 struct DerivationExpression_ExpressionPrecisionTimestampDefaultTypeInternal;
 extern DerivationExpression_ExpressionPrecisionTimestampDefaultTypeInternal _DerivationExpression_ExpressionPrecisionTimestamp_default_instance_;
@@ -125,6 +128,7 @@ template<> ::substrait::DerivationExpression_ExpressionIntervalDay* Arena::Creat
 template<> ::substrait::DerivationExpression_ExpressionList* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionList>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionMap* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionMap>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionNamedStruct* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionNamedStruct>(Arena*);
+template<> ::substrait::DerivationExpression_ExpressionPrecisionTime* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionPrecisionTime>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionPrecisionTimestamp* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionPrecisionTimestamp>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ>(Arena*);
 template<> ::substrait::DerivationExpression_ExpressionStruct* Arena::CreateMaybeMessage<::substrait::DerivationExpression_ExpressionStruct>(Arena*);
@@ -928,6 +932,183 @@ class DerivationExpression_ExpressionDecimal final :
 };
 // -------------------------------------------------------------------
 
+class DerivationExpression_ExpressionPrecisionTime final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DerivationExpression.ExpressionPrecisionTime) */ {
+ public:
+  inline DerivationExpression_ExpressionPrecisionTime() : DerivationExpression_ExpressionPrecisionTime(nullptr) {}
+  ~DerivationExpression_ExpressionPrecisionTime() override;
+  explicit constexpr DerivationExpression_ExpressionPrecisionTime(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  DerivationExpression_ExpressionPrecisionTime(const DerivationExpression_ExpressionPrecisionTime& from);
+  DerivationExpression_ExpressionPrecisionTime(DerivationExpression_ExpressionPrecisionTime&& from) noexcept
+    : DerivationExpression_ExpressionPrecisionTime() {
+    *this = ::std::move(from);
+  }
+
+  inline DerivationExpression_ExpressionPrecisionTime& operator=(const DerivationExpression_ExpressionPrecisionTime& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DerivationExpression_ExpressionPrecisionTime& operator=(DerivationExpression_ExpressionPrecisionTime&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DerivationExpression_ExpressionPrecisionTime& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const DerivationExpression_ExpressionPrecisionTime* internal_default_instance() {
+    return reinterpret_cast<const DerivationExpression_ExpressionPrecisionTime*>(
+               &_DerivationExpression_ExpressionPrecisionTime_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(DerivationExpression_ExpressionPrecisionTime& a, DerivationExpression_ExpressionPrecisionTime& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(DerivationExpression_ExpressionPrecisionTime* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DerivationExpression_ExpressionPrecisionTime* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DerivationExpression_ExpressionPrecisionTime* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<DerivationExpression_ExpressionPrecisionTime>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const DerivationExpression_ExpressionPrecisionTime& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const DerivationExpression_ExpressionPrecisionTime& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(DerivationExpression_ExpressionPrecisionTime* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.DerivationExpression.ExpressionPrecisionTime";
+  }
+  protected:
+  explicit DerivationExpression_ExpressionPrecisionTime(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kPrecisionFieldNumber = 1,
+    kVariationPointerFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // .substrait.DerivationExpression precision = 1;
+  bool has_precision() const;
+  private:
+  bool _internal_has_precision() const;
+  public:
+  void clear_precision();
+  const ::substrait::DerivationExpression& precision() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression* release_precision();
+  ::substrait::DerivationExpression* mutable_precision();
+  void set_allocated_precision(::substrait::DerivationExpression* precision);
+  private:
+  const ::substrait::DerivationExpression& _internal_precision() const;
+  ::substrait::DerivationExpression* _internal_mutable_precision();
+  public:
+  void unsafe_arena_set_allocated_precision(
+      ::substrait::DerivationExpression* precision);
+  ::substrait::DerivationExpression* unsafe_arena_release_precision();
+
+  // uint32 variation_pointer = 2;
+  void clear_variation_pointer();
+  uint32_t variation_pointer() const;
+  void set_variation_pointer(uint32_t value);
+  private:
+  uint32_t _internal_variation_pointer() const;
+  void _internal_set_variation_pointer(uint32_t value);
+  public:
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.DerivationExpression.ExpressionPrecisionTime)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::DerivationExpression* precision_;
+  uint32_t variation_pointer_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2ftype_5fexpressions_2eproto;
+};
+// -------------------------------------------------------------------
+
 class DerivationExpression_ExpressionPrecisionTimestamp final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.DerivationExpression.ExpressionPrecisionTimestamp) */ {
  public:
@@ -976,7 +1157,7 @@ class DerivationExpression_ExpressionPrecisionTimestamp final :
                &_DerivationExpression_ExpressionPrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    5;
 
   friend void swap(DerivationExpression_ExpressionPrecisionTimestamp& a, DerivationExpression_ExpressionPrecisionTimestamp& b) {
     a.Swap(&b);
@@ -1153,7 +1334,7 @@ class DerivationExpression_ExpressionIntervalDay final :
                &_DerivationExpression_ExpressionIntervalDay_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    6;
 
   friend void swap(DerivationExpression_ExpressionIntervalDay& a, DerivationExpression_ExpressionIntervalDay& b) {
     a.Swap(&b);
@@ -1330,7 +1511,7 @@ class DerivationExpression_ExpressionIntervalCompound final :
                &_DerivationExpression_ExpressionIntervalCompound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    7;
 
   friend void swap(DerivationExpression_ExpressionIntervalCompound& a, DerivationExpression_ExpressionIntervalCompound& b) {
     a.Swap(&b);
@@ -1507,7 +1688,7 @@ class DerivationExpression_ExpressionPrecisionTimestampTZ final :
                &_DerivationExpression_ExpressionPrecisionTimestampTZ_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    8;
 
   friend void swap(DerivationExpression_ExpressionPrecisionTimestampTZ& a, DerivationExpression_ExpressionPrecisionTimestampTZ& b) {
     a.Swap(&b);
@@ -1684,7 +1865,7 @@ class DerivationExpression_ExpressionStruct final :
                &_DerivationExpression_ExpressionStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    9;
 
   friend void swap(DerivationExpression_ExpressionStruct& a, DerivationExpression_ExpressionStruct& b) {
     a.Swap(&b);
@@ -1861,7 +2042,7 @@ class DerivationExpression_ExpressionNamedStruct final :
                &_DerivationExpression_ExpressionNamedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    10;
 
   friend void swap(DerivationExpression_ExpressionNamedStruct& a, DerivationExpression_ExpressionNamedStruct& b) {
     a.Swap(&b);
@@ -2042,7 +2223,7 @@ class DerivationExpression_ExpressionList final :
                &_DerivationExpression_ExpressionList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    11;
 
   friend void swap(DerivationExpression_ExpressionList& a, DerivationExpression_ExpressionList& b) {
     a.Swap(&b);
@@ -2219,7 +2400,7 @@ class DerivationExpression_ExpressionMap final :
                &_DerivationExpression_ExpressionMap_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    12;
 
   friend void swap(DerivationExpression_ExpressionMap& a, DerivationExpression_ExpressionMap& b) {
     a.Swap(&b);
@@ -2416,7 +2597,7 @@ class DerivationExpression_ExpressionUserDefined final :
                &_DerivationExpression_ExpressionUserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    13;
 
   friend void swap(DerivationExpression_ExpressionUserDefined& a, DerivationExpression_ExpressionUserDefined& b) {
     a.Swap(&b);
@@ -2584,7 +2765,7 @@ class DerivationExpression_IfElse final :
                &_DerivationExpression_IfElse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    14;
 
   friend void swap(DerivationExpression_IfElse& a, DerivationExpression_IfElse& b) {
     a.Swap(&b);
@@ -2779,7 +2960,7 @@ class DerivationExpression_UnaryOp final :
                &_DerivationExpression_UnaryOp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    15;
 
   friend void swap(DerivationExpression_UnaryOp& a, DerivationExpression_UnaryOp& b) {
     a.Swap(&b);
@@ -2975,7 +3156,7 @@ class DerivationExpression_BinaryOp final :
                &_DerivationExpression_BinaryOp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    16;
 
   friend void swap(DerivationExpression_BinaryOp& a, DerivationExpression_BinaryOp& b) {
     a.Swap(&b);
@@ -3213,7 +3394,7 @@ class DerivationExpression_ReturnProgram_Assignment final :
                &_DerivationExpression_ReturnProgram_Assignment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    17;
 
   friend void swap(DerivationExpression_ReturnProgram_Assignment& a, DerivationExpression_ReturnProgram_Assignment& b) {
     a.Swap(&b);
@@ -3384,7 +3565,7 @@ class DerivationExpression_ReturnProgram final :
                &_DerivationExpression_ReturnProgram_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    18;
 
   friend void swap(DerivationExpression_ReturnProgram& a, DerivationExpression_ReturnProgram& b) {
     a.Swap(&b);
@@ -3578,6 +3759,7 @@ class DerivationExpression final :
     kVarchar = 22,
     kFixedBinary = 23,
     kDecimal = 24,
+    kPrecisionTime = 43,
     kPrecisionTimestamp = 40,
     kPrecisionTimestampTz = 41,
     kStruct = 25,
@@ -3600,7 +3782,7 @@ class DerivationExpression final :
                &_DerivationExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    19;
 
   friend void swap(DerivationExpression& a, DerivationExpression& b) {
     a.Swap(&b);
@@ -3675,6 +3857,7 @@ class DerivationExpression final :
   typedef DerivationExpression_ExpressionVarChar ExpressionVarChar;
   typedef DerivationExpression_ExpressionFixedBinary ExpressionFixedBinary;
   typedef DerivationExpression_ExpressionDecimal ExpressionDecimal;
+  typedef DerivationExpression_ExpressionPrecisionTime ExpressionPrecisionTime;
   typedef DerivationExpression_ExpressionPrecisionTimestamp ExpressionPrecisionTimestamp;
   typedef DerivationExpression_ExpressionIntervalDay ExpressionIntervalDay;
   typedef DerivationExpression_ExpressionIntervalCompound ExpressionIntervalCompound;
@@ -3713,6 +3896,7 @@ class DerivationExpression final :
     kVarcharFieldNumber = 22,
     kFixedBinaryFieldNumber = 23,
     kDecimalFieldNumber = 24,
+    kPrecisionTimeFieldNumber = 43,
     kPrecisionTimestampFieldNumber = 40,
     kPrecisionTimestampTzFieldNumber = 41,
     kStructFieldNumber = 25,
@@ -3926,23 +4110,23 @@ class DerivationExpression final :
       ::substrait::Type_Date* date);
   ::substrait::Type_Date* unsafe_arena_release_date();
 
-  // .substrait.Type.Time time = 17;
-  bool has_time() const;
+  // .substrait.Type.Time time = 17 [deprecated = true];
+  PROTOBUF_DEPRECATED bool has_time() const;
   private:
   bool _internal_has_time() const;
   public:
-  void clear_time();
-  const ::substrait::Type_Time& time() const;
-  PROTOBUF_NODISCARD ::substrait::Type_Time* release_time();
-  ::substrait::Type_Time* mutable_time();
-  void set_allocated_time(::substrait::Type_Time* time);
+  PROTOBUF_DEPRECATED void clear_time();
+  PROTOBUF_DEPRECATED const ::substrait::Type_Time& time() const;
+  PROTOBUF_NODISCARD PROTOBUF_DEPRECATED ::substrait::Type_Time* release_time();
+  PROTOBUF_DEPRECATED ::substrait::Type_Time* mutable_time();
+  PROTOBUF_DEPRECATED void set_allocated_time(::substrait::Type_Time* time);
   private:
   const ::substrait::Type_Time& _internal_time() const;
   ::substrait::Type_Time* _internal_mutable_time();
   public:
-  void unsafe_arena_set_allocated_time(
+  PROTOBUF_DEPRECATED void unsafe_arena_set_allocated_time(
       ::substrait::Type_Time* time);
-  ::substrait::Type_Time* unsafe_arena_release_time();
+  PROTOBUF_DEPRECATED ::substrait::Type_Time* unsafe_arena_release_time();
 
   // .substrait.Type.IntervalYear interval_year = 19;
   bool has_interval_year() const;
@@ -4105,6 +4289,24 @@ class DerivationExpression final :
   void unsafe_arena_set_allocated_decimal(
       ::substrait::DerivationExpression_ExpressionDecimal* decimal);
   ::substrait::DerivationExpression_ExpressionDecimal* unsafe_arena_release_decimal();
+
+  // .substrait.DerivationExpression.ExpressionPrecisionTime precision_time = 43;
+  bool has_precision_time() const;
+  private:
+  bool _internal_has_precision_time() const;
+  public:
+  void clear_precision_time();
+  const ::substrait::DerivationExpression_ExpressionPrecisionTime& precision_time() const;
+  PROTOBUF_NODISCARD ::substrait::DerivationExpression_ExpressionPrecisionTime* release_precision_time();
+  ::substrait::DerivationExpression_ExpressionPrecisionTime* mutable_precision_time();
+  void set_allocated_precision_time(::substrait::DerivationExpression_ExpressionPrecisionTime* precision_time);
+  private:
+  const ::substrait::DerivationExpression_ExpressionPrecisionTime& _internal_precision_time() const;
+  ::substrait::DerivationExpression_ExpressionPrecisionTime* _internal_mutable_precision_time();
+  public:
+  void unsafe_arena_set_allocated_precision_time(
+      ::substrait::DerivationExpression_ExpressionPrecisionTime* precision_time);
+  ::substrait::DerivationExpression_ExpressionPrecisionTime* unsafe_arena_release_precision_time();
 
   // .substrait.DerivationExpression.ExpressionPrecisionTimestamp precision_timestamp = 40;
   bool has_precision_timestamp() const;
@@ -4374,6 +4576,7 @@ class DerivationExpression final :
   void set_has_varchar();
   void set_has_fixed_binary();
   void set_has_decimal();
+  void set_has_precision_time();
   void set_has_precision_timestamp();
   void set_has_precision_timestamp_tz();
   void set_has_struct_();
@@ -4419,6 +4622,7 @@ class DerivationExpression final :
     ::substrait::DerivationExpression_ExpressionVarChar* varchar_;
     ::substrait::DerivationExpression_ExpressionFixedBinary* fixed_binary_;
     ::substrait::DerivationExpression_ExpressionDecimal* decimal_;
+    ::substrait::DerivationExpression_ExpressionPrecisionTime* precision_time_;
     ::substrait::DerivationExpression_ExpressionPrecisionTimestamp* precision_timestamp_;
     ::substrait::DerivationExpression_ExpressionPrecisionTimestampTZ* precision_timestamp_tz_;
     ::substrait::DerivationExpression_ExpressionStruct* struct__;
@@ -5070,6 +5274,140 @@ inline void DerivationExpression_ExpressionDecimal::_internal_set_nullability(::
 inline void DerivationExpression_ExpressionDecimal::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionDecimal.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// DerivationExpression_ExpressionPrecisionTime
+
+// .substrait.DerivationExpression precision = 1;
+inline bool DerivationExpression_ExpressionPrecisionTime::_internal_has_precision() const {
+  return this != internal_default_instance() && precision_ != nullptr;
+}
+inline bool DerivationExpression_ExpressionPrecisionTime::has_precision() const {
+  return _internal_has_precision();
+}
+inline void DerivationExpression_ExpressionPrecisionTime::clear_precision() {
+  if (GetArenaForAllocation() == nullptr && precision_ != nullptr) {
+    delete precision_;
+  }
+  precision_ = nullptr;
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionPrecisionTime::_internal_precision() const {
+  const ::substrait::DerivationExpression* p = precision_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::DerivationExpression&>(
+      ::substrait::_DerivationExpression_default_instance_);
+}
+inline const ::substrait::DerivationExpression& DerivationExpression_ExpressionPrecisionTime::precision() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionPrecisionTime.precision)
+  return _internal_precision();
+}
+inline void DerivationExpression_ExpressionPrecisionTime::unsafe_arena_set_allocated_precision(
+    ::substrait::DerivationExpression* precision) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(precision_);
+  }
+  precision_ = precision;
+  if (precision) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.ExpressionPrecisionTime.precision)
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionPrecisionTime::release_precision() {
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionPrecisionTime::unsafe_arena_release_precision() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.ExpressionPrecisionTime.precision)
+  
+  ::substrait::DerivationExpression* temp = precision_;
+  precision_ = nullptr;
+  return temp;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionPrecisionTime::_internal_mutable_precision() {
+  
+  if (precision_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::DerivationExpression>(GetArenaForAllocation());
+    precision_ = p;
+  }
+  return precision_;
+}
+inline ::substrait::DerivationExpression* DerivationExpression_ExpressionPrecisionTime::mutable_precision() {
+  ::substrait::DerivationExpression* _msg = _internal_mutable_precision();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.ExpressionPrecisionTime.precision)
+  return _msg;
+}
+inline void DerivationExpression_ExpressionPrecisionTime::set_allocated_precision(::substrait::DerivationExpression* precision) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete precision_;
+  }
+  if (precision) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::DerivationExpression>::GetOwningArena(precision);
+    if (message_arena != submessage_arena) {
+      precision = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, precision, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  precision_ = precision;
+  // @@protoc_insertion_point(field_set_allocated:substrait.DerivationExpression.ExpressionPrecisionTime.precision)
+}
+
+// uint32 variation_pointer = 2;
+inline void DerivationExpression_ExpressionPrecisionTime::clear_variation_pointer() {
+  variation_pointer_ = 0u;
+}
+inline uint32_t DerivationExpression_ExpressionPrecisionTime::_internal_variation_pointer() const {
+  return variation_pointer_;
+}
+inline uint32_t DerivationExpression_ExpressionPrecisionTime::variation_pointer() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionPrecisionTime.variation_pointer)
+  return _internal_variation_pointer();
+}
+inline void DerivationExpression_ExpressionPrecisionTime::_internal_set_variation_pointer(uint32_t value) {
+  
+  variation_pointer_ = value;
+}
+inline void DerivationExpression_ExpressionPrecisionTime::set_variation_pointer(uint32_t value) {
+  _internal_set_variation_pointer(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionPrecisionTime.variation_pointer)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void DerivationExpression_ExpressionPrecisionTime::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionPrecisionTime::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability DerivationExpression_ExpressionPrecisionTime::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.ExpressionPrecisionTime.nullability)
+  return _internal_nullability();
+}
+inline void DerivationExpression_ExpressionPrecisionTime::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void DerivationExpression_ExpressionPrecisionTime::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.DerivationExpression.ExpressionPrecisionTime.nullability)
 }
 
 // -------------------------------------------------------------------
@@ -7884,7 +8222,7 @@ inline ::substrait::Type_Date* DerivationExpression::mutable_date() {
   return _msg;
 }
 
-// .substrait.Type.Time time = 17;
+// .substrait.Type.Time time = 17 [deprecated = true];
 inline bool DerivationExpression::_internal_has_time() const {
   return kind_case() == kTime;
 }
@@ -8589,6 +8927,80 @@ inline ::substrait::DerivationExpression_ExpressionDecimal* DerivationExpression
 inline ::substrait::DerivationExpression_ExpressionDecimal* DerivationExpression::mutable_decimal() {
   ::substrait::DerivationExpression_ExpressionDecimal* _msg = _internal_mutable_decimal();
   // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.decimal)
+  return _msg;
+}
+
+// .substrait.DerivationExpression.ExpressionPrecisionTime precision_time = 43;
+inline bool DerivationExpression::_internal_has_precision_time() const {
+  return kind_case() == kPrecisionTime;
+}
+inline bool DerivationExpression::has_precision_time() const {
+  return _internal_has_precision_time();
+}
+inline void DerivationExpression::set_has_precision_time() {
+  _oneof_case_[0] = kPrecisionTime;
+}
+inline void DerivationExpression::clear_precision_time() {
+  if (_internal_has_precision_time()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.precision_time_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::DerivationExpression_ExpressionPrecisionTime* DerivationExpression::release_precision_time() {
+  // @@protoc_insertion_point(field_release:substrait.DerivationExpression.precision_time)
+  if (_internal_has_precision_time()) {
+    clear_has_kind();
+      ::substrait::DerivationExpression_ExpressionPrecisionTime* temp = kind_.precision_time_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.precision_time_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::DerivationExpression_ExpressionPrecisionTime& DerivationExpression::_internal_precision_time() const {
+  return _internal_has_precision_time()
+      ? *kind_.precision_time_
+      : reinterpret_cast< ::substrait::DerivationExpression_ExpressionPrecisionTime&>(::substrait::_DerivationExpression_ExpressionPrecisionTime_default_instance_);
+}
+inline const ::substrait::DerivationExpression_ExpressionPrecisionTime& DerivationExpression::precision_time() const {
+  // @@protoc_insertion_point(field_get:substrait.DerivationExpression.precision_time)
+  return _internal_precision_time();
+}
+inline ::substrait::DerivationExpression_ExpressionPrecisionTime* DerivationExpression::unsafe_arena_release_precision_time() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.DerivationExpression.precision_time)
+  if (_internal_has_precision_time()) {
+    clear_has_kind();
+    ::substrait::DerivationExpression_ExpressionPrecisionTime* temp = kind_.precision_time_;
+    kind_.precision_time_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void DerivationExpression::unsafe_arena_set_allocated_precision_time(::substrait::DerivationExpression_ExpressionPrecisionTime* precision_time) {
+  clear_kind();
+  if (precision_time) {
+    set_has_precision_time();
+    kind_.precision_time_ = precision_time;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.DerivationExpression.precision_time)
+}
+inline ::substrait::DerivationExpression_ExpressionPrecisionTime* DerivationExpression::_internal_mutable_precision_time() {
+  if (!_internal_has_precision_time()) {
+    clear_kind();
+    set_has_precision_time();
+    kind_.precision_time_ = CreateMaybeMessage< ::substrait::DerivationExpression_ExpressionPrecisionTime >(GetArenaForAllocation());
+  }
+  return kind_.precision_time_;
+}
+inline ::substrait::DerivationExpression_ExpressionPrecisionTime* DerivationExpression::mutable_precision_time() {
+  ::substrait::DerivationExpression_ExpressionPrecisionTime* _msg = _internal_mutable_precision_time();
+  // @@protoc_insertion_point(field_mutable:substrait.DerivationExpression.precision_time)
   return _msg;
 }
 
@@ -9584,6 +9996,8 @@ inline DerivationExpression::KindCase DerivationExpression::kind_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
