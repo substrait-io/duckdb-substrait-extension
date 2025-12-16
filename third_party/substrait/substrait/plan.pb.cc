@@ -35,6 +35,9 @@ constexpr Plan::Plan(
   , extensions_()
   , relations_()
   , expected_type_urls_()
+  , parameter_bindings_()
+  , extension_urns_()
+  , type_aliases_()
   , advanced_extensions_(nullptr)
   , version_(nullptr){}
 struct PlanDefaultTypeInternal {
@@ -74,8 +77,21 @@ struct VersionDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT VersionDefaultTypeInternal _Version_default_instance_;
+constexpr DynamicParameterBinding::DynamicParameterBinding(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : value_(nullptr)
+  , parameter_anchor_(0u){}
+struct DynamicParameterBindingDefaultTypeInternal {
+  constexpr DynamicParameterBindingDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DynamicParameterBindingDefaultTypeInternal() {}
+  union {
+    DynamicParameterBinding _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DynamicParameterBindingDefaultTypeInternal _DynamicParameterBinding_default_instance_;
 }  // namespace substrait
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2fplan_2eproto[4];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2fplan_2eproto[5];
 static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_substrait_2fplan_2eproto = nullptr;
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_substrait_2fplan_2eproto = nullptr;
 
@@ -97,10 +113,13 @@ const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, version_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, extension_uris_),
+  PROTOBUF_FIELD_OFFSET(::substrait::Plan, extension_urns_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, extensions_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, relations_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, advanced_extensions_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, expected_type_urls_),
+  PROTOBUF_FIELD_OFFSET(::substrait::Plan, parameter_bindings_),
+  PROTOBUF_FIELD_OFFSET(::substrait::Plan, type_aliases_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::substrait::PlanVersion, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -119,12 +138,21 @@ const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_
   PROTOBUF_FIELD_OFFSET(::substrait::Version, patch_number_),
   PROTOBUF_FIELD_OFFSET(::substrait::Version, git_hash_),
   PROTOBUF_FIELD_OFFSET(::substrait::Version, producer_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::substrait::DynamicParameterBinding, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::substrait::DynamicParameterBinding, parameter_anchor_),
+  PROTOBUF_FIELD_OFFSET(::substrait::DynamicParameterBinding, value_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::substrait::PlanRel)},
   { 9, -1, -1, sizeof(::substrait::Plan)},
-  { 21, -1, -1, sizeof(::substrait::PlanVersion)},
-  { 28, -1, -1, sizeof(::substrait::Version)},
+  { 24, -1, -1, sizeof(::substrait::PlanVersion)},
+  { 31, -1, -1, sizeof(::substrait::Version)},
+  { 42, -1, -1, sizeof(::substrait::DynamicParameterBinding)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -132,38 +160,48 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_Plan_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_PlanVersion_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_Version_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DynamicParameterBinding_default_instance_),
 };
 
 const char descriptor_table_protodef_substrait_2fplan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\024substrait/plan.proto\022\tsubstrait\032\027subst"
   "rait/algebra.proto\032%substrait/extensions"
-  "/extensions.proto\"X\n\007PlanRel\022\035\n\003rel\030\001 \001("
-  "\0132\016.substrait.RelH\000\022\"\n\004root\030\002 \001(\0132\022.subs"
-  "trait.RelRootH\000B\n\n\010rel_type\"\274\002\n\004Plan\022#\n\007"
-  "version\030\006 \001(\0132\022.substrait.Version\022@\n\016ext"
-  "ension_uris\030\001 \003(\0132(.substrait.extensions"
-  ".SimpleExtensionURI\022D\n\nextensions\030\002 \003(\0132"
-  "0.substrait.extensions.SimpleExtensionDe"
-  "claration\022%\n\trelations\030\003 \003(\0132\022.substrait"
-  ".PlanRel\022D\n\023advanced_extensions\030\004 \001(\0132\'."
-  "substrait.extensions.AdvancedExtension\022\032"
-  "\n\022expected_type_urls\030\005 \003(\t\"2\n\013PlanVersio"
+  "/extensions.proto\032\024substrait/type.proto\""
+  "X\n\007PlanRel\022\035\n\003rel\030\001 \001(\0132\016.substrait.RelH"
+  "\000\022\"\n\004root\030\002 \001(\0132\022.substrait.RelRootH\000B\n\n"
+  "\010rel_type\"\356\003\n\004Plan\022#\n\007version\030\006 \001(\0132\022.su"
+  "bstrait.Version\022D\n\016extension_uris\030\001 \003(\0132"
+  "(.substrait.extensions.SimpleExtensionUR"
+  "IB\002\030\001\022@\n\016extension_urns\030\010 \003(\0132(.substrai"
+  "t.extensions.SimpleExtensionURN\022D\n\nexten"
+  "sions\030\002 \003(\01320.substrait.extensions.Simpl"
+  "eExtensionDeclaration\022%\n\trelations\030\003 \003(\013"
+  "2\022.substrait.PlanRel\022D\n\023advanced_extensi"
+  "ons\030\004 \001(\0132\'.substrait.extensions.Advance"
+  "dExtension\022\032\n\022expected_type_urls\030\005 \003(\t\022>"
+  "\n\022parameter_bindings\030\007 \003(\0132\".substrait.D"
+  "ynamicParameterBinding\022*\n\014type_aliases\030\t"
+  " \003(\0132\024.substrait.TypeAlias\"2\n\013PlanVersio"
   "n\022#\n\007version\030\006 \001(\0132\022.substrait.Version\"o"
   "\n\007Version\022\024\n\014major_number\030\001 \001(\r\022\024\n\014minor"
   "_number\030\002 \001(\r\022\024\n\014patch_number\030\003 \001(\r\022\020\n\010g"
-  "it_hash\030\004 \001(\t\022\020\n\010producer\030\005 \001(\tBW\n\022io.su"
-  "bstrait.protoP\001Z*github.com/substrait-io"
-  "/substrait-go/proto\252\002\022Substrait.Protobuf"
-  "b\006proto3"
+  "it_hash\030\004 \001(\t\022\020\n\010producer\030\005 \001(\t\"a\n\027Dynam"
+  "icParameterBinding\022\030\n\020parameter_anchor\030\001"
+  " \001(\r\022,\n\005value\030\002 \001(\0132\035.substrait.Expressi"
+  "on.LiteralBf\n\022io.substrait.protoP\001Z9gith"
+  "ub.com/substrait-io/substrait-protobuf/g"
+  "o/substraitpb\252\002\022Substrait.Protobufb\006prot"
+  "o3"
   ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2fplan_2eproto_deps[2] = {
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2fplan_2eproto_deps[3] = {
   &::descriptor_table_substrait_2falgebra_2eproto,
   &::descriptor_table_substrait_2fextensions_2fextensions_2eproto,
+  &::descriptor_table_substrait_2ftype_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2fplan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2fplan_2eproto = {
-  false, false, 768, descriptor_table_protodef_substrait_2fplan_2eproto, "substrait/plan.proto", 
-  &descriptor_table_substrait_2fplan_2eproto_once, descriptor_table_substrait_2fplan_2eproto_deps, 2, 4,
+  false, false, 1082, descriptor_table_protodef_substrait_2fplan_2eproto, "substrait/plan.proto", 
+  &descriptor_table_substrait_2fplan_2eproto_once, descriptor_table_substrait_2fplan_2eproto_deps, 3, 5,
   schemas, file_default_instances, TableStruct_substrait_2fplan_2eproto::offsets,
   file_level_metadata_substrait_2fplan_2eproto, file_level_enum_descriptors_substrait_2fplan_2eproto, file_level_service_descriptors_substrait_2fplan_2eproto,
 };
@@ -514,6 +552,9 @@ Plan::_Internal::advanced_extensions(const Plan* msg) {
 void Plan::clear_extension_uris() {
   extension_uris_.Clear();
 }
+void Plan::clear_extension_urns() {
+  extension_urns_.Clear();
+}
 void Plan::clear_extensions() {
   extensions_.Clear();
 }
@@ -523,13 +564,19 @@ void Plan::clear_advanced_extensions() {
   }
   advanced_extensions_ = nullptr;
 }
+void Plan::clear_type_aliases() {
+  type_aliases_.Clear();
+}
 Plan::Plan(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
   extension_uris_(arena),
   extensions_(arena),
   relations_(arena),
-  expected_type_urls_(arena) {
+  expected_type_urls_(arena),
+  parameter_bindings_(arena),
+  extension_urns_(arena),
+  type_aliases_(arena) {
   SharedCtor();
   if (!is_message_owned) {
     RegisterArenaDtor(arena);
@@ -541,7 +588,10 @@ Plan::Plan(const Plan& from)
       extension_uris_(from.extension_uris_),
       extensions_(from.extensions_),
       relations_(from.relations_),
-      expected_type_urls_(from.expected_type_urls_) {
+      expected_type_urls_(from.expected_type_urls_),
+      parameter_bindings_(from.parameter_bindings_),
+      extension_urns_(from.extension_urns_),
+      type_aliases_(from.type_aliases_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   if (from._internal_has_advanced_extensions()) {
     advanced_extensions_ = new ::substrait::extensions::AdvancedExtension(*from.advanced_extensions_);
@@ -596,6 +646,9 @@ void Plan::Clear() {
   extensions_.Clear();
   relations_.Clear();
   expected_type_urls_.Clear();
+  parameter_bindings_.Clear();
+  extension_urns_.Clear();
+  type_aliases_.Clear();
   if (GetArenaForAllocation() == nullptr && advanced_extensions_ != nullptr) {
     delete advanced_extensions_;
   }
@@ -613,7 +666,7 @@ const char* Plan::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inter
     uint32_t tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+      // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
           ptr -= 1;
@@ -683,6 +736,45 @@ const char* Plan::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inter
         } else
           goto handle_unusual;
         continue;
+      // repeated .substrait.DynamicParameterBinding parameter_bindings = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 58)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_parameter_bindings(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<58>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 66)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_extension_urns(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<66>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      // repeated .substrait.TypeAlias type_aliases = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 74)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_type_aliases(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<74>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -712,7 +804,7 @@ uint8_t* Plan::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->_internal_extension_uris_size()); i < n; i++) {
     target = stream->EnsureSpace(target);
@@ -762,6 +854,30 @@ uint8_t* Plan::_InternalSerialize(
         6, _Internal::version(this), target, stream);
   }
 
+  // repeated .substrait.DynamicParameterBinding parameter_bindings = 7;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->_internal_parameter_bindings_size()); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(7, this->_internal_parameter_bindings(i), target, stream);
+  }
+
+  // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->_internal_extension_urns_size()); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(8, this->_internal_extension_urns(i), target, stream);
+  }
+
+  // repeated .substrait.TypeAlias type_aliases = 9;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->_internal_type_aliases_size()); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(9, this->_internal_type_aliases(i), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -778,7 +894,7 @@ size_t Plan::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
   total_size += 1UL * this->_internal_extension_uris_size();
   for (const auto& msg : this->extension_uris_) {
     total_size +=
@@ -805,6 +921,27 @@ size_t Plan::ByteSizeLong() const {
   for (int i = 0, n = expected_type_urls_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
       expected_type_urls_.Get(i));
+  }
+
+  // repeated .substrait.DynamicParameterBinding parameter_bindings = 7;
+  total_size += 1UL * this->_internal_parameter_bindings_size();
+  for (const auto& msg : this->parameter_bindings_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+  }
+
+  // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+  total_size += 1UL * this->_internal_extension_urns_size();
+  for (const auto& msg : this->extension_urns_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+  }
+
+  // repeated .substrait.TypeAlias type_aliases = 9;
+  total_size += 1UL * this->_internal_type_aliases_size();
+  for (const auto& msg : this->type_aliases_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   // .substrait.extensions.AdvancedExtension advanced_extensions = 4;
@@ -847,6 +984,9 @@ void Plan::MergeFrom(const Plan& from) {
   extensions_.MergeFrom(from.extensions_);
   relations_.MergeFrom(from.relations_);
   expected_type_urls_.MergeFrom(from.expected_type_urls_);
+  parameter_bindings_.MergeFrom(from.parameter_bindings_);
+  extension_urns_.MergeFrom(from.extension_urns_);
+  type_aliases_.MergeFrom(from.type_aliases_);
   if (from._internal_has_advanced_extensions()) {
     _internal_mutable_advanced_extensions()->::substrait::extensions::AdvancedExtension::MergeFrom(from._internal_advanced_extensions());
   }
@@ -874,6 +1014,9 @@ void Plan::InternalSwap(Plan* other) {
   extensions_.InternalSwap(&other->extensions_);
   relations_.InternalSwap(&other->relations_);
   expected_type_urls_.InternalSwap(&other->expected_type_urls_);
+  parameter_bindings_.InternalSwap(&other->parameter_bindings_);
+  extension_urns_.InternalSwap(&other->extension_urns_);
+  type_aliases_.InternalSwap(&other->type_aliases_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Plan, version_)
       + sizeof(Plan::version_)
@@ -1417,6 +1560,239 @@ void Version::InternalSwap(Version* other) {
       file_level_metadata_substrait_2fplan_2eproto[3]);
 }
 
+// ===================================================================
+
+class DynamicParameterBinding::_Internal {
+ public:
+  static const ::substrait::Expression_Literal& value(const DynamicParameterBinding* msg);
+};
+
+const ::substrait::Expression_Literal&
+DynamicParameterBinding::_Internal::value(const DynamicParameterBinding* msg) {
+  return *msg->value_;
+}
+void DynamicParameterBinding::clear_value() {
+  if (GetArenaForAllocation() == nullptr && value_ != nullptr) {
+    delete value_;
+  }
+  value_ = nullptr;
+}
+DynamicParameterBinding::DynamicParameterBinding(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  if (!is_message_owned) {
+    RegisterArenaDtor(arena);
+  }
+  // @@protoc_insertion_point(arena_constructor:substrait.DynamicParameterBinding)
+}
+DynamicParameterBinding::DynamicParameterBinding(const DynamicParameterBinding& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_value()) {
+    value_ = new ::substrait::Expression_Literal(*from.value_);
+  } else {
+    value_ = nullptr;
+  }
+  parameter_anchor_ = from.parameter_anchor_;
+  // @@protoc_insertion_point(copy_constructor:substrait.DynamicParameterBinding)
+}
+
+inline void DynamicParameterBinding::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&value_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&parameter_anchor_) -
+    reinterpret_cast<char*>(&value_)) + sizeof(parameter_anchor_));
+}
+
+DynamicParameterBinding::~DynamicParameterBinding() {
+  // @@protoc_insertion_point(destructor:substrait.DynamicParameterBinding)
+  if (GetArenaForAllocation() != nullptr) return;
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+inline void DynamicParameterBinding::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  if (this != internal_default_instance()) delete value_;
+}
+
+void DynamicParameterBinding::ArenaDtor(void* object) {
+  DynamicParameterBinding* _this = reinterpret_cast< DynamicParameterBinding* >(object);
+  (void)_this;
+}
+void DynamicParameterBinding::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void DynamicParameterBinding::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void DynamicParameterBinding::Clear() {
+// @@protoc_insertion_point(message_clear_start:substrait.DynamicParameterBinding)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (GetArenaForAllocation() == nullptr && value_ != nullptr) {
+    delete value_;
+  }
+  value_ = nullptr;
+  parameter_anchor_ = 0u;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* DynamicParameterBinding::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // uint32 parameter_anchor = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          parameter_anchor_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .substrait.Expression.Literal value = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          ptr = ctx->ParseMessage(_internal_mutable_value(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* DynamicParameterBinding::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:substrait.DynamicParameterBinding)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint32 parameter_anchor = 1;
+  if (this->_internal_parameter_anchor() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_parameter_anchor(), target);
+  }
+
+  // .substrait.Expression.Literal value = 2;
+  if (this->_internal_has_value()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        2, _Internal::value(this), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:substrait.DynamicParameterBinding)
+  return target;
+}
+
+size_t DynamicParameterBinding::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:substrait.DynamicParameterBinding)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .substrait.Expression.Literal value = 2;
+  if (this->_internal_has_value()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *value_);
+  }
+
+  // uint32 parameter_anchor = 1;
+  if (this->_internal_parameter_anchor() != 0) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32SizePlusOne(this->_internal_parameter_anchor());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData DynamicParameterBinding::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    DynamicParameterBinding::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*DynamicParameterBinding::GetClassData() const { return &_class_data_; }
+
+void DynamicParameterBinding::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<DynamicParameterBinding *>(to)->MergeFrom(
+      static_cast<const DynamicParameterBinding &>(from));
+}
+
+
+void DynamicParameterBinding::MergeFrom(const DynamicParameterBinding& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:substrait.DynamicParameterBinding)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_value()) {
+    _internal_mutable_value()->::substrait::Expression_Literal::MergeFrom(from._internal_value());
+  }
+  if (from._internal_parameter_anchor() != 0) {
+    _internal_set_parameter_anchor(from._internal_parameter_anchor());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void DynamicParameterBinding::CopyFrom(const DynamicParameterBinding& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:substrait.DynamicParameterBinding)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool DynamicParameterBinding::IsInitialized() const {
+  return true;
+}
+
+void DynamicParameterBinding::InternalSwap(DynamicParameterBinding* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DynamicParameterBinding, parameter_anchor_)
+      + sizeof(DynamicParameterBinding::parameter_anchor_)
+      - PROTOBUF_FIELD_OFFSET(DynamicParameterBinding, value_)>(
+          reinterpret_cast<char*>(&value_),
+          reinterpret_cast<char*>(&other->value_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata DynamicParameterBinding::GetMetadata() const {
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_substrait_2fplan_2eproto_getter, &descriptor_table_substrait_2fplan_2eproto_once,
+      file_level_metadata_substrait_2fplan_2eproto[4]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace substrait
 PROTOBUF_NAMESPACE_OPEN
@@ -1431,6 +1807,9 @@ template<> PROTOBUF_NOINLINE ::substrait::PlanVersion* Arena::CreateMaybeMessage
 }
 template<> PROTOBUF_NOINLINE ::substrait::Version* Arena::CreateMaybeMessage< ::substrait::Version >(Arena* arena) {
   return Arena::CreateMessageInternal< ::substrait::Version >(arena);
+}
+template<> PROTOBUF_NOINLINE ::substrait::DynamicParameterBinding* Arena::CreateMaybeMessage< ::substrait::DynamicParameterBinding >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::substrait::DynamicParameterBinding >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

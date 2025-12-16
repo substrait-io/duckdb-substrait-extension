@@ -90,13 +90,14 @@ const char descriptor_table_protodef_substrait_2fcapabilities_2eproto[] PROTOBUF
   "ait.Capabilities.SimpleExtension\032e\n\017Simp"
   "leExtension\022\013\n\003uri\030\001 \001(\t\022\025\n\rfunction_key"
   "s\030\002 \003(\t\022\021\n\ttype_keys\030\003 \003(\t\022\033\n\023type_varia"
-  "tion_keys\030\004 \003(\tBW\n\022io.substrait.protoP\001Z"
-  "*github.com/substrait-io/substrait-go/pr"
-  "oto\252\002\022Substrait.Protobufb\006proto3"
+  "tion_keys\030\004 \003(\tBf\n\022io.substrait.protoP\001Z"
+  "9github.com/substrait-io/substrait-proto"
+  "buf/go/substraitpb\252\002\022Substrait.Protobufb"
+  "\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2fcapabilities_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2fcapabilities_2eproto = {
-  false, false, 392, descriptor_table_protodef_substrait_2fcapabilities_2eproto, "substrait/capabilities.proto", 
+  false, false, 407, descriptor_table_protodef_substrait_2fcapabilities_2eproto, "substrait/capabilities.proto", 
   &descriptor_table_substrait_2fcapabilities_2eproto_once, nullptr, 0, 2,
   schemas, file_default_instances, TableStruct_substrait_2fcapabilities_2eproto::offsets,
   file_level_metadata_substrait_2fcapabilities_2eproto, file_level_enum_descriptors_substrait_2fcapabilities_2eproto, file_level_service_descriptors_substrait_2fcapabilities_2eproto,

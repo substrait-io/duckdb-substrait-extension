@@ -36,6 +36,7 @@ constexpr ExtendedExpression::ExtendedExpression(
   , extensions_()
   , referred_expr_()
   , expected_type_urls_()
+  , extension_urns_()
   , base_schema_(nullptr)
   , advanced_extensions_(nullptr)
   , version_(nullptr){}
@@ -72,6 +73,7 @@ const uint32_t TableStruct_substrait_2fextended_5fexpression_2eproto::offsets[] 
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, version_),
   PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, extension_uris_),
+  PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, extension_urns_),
   PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, extensions_),
   PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, referred_expr_),
   PROTOBUF_FIELD_OFFSET(::substrait::ExtendedExpression, base_schema_),
@@ -96,19 +98,22 @@ const char descriptor_table_protodef_substrait_2fextended_5fexpression_2eproto[]
   "\023ExpressionReference\022+\n\nexpression\030\001 \001(\013"
   "2\025.substrait.ExpressionH\000\022/\n\007measure\030\002 \001"
   "(\0132\034.substrait.AggregateFunctionH\000\022\024\n\014ou"
-  "tput_names\030\003 \003(\tB\013\n\texpr_type\"\207\003\n\022Extend"
+  "tput_names\030\003 \003(\tB\013\n\texpr_type\"\315\003\n\022Extend"
   "edExpression\022#\n\007version\030\007 \001(\0132\022.substrai"
-  "t.Version\022@\n\016extension_uris\030\001 \003(\0132(.subs"
-  "trait.extensions.SimpleExtensionURI\022D\n\ne"
-  "xtensions\030\002 \003(\01320.substrait.extensions.S"
-  "impleExtensionDeclaration\0225\n\rreferred_ex"
-  "pr\030\003 \003(\0132\036.substrait.ExpressionReference"
-  "\022+\n\013base_schema\030\004 \001(\0132\026.substrait.NamedS"
-  "truct\022D\n\023advanced_extensions\030\005 \001(\0132\'.sub"
-  "strait.extensions.AdvancedExtension\022\032\n\022e"
-  "xpected_type_urls\030\006 \003(\tBW\n\022io.substrait."
-  "protoP\001Z*github.com/substrait-io/substra"
-  "it-go/proto\252\002\022Substrait.Protobufb\006proto3"
+  "t.Version\022D\n\016extension_uris\030\001 \003(\0132(.subs"
+  "trait.extensions.SimpleExtensionURIB\002\030\001\022"
+  "@\n\016extension_urns\030\010 \003(\0132(.substrait.exte"
+  "nsions.SimpleExtensionURN\022D\n\nextensions\030"
+  "\002 \003(\01320.substrait.extensions.SimpleExten"
+  "sionDeclaration\0225\n\rreferred_expr\030\003 \003(\0132\036"
+  ".substrait.ExpressionReference\022+\n\013base_s"
+  "chema\030\004 \001(\0132\026.substrait.NamedStruct\022D\n\023a"
+  "dvanced_extensions\030\005 \001(\0132\'.substrait.ext"
+  "ensions.AdvancedExtension\022\032\n\022expected_ty"
+  "pe_urls\030\006 \003(\tBf\n\022io.substrait.protoP\001Z9g"
+  "ithub.com/substrait-io/substrait-protobu"
+  "f/go/substraitpb\252\002\022Substrait.Protobufb\006p"
+  "roto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2fextended_5fexpression_2eproto_deps[4] = {
   &::descriptor_table_substrait_2falgebra_2eproto,
@@ -118,7 +123,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2fextended_5fexpression_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2fextended_5fexpression_2eproto = {
-  false, false, 800, descriptor_table_protodef_substrait_2fextended_5fexpression_2eproto, "substrait/extended_expression.proto", 
+  false, false, 885, descriptor_table_protodef_substrait_2fextended_5fexpression_2eproto, "substrait/extended_expression.proto", 
   &descriptor_table_substrait_2fextended_5fexpression_2eproto_once, descriptor_table_substrait_2fextended_5fexpression_2eproto_deps, 4, 2,
   schemas, file_default_instances, TableStruct_substrait_2fextended_5fexpression_2eproto::offsets,
   file_level_metadata_substrait_2fextended_5fexpression_2eproto, file_level_enum_descriptors_substrait_2fextended_5fexpression_2eproto, file_level_service_descriptors_substrait_2fextended_5fexpression_2eproto,
@@ -519,6 +524,9 @@ void ExtendedExpression::clear_version() {
 void ExtendedExpression::clear_extension_uris() {
   extension_uris_.Clear();
 }
+void ExtendedExpression::clear_extension_urns() {
+  extension_urns_.Clear();
+}
 void ExtendedExpression::clear_extensions() {
   extensions_.Clear();
 }
@@ -540,7 +548,8 @@ ExtendedExpression::ExtendedExpression(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   extension_uris_(arena),
   extensions_(arena),
   referred_expr_(arena),
-  expected_type_urls_(arena) {
+  expected_type_urls_(arena),
+  extension_urns_(arena) {
   SharedCtor();
   if (!is_message_owned) {
     RegisterArenaDtor(arena);
@@ -552,7 +561,8 @@ ExtendedExpression::ExtendedExpression(const ExtendedExpression& from)
       extension_uris_(from.extension_uris_),
       extensions_(from.extensions_),
       referred_expr_(from.referred_expr_),
-      expected_type_urls_(from.expected_type_urls_) {
+      expected_type_urls_(from.expected_type_urls_),
+      extension_urns_(from.extension_urns_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   if (from._internal_has_base_schema()) {
     base_schema_ = new ::substrait::NamedStruct(*from.base_schema_);
@@ -613,6 +623,7 @@ void ExtendedExpression::Clear() {
   extensions_.Clear();
   referred_expr_.Clear();
   expected_type_urls_.Clear();
+  extension_urns_.Clear();
   if (GetArenaForAllocation() == nullptr && base_schema_ != nullptr) {
     delete base_schema_;
   }
@@ -634,7 +645,7 @@ const char* ExtendedExpression::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     uint32_t tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+      // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
           ptr -= 1;
@@ -712,6 +723,19 @@ const char* ExtendedExpression::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         } else
           goto handle_unusual;
         continue;
+      // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 66)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_extension_urns(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<66>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -741,7 +765,7 @@ uint8_t* ExtendedExpression::_InternalSerialize(
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->_internal_extension_uris_size()); i < n; i++) {
     target = stream->EnsureSpace(target);
@@ -799,6 +823,14 @@ uint8_t* ExtendedExpression::_InternalSerialize(
         7, _Internal::version(this), target, stream);
   }
 
+  // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->_internal_extension_urns_size()); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(8, this->_internal_extension_urns(i), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -815,7 +847,7 @@ size_t ExtendedExpression::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1;
+  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
   total_size += 1UL * this->_internal_extension_uris_size();
   for (const auto& msg : this->extension_uris_) {
     total_size +=
@@ -842,6 +874,13 @@ size_t ExtendedExpression::ByteSizeLong() const {
   for (int i = 0, n = expected_type_urls_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
       expected_type_urls_.Get(i));
+  }
+
+  // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
+  total_size += 1UL * this->_internal_extension_urns_size();
+  for (const auto& msg : this->extension_urns_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   // .substrait.NamedStruct base_schema = 4;
@@ -891,6 +930,7 @@ void ExtendedExpression::MergeFrom(const ExtendedExpression& from) {
   extensions_.MergeFrom(from.extensions_);
   referred_expr_.MergeFrom(from.referred_expr_);
   expected_type_urls_.MergeFrom(from.expected_type_urls_);
+  extension_urns_.MergeFrom(from.extension_urns_);
   if (from._internal_has_base_schema()) {
     _internal_mutable_base_schema()->::substrait::NamedStruct::MergeFrom(from._internal_base_schema());
   }
@@ -921,6 +961,7 @@ void ExtendedExpression::InternalSwap(ExtendedExpression* other) {
   extensions_.InternalSwap(&other->extensions_);
   referred_expr_.InternalSwap(&other->referred_expr_);
   expected_type_urls_.InternalSwap(&other->expected_type_urls_);
+  extension_urns_.InternalSwap(&other->extension_urns_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ExtendedExpression, version_)
       + sizeof(ExtendedExpression::version_)
