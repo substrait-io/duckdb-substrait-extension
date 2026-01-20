@@ -1050,6 +1050,14 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 			substrait::RelRoot temp_root;
 			temp_root.mutable_input()->CopyFrom(project_input);
 			select_node->from_table = TransformRootOp(temp_root);
+		} else if (project_input.rel_type_case() == substrait::Rel::RelTypeCase::kFetch ||
+		           project_input.rel_type_case() == substrait::Rel::RelTypeCase::kSort) {
+			// Project → Fetch or Project → Sort
+			// Handle DataFusion patterns like Project(Fetch(Sort(Aggregate(...))))
+			// Transform the Fetch/Sort as a subquery and project from it
+			substrait::RelRoot temp_root;
+			temp_root.mutable_input()->CopyFrom(project_input);
+			select_node->from_table = TransformRootOp(temp_root);
 		} else {
 			throw NotImplementedException("Project input type not yet supported: %s",
 			                            substrait::Rel::GetDescriptor()
