@@ -538,7 +538,15 @@ unique_ptr<TableRef> SubstraitToAST::TransformAggregateOp(const substrait::Rel &
 
 	// Transform input relation (the FROM clause)
 	if (sagg.input().rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
-		select_node->from_table = TransformReadOp(sagg.input(), nullptr, &projection_info);
+		unique_ptr<ParsedExpression> filter_expr;
+		select_node->from_table = TransformReadOp(sagg.input(), &filter_expr, &projection_info);
+		if (filter_expr) {
+			auto &read_input = sagg.input().read();
+			if (read_input.has_base_schema()) {
+				filter_expr = ConvertPositionalToColumnRef(std::move(filter_expr), read_input.base_schema());
+			}
+			select_node->where_clause = std::move(filter_expr);
+		}
 	} else if (sagg.input().rel_type_case() == substrait::Rel::RelTypeCase::kAggregate) {
 		// Nested aggregate (e.g., in scalar subqueries)
 		// Wrap in RelRoot and transform recursively
@@ -603,7 +611,13 @@ unique_ptr<TableRef> SubstraitToAST::TransformAggregateOp(const substrait::Rel &
 	// Wrap in SelectStatement and SubqueryRef
 	auto select_stmt = make_uniq<SelectStatement>();
 	select_stmt->node = std::move(select_node);
-	return make_uniq<SubqueryRef>(std::move(select_stmt));
+	auto subquery_ref = make_uniq<SubqueryRef>(std::move(select_stmt));
+
+	// Generate a unique alias for the aggregate subquery (important for DuckDB binding)
+	static int agg_subquery_counter = 0;
+	subquery_ref->alias = "agg_subquery_" + std::to_string(agg_subquery_counter++);
+
+	return std::move(subquery_ref);
 }
 
 // Helper to convert PositionalReferenceExpression to ColumnRefExpression using schema
@@ -1066,14 +1080,12 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 		}
 
 		// Handle Project expressions and emit/outputMapping
-		// In Substrait, a Project combines input columns + computed expressions,
-		// then uses outputMapping to select which to output
+		// In Substrait, a Project's output is: [input_columns] + [computed_expressions]
+		// The outputMapping selects which of these columns to actually output
 		if (project.has_common() && project.common().has_emit() &&
 		    project.common().emit().output_mapping_size() > 0) {
-			// Has explicit outputMapping - need to build combined pool
 			auto &output_mapping = project.common().emit().output_mapping();
 
-			// Transform the computed expressions first
 			vector<unique_ptr<ParsedExpression>> computed_exprs;
 			for (auto &sexpr : project.expressions()) {
 				auto expr = TransformExpr(sexpr);
@@ -1081,11 +1093,8 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 				computed_exprs.push_back(std::move(expr));
 			}
 
-			// Determine the number of input columns from the from_table
-			// The outputMapping refers to: [input_0, ..., input_N-1, expr_0, ..., expr_M-1]
 			idx_t num_inputs = 0;
 
-			// For SubqueryRef, we can inspect the select list to count columns
 			if (select_node->from_table && select_node->from_table->type == TableReferenceType::SUBQUERY) {
 				auto &subquery_ref = select_node->from_table->Cast<SubqueryRef>();
 				if (subquery_ref.subquery && subquery_ref.subquery->node) {
@@ -1097,10 +1106,7 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 				}
 			}
 
-			// If we couldn't determine num_inputs from the subquery, fall back to heuristic
 			if (num_inputs == 0) {
-				// Compute based on max(outputMapping) - if it exceeds expression count,
-				// there must be input columns
 				int32_t max_mapping_idx = 0;
 				for (int i = 0; i < output_mapping.size(); i++) {
 					max_mapping_idx = std::max(max_mapping_idx, output_mapping.Get(i));
@@ -1110,24 +1116,20 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 				             (max_mapping_idx - num_computed + 1) : 0;
 			}
 
-			// Build the select list based on outputMapping
 			for (int i = 0; i < output_mapping.size(); i++) {
 				int32_t field_idx = output_mapping.Get(i);
 
 				if ((idx_t)field_idx < num_inputs) {
-					// References an input column (from subquery)
 					select_node->select_list.push_back(make_uniq<PositionalReferenceExpression>(field_idx + 1));
 				} else {
-					// References a computed expression
 					idx_t expr_idx = field_idx - num_inputs;
 					if (expr_idx < computed_exprs.size()) {
 						select_node->select_list.push_back(std::move(computed_exprs[expr_idx]));
-						computed_exprs[expr_idx] = nullptr; // Mark as used
+						computed_exprs[expr_idx] = nullptr;
 					}
 				}
 			}
 		} else {
-			// No outputMapping - just use the expressions directly
 			for (auto &sexpr : project.expressions()) {
 				auto expr = TransformExpr(sexpr);
 				expr = RemapFieldReferences(std::move(expr), projection_info);
@@ -1135,7 +1137,10 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 			}
 		}
 
-		// Add modifiers (ORDER BY, LIMIT) to the query node
+		if (select_node->select_list.empty()) {
+			select_node->select_list.push_back(make_uniq<StarExpression>());
+		}
+
 		for (auto &modifier : modifiers) {
 			select_node->modifiers.push_back(std::move(modifier));
 		}
