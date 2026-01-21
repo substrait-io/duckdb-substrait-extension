@@ -524,6 +524,13 @@ unique_ptr<ParsedExpression> SubstraitToAST::RemapFieldReferences(unique_ptr<Par
 		}
 		return expr;
 	}
+	case ExpressionType::COMPARE_IN: {
+		auto &op = expr->Cast<OperatorExpression>();
+		for (auto &child : op.children) {
+			child = RemapFieldReferences(std::move(child), projection_info);
+		}
+		return expr;
+	}
 	case ExpressionType::FUNCTION: {
 		auto &func = expr->Cast<FunctionExpression>();
 		for (auto &child : func.children) {
@@ -570,13 +577,28 @@ unique_ptr<TableRef> SubstraitToAST::TransformAggregateOp(const substrait::Rel &
 		auto &filter = sagg.input().filter();
 		auto &filter_input = filter.input();
 		if (filter_input.rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
-			select_node->from_table = TransformReadOp(filter_input, nullptr, &projection_info);
-			auto filter_expr = TransformExpr(filter.condition());
+			unique_ptr<ParsedExpression> read_filter_expr;
+			select_node->from_table = TransformReadOp(filter_input, &read_filter_expr, &projection_info);
 			auto &read_input = filter_input.read();
+			
+			auto top_filter_expr = TransformExpr(filter.condition());
+			top_filter_expr = RemapFieldReferences(std::move(top_filter_expr), projection_info);
 			if (read_input.has_base_schema()) {
-				filter_expr = ConvertPositionalToColumnRef(std::move(filter_expr), read_input.base_schema());
+				top_filter_expr = ConvertPositionalToColumnRef(std::move(top_filter_expr), read_input.base_schema());
+				if (read_filter_expr) {
+					read_filter_expr = ConvertPositionalToColumnRef(std::move(read_filter_expr), read_input.base_schema());
+				}
 			}
-			select_node->where_clause = std::move(filter_expr);
+			if (read_filter_expr && top_filter_expr) {
+				vector<unique_ptr<ParsedExpression>> children;
+				children.push_back(std::move(read_filter_expr));
+				children.push_back(std::move(top_filter_expr));
+				select_node->where_clause = make_uniq<ConjunctionExpression>(ExpressionType::CONJUNCTION_AND, std::move(children));
+			} else if (read_filter_expr) {
+				select_node->where_clause = std::move(read_filter_expr);
+			} else if (top_filter_expr) {
+				select_node->where_clause = std::move(top_filter_expr);
+			}
 		} else {
 			substrait::RelRoot temp_root;
 			temp_root.mutable_input()->CopyFrom(sagg.input());
@@ -700,6 +722,13 @@ unique_ptr<ParsedExpression> SubstraitToAST::ConvertPositionalToColumnRef(unique
 		auto &op = expr->Cast<OperatorExpression>();
 		if (!op.children.empty()) {
 			op.children[0] = ConvertPositionalToColumnRef(std::move(op.children[0]), schema);
+		}
+		return expr;
+	}
+	case ExpressionType::COMPARE_IN: {
+		auto &op = expr->Cast<OperatorExpression>();
+		for (auto &child : op.children) {
+			child = ConvertPositionalToColumnRef(std::move(child), schema);
 		}
 		return expr;
 	}
