@@ -51,10 +51,14 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		// "mark join" against a `ColumnDataCollection`, which may not make
 		// sense in other systems and would complicate the conversion to Substrait.
 		set<OptimizerType> disabled_optimizers = DBConfig::GetConfig(context).options.disabled_optimizers;
+		// Disable optimizers that cause issues with Substrait generation
+		// Keep FILTER_PUSHDOWN, EXPRESSION_REWRITER enabled - consumer needs filters separated from aggregates
 		disabled_optimizers.insert(OptimizerType::IN_CLAUSE);
 		disabled_optimizers.insert(OptimizerType::COMPRESSED_MATERIALIZATION);
 		disabled_optimizers.insert(OptimizerType::MATERIALIZED_CTE);
-		// Note: scalar_subquery_error_on_multiple_rows was removed in DuckDB v1.4.0
+		disabled_optimizers.insert(OptimizerType::TOP_N);
+		disabled_optimizers.insert(OptimizerType::COLUMN_LIFETIME);
+		disabled_optimizers.insert(OptimizerType::COMMON_AGGREGATE);
 		DBConfig::GetConfig(context).options.disabled_optimizers = disabled_optimizers;
 	}
 

@@ -53,6 +53,8 @@ Value SubstraitToAST::TransformLiteralToValue(const substrait::Expression_Litera
 	switch (literal.literal_type_case()) {
 	case substrait::Expression_Literal::LiteralTypeCase::kI8:
 		return Value::TINYINT(static_cast<int8_t>(literal.i8()));
+	case substrait::Expression_Literal::LiteralTypeCase::kI16:
+		return Value::SMALLINT(static_cast<int16_t>(literal.i16()));
 	case substrait::Expression_Literal::LiteralTypeCase::kI32:
 		return Value::INTEGER(literal.i32());
 	case substrait::Expression_Literal::LiteralTypeCase::kI64:
@@ -147,15 +149,11 @@ string SubstraitToAST::FindFunction(uint64_t id) {
 }
 
 string SubstraitToAST::RemoveFunctionExtension(const string &function_name) {
-	// Remove extension prefix (e.g., "substrait:add" -> "add")
-	string name;
-	for (auto &c : function_name) {
-		if (c == ':') {
-			break;
-		}
-		name += c;
+	auto pos = function_name.find(':');
+	if (pos != string::npos) {
+		return function_name.substr(0, pos);
 	}
-	return name;
+	return function_name;
 }
 
 unique_ptr<ParsedExpression> SubstraitToAST::TransformScalarFunctionExpr(const substrait::Expression &sexpr) {
