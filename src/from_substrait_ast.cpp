@@ -531,8 +531,21 @@ unique_ptr<ParsedExpression> SubstraitToAST::RemapFieldReferences(unique_ptr<Par
 		}
 		return expr;
 	}
+	case ExpressionType::CASE_EXPR: {
+		auto &case_expr = expr->Cast<CaseExpression>();
+		for (auto &check : case_expr.case_checks) {
+			check.when_expr = RemapFieldReferences(std::move(check.when_expr), projection_info);
+			check.then_expr = RemapFieldReferences(std::move(check.then_expr), projection_info);
+		}
+		case_expr.else_expr = RemapFieldReferences(std::move(case_expr.else_expr), projection_info);
+		return expr;
+	}
+	case ExpressionType::OPERATOR_CAST: {
+		auto &cast_expr = expr->Cast<CastExpression>();
+		cast_expr.child = RemapFieldReferences(std::move(cast_expr.child), projection_info);
+		return expr;
+	}
 	default:
-		// For other expression types (constants, etc.), no remapping needed
 		return expr;
 	}
 }
