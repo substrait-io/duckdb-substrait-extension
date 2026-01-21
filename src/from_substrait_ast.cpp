@@ -553,9 +553,23 @@ unique_ptr<TableRef> SubstraitToAST::TransformAggregateOp(const substrait::Rel &
 			}
 			select_node->where_clause = std::move(filter_expr);
 		}
+	} else if (sagg.input().rel_type_case() == substrait::Rel::RelTypeCase::kFilter) {
+		auto &filter = sagg.input().filter();
+		auto &filter_input = filter.input();
+		if (filter_input.rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
+			select_node->from_table = TransformReadOp(filter_input, nullptr, &projection_info);
+			auto filter_expr = TransformExpr(filter.condition());
+			auto &read_input = filter_input.read();
+			if (read_input.has_base_schema()) {
+				filter_expr = ConvertPositionalToColumnRef(std::move(filter_expr), read_input.base_schema());
+			}
+			select_node->where_clause = std::move(filter_expr);
+		} else {
+			substrait::RelRoot temp_root;
+			temp_root.mutable_input()->CopyFrom(sagg.input());
+			select_node->from_table = TransformRootOp(temp_root);
+		}
 	} else if (sagg.input().rel_type_case() == substrait::Rel::RelTypeCase::kAggregate) {
-		// Nested aggregate (e.g., in scalar subqueries)
-		// Wrap in RelRoot and transform recursively
 		substrait::RelRoot temp_root;
 		temp_root.mutable_input()->CopyFrom(sagg.input());
 		select_node->from_table = TransformRootOp(temp_root);
@@ -690,6 +704,55 @@ unique_ptr<ParsedExpression> SubstraitToAST::ConvertPositionalToColumnRef(unique
 	}
 	default:
 		// For other expression types (constants, etc.), no conversion needed
+		return expr;
+	}
+}
+
+
+unique_ptr<ParsedExpression> SubstraitToAST::ConvertPositionalToColumnRef(unique_ptr<ParsedExpression> expr,
+                                                                           const google::protobuf::RepeatedPtrField<std::string> &names) {
+	if (!expr) {
+		return expr;
+	}
+
+	switch (expr->type) {
+	case ExpressionType::POSITIONAL_REFERENCE: {
+		auto &pos_ref = expr->Cast<PositionalReferenceExpression>();
+		idx_t field_idx = pos_ref.index - 1;
+		if (field_idx < (idx_t)names.size()) {
+			string col_name = names.Get((int)field_idx);
+			return make_uniq<ColumnRefExpression>(col_name);
+		}
+		return expr;
+	}
+	case ExpressionType::COMPARE_EQUAL:
+	case ExpressionType::COMPARE_NOTEQUAL:
+	case ExpressionType::COMPARE_LESSTHAN:
+	case ExpressionType::COMPARE_GREATERTHAN:
+	case ExpressionType::COMPARE_LESSTHANOREQUALTO:
+	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
+	case ExpressionType::COMPARE_NOT_DISTINCT_FROM: {
+		auto &comp = expr->Cast<ComparisonExpression>();
+		comp.left = ConvertPositionalToColumnRef(std::move(comp.left), names);
+		comp.right = ConvertPositionalToColumnRef(std::move(comp.right), names);
+		return expr;
+	}
+	case ExpressionType::CONJUNCTION_AND:
+	case ExpressionType::CONJUNCTION_OR: {
+		auto &conj = expr->Cast<ConjunctionExpression>();
+		for (auto &child : conj.children) {
+			child = ConvertPositionalToColumnRef(std::move(child), names);
+		}
+		return expr;
+	}
+	case ExpressionType::FUNCTION: {
+		auto &func = expr->Cast<FunctionExpression>();
+		for (auto &child : func.children) {
+			child = ConvertPositionalToColumnRef(std::move(child), names);
+		}
+		return expr;
+	}
+	default:
 		return expr;
 	}
 }
@@ -1049,6 +1112,9 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 			} else if (filter_input.rel_type_case() == substrait::Rel::RelTypeCase::kAggregate) {
 				substrait::RelRoot temp_root;
 				temp_root.mutable_input()->CopyFrom(project_input);
+				for (int i = 0; i < sop.names_size(); i++) {
+					temp_root.add_names(sop.names(i));
+				}
 				select_node->from_table = TransformRootOp(temp_root);
 			} else {
 				throw NotImplementedException("Filter input type not yet supported: %s",
@@ -1183,8 +1249,15 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 			}
 			select_node = unique_ptr<SelectNode>((SelectNode*)stmt->node.release());
 
+			// Add aliases to select list items using RelRoot names
+			for (idx_t i = 0; i < select_node->select_list.size() && i < (idx_t)sop.names_size(); i++) {
+				select_node->select_list[i]->alias = sop.names((int)i);
+			}
+
 			// Transform and apply the HAVING condition
+			// Use RelRoot names to convert positional refs to column names
 			auto having_expr = TransformExpr(filter.condition());
+			having_expr = ConvertPositionalToColumnRef(std::move(having_expr), sop.names());
 			select_node->having = std::move(having_expr);
 
 			// Add modifiers (ORDER BY, LIMIT) to the query node

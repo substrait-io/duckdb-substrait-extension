@@ -89,6 +89,9 @@ private:
 	unique_ptr<ParsedExpression> ConvertPositionalToColumnRef(unique_ptr<ParsedExpression> expr,
 	                                                           const substrait::NamedStruct &schema);
 
+	unique_ptr<ParsedExpression> ConvertPositionalToColumnRef(unique_ptr<ParsedExpression> expr,
+	                                                           const google::protobuf::RepeatedPtrField<std::string> &names);
+
 	//! Helper functions
 	string FindFunction(uint64_t id);
 	static string RemoveFunctionExtension(const string &function_name);
