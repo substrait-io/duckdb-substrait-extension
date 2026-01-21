@@ -1229,10 +1229,6 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	// we only do a single grouping set for now
 	auto sgrp = saggr->add_groupings();
 	for (auto &dgrp : daggr.groups) {
-		if (dgrp->type != ExpressionType::BOUND_REF) {
-			// TODO push projection or push substrait to allow expressions here
-			throw NotImplementedException("No expressions in groupings yet");
-		}
 		TransformExpr(*dgrp, *sgrp->add_grouping_expressions());
 	}
 	for (auto &dmeas : daggr.expressions) {

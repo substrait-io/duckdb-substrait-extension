@@ -24,6 +24,14 @@
 
 namespace duckdb {
 
+// Ported from legacy from_substrait.cpp - maps Substrait function names to DuckDB equivalents
+const std::unordered_map<std::string, std::string> function_names_remap = {
+    {"modulus", "mod"},      {"std_dev", "stddev"},     {"starts_with", "prefix"},
+    {"ends_with", "suffix"}, {"substring", "substr"},   {"char_length", "length"},
+    {"is_nan", "isnan"},     {"is_finite", "isfinite"}, {"is_infinite", "isinf"},
+    {"like", "~~"},          {"extract", "date_part"},  {"bitwise_and", "&"},
+    {"bitwise_or", "|"},     {"bitwise_xor", "xor"},    {"octet_length", "strlen"}};
+
 SubstraitToAST::SubstraitToAST(ClientContext &context_p, const string &serialized, bool json)
     : context(context_p) {
 	if (!json) {
@@ -150,10 +158,12 @@ string SubstraitToAST::FindFunction(uint64_t id) {
 
 string SubstraitToAST::RemoveFunctionExtension(const string &function_name) {
 	auto pos = function_name.find(':');
-	if (pos != string::npos) {
-		return function_name.substr(0, pos);
+	string name = (pos != string::npos) ? function_name.substr(0, pos) : function_name;
+	auto it = function_names_remap.find(name);
+	if (it != function_names_remap.end()) {
+		return it->second;
 	}
-	return function_name;
+	return name;
 }
 
 unique_ptr<ParsedExpression> SubstraitToAST::TransformScalarFunctionExpr(const substrait::Expression &sexpr) {
@@ -167,8 +177,6 @@ unique_ptr<ParsedExpression> SubstraitToAST::TransformScalarFunctionExpr(const s
 		if (sarg.has_value()) {
 			children.push_back(TransformExpr(sarg.value()));
 		} else if (sarg.has_enum_()) {
-			// Enum arguments (like for EXTRACT function)
-			// We'll handle these specially
 			auto enum_val = sarg.enum_();
 			children.push_back(make_uniq<ConstantExpression>(Value(enum_val)));
 		} else {
@@ -1026,20 +1034,22 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 				select_node->where_clause = std::move(filter_expr);
 			}
 		} else if (project_input.rel_type_case() == substrait::Rel::RelTypeCase::kFilter) {
-			// Project → Filter → Read
+			// Project → Filter → Read (WHERE) or Project → Filter → Aggregate (HAVING)
 			auto &filter = project_input.filter();
 			auto &filter_input = filter.input();
 
 			if (filter_input.rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
 				select_node->from_table = TransformReadOp(filter_input, nullptr, &projection_info);
-				// Add WHERE clause and convert positional references to column names
 				auto filter_expr = TransformExpr(filter.condition());
-				// Convert positional references using the Read's base_schema
 				auto &read_input = filter_input.read();
 				if (read_input.has_base_schema()) {
 					filter_expr = ConvertPositionalToColumnRef(std::move(filter_expr), read_input.base_schema());
 				}
 				select_node->where_clause = std::move(filter_expr);
+			} else if (filter_input.rel_type_case() == substrait::Rel::RelTypeCase::kAggregate) {
+				substrait::RelRoot temp_root;
+				temp_root.mutable_input()->CopyFrom(project_input);
+				select_node->from_table = TransformRootOp(temp_root);
 			} else {
 				throw NotImplementedException("Filter input type not yet supported: %s",
 				                            substrait::Rel::GetDescriptor()
