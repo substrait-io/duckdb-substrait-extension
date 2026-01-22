@@ -966,6 +966,11 @@ unique_ptr<TableRef> SubstraitToAST::TransformRootOp(const substrait::RelRoot &s
 		}
 	}
 
+	// Reverse modifiers to get correct SQL semantic order.
+	// We unwrap outside-in (Fetch before Sort), giving us [LIMIT, ORDER BY].
+	// But SQL requires ORDER BY before LIMIT, so we reverse to [ORDER BY, LIMIT].
+	std::reverse(modifiers.begin(), modifiers.end());
+
 	// Now process the remaining relation (Project, Filter, Read, etc.)
 	unique_ptr<SelectNode> select_node;
 
