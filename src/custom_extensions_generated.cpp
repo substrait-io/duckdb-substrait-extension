@@ -162,6 +162,8 @@ void SubstraitCustomFunctions::Initialize() {
 	InsertCustomFunction("concat", {"string"}, "functions_string.yaml");
 	InsertCustomFunction("like", {"varchar", "varchar"}, "functions_string.yaml");
 	InsertCustomFunction("like", {"string", "string"}, "functions_string.yaml");
+	InsertCustomFunction("like", {"varchar", "varchar", "varchar"}, "functions_string.yaml");
+	InsertCustomFunction("like", {"string", "string", "string"}, "functions_string.yaml");
 	InsertCustomFunction("substring", {"varchar", "i32", "i32"}, "functions_string.yaml");
 	InsertCustomFunction("substring", {"string", "i32", "i32"}, "functions_string.yaml");
 	InsertCustomFunction("substring", {"fixedchar", "i32", "i32"}, "functions_string.yaml");

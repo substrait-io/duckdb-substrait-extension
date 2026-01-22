@@ -244,6 +244,21 @@ unique_ptr<ParsedExpression> SubstraitToAST::TransformScalarFunctionExpr(const s
 			throw InvalidInputException("not function requires exactly 1 argument");
 		}
 		return make_uniq<OperatorExpression>(ExpressionType::OPERATOR_NOT, std::move(children[0]));
+	} else if (function_name == "~~") {
+	// Handle 3-arg LIKE with possible NULL escape
+	if (children.size() == 3) {
+		// Check if 3rd argument is a NULL literal constant
+		auto const_expr = dynamic_cast<ConstantExpression*>(children[2].get());
+		if (const_expr && const_expr->value.IsNull()) {
+			// NULL escape: drop the 3rd argument and use 2-arg ~~
+			children.pop_back();
+		} else {
+			// Non-NULL escape: map to like_escape function
+			function_name = "like_escape";
+		}
+	}
+	return make_uniq<FunctionExpression>(function_name, std::move(children));
+	
 	} else if (function_name == "is_not_distinct_from") {
 		if (children.size() != 2) {
 			throw InvalidInputException("is_not_distinct_from function requires exactly 2 arguments");
