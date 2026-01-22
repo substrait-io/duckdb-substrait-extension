@@ -30,25 +30,15 @@ public:
 	unique_ptr<TableRef> TransformPlanToTableRef();
 
 private:
-	//! Information about Read projection mapping
-	struct ReadProjectionInfo {
-		bool has_projection = false;
-		vector<idx_t> field_mapping; // Maps output field index to base table field index
-	};
-
 	//! Transforms Substrait Plan Root to a TableRef
 	unique_ptr<TableRef> TransformRootOp(const substrait::RelRoot &sop);
 
-	//! Transform Substrait Read operation to TableRef
-	//! If filter_out is provided, any embedded filter will be extracted
-	//! If projection_info is provided, projection mapping information will be returned
+	//! Transform Substrait Read operation to TableRef (base table only)
 	unique_ptr<TableRef> TransformReadOp(const substrait::Rel &sop,
-	                                     unique_ptr<ParsedExpression> *filter_out = nullptr,
-	                                     ReadProjectionInfo *projection_info = nullptr);
+	                                     unique_ptr<ParsedExpression> *filter_out = nullptr);
 
-	//! Transform Substrait Read operation for use in joins
-	//! Wraps Read with projection in a subquery to apply the projection
-	unique_ptr<TableRef> TransformReadForJoin(const substrait::Rel &sop);
+	//! Transform Substrait Read operation with projection/filter handling via subquery wrapping
+	unique_ptr<TableRef> TransformReadWithProjection(const substrait::Rel &sop);
 
 	//! Transform Substrait Aggregate operation to TableRef
 	unique_ptr<TableRef> TransformAggregateOp(const substrait::Rel &sop);
@@ -80,10 +70,6 @@ private:
 
 	//! Transform Substrait Type to DuckDB LogicalType
 	static LogicalType SubstraitToDuckType(const substrait::Type &s_type);
-
-	//! Helper to remap field references based on Read projection
-	unique_ptr<ParsedExpression> RemapFieldReferences(unique_ptr<ParsedExpression> expr,
-	                                                    const ReadProjectionInfo &projection_info);
 
 	//! Helper to convert positional references to column references
 	unique_ptr<ParsedExpression> ConvertPositionalToColumnRef(unique_ptr<ParsedExpression> expr,

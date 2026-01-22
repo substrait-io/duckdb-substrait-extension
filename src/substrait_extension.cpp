@@ -296,11 +296,10 @@ static void ToJsonFunction(ClientContext &context, TableFunctionInput &data_p, D
 }
 
 static unique_ptr<TableRef> SubstraitBindReplace(ClientContext &context, TableFunctionBindInput &input, bool is_json) {
-	// NEW: Use SubstraitToAST for pure AST transformation (no Relations, no binding)
+	// Use SubstraitToAST for pure AST transformation (no Relations, no binding)
 	//
 	// This avoids lock re-entrancy issues by building AST nodes directly
 	// instead of creating Relations that try to bind themselves.
-
 	if (input.inputs[0].IsNull()) {
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
