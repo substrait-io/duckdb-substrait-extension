@@ -1814,6 +1814,15 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	return rel;
 }
 
+substrait::Rel *DuckDBToSubstrait::TransformCTERef(LogicalOperator &dop) {
+	auto rel = new substrait::Rel();
+	auto &cte_ref = dop.Cast<LogicalCTERef>();
+	auto index = find(cte_indices.begin(), cte_indices.end(), cte_ref.cte_index) - cte_indices.begin();
+	auto ref_rel = rel->mutable_reference();
+	ref_rel->set_subtree_ordinal(index);
+	return rel;
+}
+
 vector<LogicalType>::size_type DuckDBToSubstrait::GetColumnCount(LogicalOperator &dop) {
 	return dop.types.size();
 }
@@ -1856,6 +1865,8 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformInsertTable(dop);
 	case LogicalOperatorType::LOGICAL_DELETE:
 		return TransformDeleteTable(dop);
+	case LogicalOperatorType::LOGICAL_CTE_REF:
+		return TransformCTERef(dop);
 	default:
 		throw NotImplementedException(LogicalOperatorToString(dop.type));
 	}
@@ -1934,15 +1945,35 @@ substrait::RelRoot *DuckDBToSubstrait::TransformRootOp(LogicalOperator &dop) {
 	return root_rel;
 }
 
+LogicalOperator *DuckDBToSubstrait::TransformCTE(LogicalMaterializedCTE &dop) {
+	D_ASSERT(dop.children.size() == 2);
+	cte_indices.push_back(dop.table_index);
+	auto cte = dop.children[0].get();
+	auto root = dop.children[1].get();
+	plan.add_relations()->set_allocated_rel(TransformOp(*cte));
+	if (root->type == LogicalOperatorType::LOGICAL_MATERIALIZED_CTE) {
+		return TransformCTE(root->Cast<LogicalMaterializedCTE>());
+	}
+	return root;
+}
+
 void DuckDBToSubstrait::TransformPlan(LogicalOperator &dop) {
-	plan.add_relations()->set_allocated_root(TransformRootOp(dop));
+	if (dop.type == LogicalOperatorType::LOGICAL_MATERIALIZED_CTE) {
+		// DuckDB now handles CTEs differently...
+		// https://duckdb.org/2024/09/09/announcing-duckdb-110#automatic-cte-materialization
+		auto &lmc = dop.Cast<LogicalMaterializedCTE>();
+		auto root = TransformCTE(lmc);
+		plan.add_relations()->set_allocated_root(TransformRootOp(*root));
+	} else {
+		plan.add_relations()->set_allocated_root(TransformRootOp(dop));
+	}
 	if (strict && !errors.empty()) {
 		throw InvalidInputException("Strict Mode is set to true, and the following warnings/errors happened. \n" +
 		                            errors);
 	}
 	auto version = plan.mutable_version();
 	version->set_major_number(0);
-	version->set_minor_number(53);
+	version->set_minor_number(78);
 	version->set_patch_number(0);
 	auto *producer_name = new string();
 	*producer_name = "DuckDB";

@@ -267,8 +267,9 @@ static unique_ptr<TableRef> SubstraitBindReplace(ClientContext &context, TableFu
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
 	string serialized = input.inputs[0].GetValueUnsafe<string>();
-	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
-	auto plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	// Create a new connection to avoid deadlock with the locked context
+	auto con = Connection(*context.db);
+	auto plan = SubstraitPlanToDuckDBRel(con.context, serialized, is_json);
 	if (!plan.get()->IsReadOnly()) {
 		return nullptr;
 	}
@@ -298,8 +299,8 @@ static unique_ptr<FunctionData> SubstraitBind(ClientContext &context, TableFunct
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
 	string serialized = input.inputs[0].GetValueUnsafe<string>();
-	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
-	result->plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	// Use the connection's context to avoid deadlock with the locked context
+	result->plan = SubstraitPlanToDuckDBRel(result->conn->context, serialized, is_json);
 	for (auto &column : result->plan->Columns()) {
 		return_types.emplace_back(column.Type());
 		names.emplace_back(column.Name());

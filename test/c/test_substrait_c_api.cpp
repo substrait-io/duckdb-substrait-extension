@@ -300,7 +300,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	const string plan_json = R"plan(
 	{
 	  "version": {
-	    "minorNumber": 53,
+	    "minorNumber": 78,
 	    "producer": "substrait-go v3.5.0 darwin/arm64"
 	  },
 	  "extensionUris": [
@@ -465,7 +465,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		    }
 		  } ],
 		  "version" : {
-		    "minorNumber" : 53,
+		    "minorNumber" : 78,
 		    "producer" : "DuckDB"
 		  }
 		}
@@ -547,7 +547,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		    }
 		  } ],
 		  "version" : {
-		    "minorNumber" : 53,
+		    "minorNumber" : 78,
 		    "producer" : "DuckDB"
 		  }
 		}
@@ -629,7 +629,7 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		    }
 		  } ],
 		  "version" : {
-		    "minorNumber" : 53,
+		    "minorNumber" : 78,
 		    "producer" : "DuckDB"
 		  }
 		}
@@ -645,7 +645,7 @@ TEST_CASE("Test C Project SELECT 1", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
 
-	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":53,"producer":"DuckDB"}})";
+	auto expected_json_str = R"({"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"read":{"virtualTable":{"values":[{"fields":[{"i32":42}]}]}}},"expressions":[{"literal":{"i32":1}}]}},"names":["1"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}})";
 	auto json_str = GetSubstraitJSON(con,"SELECT 1");
 	REQUIRE(json_str == expected_json_str);
 	auto result = FromSubstraitJSON(con,json_str);

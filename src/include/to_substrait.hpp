@@ -52,6 +52,8 @@ private:
 
 	//! Transforms Relation Root
 	substrait::RelRoot *TransformRootOp(LogicalOperator &dop);
+	//! Transforms Common Table Expressions (at root level)
+	LogicalOperator *TransformCTE(LogicalMaterializedCTE &dop);
 
 	//! Methods to Transform Logical Operators to Substrait Relations
 	substrait::Rel *TransformOp(LogicalOperator &dop);
@@ -72,6 +74,7 @@ private:
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
+	substrait::Rel *TransformCTERef(LogicalOperator &dop);
 	static vector<LogicalType>::size_type GetColumnCount(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
 	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
@@ -191,6 +194,8 @@ private:
 	//! The substrait Plan
 	substrait::Plan plan;
 	ClientContext &context;
+	//! Map the CTE index to the Substrait reference
+	vector<uint32_t> cte_indices;
 	//! If we are generating a query plan on strict mode we will error if
 	//! things don't go perfectly shiny
 	bool strict;
