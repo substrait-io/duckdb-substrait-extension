@@ -363,6 +363,7 @@ std::string SubstraitExtension::Name() {
 extern "C" {
 
 DUCKDB_CPP_EXTENSION_ENTRY(substrait, loader) {
-    loader.LoadExtension<duckdb::SubstraitExtension>();
+    duckdb::SubstraitExtension ext;
+    ext.Load(loader);
 }
 }

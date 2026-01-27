@@ -853,7 +853,8 @@ substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, cons
 substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition &dcond, uint64_t left_ncol) {
 	auto expr = new substrait::Expression();
 	string join_comparision;
-	switch (dcond.comparison) {
+	auto comparison = dcond.GetComparisonType();
+	switch (comparison) {
 	case ExpressionType::COMPARE_EQUAL:
 		join_comparision = "equal";
 		break;
@@ -873,17 +874,19 @@ substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition 
 		join_comparision = "lt";
 		break;
 	default:
-		throw NotImplementedException("Unsupported join comparison: " + ExpressionTypeToOperator(dcond.comparison));
+		throw NotImplementedException("Unsupported join comparison: " + ExpressionTypeToOperator(comparison));
 	}
 	vector<::substrait::Type> args_types;
 	auto scalar_fun = expr->mutable_scalar_function();
 	auto s_arg = scalar_fun->add_arguments();
-	TransformExpr(*dcond.left, *s_arg->mutable_value());
-	args_types.emplace_back(DuckToSubstraitType(dcond.left->return_type));
+	auto &lhs = const_cast<Expression &>(dcond.GetLHS());
+	auto &rhs = const_cast<Expression &>(dcond.GetRHS());
+	TransformExpr(lhs, *s_arg->mutable_value());
+	args_types.emplace_back(DuckToSubstraitType(lhs.return_type));
 
 	s_arg = scalar_fun->add_arguments();
-	TransformExpr(*dcond.right, *s_arg->mutable_value(), left_ncol);
-	args_types.emplace_back(DuckToSubstraitType(dcond.right->return_type));
+	TransformExpr(rhs, *s_arg->mutable_value(), left_ncol);
+	args_types.emplace_back(DuckToSubstraitType(rhs.return_type));
 
 	LogicalType bool_type = LogicalType::BOOLEAN;
 	*scalar_fun->mutable_output_type() = DuckToSubstraitType(bool_type);
