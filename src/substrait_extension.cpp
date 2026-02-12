@@ -4,6 +4,7 @@
 #include "from_substrait.hpp"
 #include "to_substrait.hpp"
 
+#include "duckdb.hpp"
 #include "duckdb/execution/column_binding_resolver.hpp"
 #include "duckdb/optimizer/optimizer.hpp"
 #include "duckdb/parser/parser.hpp"
@@ -18,6 +19,7 @@
 #include "duckdb/main/client_context.hpp"
 #include "duckdb/main/config.hpp"
 #include "duckdb/main/connection.hpp"
+#include "duckdb/main/settings.hpp"
 #endif
 
 namespace duckdb {
@@ -57,7 +59,7 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		disabled_optimizers.insert(OptimizerType::COMPRESSED_MATERIALIZATION);
 		disabled_optimizers.insert(OptimizerType::MATERIALIZED_CTE);
 		// If error(varchar) gets implemented in substrait this can be removed
-		context.config.scalar_subquery_error_on_multiple_rows = false;
+		DBConfig::GetConfig(context).SetOption(ScalarSubqueryErrorOnMultipleRowsSetting::Name, false);
 		DBConfig::GetConfig(context).options.disabled_optimizers = disabled_optimizers;
 	}
 
@@ -265,8 +267,9 @@ static unique_ptr<TableRef> SubstraitBindReplace(ClientContext &context, TableFu
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
 	string serialized = input.inputs[0].GetValueUnsafe<string>();
-	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
-	auto plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	// Create a new connection to avoid deadlock with the locked context
+	auto con = Connection(*context.db);
+	auto plan = SubstraitPlanToDuckDBRel(con.context, serialized, is_json);
 	if (!plan.get()->IsReadOnly()) {
 		return nullptr;
 	}
@@ -296,8 +299,8 @@ static unique_ptr<FunctionData> SubstraitBind(ClientContext &context, TableFunct
 		throw BinderException("from_substrait cannot be called with a NULL parameter");
 	}
 	string serialized = input.inputs[0].GetValueUnsafe<string>();
-	shared_ptr<ClientContext> c_ptr(&context, do_nothing);
-	result->plan = SubstraitPlanToDuckDBRel(c_ptr, serialized, is_json);
+	// Use the connection's context to avoid deadlock with the locked context
+	result->plan = SubstraitPlanToDuckDBRel(result->conn->context, serialized, is_json);
 	for (auto &column : result->plan->Columns()) {
 		return_types.emplace_back(column.Type());
 		names.emplace_back(column.Name());
@@ -373,8 +376,8 @@ void InitializeFromSubstraitJSON(const Connection &con) {
 	catalog.CreateTableFunction(*con.context, from_sub_info_json);
 }
 
-void SubstraitExtension::Load(DuckDB &db) {
-	Connection con(db);
+static void LoadInternal(ExtensionLoader &loader) {
+	Connection con(loader.GetDatabaseInstance());
 	con.BeginTransaction();
 
 	InitializeGetSubstrait(con);
@@ -386,6 +389,10 @@ void SubstraitExtension::Load(DuckDB &db) {
 	con.Commit();
 }
 
+void SubstraitExtension::Load(ExtensionLoader &loader) {
+	LoadInternal(loader);
+}
+
 std::string SubstraitExtension::Name() {
 	return "substrait";
 }
@@ -394,12 +401,7 @@ std::string SubstraitExtension::Name() {
 
 extern "C" {
 
-DUCKDB_EXTENSION_API void substrait_init(duckdb::DatabaseInstance &db) {
-	duckdb::DuckDB db_wrapper(db);
-	db_wrapper.LoadExtension<duckdb::SubstraitExtension>();
-}
-
-DUCKDB_EXTENSION_API const char *substrait_version() {
-	return duckdb::DuckDB::LibraryVersion();
+DUCKDB_CPP_EXTENSION_ENTRY(substrait, loader) {
+	duckdb::LoadInternal(loader);
 }
 }

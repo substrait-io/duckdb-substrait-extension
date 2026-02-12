@@ -82,6 +82,7 @@ private:
 	shared_ptr<Relation> TransformSetOp(const substrait::Rel &sop,
 	                                    const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformWriteOp(const substrait::Rel &sop);
+	shared_ptr<Relation> TransformReferenceOp(const substrait::Rel &sop);
 
 	//! Transform Substrait Expressions to DuckDB Expressions
 	unique_ptr<ParsedExpression> TransformExpr(const substrait::Expression &sexpr,
@@ -106,6 +107,8 @@ private:
 	OrderByNode TransformOrder(const substrait::SortField &sordf);
 	//! DuckDB Client Context
 	shared_ptr<ClientContext> context;
+	//! CTEs
+	vector<shared_ptr<Relation>> ctes;
 	//! Substrait Plan
 	substrait::Plan plan;
 	//! Variable used to register functions

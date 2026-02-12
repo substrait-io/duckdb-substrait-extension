@@ -11,6 +11,7 @@
 #include "duckdb/common/shared_ptr.hpp"
 #include "duckdb/common/types.hpp"
 #include "duckdb/common/enums/set_operation_type.hpp"
+#include "duckdb/planner/operator/logical_cteref.hpp"
 
 #include "duckdb/parser/expression/comparison_expression.hpp"
 
@@ -333,6 +334,31 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 		return {LogicalTypeId::DOUBLE};
 	case substrait::Type::KindCase::kTimestamp:
 		return {LogicalTypeId::TIMESTAMP};
+	case substrait::Type::KindCase::kPrecisionTimestamp: {
+		auto &s_precision_timestamp = s_type.precision_timestamp();
+		auto precision = s_precision_timestamp.precision();
+		switch (precision) {
+		case 0:
+			return {LogicalTypeId::TIMESTAMP_SEC};
+		case 3:
+			return {LogicalTypeId::TIMESTAMP_MS};
+		case 6:
+			return {LogicalTypeId::TIMESTAMP};
+		case 9:
+			return {LogicalTypeId::TIMESTAMP_NS};
+		default:
+			throw NotImplementedException("Unsupported timestamp precision: %d", precision);
+		}
+	}
+	case substrait::Type::KindCase::kPrecisionTimestampTz: {
+		// DuckDB's TIMESTAMP_TZ is always microsecond precision (6)
+		auto &s_precision_timestamp_tz = s_type.precision_timestamp_tz();
+		auto precision = s_precision_timestamp_tz.precision();
+		if (precision != 6) {
+			throw NotImplementedException("DuckDB TIMESTAMP_TZ only supports microsecond precision (6), got: %d", precision);
+		}
+		return {LogicalTypeId::TIMESTAMP_TZ};
+	}
 	case substrait::Type::KindCase::kList: {
 		auto &s_list_type = s_type.list();
 		auto element_type = SubstraitToDuckType(s_list_type.type());
@@ -962,6 +988,15 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 }
 
+shared_ptr<Relation> SubstraitToDuckDB::TransformReferenceOp(const substrait::Rel &sop) {
+	auto index = sop.reference().subtree_ordinal();
+	if (index >= ctes.size()) {
+		throw InvalidInputException("Reference made to non-existent top-level relation: %d", index);
+	}
+	auto &cte = ctes[index];
+	return cte;
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
                                                     const google::protobuf::RepeatedPtrField<std::string> *names) {
 	switch (sop.rel_type_case()) {
@@ -985,6 +1020,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		return TransformSetOp(sop, names);
 	case substrait::Rel::RelTypeCase::kWrite:
 		return TransformWriteOp(sop);
+	case substrait::Rel::RelTypeCase::kReference:
+		return TransformReferenceOp(sop);
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
 		                              substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
@@ -1068,8 +1105,14 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformPlan() {
 	if (plan.relations().empty()) {
 		throw InvalidInputException("Substrait Plan does not have a SELECT statement");
 	}
-	auto d_plan = TransformRootOp(plan.relations(0).root());
-	return d_plan;
+	ctes.clear();
+	auto size = plan.relations().size();
+	// The last relation is the root.  Others could be CTEs.
+	for (auto i = 0; i < size - 1; i++) {
+		auto cte = TransformOp(plan.relations(i).rel());
+		ctes.push_back(cte);
+	}
+	return TransformRootOp(plan.relations(size - 1).root());
 }
 
 } // namespace duckdb

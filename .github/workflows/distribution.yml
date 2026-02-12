@@ -24,21 +24,21 @@ concurrency:
 jobs:
   duckdb-stable-build:
     name: Build extension binaries
-    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@v1.3.0
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@af154d26927bc8bdc9be4b3c58cde1c00d196388
     with:
-      duckdb_version: 71c5c07cdd295e9409c0505885033ae9eb6b5ddd
-      ci_tools_version: 71d20029c5314dfc34f3bbdab808b9bce03b8003
+      duckdb_version: d1dc88f950d456d72493df452dabdcd13aa413dd
+      ci_tools_version: af154d26927bc8bdc9be4b3c58cde1c00d196388
       exclude_archs: "wasm_mvp;wasm_eh;wasm_threads;windows_amd64;windows_amd64_mingw"
       extension_name: substrait
 
   duckdb-stable-deploy:
     name: Deploy extension binaries
     needs: duckdb-stable-build
-    uses: duckdb/extension-ci-tools/.github/workflows/_extension_deploy.yml@v1.3.0
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_deploy.yml@af154d26927bc8bdc9be4b3c58cde1c00d196388
     secrets: inherit
     with:
-      duckdb_version: 71c5c07cdd295e9409c0505885033ae9eb6b5ddd
-      ci_tools_version: 71d20029c5314dfc34f3bbdab808b9bce03b8003
+      duckdb_version: d1dc88f950d456d72493df452dabdcd13aa413dd
+      ci_tools_version: af154d26927bc8bdc9be4b3c58cde1c00d196388
       exclude_archs: "wasm_mvp;wasm_eh;wasm_threads;windows_amd64;windows_amd64_mingw"
       extension_name: substrait
       deploy_latest: true
