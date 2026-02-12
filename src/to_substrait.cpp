@@ -1817,7 +1817,11 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 substrait::Rel *DuckDBToSubstrait::TransformCTERef(LogicalOperator &dop) {
 	auto rel = new substrait::Rel();
 	auto &cte_ref = dop.Cast<LogicalCTERef>();
-	auto index = find(cte_indices.begin(), cte_indices.end(), cte_ref.cte_index) - cte_indices.begin();
+	auto it = find(cte_indices.begin(), cte_indices.end(), cte_ref.cte_index);
+	if (it == cte_indices.end()) {
+		throw InternalException("CTE reference index not found: " + to_string(cte_ref.cte_index));
+	}
+	auto index = it - cte_indices.begin();
 	auto ref_rel = rel->mutable_reference();
 	ref_rel->set_subtree_ordinal(index);
 	return rel;

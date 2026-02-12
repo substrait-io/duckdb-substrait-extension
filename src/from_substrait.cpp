@@ -991,7 +991,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 shared_ptr<Relation> SubstraitToDuckDB::TransformReferenceOp(const substrait::Rel &sop) {
 	auto index = sop.reference().subtree_ordinal();
 	if (index >= ctes.size()) {
-		throw InvalidInputException("Reference made to non-existent top-level relation: %d\n", index);
+		throw InvalidInputException("Reference made to non-existent top-level relation: %d", index);
 	}
 	auto &cte = ctes[index];
 	return cte;
