@@ -31,15 +31,15 @@ struct PlanRelDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PlanRelDefaultTypeInternal _PlanRel_default_instance_;
 constexpr Plan::Plan(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
-  : extension_uris_()
-  , extensions_()
+  : extensions_()
   , relations_()
   , expected_type_urls_()
   , parameter_bindings_()
   , extension_urns_()
   , type_aliases_()
   , advanced_extensions_(nullptr)
-  , version_(nullptr){}
+  , version_(nullptr)
+  , execution_behavior_(nullptr){}
 struct PlanDefaultTypeInternal {
   constexpr PlanDefaultTypeInternal()
     : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
@@ -90,9 +90,22 @@ struct DynamicParameterBindingDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DynamicParameterBindingDefaultTypeInternal _DynamicParameterBinding_default_instance_;
+constexpr ExecutionBehavior::ExecutionBehavior(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : variable_eval_mode_(0)
+{}
+struct ExecutionBehaviorDefaultTypeInternal {
+  constexpr ExecutionBehaviorDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ExecutionBehaviorDefaultTypeInternal() {}
+  union {
+    ExecutionBehavior _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ExecutionBehaviorDefaultTypeInternal _ExecutionBehavior_default_instance_;
 }  // namespace substrait
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2fplan_2eproto[5];
-static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_substrait_2fplan_2eproto = nullptr;
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_substrait_2fplan_2eproto[6];
+static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_substrait_2fplan_2eproto[1];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_substrait_2fplan_2eproto = nullptr;
 
 const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -112,7 +125,6 @@ const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, version_),
-  PROTOBUF_FIELD_OFFSET(::substrait::Plan, extension_uris_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, extension_urns_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, extensions_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, relations_),
@@ -120,6 +132,7 @@ const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, expected_type_urls_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, parameter_bindings_),
   PROTOBUF_FIELD_OFFSET(::substrait::Plan, type_aliases_),
+  PROTOBUF_FIELD_OFFSET(::substrait::Plan, execution_behavior_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::substrait::PlanVersion, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -146,6 +159,13 @@ const uint32_t TableStruct_substrait_2fplan_2eproto::offsets[] PROTOBUF_SECTION_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::substrait::DynamicParameterBinding, parameter_anchor_),
   PROTOBUF_FIELD_OFFSET(::substrait::DynamicParameterBinding, value_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::substrait::ExecutionBehavior, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::substrait::ExecutionBehavior, variable_eval_mode_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::substrait::PlanRel)},
@@ -153,6 +173,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 24, -1, -1, sizeof(::substrait::PlanVersion)},
   { 31, -1, -1, sizeof(::substrait::Version)},
   { 42, -1, -1, sizeof(::substrait::DynamicParameterBinding)},
+  { 50, -1, -1, sizeof(::substrait::ExecutionBehavior)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -161,6 +182,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_PlanVersion_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_Version_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_DynamicParameterBinding_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::substrait::_ExecutionBehavior_default_instance_),
 };
 
 const char descriptor_table_protodef_substrait_2fplan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -169,29 +191,35 @@ const char descriptor_table_protodef_substrait_2fplan_2eproto[] PROTOBUF_SECTION
   "/extensions.proto\032\024substrait/type.proto\""
   "X\n\007PlanRel\022\035\n\003rel\030\001 \001(\0132\016.substrait.RelH"
   "\000\022\"\n\004root\030\002 \001(\0132\022.substrait.RelRootH\000B\n\n"
-  "\010rel_type\"\356\003\n\004Plan\022#\n\007version\030\006 \001(\0132\022.su"
-  "bstrait.Version\022D\n\016extension_uris\030\001 \003(\0132"
+  "\010rel_type\"\350\003\n\004Plan\022#\n\007version\030\006 \001(\0132\022.su"
+  "bstrait.Version\022@\n\016extension_urns\030\010 \003(\0132"
   "(.substrait.extensions.SimpleExtensionUR"
-  "IB\002\030\001\022@\n\016extension_urns\030\010 \003(\0132(.substrai"
-  "t.extensions.SimpleExtensionURN\022D\n\nexten"
-  "sions\030\002 \003(\01320.substrait.extensions.Simpl"
-  "eExtensionDeclaration\022%\n\trelations\030\003 \003(\013"
-  "2\022.substrait.PlanRel\022D\n\023advanced_extensi"
-  "ons\030\004 \001(\0132\'.substrait.extensions.Advance"
-  "dExtension\022\032\n\022expected_type_urls\030\005 \003(\t\022>"
-  "\n\022parameter_bindings\030\007 \003(\0132\".substrait.D"
-  "ynamicParameterBinding\022*\n\014type_aliases\030\t"
-  " \003(\0132\024.substrait.TypeAlias\"2\n\013PlanVersio"
-  "n\022#\n\007version\030\006 \001(\0132\022.substrait.Version\"o"
-  "\n\007Version\022\024\n\014major_number\030\001 \001(\r\022\024\n\014minor"
-  "_number\030\002 \001(\r\022\024\n\014patch_number\030\003 \001(\r\022\020\n\010g"
-  "it_hash\030\004 \001(\t\022\020\n\010producer\030\005 \001(\t\"a\n\027Dynam"
-  "icParameterBinding\022\030\n\020parameter_anchor\030\001"
-  " \001(\r\022,\n\005value\030\002 \001(\0132\035.substrait.Expressi"
-  "on.LiteralBf\n\022io.substrait.protoP\001Z9gith"
-  "ub.com/substrait-io/substrait-protobuf/g"
-  "o/substraitpb\252\002\022Substrait.Protobufb\006prot"
-  "o3"
+  "N\022D\n\nextensions\030\002 \003(\01320.substrait.extens"
+  "ions.SimpleExtensionDeclaration\022%\n\trelat"
+  "ions\030\003 \003(\0132\022.substrait.PlanRel\022D\n\023advanc"
+  "ed_extensions\030\004 \001(\0132\'.substrait.extensio"
+  "ns.AdvancedExtension\022\032\n\022expected_type_ur"
+  "ls\030\005 \003(\t\022>\n\022parameter_bindings\030\007 \003(\0132\".s"
+  "ubstrait.DynamicParameterBinding\022*\n\014type"
+  "_aliases\030\t \003(\0132\024.substrait.TypeAlias\0228\n\022"
+  "execution_behavior\030\n \001(\0132\034.substrait.Exe"
+  "cutionBehaviorJ\004\010\001\020\002\"2\n\013PlanVersion\022#\n\007v"
+  "ersion\030\006 \001(\0132\022.substrait.Version\"o\n\007Vers"
+  "ion\022\024\n\014major_number\030\001 \001(\r\022\024\n\014minor_numbe"
+  "r\030\002 \001(\r\022\024\n\014patch_number\030\003 \001(\r\022\020\n\010git_has"
+  "h\030\004 \001(\t\022\020\n\010producer\030\005 \001(\t\"a\n\027DynamicPara"
+  "meterBinding\022\030\n\020parameter_anchor\030\001 \001(\r\022,"
+  "\n\005value\030\002 \001(\0132\035.substrait.Expression.Lit"
+  "eral\"\371\001\n\021ExecutionBehavior\022O\n\022variable_e"
+  "val_mode\030\001 \001(\01623.substrait.ExecutionBeha"
+  "vior.VariableEvaluationMode\"\222\001\n\026Variable"
+  "EvaluationMode\022(\n$VARIABLE_EVALUATION_MO"
+  "DE_UNSPECIFIED\020\000\022%\n!VARIABLE_EVALUATION_"
+  "MODE_PER_PLAN\020\001\022\'\n#VARIABLE_EVALUATION_M"
+  "ODE_PER_RECORD\020\002Bf\n\022io.substrait.protoP\001"
+  "Z9github.com/substrait-io/substrait-prot"
+  "obuf/go/substraitpb\252\002\022Substrait.Protobuf"
+  "b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_substrait_2fplan_2eproto_deps[3] = {
   &::descriptor_table_substrait_2falgebra_2eproto,
@@ -200,8 +228,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_substrait_2fplan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_substrait_2fplan_2eproto = {
-  false, false, 1082, descriptor_table_protodef_substrait_2fplan_2eproto, "substrait/plan.proto", 
-  &descriptor_table_substrait_2fplan_2eproto_once, descriptor_table_substrait_2fplan_2eproto_deps, 3, 5,
+  false, false, 1328, descriptor_table_protodef_substrait_2fplan_2eproto, "substrait/plan.proto", 
+  &descriptor_table_substrait_2fplan_2eproto_once, descriptor_table_substrait_2fplan_2eproto_deps, 3, 6,
   schemas, file_default_instances, TableStruct_substrait_2fplan_2eproto::offsets,
   file_level_metadata_substrait_2fplan_2eproto, file_level_enum_descriptors_substrait_2fplan_2eproto, file_level_service_descriptors_substrait_2fplan_2eproto,
 };
@@ -212,6 +240,29 @@ PROTOBUF_ATTRIBUTE_WEAK const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable
 // Force running AddDescriptors() at dynamic initialization time.
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY static ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptorsRunner dynamic_init_dummy_substrait_2fplan_2eproto(&descriptor_table_substrait_2fplan_2eproto);
 namespace substrait {
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ExecutionBehavior_VariableEvaluationMode_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_substrait_2fplan_2eproto);
+  return file_level_enum_descriptors_substrait_2fplan_2eproto[0];
+}
+bool ExecutionBehavior_VariableEvaluationMode_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+      return true;
+    default:
+      return false;
+  }
+}
+
+#if (__cplusplus < 201703) && (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::VARIABLE_EVALUATION_MODE_UNSPECIFIED;
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::VARIABLE_EVALUATION_MODE_PER_PLAN;
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::VARIABLE_EVALUATION_MODE_PER_RECORD;
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::VariableEvaluationMode_MIN;
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::VariableEvaluationMode_MAX;
+constexpr int ExecutionBehavior::VariableEvaluationMode_ARRAYSIZE;
+#endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
 // ===================================================================
 
@@ -539,6 +590,7 @@ class Plan::_Internal {
  public:
   static const ::substrait::Version& version(const Plan* msg);
   static const ::substrait::extensions::AdvancedExtension& advanced_extensions(const Plan* msg);
+  static const ::substrait::ExecutionBehavior& execution_behavior(const Plan* msg);
 };
 
 const ::substrait::Version&
@@ -549,8 +601,9 @@ const ::substrait::extensions::AdvancedExtension&
 Plan::_Internal::advanced_extensions(const Plan* msg) {
   return *msg->advanced_extensions_;
 }
-void Plan::clear_extension_uris() {
-  extension_uris_.Clear();
+const ::substrait::ExecutionBehavior&
+Plan::_Internal::execution_behavior(const Plan* msg) {
+  return *msg->execution_behavior_;
 }
 void Plan::clear_extension_urns() {
   extension_urns_.Clear();
@@ -570,7 +623,6 @@ void Plan::clear_type_aliases() {
 Plan::Plan(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
-  extension_uris_(arena),
   extensions_(arena),
   relations_(arena),
   expected_type_urls_(arena),
@@ -585,7 +637,6 @@ Plan::Plan(::PROTOBUF_NAMESPACE_ID::Arena* arena,
 }
 Plan::Plan(const Plan& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
-      extension_uris_(from.extension_uris_),
       extensions_(from.extensions_),
       relations_(from.relations_),
       expected_type_urls_(from.expected_type_urls_),
@@ -603,14 +654,19 @@ Plan::Plan(const Plan& from)
   } else {
     version_ = nullptr;
   }
+  if (from._internal_has_execution_behavior()) {
+    execution_behavior_ = new ::substrait::ExecutionBehavior(*from.execution_behavior_);
+  } else {
+    execution_behavior_ = nullptr;
+  }
   // @@protoc_insertion_point(copy_constructor:substrait.Plan)
 }
 
 inline void Plan::SharedCtor() {
 ::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
     reinterpret_cast<char*>(&advanced_extensions_) - reinterpret_cast<char*>(this)),
-    0, static_cast<size_t>(reinterpret_cast<char*>(&version_) -
-    reinterpret_cast<char*>(&advanced_extensions_)) + sizeof(version_));
+    0, static_cast<size_t>(reinterpret_cast<char*>(&execution_behavior_) -
+    reinterpret_cast<char*>(&advanced_extensions_)) + sizeof(execution_behavior_));
 }
 
 Plan::~Plan() {
@@ -624,6 +680,7 @@ inline void Plan::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete advanced_extensions_;
   if (this != internal_default_instance()) delete version_;
+  if (this != internal_default_instance()) delete execution_behavior_;
 }
 
 void Plan::ArenaDtor(void* object) {
@@ -642,7 +699,6 @@ void Plan::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  extension_uris_.Clear();
   extensions_.Clear();
   relations_.Clear();
   expected_type_urls_.Clear();
@@ -657,6 +713,10 @@ void Plan::Clear() {
     delete version_;
   }
   version_ = nullptr;
+  if (GetArenaForAllocation() == nullptr && execution_behavior_ != nullptr) {
+    delete execution_behavior_;
+  }
+  execution_behavior_ = nullptr;
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -666,19 +726,6 @@ const char* Plan::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inter
     uint32_t tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          ptr -= 1;
-          do {
-            ptr += 1;
-            ptr = ctx->ParseMessage(_internal_add_extension_uris(), ptr);
-            CHK_(ptr);
-            if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else
-          goto handle_unusual;
-        continue;
       // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
@@ -775,6 +822,14 @@ const char* Plan::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inter
         } else
           goto handle_unusual;
         continue;
+      // .substrait.ExecutionBehavior execution_behavior = 10;
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 82)) {
+          ptr = ctx->ParseMessage(_internal_mutable_execution_behavior(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -803,14 +858,6 @@ uint8_t* Plan::_InternalSerialize(
   // @@protoc_insertion_point(serialize_to_array_start:substrait.Plan)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
-
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_extension_uris_size()); i < n; i++) {
-    target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_extension_uris(i), target, stream);
-  }
 
   // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
   for (unsigned int i = 0,
@@ -878,6 +925,14 @@ uint8_t* Plan::_InternalSerialize(
       InternalWriteMessage(9, this->_internal_type_aliases(i), target, stream);
   }
 
+  // .substrait.ExecutionBehavior execution_behavior = 10;
+  if (this->_internal_has_execution_behavior()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        10, _Internal::execution_behavior(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -893,13 +948,6 @@ size_t Plan::ByteSizeLong() const {
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
-
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-  total_size += 1UL * this->_internal_extension_uris_size();
-  for (const auto& msg : this->extension_uris_) {
-    total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
-  }
 
   // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
   total_size += 1UL * this->_internal_extensions_size();
@@ -958,6 +1006,13 @@ size_t Plan::ByteSizeLong() const {
         *version_);
   }
 
+  // .substrait.ExecutionBehavior execution_behavior = 10;
+  if (this->_internal_has_execution_behavior()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *execution_behavior_);
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
 }
 
@@ -980,7 +1035,6 @@ void Plan::MergeFrom(const Plan& from) {
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  extension_uris_.MergeFrom(from.extension_uris_);
   extensions_.MergeFrom(from.extensions_);
   relations_.MergeFrom(from.relations_);
   expected_type_urls_.MergeFrom(from.expected_type_urls_);
@@ -992,6 +1046,9 @@ void Plan::MergeFrom(const Plan& from) {
   }
   if (from._internal_has_version()) {
     _internal_mutable_version()->::substrait::Version::MergeFrom(from._internal_version());
+  }
+  if (from._internal_has_execution_behavior()) {
+    _internal_mutable_execution_behavior()->::substrait::ExecutionBehavior::MergeFrom(from._internal_execution_behavior());
   }
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1010,7 +1067,6 @@ bool Plan::IsInitialized() const {
 void Plan::InternalSwap(Plan* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  extension_uris_.InternalSwap(&other->extension_uris_);
   extensions_.InternalSwap(&other->extensions_);
   relations_.InternalSwap(&other->relations_);
   expected_type_urls_.InternalSwap(&other->expected_type_urls_);
@@ -1018,8 +1074,8 @@ void Plan::InternalSwap(Plan* other) {
   extension_urns_.InternalSwap(&other->extension_urns_);
   type_aliases_.InternalSwap(&other->type_aliases_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(Plan, version_)
-      + sizeof(Plan::version_)
+      PROTOBUF_FIELD_OFFSET(Plan, execution_behavior_)
+      + sizeof(Plan::execution_behavior_)
       - PROTOBUF_FIELD_OFFSET(Plan, advanced_extensions_)>(
           reinterpret_cast<char*>(&advanced_extensions_),
           reinterpret_cast<char*>(&other->advanced_extensions_));
@@ -1793,6 +1849,187 @@ void DynamicParameterBinding::InternalSwap(DynamicParameterBinding* other) {
       file_level_metadata_substrait_2fplan_2eproto[4]);
 }
 
+// ===================================================================
+
+class ExecutionBehavior::_Internal {
+ public:
+};
+
+ExecutionBehavior::ExecutionBehavior(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  if (!is_message_owned) {
+    RegisterArenaDtor(arena);
+  }
+  // @@protoc_insertion_point(arena_constructor:substrait.ExecutionBehavior)
+}
+ExecutionBehavior::ExecutionBehavior(const ExecutionBehavior& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  variable_eval_mode_ = from.variable_eval_mode_;
+  // @@protoc_insertion_point(copy_constructor:substrait.ExecutionBehavior)
+}
+
+inline void ExecutionBehavior::SharedCtor() {
+variable_eval_mode_ = 0;
+}
+
+ExecutionBehavior::~ExecutionBehavior() {
+  // @@protoc_insertion_point(destructor:substrait.ExecutionBehavior)
+  if (GetArenaForAllocation() != nullptr) return;
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+inline void ExecutionBehavior::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void ExecutionBehavior::ArenaDtor(void* object) {
+  ExecutionBehavior* _this = reinterpret_cast< ExecutionBehavior* >(object);
+  (void)_this;
+}
+void ExecutionBehavior::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void ExecutionBehavior::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void ExecutionBehavior::Clear() {
+// @@protoc_insertion_point(message_clear_start:substrait.ExecutionBehavior)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  variable_eval_mode_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ExecutionBehavior::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .substrait.ExecutionBehavior.VariableEvaluationMode variable_eval_mode = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          uint64_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          _internal_set_variable_eval_mode(static_cast<::substrait::ExecutionBehavior_VariableEvaluationMode>(val));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ExecutionBehavior::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:substrait.ExecutionBehavior)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // .substrait.ExecutionBehavior.VariableEvaluationMode variable_eval_mode = 1;
+  if (this->_internal_variable_eval_mode() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      1, this->_internal_variable_eval_mode(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:substrait.ExecutionBehavior)
+  return target;
+}
+
+size_t ExecutionBehavior::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:substrait.ExecutionBehavior)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .substrait.ExecutionBehavior.VariableEvaluationMode variable_eval_mode = 1;
+  if (this->_internal_variable_eval_mode() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_variable_eval_mode());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ExecutionBehavior::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    ExecutionBehavior::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ExecutionBehavior::GetClassData() const { return &_class_data_; }
+
+void ExecutionBehavior::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<ExecutionBehavior *>(to)->MergeFrom(
+      static_cast<const ExecutionBehavior &>(from));
+}
+
+
+void ExecutionBehavior::MergeFrom(const ExecutionBehavior& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:substrait.ExecutionBehavior)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_variable_eval_mode() != 0) {
+    _internal_set_variable_eval_mode(from._internal_variable_eval_mode());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ExecutionBehavior::CopyFrom(const ExecutionBehavior& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:substrait.ExecutionBehavior)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ExecutionBehavior::IsInitialized() const {
+  return true;
+}
+
+void ExecutionBehavior::InternalSwap(ExecutionBehavior* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(variable_eval_mode_, other->variable_eval_mode_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ExecutionBehavior::GetMetadata() const {
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_substrait_2fplan_2eproto_getter, &descriptor_table_substrait_2fplan_2eproto_once,
+      file_level_metadata_substrait_2fplan_2eproto[5]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace substrait
 PROTOBUF_NAMESPACE_OPEN
@@ -1810,6 +2047,9 @@ template<> PROTOBUF_NOINLINE ::substrait::Version* Arena::CreateMaybeMessage< ::
 }
 template<> PROTOBUF_NOINLINE ::substrait::DynamicParameterBinding* Arena::CreateMaybeMessage< ::substrait::DynamicParameterBinding >(Arena* arena) {
   return Arena::CreateMessageInternal< ::substrait::DynamicParameterBinding >(arena);
+}
+template<> PROTOBUF_NOINLINE ::substrait::ExecutionBehavior* Arena::CreateMaybeMessage< ::substrait::ExecutionBehavior >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::substrait::ExecutionBehavior >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

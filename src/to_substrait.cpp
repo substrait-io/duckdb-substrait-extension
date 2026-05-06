@@ -183,7 +183,9 @@ void DuckDBToSubstrait::TransformDate(const Value &dval, substrait::Expression &
 
 void DuckDBToSubstrait::TransformTime(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
-	sval.set_time(dval.GetValue<dtime_t>().micros);
+	auto precision_time = sval.mutable_precision_time();
+	precision_time->set_precision(6); // microseconds
+	precision_time->set_value(dval.GetValue<dtime_t>().micros);
 }
 
 void DuckDBToSubstrait::TransformTimestamp(const Value &dval, substrait::Expression &sexpr) {
@@ -205,7 +207,8 @@ void DuckDBToSubstrait::TransformInterval(const Value &dval, substrait::Expressi
 	} else {
 		auto interval_day = make_uniq<substrait::Expression_Literal_IntervalDayToSecond>();
 		interval_day->set_days(dval.GetValue<interval_t>().days);
-		interval_day->set_microseconds(static_cast<int32_t>(dval.GetValue<interval_t>().micros));
+		interval_day->set_subseconds(dval.GetValue<interval_t>().micros);
+		interval_day->set_precision(6); // microseconds precision
 		sval.set_allocated_interval_day_to_second(interval_day.release());
 	}
 }
@@ -596,19 +599,17 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 		throw InternalException("Missing function name");
 	}
 	auto function = custom_functions.Get(name, args_types);
-	auto substrait_extensions = plan.mutable_extension_uris();
+	auto substrait_extensions = plan.mutable_extension_urns();
 	if (!function.IsNative()) {
-		auto extensionURI = function.GetExtensionURI();
-		auto it = extension_uri_map.find(extensionURI);
+		auto extensionURN = function.GetExtensionURI();
+		auto it = extension_uri_map.find(extensionURN);
 		if (it == extension_uri_map.end()) {
 			// We have to add this extension
-			extension_uri_map[extensionURI] = last_uri_id;
-			auto allocated_string = new string();
-			*allocated_string = extensionURI;
-			auto uri = new substrait::extensions::SimpleExtensionURI();
-			uri->set_allocated_uri(allocated_string);
-			uri->set_extension_uri_anchor(last_uri_id);
-			substrait_extensions->AddAllocated(uri);
+			extension_uri_map[extensionURN] = last_uri_id;
+			auto urn = new substrait::extensions::SimpleExtensionURN();
+			urn->set_urn(extensionURN);
+			urn->set_extension_urn_anchor(last_uri_id);
+			substrait_extensions->AddAllocated(urn);
 			last_uri_id++;
 		}
 	}
@@ -618,11 +619,11 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 		sfun->set_function_anchor(function_id);
 		sfun->set_name(function.function.GetName());
 		if (!function.IsNative()) {
-			// We only define URI if not native
-			sfun->set_extension_uri_reference(extension_uri_map[function.GetExtensionURI()]);
+			// We only define URN if not native
+			sfun->set_extension_urn_reference(extension_uri_map[function.GetExtensionURI()]);
 		} else {
 			// Function was not found in the yaml files
-			sfun->set_extension_uri_reference(0);
+			sfun->set_extension_urn_reference(0);
 			if (strict) {
 				// Produce warning message
 				std::ostringstream error;
@@ -1226,14 +1227,24 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	if (!daggr.grouping_functions.empty()) {
 		throw NotImplementedException("Grouping functions not supported yet");
 	}
-	// we only do a single grouping set for now
-	auto sgrp = saggr->add_groupings();
+	
+	// In v0.89.0, grouping expressions are stored at the AggregateRel level
+	// and groupings reference them by index
 	for (auto &dgrp : daggr.groups) {
 		if (dgrp->type != ExpressionType::BOUND_REF) {
 			// TODO push projection or push substrait to allow expressions here
 			throw NotImplementedException("No expressions in groupings yet");
 		}
-		TransformExpr(*dgrp, *sgrp->add_grouping_expressions());
+		// Add the expression to the AggregateRel's grouping_expressions array
+		auto grouping_expr = saggr->add_grouping_expressions();
+		TransformExpr(*dgrp, *grouping_expr);
+	}
+	
+	// we only do a single grouping set for now
+	auto sgrp = saggr->add_groupings();
+	// Add references to all grouping expressions (0, 1, 2, ...)
+	for (idx_t i = 0; i < daggr.groups.size(); i++) {
+		sgrp->add_expression_references(i);
 	}
 	for (auto &dmeas : daggr.expressions) {
 		auto smeas = saggr->add_measures()->mutable_measure();
@@ -1338,9 +1349,10 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 	}
 	case LogicalTypeId::TIME_TZ:
 	case LogicalTypeId::TIME: {
-		auto time_type = new substrait::Type_Time;
+		auto time_type = new substrait::Type_PrecisionTimestamp;
+		time_type->set_precision(6); // microseconds
 		time_type->set_nullability(type_nullability);
-		s_type.set_allocated_time(time_type);
+		s_type.set_allocated_precision_timestamp(time_type);
 		return s_type;
 	}
 	case LogicalTypeId::TIMESTAMP:
@@ -1532,8 +1544,8 @@ substrait::Rel *DuckDBToSubstrait::TransformDummyScan() {
 	auto virtual_table = sget->mutable_virtual_table();
 
 	// Add a dummy value to emit one row
-	auto dummy_value = virtual_table->add_values();
-	dummy_value->add_fields()->set_i32(42);
+	auto dummy_struct = virtual_table->add_values();
+	dummy_struct->add_fields()->set_i32(42);
 	return get_rel;
 }
 

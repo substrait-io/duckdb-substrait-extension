@@ -51,7 +51,7 @@ struct TableStruct_substrait_2falgebra_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[128]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[133]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -143,9 +143,15 @@ extern Expression_EnumDefaultTypeInternal _Expression_Enum_default_instance_;
 class Expression_Enum_Empty;
 struct Expression_Enum_EmptyDefaultTypeInternal;
 extern Expression_Enum_EmptyDefaultTypeInternal _Expression_Enum_Empty_default_instance_;
+class Expression_ExecutionContextVariable;
+struct Expression_ExecutionContextVariableDefaultTypeInternal;
+extern Expression_ExecutionContextVariableDefaultTypeInternal _Expression_ExecutionContextVariable_default_instance_;
 class Expression_FieldReference;
 struct Expression_FieldReferenceDefaultTypeInternal;
 extern Expression_FieldReferenceDefaultTypeInternal _Expression_FieldReference_default_instance_;
+class Expression_FieldReference_LambdaParameterReference;
+struct Expression_FieldReference_LambdaParameterReferenceDefaultTypeInternal;
+extern Expression_FieldReference_LambdaParameterReferenceDefaultTypeInternal _Expression_FieldReference_LambdaParameterReference_default_instance_;
 class Expression_FieldReference_OuterReference;
 struct Expression_FieldReference_OuterReferenceDefaultTypeInternal;
 extern Expression_FieldReference_OuterReferenceDefaultTypeInternal _Expression_FieldReference_OuterReference_default_instance_;
@@ -158,6 +164,12 @@ extern Expression_IfThenDefaultTypeInternal _Expression_IfThen_default_instance_
 class Expression_IfThen_IfClause;
 struct Expression_IfThen_IfClauseDefaultTypeInternal;
 extern Expression_IfThen_IfClauseDefaultTypeInternal _Expression_IfThen_IfClause_default_instance_;
+class Expression_Lambda;
+struct Expression_LambdaDefaultTypeInternal;
+extern Expression_LambdaDefaultTypeInternal _Expression_Lambda_default_instance_;
+class Expression_LambdaInvocation;
+struct Expression_LambdaInvocationDefaultTypeInternal;
+extern Expression_LambdaInvocationDefaultTypeInternal _Expression_LambdaInvocation_default_instance_;
 class Expression_Literal;
 struct Expression_LiteralDefaultTypeInternal;
 extern Expression_LiteralDefaultTypeInternal _Expression_Literal_default_instance_;
@@ -434,6 +446,9 @@ extern SortFieldDefaultTypeInternal _SortField_default_instance_;
 class SortRel;
 struct SortRelDefaultTypeInternal;
 extern SortRelDefaultTypeInternal _SortRel_default_instance_;
+class TopNRel;
+struct TopNRelDefaultTypeInternal;
+extern TopNRelDefaultTypeInternal _TopNRel_default_instance_;
 class UpdateRel;
 struct UpdateRelDefaultTypeInternal;
 extern UpdateRelDefaultTypeInternal _UpdateRel_default_instance_;
@@ -473,11 +488,15 @@ template<> ::substrait::Expression_EmbeddedFunction_PythonPickleFunction* Arena:
 template<> ::substrait::Expression_EmbeddedFunction_WebAssemblyFunction* Arena::CreateMaybeMessage<::substrait::Expression_EmbeddedFunction_WebAssemblyFunction>(Arena*);
 template<> ::substrait::Expression_Enum* Arena::CreateMaybeMessage<::substrait::Expression_Enum>(Arena*);
 template<> ::substrait::Expression_Enum_Empty* Arena::CreateMaybeMessage<::substrait::Expression_Enum_Empty>(Arena*);
+template<> ::substrait::Expression_ExecutionContextVariable* Arena::CreateMaybeMessage<::substrait::Expression_ExecutionContextVariable>(Arena*);
 template<> ::substrait::Expression_FieldReference* Arena::CreateMaybeMessage<::substrait::Expression_FieldReference>(Arena*);
+template<> ::substrait::Expression_FieldReference_LambdaParameterReference* Arena::CreateMaybeMessage<::substrait::Expression_FieldReference_LambdaParameterReference>(Arena*);
 template<> ::substrait::Expression_FieldReference_OuterReference* Arena::CreateMaybeMessage<::substrait::Expression_FieldReference_OuterReference>(Arena*);
 template<> ::substrait::Expression_FieldReference_RootReference* Arena::CreateMaybeMessage<::substrait::Expression_FieldReference_RootReference>(Arena*);
 template<> ::substrait::Expression_IfThen* Arena::CreateMaybeMessage<::substrait::Expression_IfThen>(Arena*);
 template<> ::substrait::Expression_IfThen_IfClause* Arena::CreateMaybeMessage<::substrait::Expression_IfThen_IfClause>(Arena*);
+template<> ::substrait::Expression_Lambda* Arena::CreateMaybeMessage<::substrait::Expression_Lambda>(Arena*);
+template<> ::substrait::Expression_LambdaInvocation* Arena::CreateMaybeMessage<::substrait::Expression_LambdaInvocation>(Arena*);
 template<> ::substrait::Expression_Literal* Arena::CreateMaybeMessage<::substrait::Expression_Literal>(Arena*);
 template<> ::substrait::Expression_Literal_Decimal* Arena::CreateMaybeMessage<::substrait::Expression_Literal_Decimal>(Arena*);
 template<> ::substrait::Expression_Literal_IntervalCompound* Arena::CreateMaybeMessage<::substrait::Expression_Literal_IntervalCompound>(Arena*);
@@ -570,6 +589,7 @@ template<> ::substrait::RelRoot* Arena::CreateMaybeMessage<::substrait::RelRoot>
 template<> ::substrait::SetRel* Arena::CreateMaybeMessage<::substrait::SetRel>(Arena*);
 template<> ::substrait::SortField* Arena::CreateMaybeMessage<::substrait::SortField>(Arena*);
 template<> ::substrait::SortRel* Arena::CreateMaybeMessage<::substrait::SortRel>(Arena*);
+template<> ::substrait::TopNRel* Arena::CreateMaybeMessage<::substrait::TopNRel>(Arena*);
 template<> ::substrait::UpdateRel* Arena::CreateMaybeMessage<::substrait::UpdateRel>(Arena*);
 template<> ::substrait::UpdateRel_TransformExpression* Arena::CreateMaybeMessage<::substrait::UpdateRel_TransformExpression>(Arena*);
 template<> ::substrait::WriteRel* Arena::CreateMaybeMessage<::substrait::WriteRel>(Arena*);
@@ -1157,6 +1177,32 @@ inline bool AggregateFunction_AggregationInvocation_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, AggregateFunction_AggregationInvocation* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<AggregateFunction_AggregationInvocation>(
     AggregateFunction_AggregationInvocation_descriptor(), name, value);
+}
+enum FetchMode : int {
+  FETCH_MODE_UNSPECIFIED = 0,
+  FETCH_MODE_ROWS_ONLY = 1,
+  FETCH_MODE_WITH_TIES = 2,
+  FetchMode_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  FetchMode_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool FetchMode_IsValid(int value);
+constexpr FetchMode FetchMode_MIN = FETCH_MODE_UNSPECIFIED;
+constexpr FetchMode FetchMode_MAX = FETCH_MODE_WITH_TIES;
+constexpr int FetchMode_ARRAYSIZE = FetchMode_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* FetchMode_descriptor();
+template<typename T>
+inline const std::string& FetchMode_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, FetchMode>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function FetchMode_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    FetchMode_descriptor(), enum_t_value);
+}
+inline bool FetchMode_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, FetchMode* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<FetchMode>(
+    FetchMode_descriptor(), name, value);
 }
 enum AggregationPhase : int {
   AGGREGATION_PHASE_UNSPECIFIED = 0,
@@ -2602,6 +2648,7 @@ class RelCommon final :
   enum : int {
     kHintFieldNumber = 3,
     kAdvancedExtensionFieldNumber = 4,
+    kRelAnchorFieldNumber = 5,
     kDirectFieldNumber = 1,
     kEmitFieldNumber = 2,
   };
@@ -2640,6 +2687,19 @@ class RelCommon final :
   void unsafe_arena_set_allocated_advanced_extension(
       ::substrait::extensions::AdvancedExtension* advanced_extension);
   ::substrait::extensions::AdvancedExtension* unsafe_arena_release_advanced_extension();
+
+  // optional uint32 rel_anchor = 5;
+  bool has_rel_anchor() const;
+  private:
+  bool _internal_has_rel_anchor() const;
+  public:
+  void clear_rel_anchor();
+  uint32_t rel_anchor() const;
+  void set_rel_anchor(uint32_t value);
+  private:
+  uint32_t _internal_rel_anchor() const;
+  void _internal_set_rel_anchor(uint32_t value);
+  public:
 
   // .substrait.RelCommon.Direct direct = 1;
   bool has_direct() const;
@@ -2691,15 +2751,17 @@ class RelCommon final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   ::substrait::RelCommon_Hint* hint_;
   ::substrait::extensions::AdvancedExtension* advanced_extension_;
+  uint32_t rel_anchor_;
   union EmitKindUnion {
     constexpr EmitKindUnion() : _constinit_{} {}
       ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
     ::substrait::RelCommon_Direct* direct_;
     ::substrait::RelCommon_Emit* emit_;
   } emit_kind_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
 
   friend struct ::TableStruct_substrait_2falgebra_2eproto;
@@ -6450,27 +6512,8 @@ class AggregateRel_Grouping final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kGroupingExpressionsFieldNumber = 1,
     kExpressionReferencesFieldNumber = 2,
   };
-  // repeated .substrait.Expression grouping_expressions = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED int grouping_expressions_size() const;
-  private:
-  int _internal_grouping_expressions_size() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_grouping_expressions();
-  PROTOBUF_DEPRECATED ::substrait::Expression* mutable_grouping_expressions(int index);
-  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
-      mutable_grouping_expressions();
-  private:
-  const ::substrait::Expression& _internal_grouping_expressions(int index) const;
-  ::substrait::Expression* _internal_add_grouping_expressions();
-  public:
-  PROTOBUF_DEPRECATED const ::substrait::Expression& grouping_expressions(int index) const;
-  PROTOBUF_DEPRECATED ::substrait::Expression* add_grouping_expressions();
-  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
-      grouping_expressions() const;
-
   // repeated uint32 expression_references = 2;
   int expression_references_size() const;
   private:
@@ -6500,7 +6543,6 @@ class AggregateRel_Grouping final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression > grouping_expressions_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedField< uint32_t > expression_references_;
   mutable std::atomic<int> _expression_references_cached_byte_size_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -10586,6 +10628,272 @@ class ExpandRel final :
 };
 // -------------------------------------------------------------------
 
+class TopNRel final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.TopNRel) */ {
+ public:
+  inline TopNRel() : TopNRel(nullptr) {}
+  ~TopNRel() override;
+  explicit constexpr TopNRel(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  TopNRel(const TopNRel& from);
+  TopNRel(TopNRel&& from) noexcept
+    : TopNRel() {
+    *this = ::std::move(from);
+  }
+
+  inline TopNRel& operator=(const TopNRel& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TopNRel& operator=(TopNRel&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const TopNRel& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const TopNRel* internal_default_instance() {
+    return reinterpret_cast<const TopNRel*>(
+               &_TopNRel_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    46;
+
+  friend void swap(TopNRel& a, TopNRel& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(TopNRel* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TopNRel* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  TopNRel* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<TopNRel>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const TopNRel& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const TopNRel& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(TopNRel* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.TopNRel";
+  }
+  protected:
+  explicit TopNRel(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kSortsFieldNumber = 3,
+    kCommonFieldNumber = 1,
+    kInputFieldNumber = 2,
+    kOffsetFieldNumber = 4,
+    kCountFieldNumber = 5,
+    kAdvancedExtensionFieldNumber = 7,
+    kModeFieldNumber = 6,
+  };
+  // repeated .substrait.SortField sorts = 3;
+  int sorts_size() const;
+  private:
+  int _internal_sorts_size() const;
+  public:
+  void clear_sorts();
+  ::substrait::SortField* mutable_sorts(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::SortField >*
+      mutable_sorts();
+  private:
+  const ::substrait::SortField& _internal_sorts(int index) const;
+  ::substrait::SortField* _internal_add_sorts();
+  public:
+  const ::substrait::SortField& sorts(int index) const;
+  ::substrait::SortField* add_sorts();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::SortField >&
+      sorts() const;
+
+  // .substrait.RelCommon common = 1;
+  bool has_common() const;
+  private:
+  bool _internal_has_common() const;
+  public:
+  void clear_common();
+  const ::substrait::RelCommon& common() const;
+  PROTOBUF_NODISCARD ::substrait::RelCommon* release_common();
+  ::substrait::RelCommon* mutable_common();
+  void set_allocated_common(::substrait::RelCommon* common);
+  private:
+  const ::substrait::RelCommon& _internal_common() const;
+  ::substrait::RelCommon* _internal_mutable_common();
+  public:
+  void unsafe_arena_set_allocated_common(
+      ::substrait::RelCommon* common);
+  ::substrait::RelCommon* unsafe_arena_release_common();
+
+  // .substrait.Rel input = 2;
+  bool has_input() const;
+  private:
+  bool _internal_has_input() const;
+  public:
+  void clear_input();
+  const ::substrait::Rel& input() const;
+  PROTOBUF_NODISCARD ::substrait::Rel* release_input();
+  ::substrait::Rel* mutable_input();
+  void set_allocated_input(::substrait::Rel* input);
+  private:
+  const ::substrait::Rel& _internal_input() const;
+  ::substrait::Rel* _internal_mutable_input();
+  public:
+  void unsafe_arena_set_allocated_input(
+      ::substrait::Rel* input);
+  ::substrait::Rel* unsafe_arena_release_input();
+
+  // .substrait.Expression offset = 4;
+  bool has_offset() const;
+  private:
+  bool _internal_has_offset() const;
+  public:
+  void clear_offset();
+  const ::substrait::Expression& offset() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_offset();
+  ::substrait::Expression* mutable_offset();
+  void set_allocated_offset(::substrait::Expression* offset);
+  private:
+  const ::substrait::Expression& _internal_offset() const;
+  ::substrait::Expression* _internal_mutable_offset();
+  public:
+  void unsafe_arena_set_allocated_offset(
+      ::substrait::Expression* offset);
+  ::substrait::Expression* unsafe_arena_release_offset();
+
+  // .substrait.Expression count = 5;
+  bool has_count() const;
+  private:
+  bool _internal_has_count() const;
+  public:
+  void clear_count();
+  const ::substrait::Expression& count() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_count();
+  ::substrait::Expression* mutable_count();
+  void set_allocated_count(::substrait::Expression* count);
+  private:
+  const ::substrait::Expression& _internal_count() const;
+  ::substrait::Expression* _internal_mutable_count();
+  public:
+  void unsafe_arena_set_allocated_count(
+      ::substrait::Expression* count);
+  ::substrait::Expression* unsafe_arena_release_count();
+
+  // .substrait.extensions.AdvancedExtension advanced_extension = 7;
+  bool has_advanced_extension() const;
+  private:
+  bool _internal_has_advanced_extension() const;
+  public:
+  void clear_advanced_extension();
+  const ::substrait::extensions::AdvancedExtension& advanced_extension() const;
+  PROTOBUF_NODISCARD ::substrait::extensions::AdvancedExtension* release_advanced_extension();
+  ::substrait::extensions::AdvancedExtension* mutable_advanced_extension();
+  void set_allocated_advanced_extension(::substrait::extensions::AdvancedExtension* advanced_extension);
+  private:
+  const ::substrait::extensions::AdvancedExtension& _internal_advanced_extension() const;
+  ::substrait::extensions::AdvancedExtension* _internal_mutable_advanced_extension();
+  public:
+  void unsafe_arena_set_allocated_advanced_extension(
+      ::substrait::extensions::AdvancedExtension* advanced_extension);
+  ::substrait::extensions::AdvancedExtension* unsafe_arena_release_advanced_extension();
+
+  // .substrait.FetchMode mode = 6;
+  void clear_mode();
+  ::substrait::FetchMode mode() const;
+  void set_mode(::substrait::FetchMode value);
+  private:
+  ::substrait::FetchMode _internal_mode() const;
+  void _internal_set_mode(::substrait::FetchMode value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.TopNRel)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::SortField > sorts_;
+  ::substrait::RelCommon* common_;
+  ::substrait::Rel* input_;
+  ::substrait::Expression* offset_;
+  ::substrait::Expression* count_;
+  ::substrait::extensions::AdvancedExtension* advanced_extension_;
+  int mode_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class RelRoot final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.RelRoot) */ {
  public:
@@ -10634,7 +10942,7 @@ class RelRoot final :
                &_RelRoot_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    47;
 
   friend void swap(RelRoot& a, RelRoot& b) {
     a.Swap(&b);
@@ -10833,6 +11141,7 @@ class Rel final :
     kWindow = 17,
     kExchange = 15,
     kExpand = 16,
+    kTopN = 23,
     REL_TYPE_NOT_SET = 0,
   };
 
@@ -10841,7 +11150,7 @@ class Rel final :
                &_Rel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    48;
 
   friend void swap(Rel& a, Rel& b) {
     a.Swap(&b);
@@ -10937,6 +11246,7 @@ class Rel final :
     kWindowFieldNumber = 17,
     kExchangeFieldNumber = 15,
     kExpandFieldNumber = 16,
+    kTopNFieldNumber = 23,
   };
   // .substrait.ReadRel read = 1;
   bool has_read() const;
@@ -11334,6 +11644,24 @@ class Rel final :
       ::substrait::ExpandRel* expand);
   ::substrait::ExpandRel* unsafe_arena_release_expand();
 
+  // .substrait.TopNRel top_n = 23;
+  bool has_top_n() const;
+  private:
+  bool _internal_has_top_n() const;
+  public:
+  void clear_top_n();
+  const ::substrait::TopNRel& top_n() const;
+  PROTOBUF_NODISCARD ::substrait::TopNRel* release_top_n();
+  ::substrait::TopNRel* mutable_top_n();
+  void set_allocated_top_n(::substrait::TopNRel* top_n);
+  private:
+  const ::substrait::TopNRel& _internal_top_n() const;
+  ::substrait::TopNRel* _internal_mutable_top_n();
+  public:
+  void unsafe_arena_set_allocated_top_n(
+      ::substrait::TopNRel* top_n);
+  ::substrait::TopNRel* unsafe_arena_release_top_n();
+
   void clear_rel_type();
   RelTypeCase rel_type_case() const;
   // @@protoc_insertion_point(class_scope:substrait.Rel)
@@ -11361,6 +11689,7 @@ class Rel final :
   void set_has_window();
   void set_has_exchange();
   void set_has_expand();
+  void set_has_top_n();
 
   inline bool has_rel_type() const;
   inline void clear_has_rel_type();
@@ -11393,6 +11722,7 @@ class Rel final :
     ::substrait::ConsistentPartitionWindowRel* window_;
     ::substrait::ExchangeRel* exchange_;
     ::substrait::ExpandRel* expand_;
+    ::substrait::TopNRel* top_n_;
   } rel_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -11449,7 +11779,7 @@ class NamedObjectWrite final :
                &_NamedObjectWrite_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    49;
 
   friend void swap(NamedObjectWrite& a, NamedObjectWrite& b) {
     a.Swap(&b);
@@ -11630,7 +11960,7 @@ class ExtensionObject final :
                &_ExtensionObject_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    50;
 
   friend void swap(ExtensionObject& a, ExtensionObject& b) {
     a.Swap(&b);
@@ -11791,7 +12121,7 @@ class DdlRel final :
                &_DdlRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    51;
 
   friend void swap(DdlRel& a, DdlRel& b) {
     a.Swap(&b);
@@ -12177,7 +12507,7 @@ class WriteRel final :
                &_WriteRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    52;
 
   friend void swap(WriteRel& a, WriteRel& b) {
     a.Swap(&b);
@@ -12582,7 +12912,7 @@ class UpdateRel_TransformExpression final :
                &_UpdateRel_TransformExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    53;
 
   friend void swap(UpdateRel_TransformExpression& a, UpdateRel_TransformExpression& b) {
     a.Swap(&b);
@@ -12753,7 +13083,7 @@ class UpdateRel final :
                &_UpdateRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    54;
 
   friend void swap(UpdateRel& a, UpdateRel& b) {
     a.Swap(&b);
@@ -13002,7 +13332,7 @@ class NamedTable final :
                &_NamedTable_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    55;
 
   friend void swap(NamedTable& a, NamedTable& b) {
     a.Swap(&b);
@@ -13189,7 +13519,7 @@ class ComparisonJoinKey_ComparisonType final :
                &_ComparisonJoinKey_ComparisonType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    56;
 
   friend void swap(ComparisonJoinKey_ComparisonType& a, ComparisonJoinKey_ComparisonType& b) {
     a.Swap(&b);
@@ -13367,7 +13697,7 @@ class ComparisonJoinKey final :
                &_ComparisonJoinKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    57;
 
   friend void swap(ComparisonJoinKey& a, ComparisonJoinKey& b) {
     a.Swap(&b);
@@ -13598,7 +13928,7 @@ class HashJoinRel final :
                &_HashJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    58;
 
   friend void swap(HashJoinRel& a, HashJoinRel& b) {
     a.Swap(&b);
@@ -13999,7 +14329,7 @@ class MergeJoinRel final :
                &_MergeJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    59;
 
   friend void swap(MergeJoinRel& a, MergeJoinRel& b) {
     a.Swap(&b);
@@ -14357,7 +14687,7 @@ class NestedLoopJoinRel final :
                &_NestedLoopJoinRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    60;
 
   friend void swap(NestedLoopJoinRel& a, NestedLoopJoinRel& b) {
     a.Swap(&b);
@@ -14662,7 +14992,7 @@ class FunctionArgument final :
                &_FunctionArgument_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    61;
 
   friend void swap(FunctionArgument& a, FunctionArgument& b) {
     a.Swap(&b);
@@ -14871,7 +15201,7 @@ class FunctionOption final :
                &_FunctionOption_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    62;
 
   friend void swap(FunctionOption& a, FunctionOption& b) {
     a.Swap(&b);
@@ -15047,7 +15377,7 @@ class Expression_Enum_Empty final :
                &_Expression_Enum_Empty_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    63;
 
   friend void swap(Expression_Enum_Empty& a, Expression_Enum_Empty& b) {
     a.Swap(&b);
@@ -15172,7 +15502,7 @@ class Expression_Enum final :
                &_Expression_Enum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    64;
 
   friend void swap(Expression_Enum& a, Expression_Enum& b) {
     a.Swap(&b);
@@ -15362,7 +15692,7 @@ class Expression_Literal_VarChar final :
                &_Expression_Literal_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    65;
 
   friend void swap(Expression_Literal_VarChar& a, Expression_Literal_VarChar& b) {
     a.Swap(&b);
@@ -15524,7 +15854,7 @@ class Expression_Literal_Decimal final :
                &_Expression_Literal_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    66;
 
   friend void swap(Expression_Literal_Decimal& a, Expression_Literal_Decimal& b) {
     a.Swap(&b);
@@ -15697,7 +16027,7 @@ class Expression_Literal_PrecisionTime final :
                &_Expression_Literal_PrecisionTime_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    67;
 
   friend void swap(Expression_Literal_PrecisionTime& a, Expression_Literal_PrecisionTime& b) {
     a.Swap(&b);
@@ -15854,7 +16184,7 @@ class Expression_Literal_PrecisionTimestamp final :
                &_Expression_Literal_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    68;
 
   friend void swap(Expression_Literal_PrecisionTimestamp& a, Expression_Literal_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -16011,7 +16341,7 @@ class Expression_Literal_Map_KeyValue final :
                &_Expression_Literal_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    69;
 
   friend void swap(Expression_Literal_Map_KeyValue& a, Expression_Literal_Map_KeyValue& b) {
     a.Swap(&b);
@@ -16186,7 +16516,7 @@ class Expression_Literal_Map final :
                &_Expression_Literal_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    70;
 
   friend void swap(Expression_Literal_Map& a, Expression_Literal_Map& b) {
     a.Swap(&b);
@@ -16343,7 +16673,7 @@ class Expression_Literal_IntervalYearToMonth final :
                &_Expression_Literal_IntervalYearToMonth_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    71;
 
   friend void swap(Expression_Literal_IntervalYearToMonth& a, Expression_Literal_IntervalYearToMonth& b) {
     a.Swap(&b);
@@ -16506,7 +16836,7 @@ class Expression_Literal_IntervalDayToSecond final :
                &_Expression_Literal_IntervalDayToSecond_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    72;
 
   friend void swap(Expression_Literal_IntervalDayToSecond& a, Expression_Literal_IntervalDayToSecond& b) {
     a.Swap(&b);
@@ -16717,7 +17047,7 @@ class Expression_Literal_IntervalCompound final :
                &_Expression_Literal_IntervalCompound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    73;
 
   friend void swap(Expression_Literal_IntervalCompound& a, Expression_Literal_IntervalCompound& b) {
     a.Swap(&b);
@@ -16892,7 +17222,7 @@ class Expression_Literal_Struct final :
                &_Expression_Literal_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    74;
 
   friend void swap(Expression_Literal_Struct& a, Expression_Literal_Struct& b) {
     a.Swap(&b);
@@ -17047,7 +17377,7 @@ class Expression_Literal_List final :
                &_Expression_Literal_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    75;
 
   friend void swap(Expression_Literal_List& a, Expression_Literal_List& b) {
     a.Swap(&b);
@@ -17214,7 +17544,7 @@ class Expression_Literal_UserDefined final :
                &_Expression_Literal_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    76;
 
   friend void swap(Expression_Literal_UserDefined& a, Expression_Literal_UserDefined& b) {
     a.Swap(&b);
@@ -17468,9 +17798,7 @@ class Expression_Literal final :
     kFp64 = 11,
     kString = 12,
     kBinary = 13,
-    kTimestamp = 14,
     kDate = 16,
-    kTime = 17,
     kIntervalYearToMonth = 19,
     kIntervalDayToSecond = 20,
     kIntervalCompound = 36,
@@ -17483,7 +17811,6 @@ class Expression_Literal final :
     kPrecisionTimestampTz = 35,
     kStruct = 25,
     kMap = 26,
-    kTimestampTz = 27,
     kUuid = 28,
     kNull = 29,
     kList = 30,
@@ -17498,7 +17825,7 @@ class Expression_Literal final :
                &_Expression_Literal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    77;
 
   friend void swap(Expression_Literal& a, Expression_Literal& b) {
     a.Swap(&b);
@@ -17595,9 +17922,7 @@ class Expression_Literal final :
     kFp64FieldNumber = 11,
     kStringFieldNumber = 12,
     kBinaryFieldNumber = 13,
-    kTimestampFieldNumber = 14,
     kDateFieldNumber = 16,
-    kTimeFieldNumber = 17,
     kIntervalYearToMonthFieldNumber = 19,
     kIntervalDayToSecondFieldNumber = 20,
     kIntervalCompoundFieldNumber = 36,
@@ -17610,7 +17935,6 @@ class Expression_Literal final :
     kPrecisionTimestampTzFieldNumber = 35,
     kStructFieldNumber = 25,
     kMapFieldNumber = 26,
-    kTimestampTzFieldNumber = 27,
     kUuidFieldNumber = 28,
     kNullFieldNumber = 29,
     kListFieldNumber = 30,
@@ -17763,19 +18087,6 @@ class Expression_Literal final :
   std::string* _internal_mutable_binary();
   public:
 
-  // int64 timestamp = 14 [deprecated = true];
-  PROTOBUF_DEPRECATED bool has_timestamp() const;
-  private:
-  bool _internal_has_timestamp() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_timestamp();
-  PROTOBUF_DEPRECATED int64_t timestamp() const;
-  PROTOBUF_DEPRECATED void set_timestamp(int64_t value);
-  private:
-  int64_t _internal_timestamp() const;
-  void _internal_set_timestamp(int64_t value);
-  public:
-
   // int32 date = 16;
   bool has_date() const;
   private:
@@ -17787,19 +18098,6 @@ class Expression_Literal final :
   private:
   int32_t _internal_date() const;
   void _internal_set_date(int32_t value);
-  public:
-
-  // int64 time = 17;
-  bool has_time() const;
-  private:
-  bool _internal_has_time() const;
-  public:
-  void clear_time();
-  int64_t time() const;
-  void set_time(int64_t value);
-  private:
-  int64_t _internal_time() const;
-  void _internal_set_time(int64_t value);
   public:
 
   // .substrait.Expression.Literal.IntervalYearToMonth interval_year_to_month = 19;
@@ -18018,19 +18316,6 @@ class Expression_Literal final :
       ::substrait::Expression_Literal_Map* map);
   ::substrait::Expression_Literal_Map* unsafe_arena_release_map();
 
-  // int64 timestamp_tz = 27 [deprecated = true];
-  PROTOBUF_DEPRECATED bool has_timestamp_tz() const;
-  private:
-  bool _internal_has_timestamp_tz() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_timestamp_tz();
-  PROTOBUF_DEPRECATED int64_t timestamp_tz() const;
-  PROTOBUF_DEPRECATED void set_timestamp_tz(int64_t value);
-  private:
-  int64_t _internal_timestamp_tz() const;
-  void _internal_set_timestamp_tz(int64_t value);
-  public:
-
   // bytes uuid = 28;
   bool has_uuid() const;
   private:
@@ -18153,9 +18438,7 @@ class Expression_Literal final :
   void set_has_fp64();
   void set_has_string();
   void set_has_binary();
-  void set_has_timestamp();
   void set_has_date();
-  void set_has_time();
   void set_has_interval_year_to_month();
   void set_has_interval_day_to_second();
   void set_has_interval_compound();
@@ -18168,7 +18451,6 @@ class Expression_Literal final :
   void set_has_precision_timestamp_tz();
   void set_has_struct_();
   void set_has_map();
-  void set_has_timestamp_tz();
   void set_has_uuid();
   void set_has_null();
   void set_has_list();
@@ -18196,9 +18478,7 @@ class Expression_Literal final :
     double fp64_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr string_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr binary_;
-    int64_t timestamp_;
     int32_t date_;
-    int64_t time_;
     ::substrait::Expression_Literal_IntervalYearToMonth* interval_year_to_month_;
     ::substrait::Expression_Literal_IntervalDayToSecond* interval_day_to_second_;
     ::substrait::Expression_Literal_IntervalCompound* interval_compound_;
@@ -18211,7 +18491,6 @@ class Expression_Literal final :
     ::substrait::Expression_Literal_PrecisionTimestamp* precision_timestamp_tz_;
     ::substrait::Expression_Literal_Struct* struct__;
     ::substrait::Expression_Literal_Map* map_;
-    int64_t timestamp_tz_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr uuid_;
     ::substrait::Type* null_;
     ::substrait::Expression_Literal_List* list_;
@@ -18274,7 +18553,7 @@ class Expression_Nested_Map_KeyValue final :
                &_Expression_Nested_Map_KeyValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    78;
 
   friend void swap(Expression_Nested_Map_KeyValue& a, Expression_Nested_Map_KeyValue& b) {
     a.Swap(&b);
@@ -18449,7 +18728,7 @@ class Expression_Nested_Map final :
                &_Expression_Nested_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    79;
 
   friend void swap(Expression_Nested_Map& a, Expression_Nested_Map& b) {
     a.Swap(&b);
@@ -18606,7 +18885,7 @@ class Expression_Nested_Struct final :
                &_Expression_Nested_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    80;
 
   friend void swap(Expression_Nested_Struct& a, Expression_Nested_Struct& b) {
     a.Swap(&b);
@@ -18761,7 +19040,7 @@ class Expression_Nested_List final :
                &_Expression_Nested_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    81;
 
   friend void swap(Expression_Nested_List& a, Expression_Nested_List& b) {
     a.Swap(&b);
@@ -18923,7 +19202,7 @@ class Expression_Nested final :
                &_Expression_Nested_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    82;
 
   friend void swap(Expression_Nested& a, Expression_Nested& b) {
     a.Swap(&b);
@@ -19110,6 +19389,356 @@ class Expression_Nested final :
 };
 // -------------------------------------------------------------------
 
+class Expression_Lambda final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.Lambda) */ {
+ public:
+  inline Expression_Lambda() : Expression_Lambda(nullptr) {}
+  ~Expression_Lambda() override;
+  explicit constexpr Expression_Lambda(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Expression_Lambda(const Expression_Lambda& from);
+  Expression_Lambda(Expression_Lambda&& from) noexcept
+    : Expression_Lambda() {
+    *this = ::std::move(from);
+  }
+
+  inline Expression_Lambda& operator=(const Expression_Lambda& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Expression_Lambda& operator=(Expression_Lambda&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Expression_Lambda& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Expression_Lambda* internal_default_instance() {
+    return reinterpret_cast<const Expression_Lambda*>(
+               &_Expression_Lambda_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    83;
+
+  friend void swap(Expression_Lambda& a, Expression_Lambda& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Expression_Lambda* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Expression_Lambda* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Expression_Lambda* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Expression_Lambda>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Expression_Lambda& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Expression_Lambda& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Expression_Lambda* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Expression.Lambda";
+  }
+  protected:
+  explicit Expression_Lambda(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kParametersFieldNumber = 1,
+    kBodyFieldNumber = 2,
+  };
+  // .substrait.Type.Struct parameters = 1;
+  bool has_parameters() const;
+  private:
+  bool _internal_has_parameters() const;
+  public:
+  void clear_parameters();
+  const ::substrait::Type_Struct& parameters() const;
+  PROTOBUF_NODISCARD ::substrait::Type_Struct* release_parameters();
+  ::substrait::Type_Struct* mutable_parameters();
+  void set_allocated_parameters(::substrait::Type_Struct* parameters);
+  private:
+  const ::substrait::Type_Struct& _internal_parameters() const;
+  ::substrait::Type_Struct* _internal_mutable_parameters();
+  public:
+  void unsafe_arena_set_allocated_parameters(
+      ::substrait::Type_Struct* parameters);
+  ::substrait::Type_Struct* unsafe_arena_release_parameters();
+
+  // .substrait.Expression body = 2;
+  bool has_body() const;
+  private:
+  bool _internal_has_body() const;
+  public:
+  void clear_body();
+  const ::substrait::Expression& body() const;
+  PROTOBUF_NODISCARD ::substrait::Expression* release_body();
+  ::substrait::Expression* mutable_body();
+  void set_allocated_body(::substrait::Expression* body);
+  private:
+  const ::substrait::Expression& _internal_body() const;
+  ::substrait::Expression* _internal_mutable_body();
+  public:
+  void unsafe_arena_set_allocated_body(
+      ::substrait::Expression* body);
+  ::substrait::Expression* unsafe_arena_release_body();
+
+  // @@protoc_insertion_point(class_scope:substrait.Expression.Lambda)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::Type_Struct* parameters_;
+  ::substrait::Expression* body_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Expression_LambdaInvocation final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.LambdaInvocation) */ {
+ public:
+  inline Expression_LambdaInvocation() : Expression_LambdaInvocation(nullptr) {}
+  ~Expression_LambdaInvocation() override;
+  explicit constexpr Expression_LambdaInvocation(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Expression_LambdaInvocation(const Expression_LambdaInvocation& from);
+  Expression_LambdaInvocation(Expression_LambdaInvocation&& from) noexcept
+    : Expression_LambdaInvocation() {
+    *this = ::std::move(from);
+  }
+
+  inline Expression_LambdaInvocation& operator=(const Expression_LambdaInvocation& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Expression_LambdaInvocation& operator=(Expression_LambdaInvocation&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Expression_LambdaInvocation& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Expression_LambdaInvocation* internal_default_instance() {
+    return reinterpret_cast<const Expression_LambdaInvocation*>(
+               &_Expression_LambdaInvocation_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    84;
+
+  friend void swap(Expression_LambdaInvocation& a, Expression_LambdaInvocation& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Expression_LambdaInvocation* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Expression_LambdaInvocation* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Expression_LambdaInvocation* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Expression_LambdaInvocation>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Expression_LambdaInvocation& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Expression_LambdaInvocation& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Expression_LambdaInvocation* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Expression.LambdaInvocation";
+  }
+  protected:
+  explicit Expression_LambdaInvocation(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kLambdaFieldNumber = 1,
+    kArgumentsFieldNumber = 2,
+  };
+  // .substrait.Expression.Lambda lambda = 1;
+  bool has_lambda() const;
+  private:
+  bool _internal_has_lambda() const;
+  public:
+  void clear_lambda();
+  const ::substrait::Expression_Lambda& lambda() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Lambda* release_lambda();
+  ::substrait::Expression_Lambda* mutable_lambda();
+  void set_allocated_lambda(::substrait::Expression_Lambda* lambda);
+  private:
+  const ::substrait::Expression_Lambda& _internal_lambda() const;
+  ::substrait::Expression_Lambda* _internal_mutable_lambda();
+  public:
+  void unsafe_arena_set_allocated_lambda(
+      ::substrait::Expression_Lambda* lambda);
+  ::substrait::Expression_Lambda* unsafe_arena_release_lambda();
+
+  // .substrait.Expression.Nested.Struct arguments = 2;
+  bool has_arguments() const;
+  private:
+  bool _internal_has_arguments() const;
+  public:
+  void clear_arguments();
+  const ::substrait::Expression_Nested_Struct& arguments() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Nested_Struct* release_arguments();
+  ::substrait::Expression_Nested_Struct* mutable_arguments();
+  void set_allocated_arguments(::substrait::Expression_Nested_Struct* arguments);
+  private:
+  const ::substrait::Expression_Nested_Struct& _internal_arguments() const;
+  ::substrait::Expression_Nested_Struct* _internal_mutable_arguments();
+  public:
+  void unsafe_arena_set_allocated_arguments(
+      ::substrait::Expression_Nested_Struct* arguments);
+  ::substrait::Expression_Nested_Struct* unsafe_arena_release_arguments();
+
+  // @@protoc_insertion_point(class_scope:substrait.Expression.LambdaInvocation)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::substrait::Expression_Lambda* lambda_;
+  ::substrait::Expression_Nested_Struct* arguments_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Expression_ScalarFunction final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.ScalarFunction) */ {
  public:
@@ -19158,7 +19787,7 @@ class Expression_ScalarFunction final :
                &_Expression_ScalarFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    85;
 
   friend void swap(Expression_ScalarFunction& a, Expression_ScalarFunction& b) {
     a.Swap(&b);
@@ -19384,7 +20013,7 @@ class Expression_WindowFunction_Bound_Preceding final :
                &_Expression_WindowFunction_Bound_Preceding_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    86;
 
   friend void swap(Expression_WindowFunction_Bound_Preceding& a, Expression_WindowFunction_Bound_Preceding& b) {
     a.Swap(&b);
@@ -19530,7 +20159,7 @@ class Expression_WindowFunction_Bound_Following final :
                &_Expression_WindowFunction_Bound_Following_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    87;
 
   friend void swap(Expression_WindowFunction_Bound_Following& a, Expression_WindowFunction_Bound_Following& b) {
     a.Swap(&b);
@@ -19675,7 +20304,7 @@ class Expression_WindowFunction_Bound_CurrentRow final :
                &_Expression_WindowFunction_Bound_CurrentRow_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    88;
 
   friend void swap(Expression_WindowFunction_Bound_CurrentRow& a, Expression_WindowFunction_Bound_CurrentRow& b) {
     a.Swap(&b);
@@ -19793,7 +20422,7 @@ class Expression_WindowFunction_Bound_Unbounded final :
                &_Expression_WindowFunction_Bound_Unbounded_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    89;
 
   friend void swap(Expression_WindowFunction_Bound_Unbounded& a, Expression_WindowFunction_Bound_Unbounded& b) {
     a.Swap(&b);
@@ -19920,7 +20549,7 @@ class Expression_WindowFunction_Bound final :
                &_Expression_WindowFunction_Bound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    90;
 
   friend void swap(Expression_WindowFunction_Bound& a, Expression_WindowFunction_Bound& b) {
     a.Swap(&b);
@@ -20155,7 +20784,7 @@ class Expression_WindowFunction final :
                &_Expression_WindowFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    91;
 
   friend void swap(Expression_WindowFunction& a, Expression_WindowFunction& b) {
     a.Swap(&b);
@@ -20528,7 +21157,7 @@ class Expression_IfThen_IfClause final :
                &_Expression_IfThen_IfClause_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    92;
 
   friend void swap(Expression_IfThen_IfClause& a, Expression_IfThen_IfClause& b) {
     a.Swap(&b);
@@ -20703,7 +21332,7 @@ class Expression_IfThen final :
                &_Expression_IfThen_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    93;
 
   friend void swap(Expression_IfThen& a, Expression_IfThen& b) {
     a.Swap(&b);
@@ -20880,7 +21509,7 @@ class Expression_Cast final :
                &_Expression_Cast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    94;
 
   friend void swap(Expression_Cast& a, Expression_Cast& b) {
     a.Swap(&b);
@@ -21098,7 +21727,7 @@ class Expression_SwitchExpression_IfValue final :
                &_Expression_SwitchExpression_IfValue_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    95;
 
   friend void swap(Expression_SwitchExpression_IfValue& a, Expression_SwitchExpression_IfValue& b) {
     a.Swap(&b);
@@ -21273,7 +21902,7 @@ class Expression_SwitchExpression final :
                &_Expression_SwitchExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    96;
 
   friend void swap(Expression_SwitchExpression& a, Expression_SwitchExpression& b) {
     a.Swap(&b);
@@ -21470,7 +22099,7 @@ class Expression_SingularOrList final :
                &_Expression_SingularOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    97;
 
   friend void swap(Expression_SingularOrList& a, Expression_SingularOrList& b) {
     a.Swap(&b);
@@ -21645,7 +22274,7 @@ class Expression_MultiOrList_Record final :
                &_Expression_MultiOrList_Record_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    98;
 
   friend void swap(Expression_MultiOrList_Record& a, Expression_MultiOrList_Record& b) {
     a.Swap(&b);
@@ -21800,7 +22429,7 @@ class Expression_MultiOrList final :
                &_Expression_MultiOrList_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    99;
 
   friend void swap(Expression_MultiOrList& a, Expression_MultiOrList& b) {
     a.Swap(&b);
@@ -21977,7 +22606,7 @@ class Expression_EmbeddedFunction_PythonPickleFunction final :
                &_Expression_EmbeddedFunction_PythonPickleFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    100;
 
   friend void swap(Expression_EmbeddedFunction_PythonPickleFunction& a, Expression_EmbeddedFunction_PythonPickleFunction& b) {
     a.Swap(&b);
@@ -22154,7 +22783,7 @@ class Expression_EmbeddedFunction_WebAssemblyFunction final :
                &_Expression_EmbeddedFunction_WebAssemblyFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    101;
 
   friend void swap(Expression_EmbeddedFunction_WebAssemblyFunction& a, Expression_EmbeddedFunction_WebAssemblyFunction& b) {
     a.Swap(&b);
@@ -22337,7 +22966,7 @@ class Expression_EmbeddedFunction final :
                &_Expression_EmbeddedFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    102;
 
   friend void swap(Expression_EmbeddedFunction& a, Expression_EmbeddedFunction& b) {
     a.Swap(&b);
@@ -22568,7 +23197,7 @@ class Expression_ReferenceSegment_MapKey final :
                &_Expression_ReferenceSegment_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    103;
 
   friend void swap(Expression_ReferenceSegment_MapKey& a, Expression_ReferenceSegment_MapKey& b) {
     a.Swap(&b);
@@ -22743,7 +23372,7 @@ class Expression_ReferenceSegment_StructField final :
                &_Expression_ReferenceSegment_StructField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    104;
 
   friend void swap(Expression_ReferenceSegment_StructField& a, Expression_ReferenceSegment_StructField& b) {
     a.Swap(&b);
@@ -22909,7 +23538,7 @@ class Expression_ReferenceSegment_ListElement final :
                &_Expression_ReferenceSegment_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    105;
 
   friend void swap(Expression_ReferenceSegment_ListElement& a, Expression_ReferenceSegment_ListElement& b) {
     a.Swap(&b);
@@ -23082,7 +23711,7 @@ class Expression_ReferenceSegment final :
                &_Expression_ReferenceSegment_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    106;
 
   friend void swap(Expression_ReferenceSegment& a, Expression_ReferenceSegment& b) {
     a.Swap(&b);
@@ -23302,7 +23931,7 @@ class Expression_MaskExpression_Select final :
                &_Expression_MaskExpression_Select_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    107;
 
   friend void swap(Expression_MaskExpression_Select& a, Expression_MaskExpression_Select& b) {
     a.Swap(&b);
@@ -23511,7 +24140,7 @@ class Expression_MaskExpression_StructSelect final :
                &_Expression_MaskExpression_StructSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    108;
 
   friend void swap(Expression_MaskExpression_StructSelect& a, Expression_MaskExpression_StructSelect& b) {
     a.Swap(&b);
@@ -23666,7 +24295,7 @@ class Expression_MaskExpression_StructItem final :
                &_Expression_MaskExpression_StructItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    109;
 
   friend void swap(Expression_MaskExpression_StructItem& a, Expression_MaskExpression_StructItem& b) {
     a.Swap(&b);
@@ -23832,7 +24461,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListElement final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListElement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    110;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListElement& b) {
     a.Swap(&b);
@@ -23978,7 +24607,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    108;
+    111;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& a, Expression_MaskExpression_ListSelect_ListSelectItem_ListSlice& b) {
     a.Swap(&b);
@@ -24141,7 +24770,7 @@ class Expression_MaskExpression_ListSelect_ListSelectItem final :
                &_Expression_MaskExpression_ListSelect_ListSelectItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    109;
+    112;
 
   friend void swap(Expression_MaskExpression_ListSelect_ListSelectItem& a, Expression_MaskExpression_ListSelect_ListSelectItem& b) {
     a.Swap(&b);
@@ -24332,7 +24961,7 @@ class Expression_MaskExpression_ListSelect final :
                &_Expression_MaskExpression_ListSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    110;
+    113;
 
   friend void swap(Expression_MaskExpression_ListSelect& a, Expression_MaskExpression_ListSelect& b) {
     a.Swap(&b);
@@ -24509,7 +25138,7 @@ class Expression_MaskExpression_MapSelect_MapKey final :
                &_Expression_MaskExpression_MapSelect_MapKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    111;
+    114;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKey& a, Expression_MaskExpression_MapSelect_MapKey& b) {
     a.Swap(&b);
@@ -24660,7 +25289,7 @@ class Expression_MaskExpression_MapSelect_MapKeyExpression final :
                &_Expression_MaskExpression_MapSelect_MapKeyExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    112;
+    115;
 
   friend void swap(Expression_MaskExpression_MapSelect_MapKeyExpression& a, Expression_MaskExpression_MapSelect_MapKeyExpression& b) {
     a.Swap(&b);
@@ -24817,7 +25446,7 @@ class Expression_MaskExpression_MapSelect final :
                &_Expression_MaskExpression_MapSelect_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    113;
+    116;
 
   friend void swap(Expression_MaskExpression_MapSelect& a, Expression_MaskExpression_MapSelect& b) {
     a.Swap(&b);
@@ -25028,7 +25657,7 @@ class Expression_MaskExpression final :
                &_Expression_MaskExpression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    114;
+    117;
 
   friend void swap(Expression_MaskExpression& a, Expression_MaskExpression& b) {
     a.Swap(&b);
@@ -25199,7 +25828,7 @@ class Expression_FieldReference_RootReference final :
                &_Expression_FieldReference_RootReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    115;
+    118;
 
   friend void swap(Expression_FieldReference_RootReference& a, Expression_FieldReference_RootReference& b) {
     a.Swap(&b);
@@ -25313,12 +25942,18 @@ class Expression_FieldReference_OuterReference final :
   static const Expression_FieldReference_OuterReference& default_instance() {
     return *internal_default_instance();
   }
+  enum OuterReferenceTypeCase {
+    kStepsOut = 1,
+    kRelReference = 2,
+    OUTER_REFERENCE_TYPE_NOT_SET = 0,
+  };
+
   static inline const Expression_FieldReference_OuterReference* internal_default_instance() {
     return reinterpret_cast<const Expression_FieldReference_OuterReference*>(
                &_Expression_FieldReference_OuterReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    116;
+    119;
 
   friend void swap(Expression_FieldReference_OuterReference& a, Expression_FieldReference_OuterReference& b) {
     a.Swap(&b);
@@ -25393,6 +26028,184 @@ class Expression_FieldReference_OuterReference final :
 
   enum : int {
     kStepsOutFieldNumber = 1,
+    kRelReferenceFieldNumber = 2,
+  };
+  // uint32 steps_out = 1;
+  bool has_steps_out() const;
+  private:
+  bool _internal_has_steps_out() const;
+  public:
+  void clear_steps_out();
+  uint32_t steps_out() const;
+  void set_steps_out(uint32_t value);
+  private:
+  uint32_t _internal_steps_out() const;
+  void _internal_set_steps_out(uint32_t value);
+  public:
+
+  // uint32 rel_reference = 2;
+  bool has_rel_reference() const;
+  private:
+  bool _internal_has_rel_reference() const;
+  public:
+  void clear_rel_reference();
+  uint32_t rel_reference() const;
+  void set_rel_reference(uint32_t value);
+  private:
+  uint32_t _internal_rel_reference() const;
+  void _internal_set_rel_reference(uint32_t value);
+  public:
+
+  void clear_outer_reference_type();
+  OuterReferenceTypeCase outer_reference_type_case() const;
+  // @@protoc_insertion_point(class_scope:substrait.Expression.FieldReference.OuterReference)
+ private:
+  class _Internal;
+  void set_has_steps_out();
+  void set_has_rel_reference();
+
+  inline bool has_outer_reference_type() const;
+  inline void clear_has_outer_reference_type();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  union OuterReferenceTypeUnion {
+    constexpr OuterReferenceTypeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    uint32_t steps_out_;
+    uint32_t rel_reference_;
+  } outer_reference_type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Expression_FieldReference_LambdaParameterReference final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.FieldReference.LambdaParameterReference) */ {
+ public:
+  inline Expression_FieldReference_LambdaParameterReference() : Expression_FieldReference_LambdaParameterReference(nullptr) {}
+  ~Expression_FieldReference_LambdaParameterReference() override;
+  explicit constexpr Expression_FieldReference_LambdaParameterReference(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Expression_FieldReference_LambdaParameterReference(const Expression_FieldReference_LambdaParameterReference& from);
+  Expression_FieldReference_LambdaParameterReference(Expression_FieldReference_LambdaParameterReference&& from) noexcept
+    : Expression_FieldReference_LambdaParameterReference() {
+    *this = ::std::move(from);
+  }
+
+  inline Expression_FieldReference_LambdaParameterReference& operator=(const Expression_FieldReference_LambdaParameterReference& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Expression_FieldReference_LambdaParameterReference& operator=(Expression_FieldReference_LambdaParameterReference&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Expression_FieldReference_LambdaParameterReference& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Expression_FieldReference_LambdaParameterReference* internal_default_instance() {
+    return reinterpret_cast<const Expression_FieldReference_LambdaParameterReference*>(
+               &_Expression_FieldReference_LambdaParameterReference_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    120;
+
+  friend void swap(Expression_FieldReference_LambdaParameterReference& a, Expression_FieldReference_LambdaParameterReference& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Expression_FieldReference_LambdaParameterReference* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Expression_FieldReference_LambdaParameterReference* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Expression_FieldReference_LambdaParameterReference* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Expression_FieldReference_LambdaParameterReference>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Expression_FieldReference_LambdaParameterReference& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Expression_FieldReference_LambdaParameterReference& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Expression_FieldReference_LambdaParameterReference* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Expression.FieldReference.LambdaParameterReference";
+  }
+  protected:
+  explicit Expression_FieldReference_LambdaParameterReference(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kStepsOutFieldNumber = 1,
   };
   // uint32 steps_out = 1;
   void clear_steps_out();
@@ -25403,7 +26216,7 @@ class Expression_FieldReference_OuterReference final :
   void _internal_set_steps_out(uint32_t value);
   public:
 
-  // @@protoc_insertion_point(class_scope:substrait.Expression.FieldReference.OuterReference)
+  // @@protoc_insertion_point(class_scope:substrait.Expression.FieldReference.LambdaParameterReference)
  private:
   class _Internal;
 
@@ -25469,6 +26282,7 @@ class Expression_FieldReference final :
     kExpression = 3,
     kRootReference = 4,
     kOuterReference = 5,
+    kLambdaParameterReference = 6,
     ROOT_TYPE_NOT_SET = 0,
   };
 
@@ -25477,7 +26291,7 @@ class Expression_FieldReference final :
                &_Expression_FieldReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    117;
+    121;
 
   friend void swap(Expression_FieldReference& a, Expression_FieldReference& b) {
     a.Swap(&b);
@@ -25550,6 +26364,7 @@ class Expression_FieldReference final :
 
   typedef Expression_FieldReference_RootReference RootReference;
   typedef Expression_FieldReference_OuterReference OuterReference;
+  typedef Expression_FieldReference_LambdaParameterReference LambdaParameterReference;
 
   // accessors -------------------------------------------------------
 
@@ -25559,6 +26374,7 @@ class Expression_FieldReference final :
     kExpressionFieldNumber = 3,
     kRootReferenceFieldNumber = 4,
     kOuterReferenceFieldNumber = 5,
+    kLambdaParameterReferenceFieldNumber = 6,
   };
   // .substrait.Expression.ReferenceSegment direct_reference = 1;
   bool has_direct_reference() const;
@@ -25650,6 +26466,24 @@ class Expression_FieldReference final :
       ::substrait::Expression_FieldReference_OuterReference* outer_reference);
   ::substrait::Expression_FieldReference_OuterReference* unsafe_arena_release_outer_reference();
 
+  // .substrait.Expression.FieldReference.LambdaParameterReference lambda_parameter_reference = 6;
+  bool has_lambda_parameter_reference() const;
+  private:
+  bool _internal_has_lambda_parameter_reference() const;
+  public:
+  void clear_lambda_parameter_reference();
+  const ::substrait::Expression_FieldReference_LambdaParameterReference& lambda_parameter_reference() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_FieldReference_LambdaParameterReference* release_lambda_parameter_reference();
+  ::substrait::Expression_FieldReference_LambdaParameterReference* mutable_lambda_parameter_reference();
+  void set_allocated_lambda_parameter_reference(::substrait::Expression_FieldReference_LambdaParameterReference* lambda_parameter_reference);
+  private:
+  const ::substrait::Expression_FieldReference_LambdaParameterReference& _internal_lambda_parameter_reference() const;
+  ::substrait::Expression_FieldReference_LambdaParameterReference* _internal_mutable_lambda_parameter_reference();
+  public:
+  void unsafe_arena_set_allocated_lambda_parameter_reference(
+      ::substrait::Expression_FieldReference_LambdaParameterReference* lambda_parameter_reference);
+  ::substrait::Expression_FieldReference_LambdaParameterReference* unsafe_arena_release_lambda_parameter_reference();
+
   void clear_reference_type();
   ReferenceTypeCase reference_type_case() const;
   void clear_root_type();
@@ -25662,6 +26496,7 @@ class Expression_FieldReference final :
   void set_has_expression();
   void set_has_root_reference();
   void set_has_outer_reference();
+  void set_has_lambda_parameter_reference();
 
   inline bool has_reference_type() const;
   inline void clear_has_reference_type();
@@ -25684,6 +26519,7 @@ class Expression_FieldReference final :
     ::substrait::Expression* expression_;
     ::substrait::Expression_FieldReference_RootReference* root_reference_;
     ::substrait::Expression_FieldReference_OuterReference* outer_reference_;
+    ::substrait::Expression_FieldReference_LambdaParameterReference* lambda_parameter_reference_;
   } root_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[2];
@@ -25740,7 +26576,7 @@ class Expression_Subquery_Scalar final :
                &_Expression_Subquery_Scalar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    118;
+    122;
 
   friend void swap(Expression_Subquery_Scalar& a, Expression_Subquery_Scalar& b) {
     a.Swap(&b);
@@ -25895,7 +26731,7 @@ class Expression_Subquery_InPredicate final :
                &_Expression_Subquery_InPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    119;
+    123;
 
   friend void swap(Expression_Subquery_InPredicate& a, Expression_Subquery_InPredicate& b) {
     a.Swap(&b);
@@ -26070,7 +26906,7 @@ class Expression_Subquery_SetPredicate final :
                &_Expression_Subquery_SetPredicate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    120;
+    124;
 
   friend void swap(Expression_Subquery_SetPredicate& a, Expression_Subquery_SetPredicate& b) {
     a.Swap(&b);
@@ -26268,7 +27104,7 @@ class Expression_Subquery_SetComparison final :
                &_Expression_Subquery_SetComparison_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    121;
+    125;
 
   friend void swap(Expression_Subquery_SetComparison& a, Expression_Subquery_SetComparison& b) {
     a.Swap(&b);
@@ -26545,7 +27381,7 @@ class Expression_Subquery final :
                &_Expression_Subquery_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    122;
+    126;
 
   friend void swap(Expression_Subquery& a, Expression_Subquery& b) {
     a.Swap(&b);
@@ -26732,6 +27568,222 @@ class Expression_Subquery final :
 };
 // -------------------------------------------------------------------
 
+class Expression_ExecutionContextVariable final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression.ExecutionContextVariable) */ {
+ public:
+  inline Expression_ExecutionContextVariable() : Expression_ExecutionContextVariable(nullptr) {}
+  ~Expression_ExecutionContextVariable() override;
+  explicit constexpr Expression_ExecutionContextVariable(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Expression_ExecutionContextVariable(const Expression_ExecutionContextVariable& from);
+  Expression_ExecutionContextVariable(Expression_ExecutionContextVariable&& from) noexcept
+    : Expression_ExecutionContextVariable() {
+    *this = ::std::move(from);
+  }
+
+  inline Expression_ExecutionContextVariable& operator=(const Expression_ExecutionContextVariable& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Expression_ExecutionContextVariable& operator=(Expression_ExecutionContextVariable&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Expression_ExecutionContextVariable& default_instance() {
+    return *internal_default_instance();
+  }
+  enum ExecutionContextVariableTypeCase {
+    kCurrentTimestamp = 1,
+    kCurrentTimezone = 2,
+    kCurrentDate = 3,
+    EXECUTION_CONTEXT_VARIABLE_TYPE_NOT_SET = 0,
+  };
+
+  static inline const Expression_ExecutionContextVariable* internal_default_instance() {
+    return reinterpret_cast<const Expression_ExecutionContextVariable*>(
+               &_Expression_ExecutionContextVariable_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    127;
+
+  friend void swap(Expression_ExecutionContextVariable& a, Expression_ExecutionContextVariable& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Expression_ExecutionContextVariable* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Expression_ExecutionContextVariable* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Expression_ExecutionContextVariable* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Expression_ExecutionContextVariable>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Expression_ExecutionContextVariable& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Expression_ExecutionContextVariable& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Expression_ExecutionContextVariable* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Expression.ExecutionContextVariable";
+  }
+  protected:
+  explicit Expression_ExecutionContextVariable(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kCurrentTimestampFieldNumber = 1,
+    kCurrentTimezoneFieldNumber = 2,
+    kCurrentDateFieldNumber = 3,
+  };
+  // .substrait.Type.PrecisionTimestampTZ current_timestamp = 1;
+  bool has_current_timestamp() const;
+  private:
+  bool _internal_has_current_timestamp() const;
+  public:
+  void clear_current_timestamp();
+  const ::substrait::Type_PrecisionTimestampTZ& current_timestamp() const;
+  PROTOBUF_NODISCARD ::substrait::Type_PrecisionTimestampTZ* release_current_timestamp();
+  ::substrait::Type_PrecisionTimestampTZ* mutable_current_timestamp();
+  void set_allocated_current_timestamp(::substrait::Type_PrecisionTimestampTZ* current_timestamp);
+  private:
+  const ::substrait::Type_PrecisionTimestampTZ& _internal_current_timestamp() const;
+  ::substrait::Type_PrecisionTimestampTZ* _internal_mutable_current_timestamp();
+  public:
+  void unsafe_arena_set_allocated_current_timestamp(
+      ::substrait::Type_PrecisionTimestampTZ* current_timestamp);
+  ::substrait::Type_PrecisionTimestampTZ* unsafe_arena_release_current_timestamp();
+
+  // .substrait.Type.String current_timezone = 2;
+  bool has_current_timezone() const;
+  private:
+  bool _internal_has_current_timezone() const;
+  public:
+  void clear_current_timezone();
+  const ::substrait::Type_String& current_timezone() const;
+  PROTOBUF_NODISCARD ::substrait::Type_String* release_current_timezone();
+  ::substrait::Type_String* mutable_current_timezone();
+  void set_allocated_current_timezone(::substrait::Type_String* current_timezone);
+  private:
+  const ::substrait::Type_String& _internal_current_timezone() const;
+  ::substrait::Type_String* _internal_mutable_current_timezone();
+  public:
+  void unsafe_arena_set_allocated_current_timezone(
+      ::substrait::Type_String* current_timezone);
+  ::substrait::Type_String* unsafe_arena_release_current_timezone();
+
+  // .substrait.Type.Date current_date = 3;
+  bool has_current_date() const;
+  private:
+  bool _internal_has_current_date() const;
+  public:
+  void clear_current_date();
+  const ::substrait::Type_Date& current_date() const;
+  PROTOBUF_NODISCARD ::substrait::Type_Date* release_current_date();
+  ::substrait::Type_Date* mutable_current_date();
+  void set_allocated_current_date(::substrait::Type_Date* current_date);
+  private:
+  const ::substrait::Type_Date& _internal_current_date() const;
+  ::substrait::Type_Date* _internal_mutable_current_date();
+  public:
+  void unsafe_arena_set_allocated_current_date(
+      ::substrait::Type_Date* current_date);
+  ::substrait::Type_Date* unsafe_arena_release_current_date();
+
+  void clear_execution_context_variable_type();
+  ExecutionContextVariableTypeCase execution_context_variable_type_case() const;
+  // @@protoc_insertion_point(class_scope:substrait.Expression.ExecutionContextVariable)
+ private:
+  class _Internal;
+  void set_has_current_timestamp();
+  void set_has_current_timezone();
+  void set_has_current_date();
+
+  inline bool has_execution_context_variable_type() const;
+  inline void clear_has_execution_context_variable_type();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  union ExecutionContextVariableTypeUnion {
+    constexpr ExecutionContextVariableTypeUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    ::substrait::Type_PrecisionTimestampTZ* current_timestamp_;
+    ::substrait::Type_String* current_timezone_;
+    ::substrait::Type_Date* current_date_;
+  } execution_context_variable_type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
+  friend struct ::TableStruct_substrait_2falgebra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Expression final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Expression) */ {
  public:
@@ -26788,6 +27840,9 @@ class Expression final :
     kSubquery = 12,
     kNested = 13,
     kDynamicParameter = 14,
+    kLambda = 15,
+    kLambdaInvocation = 16,
+    kExecutionContextVariable = 17,
     kEnum = 10,
     REX_TYPE_NOT_SET = 0,
   };
@@ -26797,7 +27852,7 @@ class Expression final :
                &_Expression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    123;
+    128;
 
   friend void swap(Expression& a, Expression& b) {
     a.Swap(&b);
@@ -26871,6 +27926,8 @@ class Expression final :
   typedef Expression_Enum Enum;
   typedef Expression_Literal Literal;
   typedef Expression_Nested Nested;
+  typedef Expression_Lambda Lambda;
+  typedef Expression_LambdaInvocation LambdaInvocation;
   typedef Expression_ScalarFunction ScalarFunction;
   typedef Expression_WindowFunction WindowFunction;
   typedef Expression_IfThen IfThen;
@@ -26883,6 +27940,7 @@ class Expression final :
   typedef Expression_MaskExpression MaskExpression;
   typedef Expression_FieldReference FieldReference;
   typedef Expression_Subquery Subquery;
+  typedef Expression_ExecutionContextVariable ExecutionContextVariable;
 
   // accessors -------------------------------------------------------
 
@@ -26899,6 +27957,9 @@ class Expression final :
     kSubqueryFieldNumber = 12,
     kNestedFieldNumber = 13,
     kDynamicParameterFieldNumber = 14,
+    kLambdaFieldNumber = 15,
+    kLambdaInvocationFieldNumber = 16,
+    kExecutionContextVariableFieldNumber = 17,
     kEnumFieldNumber = 10,
   };
   // .substrait.Expression.Literal literal = 1;
@@ -27117,6 +28178,60 @@ class Expression final :
       ::substrait::DynamicParameter* dynamic_parameter);
   ::substrait::DynamicParameter* unsafe_arena_release_dynamic_parameter();
 
+  // .substrait.Expression.Lambda lambda = 15;
+  bool has_lambda() const;
+  private:
+  bool _internal_has_lambda() const;
+  public:
+  void clear_lambda();
+  const ::substrait::Expression_Lambda& lambda() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_Lambda* release_lambda();
+  ::substrait::Expression_Lambda* mutable_lambda();
+  void set_allocated_lambda(::substrait::Expression_Lambda* lambda);
+  private:
+  const ::substrait::Expression_Lambda& _internal_lambda() const;
+  ::substrait::Expression_Lambda* _internal_mutable_lambda();
+  public:
+  void unsafe_arena_set_allocated_lambda(
+      ::substrait::Expression_Lambda* lambda);
+  ::substrait::Expression_Lambda* unsafe_arena_release_lambda();
+
+  // .substrait.Expression.LambdaInvocation lambda_invocation = 16;
+  bool has_lambda_invocation() const;
+  private:
+  bool _internal_has_lambda_invocation() const;
+  public:
+  void clear_lambda_invocation();
+  const ::substrait::Expression_LambdaInvocation& lambda_invocation() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_LambdaInvocation* release_lambda_invocation();
+  ::substrait::Expression_LambdaInvocation* mutable_lambda_invocation();
+  void set_allocated_lambda_invocation(::substrait::Expression_LambdaInvocation* lambda_invocation);
+  private:
+  const ::substrait::Expression_LambdaInvocation& _internal_lambda_invocation() const;
+  ::substrait::Expression_LambdaInvocation* _internal_mutable_lambda_invocation();
+  public:
+  void unsafe_arena_set_allocated_lambda_invocation(
+      ::substrait::Expression_LambdaInvocation* lambda_invocation);
+  ::substrait::Expression_LambdaInvocation* unsafe_arena_release_lambda_invocation();
+
+  // .substrait.Expression.ExecutionContextVariable execution_context_variable = 17;
+  bool has_execution_context_variable() const;
+  private:
+  bool _internal_has_execution_context_variable() const;
+  public:
+  void clear_execution_context_variable();
+  const ::substrait::Expression_ExecutionContextVariable& execution_context_variable() const;
+  PROTOBUF_NODISCARD ::substrait::Expression_ExecutionContextVariable* release_execution_context_variable();
+  ::substrait::Expression_ExecutionContextVariable* mutable_execution_context_variable();
+  void set_allocated_execution_context_variable(::substrait::Expression_ExecutionContextVariable* execution_context_variable);
+  private:
+  const ::substrait::Expression_ExecutionContextVariable& _internal_execution_context_variable() const;
+  ::substrait::Expression_ExecutionContextVariable* _internal_mutable_execution_context_variable();
+  public:
+  void unsafe_arena_set_allocated_execution_context_variable(
+      ::substrait::Expression_ExecutionContextVariable* execution_context_variable);
+  ::substrait::Expression_ExecutionContextVariable* unsafe_arena_release_execution_context_variable();
+
   // .substrait.Expression.Enum enum = 10 [deprecated = true];
   PROTOBUF_DEPRECATED bool has_enum_() const;
   private:
@@ -27152,6 +28267,9 @@ class Expression final :
   void set_has_subquery();
   void set_has_nested();
   void set_has_dynamic_parameter();
+  void set_has_lambda();
+  void set_has_lambda_invocation();
+  void set_has_execution_context_variable();
   void set_has_enum_();
 
   inline bool has_rex_type() const;
@@ -27175,6 +28293,9 @@ class Expression final :
     ::substrait::Expression_Subquery* subquery_;
     ::substrait::Expression_Nested* nested_;
     ::substrait::DynamicParameter* dynamic_parameter_;
+    ::substrait::Expression_Lambda* lambda_;
+    ::substrait::Expression_LambdaInvocation* lambda_invocation_;
+    ::substrait::Expression_ExecutionContextVariable* execution_context_variable_;
     ::substrait::Expression_Enum* enum__;
   } rex_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -27232,7 +28353,7 @@ class DynamicParameter final :
                &_DynamicParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    124;
+    129;
 
   friend void swap(DynamicParameter& a, DynamicParameter& b) {
     a.Swap(&b);
@@ -27404,7 +28525,7 @@ class SortField final :
                &_SortField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    125;
+    130;
 
   friend void swap(SortField& a, SortField& b) {
     a.Swap(&b);
@@ -27640,7 +28761,7 @@ class AggregateFunction final :
                &_AggregateFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    126;
+    131;
 
   friend void swap(AggregateFunction& a, AggregateFunction& b) {
     a.Swap(&b);
@@ -27940,7 +29061,7 @@ class ReferenceRel final :
                &_ReferenceRel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    127;
+    132;
 
   friend void swap(ReferenceRel& a, ReferenceRel& b) {
     a.Swap(&b);
@@ -29380,6 +30501,34 @@ inline void RelCommon::set_allocated_advanced_extension(::substrait::extensions:
   }
   advanced_extension_ = advanced_extension;
   // @@protoc_insertion_point(field_set_allocated:substrait.RelCommon.advanced_extension)
+}
+
+// optional uint32 rel_anchor = 5;
+inline bool RelCommon::_internal_has_rel_anchor() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool RelCommon::has_rel_anchor() const {
+  return _internal_has_rel_anchor();
+}
+inline void RelCommon::clear_rel_anchor() {
+  rel_anchor_ = 0u;
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline uint32_t RelCommon::_internal_rel_anchor() const {
+  return rel_anchor_;
+}
+inline uint32_t RelCommon::rel_anchor() const {
+  // @@protoc_insertion_point(field_get:substrait.RelCommon.rel_anchor)
+  return _internal_rel_anchor();
+}
+inline void RelCommon::_internal_set_rel_anchor(uint32_t value) {
+  _has_bits_[0] |= 0x00000001u;
+  rel_anchor_ = value;
+}
+inline void RelCommon::set_rel_anchor(uint32_t value) {
+  _internal_set_rel_anchor(value);
+  // @@protoc_insertion_point(field_set:substrait.RelCommon.rel_anchor)
 }
 
 inline bool RelCommon::has_emit_kind() const {
@@ -33919,46 +35068,6 @@ inline FetchRel::CountModeCase FetchRel::count_mode_case() const {
 // -------------------------------------------------------------------
 
 // AggregateRel_Grouping
-
-// repeated .substrait.Expression grouping_expressions = 1 [deprecated = true];
-inline int AggregateRel_Grouping::_internal_grouping_expressions_size() const {
-  return grouping_expressions_.size();
-}
-inline int AggregateRel_Grouping::grouping_expressions_size() const {
-  return _internal_grouping_expressions_size();
-}
-inline void AggregateRel_Grouping::clear_grouping_expressions() {
-  grouping_expressions_.Clear();
-}
-inline ::substrait::Expression* AggregateRel_Grouping::mutable_grouping_expressions(int index) {
-  // @@protoc_insertion_point(field_mutable:substrait.AggregateRel.Grouping.grouping_expressions)
-  return grouping_expressions_.Mutable(index);
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >*
-AggregateRel_Grouping::mutable_grouping_expressions() {
-  // @@protoc_insertion_point(field_mutable_list:substrait.AggregateRel.Grouping.grouping_expressions)
-  return &grouping_expressions_;
-}
-inline const ::substrait::Expression& AggregateRel_Grouping::_internal_grouping_expressions(int index) const {
-  return grouping_expressions_.Get(index);
-}
-inline const ::substrait::Expression& AggregateRel_Grouping::grouping_expressions(int index) const {
-  // @@protoc_insertion_point(field_get:substrait.AggregateRel.Grouping.grouping_expressions)
-  return _internal_grouping_expressions(index);
-}
-inline ::substrait::Expression* AggregateRel_Grouping::_internal_add_grouping_expressions() {
-  return grouping_expressions_.Add();
-}
-inline ::substrait::Expression* AggregateRel_Grouping::add_grouping_expressions() {
-  ::substrait::Expression* _add = _internal_add_grouping_expressions();
-  // @@protoc_insertion_point(field_add:substrait.AggregateRel.Grouping.grouping_expressions)
-  return _add;
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Expression >&
-AggregateRel_Grouping::grouping_expressions() const {
-  // @@protoc_insertion_point(field_list:substrait.AggregateRel.Grouping.grouping_expressions)
-  return grouping_expressions_;
-}
 
 // repeated uint32 expression_references = 2;
 inline int AggregateRel_Grouping::_internal_expression_references_size() const {
@@ -38609,6 +39718,516 @@ ExpandRel::fields() const {
 
 // -------------------------------------------------------------------
 
+// TopNRel
+
+// .substrait.RelCommon common = 1;
+inline bool TopNRel::_internal_has_common() const {
+  return this != internal_default_instance() && common_ != nullptr;
+}
+inline bool TopNRel::has_common() const {
+  return _internal_has_common();
+}
+inline void TopNRel::clear_common() {
+  if (GetArenaForAllocation() == nullptr && common_ != nullptr) {
+    delete common_;
+  }
+  common_ = nullptr;
+}
+inline const ::substrait::RelCommon& TopNRel::_internal_common() const {
+  const ::substrait::RelCommon* p = common_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::RelCommon&>(
+      ::substrait::_RelCommon_default_instance_);
+}
+inline const ::substrait::RelCommon& TopNRel::common() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.common)
+  return _internal_common();
+}
+inline void TopNRel::unsafe_arena_set_allocated_common(
+    ::substrait::RelCommon* common) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(common_);
+  }
+  common_ = common;
+  if (common) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.TopNRel.common)
+}
+inline ::substrait::RelCommon* TopNRel::release_common() {
+  
+  ::substrait::RelCommon* temp = common_;
+  common_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::RelCommon* TopNRel::unsafe_arena_release_common() {
+  // @@protoc_insertion_point(field_release:substrait.TopNRel.common)
+  
+  ::substrait::RelCommon* temp = common_;
+  common_ = nullptr;
+  return temp;
+}
+inline ::substrait::RelCommon* TopNRel::_internal_mutable_common() {
+  
+  if (common_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::RelCommon>(GetArenaForAllocation());
+    common_ = p;
+  }
+  return common_;
+}
+inline ::substrait::RelCommon* TopNRel::mutable_common() {
+  ::substrait::RelCommon* _msg = _internal_mutable_common();
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.common)
+  return _msg;
+}
+inline void TopNRel::set_allocated_common(::substrait::RelCommon* common) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete common_;
+  }
+  if (common) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::RelCommon>::GetOwningArena(common);
+    if (message_arena != submessage_arena) {
+      common = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, common, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  common_ = common;
+  // @@protoc_insertion_point(field_set_allocated:substrait.TopNRel.common)
+}
+
+// .substrait.Rel input = 2;
+inline bool TopNRel::_internal_has_input() const {
+  return this != internal_default_instance() && input_ != nullptr;
+}
+inline bool TopNRel::has_input() const {
+  return _internal_has_input();
+}
+inline void TopNRel::clear_input() {
+  if (GetArenaForAllocation() == nullptr && input_ != nullptr) {
+    delete input_;
+  }
+  input_ = nullptr;
+}
+inline const ::substrait::Rel& TopNRel::_internal_input() const {
+  const ::substrait::Rel* p = input_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Rel&>(
+      ::substrait::_Rel_default_instance_);
+}
+inline const ::substrait::Rel& TopNRel::input() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.input)
+  return _internal_input();
+}
+inline void TopNRel::unsafe_arena_set_allocated_input(
+    ::substrait::Rel* input) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(input_);
+  }
+  input_ = input;
+  if (input) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.TopNRel.input)
+}
+inline ::substrait::Rel* TopNRel::release_input() {
+  
+  ::substrait::Rel* temp = input_;
+  input_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Rel* TopNRel::unsafe_arena_release_input() {
+  // @@protoc_insertion_point(field_release:substrait.TopNRel.input)
+  
+  ::substrait::Rel* temp = input_;
+  input_ = nullptr;
+  return temp;
+}
+inline ::substrait::Rel* TopNRel::_internal_mutable_input() {
+  
+  if (input_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Rel>(GetArenaForAllocation());
+    input_ = p;
+  }
+  return input_;
+}
+inline ::substrait::Rel* TopNRel::mutable_input() {
+  ::substrait::Rel* _msg = _internal_mutable_input();
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.input)
+  return _msg;
+}
+inline void TopNRel::set_allocated_input(::substrait::Rel* input) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete input_;
+  }
+  if (input) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Rel>::GetOwningArena(input);
+    if (message_arena != submessage_arena) {
+      input = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, input, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  input_ = input;
+  // @@protoc_insertion_point(field_set_allocated:substrait.TopNRel.input)
+}
+
+// repeated .substrait.SortField sorts = 3;
+inline int TopNRel::_internal_sorts_size() const {
+  return sorts_.size();
+}
+inline int TopNRel::sorts_size() const {
+  return _internal_sorts_size();
+}
+inline void TopNRel::clear_sorts() {
+  sorts_.Clear();
+}
+inline ::substrait::SortField* TopNRel::mutable_sorts(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.sorts)
+  return sorts_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::SortField >*
+TopNRel::mutable_sorts() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.TopNRel.sorts)
+  return &sorts_;
+}
+inline const ::substrait::SortField& TopNRel::_internal_sorts(int index) const {
+  return sorts_.Get(index);
+}
+inline const ::substrait::SortField& TopNRel::sorts(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.sorts)
+  return _internal_sorts(index);
+}
+inline ::substrait::SortField* TopNRel::_internal_add_sorts() {
+  return sorts_.Add();
+}
+inline ::substrait::SortField* TopNRel::add_sorts() {
+  ::substrait::SortField* _add = _internal_add_sorts();
+  // @@protoc_insertion_point(field_add:substrait.TopNRel.sorts)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::SortField >&
+TopNRel::sorts() const {
+  // @@protoc_insertion_point(field_list:substrait.TopNRel.sorts)
+  return sorts_;
+}
+
+// .substrait.Expression offset = 4;
+inline bool TopNRel::_internal_has_offset() const {
+  return this != internal_default_instance() && offset_ != nullptr;
+}
+inline bool TopNRel::has_offset() const {
+  return _internal_has_offset();
+}
+inline void TopNRel::clear_offset() {
+  if (GetArenaForAllocation() == nullptr && offset_ != nullptr) {
+    delete offset_;
+  }
+  offset_ = nullptr;
+}
+inline const ::substrait::Expression& TopNRel::_internal_offset() const {
+  const ::substrait::Expression* p = offset_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression&>(
+      ::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& TopNRel::offset() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.offset)
+  return _internal_offset();
+}
+inline void TopNRel::unsafe_arena_set_allocated_offset(
+    ::substrait::Expression* offset) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(offset_);
+  }
+  offset_ = offset;
+  if (offset) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.TopNRel.offset)
+}
+inline ::substrait::Expression* TopNRel::release_offset() {
+  
+  ::substrait::Expression* temp = offset_;
+  offset_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression* TopNRel::unsafe_arena_release_offset() {
+  // @@protoc_insertion_point(field_release:substrait.TopNRel.offset)
+  
+  ::substrait::Expression* temp = offset_;
+  offset_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression* TopNRel::_internal_mutable_offset() {
+  
+  if (offset_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression>(GetArenaForAllocation());
+    offset_ = p;
+  }
+  return offset_;
+}
+inline ::substrait::Expression* TopNRel::mutable_offset() {
+  ::substrait::Expression* _msg = _internal_mutable_offset();
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.offset)
+  return _msg;
+}
+inline void TopNRel::set_allocated_offset(::substrait::Expression* offset) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete offset_;
+  }
+  if (offset) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression>::GetOwningArena(offset);
+    if (message_arena != submessage_arena) {
+      offset = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, offset, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  offset_ = offset;
+  // @@protoc_insertion_point(field_set_allocated:substrait.TopNRel.offset)
+}
+
+// .substrait.Expression count = 5;
+inline bool TopNRel::_internal_has_count() const {
+  return this != internal_default_instance() && count_ != nullptr;
+}
+inline bool TopNRel::has_count() const {
+  return _internal_has_count();
+}
+inline void TopNRel::clear_count() {
+  if (GetArenaForAllocation() == nullptr && count_ != nullptr) {
+    delete count_;
+  }
+  count_ = nullptr;
+}
+inline const ::substrait::Expression& TopNRel::_internal_count() const {
+  const ::substrait::Expression* p = count_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression&>(
+      ::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& TopNRel::count() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.count)
+  return _internal_count();
+}
+inline void TopNRel::unsafe_arena_set_allocated_count(
+    ::substrait::Expression* count) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(count_);
+  }
+  count_ = count;
+  if (count) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.TopNRel.count)
+}
+inline ::substrait::Expression* TopNRel::release_count() {
+  
+  ::substrait::Expression* temp = count_;
+  count_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression* TopNRel::unsafe_arena_release_count() {
+  // @@protoc_insertion_point(field_release:substrait.TopNRel.count)
+  
+  ::substrait::Expression* temp = count_;
+  count_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression* TopNRel::_internal_mutable_count() {
+  
+  if (count_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression>(GetArenaForAllocation());
+    count_ = p;
+  }
+  return count_;
+}
+inline ::substrait::Expression* TopNRel::mutable_count() {
+  ::substrait::Expression* _msg = _internal_mutable_count();
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.count)
+  return _msg;
+}
+inline void TopNRel::set_allocated_count(::substrait::Expression* count) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete count_;
+  }
+  if (count) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression>::GetOwningArena(count);
+    if (message_arena != submessage_arena) {
+      count = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, count, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  count_ = count;
+  // @@protoc_insertion_point(field_set_allocated:substrait.TopNRel.count)
+}
+
+// .substrait.FetchMode mode = 6;
+inline void TopNRel::clear_mode() {
+  mode_ = 0;
+}
+inline ::substrait::FetchMode TopNRel::_internal_mode() const {
+  return static_cast< ::substrait::FetchMode >(mode_);
+}
+inline ::substrait::FetchMode TopNRel::mode() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.mode)
+  return _internal_mode();
+}
+inline void TopNRel::_internal_set_mode(::substrait::FetchMode value) {
+  
+  mode_ = value;
+}
+inline void TopNRel::set_mode(::substrait::FetchMode value) {
+  _internal_set_mode(value);
+  // @@protoc_insertion_point(field_set:substrait.TopNRel.mode)
+}
+
+// .substrait.extensions.AdvancedExtension advanced_extension = 7;
+inline bool TopNRel::_internal_has_advanced_extension() const {
+  return this != internal_default_instance() && advanced_extension_ != nullptr;
+}
+inline bool TopNRel::has_advanced_extension() const {
+  return _internal_has_advanced_extension();
+}
+inline const ::substrait::extensions::AdvancedExtension& TopNRel::_internal_advanced_extension() const {
+  const ::substrait::extensions::AdvancedExtension* p = advanced_extension_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::extensions::AdvancedExtension&>(
+      ::substrait::extensions::_AdvancedExtension_default_instance_);
+}
+inline const ::substrait::extensions::AdvancedExtension& TopNRel::advanced_extension() const {
+  // @@protoc_insertion_point(field_get:substrait.TopNRel.advanced_extension)
+  return _internal_advanced_extension();
+}
+inline void TopNRel::unsafe_arena_set_allocated_advanced_extension(
+    ::substrait::extensions::AdvancedExtension* advanced_extension) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension_);
+  }
+  advanced_extension_ = advanced_extension;
+  if (advanced_extension) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.TopNRel.advanced_extension)
+}
+inline ::substrait::extensions::AdvancedExtension* TopNRel::release_advanced_extension() {
+  
+  ::substrait::extensions::AdvancedExtension* temp = advanced_extension_;
+  advanced_extension_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::extensions::AdvancedExtension* TopNRel::unsafe_arena_release_advanced_extension() {
+  // @@protoc_insertion_point(field_release:substrait.TopNRel.advanced_extension)
+  
+  ::substrait::extensions::AdvancedExtension* temp = advanced_extension_;
+  advanced_extension_ = nullptr;
+  return temp;
+}
+inline ::substrait::extensions::AdvancedExtension* TopNRel::_internal_mutable_advanced_extension() {
+  
+  if (advanced_extension_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::extensions::AdvancedExtension>(GetArenaForAllocation());
+    advanced_extension_ = p;
+  }
+  return advanced_extension_;
+}
+inline ::substrait::extensions::AdvancedExtension* TopNRel::mutable_advanced_extension() {
+  ::substrait::extensions::AdvancedExtension* _msg = _internal_mutable_advanced_extension();
+  // @@protoc_insertion_point(field_mutable:substrait.TopNRel.advanced_extension)
+  return _msg;
+}
+inline void TopNRel::set_allocated_advanced_extension(::substrait::extensions::AdvancedExtension* advanced_extension) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension_);
+  }
+  if (advanced_extension) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
+            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(advanced_extension));
+    if (message_arena != submessage_arena) {
+      advanced_extension = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, advanced_extension, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  advanced_extension_ = advanced_extension;
+  // @@protoc_insertion_point(field_set_allocated:substrait.TopNRel.advanced_extension)
+}
+
+// -------------------------------------------------------------------
+
 // RelRoot
 
 // .substrait.Rel input = 1;
@@ -40405,6 +42024,80 @@ inline ::substrait::ExpandRel* Rel::_internal_mutable_expand() {
 inline ::substrait::ExpandRel* Rel::mutable_expand() {
   ::substrait::ExpandRel* _msg = _internal_mutable_expand();
   // @@protoc_insertion_point(field_mutable:substrait.Rel.expand)
+  return _msg;
+}
+
+// .substrait.TopNRel top_n = 23;
+inline bool Rel::_internal_has_top_n() const {
+  return rel_type_case() == kTopN;
+}
+inline bool Rel::has_top_n() const {
+  return _internal_has_top_n();
+}
+inline void Rel::set_has_top_n() {
+  _oneof_case_[0] = kTopN;
+}
+inline void Rel::clear_top_n() {
+  if (_internal_has_top_n()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete rel_type_.top_n_;
+    }
+    clear_has_rel_type();
+  }
+}
+inline ::substrait::TopNRel* Rel::release_top_n() {
+  // @@protoc_insertion_point(field_release:substrait.Rel.top_n)
+  if (_internal_has_top_n()) {
+    clear_has_rel_type();
+      ::substrait::TopNRel* temp = rel_type_.top_n_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    rel_type_.top_n_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::TopNRel& Rel::_internal_top_n() const {
+  return _internal_has_top_n()
+      ? *rel_type_.top_n_
+      : reinterpret_cast< ::substrait::TopNRel&>(::substrait::_TopNRel_default_instance_);
+}
+inline const ::substrait::TopNRel& Rel::top_n() const {
+  // @@protoc_insertion_point(field_get:substrait.Rel.top_n)
+  return _internal_top_n();
+}
+inline ::substrait::TopNRel* Rel::unsafe_arena_release_top_n() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Rel.top_n)
+  if (_internal_has_top_n()) {
+    clear_has_rel_type();
+    ::substrait::TopNRel* temp = rel_type_.top_n_;
+    rel_type_.top_n_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Rel::unsafe_arena_set_allocated_top_n(::substrait::TopNRel* top_n) {
+  clear_rel_type();
+  if (top_n) {
+    set_has_top_n();
+    rel_type_.top_n_ = top_n;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Rel.top_n)
+}
+inline ::substrait::TopNRel* Rel::_internal_mutable_top_n() {
+  if (!_internal_has_top_n()) {
+    clear_rel_type();
+    set_has_top_n();
+    rel_type_.top_n_ = CreateMaybeMessage< ::substrait::TopNRel >(GetArenaForAllocation());
+  }
+  return rel_type_.top_n_;
+}
+inline ::substrait::TopNRel* Rel::mutable_top_n() {
+  ::substrait::TopNRel* _msg = _internal_mutable_top_n();
+  // @@protoc_insertion_point(field_mutable:substrait.Rel.top_n)
   return _msg;
 }
 
@@ -46787,44 +48480,6 @@ inline void Expression_Literal::set_allocated_binary(std::string* binary) {
   // @@protoc_insertion_point(field_set_allocated:substrait.Expression.Literal.binary)
 }
 
-// int64 timestamp = 14 [deprecated = true];
-inline bool Expression_Literal::_internal_has_timestamp() const {
-  return literal_type_case() == kTimestamp;
-}
-inline bool Expression_Literal::has_timestamp() const {
-  return _internal_has_timestamp();
-}
-inline void Expression_Literal::set_has_timestamp() {
-  _oneof_case_[0] = kTimestamp;
-}
-inline void Expression_Literal::clear_timestamp() {
-  if (_internal_has_timestamp()) {
-    literal_type_.timestamp_ = int64_t{0};
-    clear_has_literal_type();
-  }
-}
-inline int64_t Expression_Literal::_internal_timestamp() const {
-  if (_internal_has_timestamp()) {
-    return literal_type_.timestamp_;
-  }
-  return int64_t{0};
-}
-inline void Expression_Literal::_internal_set_timestamp(int64_t value) {
-  if (!_internal_has_timestamp()) {
-    clear_literal_type();
-    set_has_timestamp();
-  }
-  literal_type_.timestamp_ = value;
-}
-inline int64_t Expression_Literal::timestamp() const {
-  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.timestamp)
-  return _internal_timestamp();
-}
-inline void Expression_Literal::set_timestamp(int64_t value) {
-  _internal_set_timestamp(value);
-  // @@protoc_insertion_point(field_set:substrait.Expression.Literal.timestamp)
-}
-
 // int32 date = 16;
 inline bool Expression_Literal::_internal_has_date() const {
   return literal_type_case() == kDate;
@@ -46861,44 +48516,6 @@ inline int32_t Expression_Literal::date() const {
 inline void Expression_Literal::set_date(int32_t value) {
   _internal_set_date(value);
   // @@protoc_insertion_point(field_set:substrait.Expression.Literal.date)
-}
-
-// int64 time = 17;
-inline bool Expression_Literal::_internal_has_time() const {
-  return literal_type_case() == kTime;
-}
-inline bool Expression_Literal::has_time() const {
-  return _internal_has_time();
-}
-inline void Expression_Literal::set_has_time() {
-  _oneof_case_[0] = kTime;
-}
-inline void Expression_Literal::clear_time() {
-  if (_internal_has_time()) {
-    literal_type_.time_ = int64_t{0};
-    clear_has_literal_type();
-  }
-}
-inline int64_t Expression_Literal::_internal_time() const {
-  if (_internal_has_time()) {
-    return literal_type_.time_;
-  }
-  return int64_t{0};
-}
-inline void Expression_Literal::_internal_set_time(int64_t value) {
-  if (!_internal_has_time()) {
-    clear_literal_type();
-    set_has_time();
-  }
-  literal_type_.time_ = value;
-}
-inline int64_t Expression_Literal::time() const {
-  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.time)
-  return _internal_time();
-}
-inline void Expression_Literal::set_time(int64_t value) {
-  _internal_set_time(value);
-  // @@protoc_insertion_point(field_set:substrait.Expression.Literal.time)
 }
 
 // .substrait.Expression.Literal.IntervalYearToMonth interval_year_to_month = 19;
@@ -47803,44 +49420,6 @@ inline ::substrait::Expression_Literal_Map* Expression_Literal::mutable_map() {
   ::substrait::Expression_Literal_Map* _msg = _internal_mutable_map();
   // @@protoc_insertion_point(field_mutable:substrait.Expression.Literal.map)
   return _msg;
-}
-
-// int64 timestamp_tz = 27 [deprecated = true];
-inline bool Expression_Literal::_internal_has_timestamp_tz() const {
-  return literal_type_case() == kTimestampTz;
-}
-inline bool Expression_Literal::has_timestamp_tz() const {
-  return _internal_has_timestamp_tz();
-}
-inline void Expression_Literal::set_has_timestamp_tz() {
-  _oneof_case_[0] = kTimestampTz;
-}
-inline void Expression_Literal::clear_timestamp_tz() {
-  if (_internal_has_timestamp_tz()) {
-    literal_type_.timestamp_tz_ = int64_t{0};
-    clear_has_literal_type();
-  }
-}
-inline int64_t Expression_Literal::_internal_timestamp_tz() const {
-  if (_internal_has_timestamp_tz()) {
-    return literal_type_.timestamp_tz_;
-  }
-  return int64_t{0};
-}
-inline void Expression_Literal::_internal_set_timestamp_tz(int64_t value) {
-  if (!_internal_has_timestamp_tz()) {
-    clear_literal_type();
-    set_has_timestamp_tz();
-  }
-  literal_type_.timestamp_tz_ = value;
-}
-inline int64_t Expression_Literal::timestamp_tz() const {
-  // @@protoc_insertion_point(field_get:substrait.Expression.Literal.timestamp_tz)
-  return _internal_timestamp_tz();
-}
-inline void Expression_Literal::set_timestamp_tz(int64_t value) {
-  _internal_set_timestamp_tz(value);
-  // @@protoc_insertion_point(field_set:substrait.Expression.Literal.timestamp_tz)
 }
 
 // bytes uuid = 28;
@@ -48911,6 +50490,370 @@ inline void Expression_Nested::clear_has_nested_type() {
 inline Expression_Nested::NestedTypeCase Expression_Nested::nested_type_case() const {
   return Expression_Nested::NestedTypeCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// Expression_Lambda
+
+// .substrait.Type.Struct parameters = 1;
+inline bool Expression_Lambda::_internal_has_parameters() const {
+  return this != internal_default_instance() && parameters_ != nullptr;
+}
+inline bool Expression_Lambda::has_parameters() const {
+  return _internal_has_parameters();
+}
+inline const ::substrait::Type_Struct& Expression_Lambda::_internal_parameters() const {
+  const ::substrait::Type_Struct* p = parameters_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Type_Struct&>(
+      ::substrait::_Type_Struct_default_instance_);
+}
+inline const ::substrait::Type_Struct& Expression_Lambda::parameters() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Lambda.parameters)
+  return _internal_parameters();
+}
+inline void Expression_Lambda::unsafe_arena_set_allocated_parameters(
+    ::substrait::Type_Struct* parameters) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(parameters_);
+  }
+  parameters_ = parameters;
+  if (parameters) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.Lambda.parameters)
+}
+inline ::substrait::Type_Struct* Expression_Lambda::release_parameters() {
+  
+  ::substrait::Type_Struct* temp = parameters_;
+  parameters_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Type_Struct* Expression_Lambda::unsafe_arena_release_parameters() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.Lambda.parameters)
+  
+  ::substrait::Type_Struct* temp = parameters_;
+  parameters_ = nullptr;
+  return temp;
+}
+inline ::substrait::Type_Struct* Expression_Lambda::_internal_mutable_parameters() {
+  
+  if (parameters_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Type_Struct>(GetArenaForAllocation());
+    parameters_ = p;
+  }
+  return parameters_;
+}
+inline ::substrait::Type_Struct* Expression_Lambda::mutable_parameters() {
+  ::substrait::Type_Struct* _msg = _internal_mutable_parameters();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.Lambda.parameters)
+  return _msg;
+}
+inline void Expression_Lambda::set_allocated_parameters(::substrait::Type_Struct* parameters) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(parameters_);
+  }
+  if (parameters) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<
+            ::PROTOBUF_NAMESPACE_ID::MessageLite>::GetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(parameters));
+    if (message_arena != submessage_arena) {
+      parameters = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, parameters, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  parameters_ = parameters;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.Lambda.parameters)
+}
+
+// .substrait.Expression body = 2;
+inline bool Expression_Lambda::_internal_has_body() const {
+  return this != internal_default_instance() && body_ != nullptr;
+}
+inline bool Expression_Lambda::has_body() const {
+  return _internal_has_body();
+}
+inline void Expression_Lambda::clear_body() {
+  if (GetArenaForAllocation() == nullptr && body_ != nullptr) {
+    delete body_;
+  }
+  body_ = nullptr;
+}
+inline const ::substrait::Expression& Expression_Lambda::_internal_body() const {
+  const ::substrait::Expression* p = body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression&>(
+      ::substrait::_Expression_default_instance_);
+}
+inline const ::substrait::Expression& Expression_Lambda::body() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.Lambda.body)
+  return _internal_body();
+}
+inline void Expression_Lambda::unsafe_arena_set_allocated_body(
+    ::substrait::Expression* body) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(body_);
+  }
+  body_ = body;
+  if (body) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.Lambda.body)
+}
+inline ::substrait::Expression* Expression_Lambda::release_body() {
+  
+  ::substrait::Expression* temp = body_;
+  body_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression* Expression_Lambda::unsafe_arena_release_body() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.Lambda.body)
+  
+  ::substrait::Expression* temp = body_;
+  body_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression* Expression_Lambda::_internal_mutable_body() {
+  
+  if (body_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression>(GetArenaForAllocation());
+    body_ = p;
+  }
+  return body_;
+}
+inline ::substrait::Expression* Expression_Lambda::mutable_body() {
+  ::substrait::Expression* _msg = _internal_mutable_body();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.Lambda.body)
+  return _msg;
+}
+inline void Expression_Lambda::set_allocated_body(::substrait::Expression* body) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete body_;
+  }
+  if (body) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression>::GetOwningArena(body);
+    if (message_arena != submessage_arena) {
+      body = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, body, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  body_ = body;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.Lambda.body)
+}
+
+// -------------------------------------------------------------------
+
+// Expression_LambdaInvocation
+
+// .substrait.Expression.Lambda lambda = 1;
+inline bool Expression_LambdaInvocation::_internal_has_lambda() const {
+  return this != internal_default_instance() && lambda_ != nullptr;
+}
+inline bool Expression_LambdaInvocation::has_lambda() const {
+  return _internal_has_lambda();
+}
+inline void Expression_LambdaInvocation::clear_lambda() {
+  if (GetArenaForAllocation() == nullptr && lambda_ != nullptr) {
+    delete lambda_;
+  }
+  lambda_ = nullptr;
+}
+inline const ::substrait::Expression_Lambda& Expression_LambdaInvocation::_internal_lambda() const {
+  const ::substrait::Expression_Lambda* p = lambda_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression_Lambda&>(
+      ::substrait::_Expression_Lambda_default_instance_);
+}
+inline const ::substrait::Expression_Lambda& Expression_LambdaInvocation::lambda() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.LambdaInvocation.lambda)
+  return _internal_lambda();
+}
+inline void Expression_LambdaInvocation::unsafe_arena_set_allocated_lambda(
+    ::substrait::Expression_Lambda* lambda) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(lambda_);
+  }
+  lambda_ = lambda;
+  if (lambda) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.LambdaInvocation.lambda)
+}
+inline ::substrait::Expression_Lambda* Expression_LambdaInvocation::release_lambda() {
+  
+  ::substrait::Expression_Lambda* temp = lambda_;
+  lambda_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression_Lambda* Expression_LambdaInvocation::unsafe_arena_release_lambda() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.LambdaInvocation.lambda)
+  
+  ::substrait::Expression_Lambda* temp = lambda_;
+  lambda_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression_Lambda* Expression_LambdaInvocation::_internal_mutable_lambda() {
+  
+  if (lambda_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression_Lambda>(GetArenaForAllocation());
+    lambda_ = p;
+  }
+  return lambda_;
+}
+inline ::substrait::Expression_Lambda* Expression_LambdaInvocation::mutable_lambda() {
+  ::substrait::Expression_Lambda* _msg = _internal_mutable_lambda();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.LambdaInvocation.lambda)
+  return _msg;
+}
+inline void Expression_LambdaInvocation::set_allocated_lambda(::substrait::Expression_Lambda* lambda) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete lambda_;
+  }
+  if (lambda) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression_Lambda>::GetOwningArena(lambda);
+    if (message_arena != submessage_arena) {
+      lambda = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, lambda, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  lambda_ = lambda;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.LambdaInvocation.lambda)
+}
+
+// .substrait.Expression.Nested.Struct arguments = 2;
+inline bool Expression_LambdaInvocation::_internal_has_arguments() const {
+  return this != internal_default_instance() && arguments_ != nullptr;
+}
+inline bool Expression_LambdaInvocation::has_arguments() const {
+  return _internal_has_arguments();
+}
+inline void Expression_LambdaInvocation::clear_arguments() {
+  if (GetArenaForAllocation() == nullptr && arguments_ != nullptr) {
+    delete arguments_;
+  }
+  arguments_ = nullptr;
+}
+inline const ::substrait::Expression_Nested_Struct& Expression_LambdaInvocation::_internal_arguments() const {
+  const ::substrait::Expression_Nested_Struct* p = arguments_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Expression_Nested_Struct&>(
+      ::substrait::_Expression_Nested_Struct_default_instance_);
+}
+inline const ::substrait::Expression_Nested_Struct& Expression_LambdaInvocation::arguments() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.LambdaInvocation.arguments)
+  return _internal_arguments();
+}
+inline void Expression_LambdaInvocation::unsafe_arena_set_allocated_arguments(
+    ::substrait::Expression_Nested_Struct* arguments) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(arguments_);
+  }
+  arguments_ = arguments;
+  if (arguments) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.LambdaInvocation.arguments)
+}
+inline ::substrait::Expression_Nested_Struct* Expression_LambdaInvocation::release_arguments() {
+  
+  ::substrait::Expression_Nested_Struct* temp = arguments_;
+  arguments_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Expression_Nested_Struct* Expression_LambdaInvocation::unsafe_arena_release_arguments() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.LambdaInvocation.arguments)
+  
+  ::substrait::Expression_Nested_Struct* temp = arguments_;
+  arguments_ = nullptr;
+  return temp;
+}
+inline ::substrait::Expression_Nested_Struct* Expression_LambdaInvocation::_internal_mutable_arguments() {
+  
+  if (arguments_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Expression_Nested_Struct>(GetArenaForAllocation());
+    arguments_ = p;
+  }
+  return arguments_;
+}
+inline ::substrait::Expression_Nested_Struct* Expression_LambdaInvocation::mutable_arguments() {
+  ::substrait::Expression_Nested_Struct* _msg = _internal_mutable_arguments();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.LambdaInvocation.arguments)
+  return _msg;
+}
+inline void Expression_LambdaInvocation::set_allocated_arguments(::substrait::Expression_Nested_Struct* arguments) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete arguments_;
+  }
+  if (arguments) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Expression_Nested_Struct>::GetOwningArena(arguments);
+    if (message_arena != submessage_arena) {
+      arguments = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, arguments, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  arguments_ = arguments;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Expression.LambdaInvocation.arguments)
+}
+
 // -------------------------------------------------------------------
 
 // Expression_ScalarFunction
@@ -53678,23 +55621,112 @@ inline void Expression_MaskExpression::set_maintain_singular_struct(bool value) 
 // Expression_FieldReference_OuterReference
 
 // uint32 steps_out = 1;
+inline bool Expression_FieldReference_OuterReference::_internal_has_steps_out() const {
+  return outer_reference_type_case() == kStepsOut;
+}
+inline bool Expression_FieldReference_OuterReference::has_steps_out() const {
+  return _internal_has_steps_out();
+}
+inline void Expression_FieldReference_OuterReference::set_has_steps_out() {
+  _oneof_case_[0] = kStepsOut;
+}
 inline void Expression_FieldReference_OuterReference::clear_steps_out() {
-  steps_out_ = 0u;
+  if (_internal_has_steps_out()) {
+    outer_reference_type_.steps_out_ = 0u;
+    clear_has_outer_reference_type();
+  }
 }
 inline uint32_t Expression_FieldReference_OuterReference::_internal_steps_out() const {
-  return steps_out_;
+  if (_internal_has_steps_out()) {
+    return outer_reference_type_.steps_out_;
+  }
+  return 0u;
+}
+inline void Expression_FieldReference_OuterReference::_internal_set_steps_out(uint32_t value) {
+  if (!_internal_has_steps_out()) {
+    clear_outer_reference_type();
+    set_has_steps_out();
+  }
+  outer_reference_type_.steps_out_ = value;
 }
 inline uint32_t Expression_FieldReference_OuterReference::steps_out() const {
   // @@protoc_insertion_point(field_get:substrait.Expression.FieldReference.OuterReference.steps_out)
   return _internal_steps_out();
 }
-inline void Expression_FieldReference_OuterReference::_internal_set_steps_out(uint32_t value) {
-  
-  steps_out_ = value;
-}
 inline void Expression_FieldReference_OuterReference::set_steps_out(uint32_t value) {
   _internal_set_steps_out(value);
   // @@protoc_insertion_point(field_set:substrait.Expression.FieldReference.OuterReference.steps_out)
+}
+
+// uint32 rel_reference = 2;
+inline bool Expression_FieldReference_OuterReference::_internal_has_rel_reference() const {
+  return outer_reference_type_case() == kRelReference;
+}
+inline bool Expression_FieldReference_OuterReference::has_rel_reference() const {
+  return _internal_has_rel_reference();
+}
+inline void Expression_FieldReference_OuterReference::set_has_rel_reference() {
+  _oneof_case_[0] = kRelReference;
+}
+inline void Expression_FieldReference_OuterReference::clear_rel_reference() {
+  if (_internal_has_rel_reference()) {
+    outer_reference_type_.rel_reference_ = 0u;
+    clear_has_outer_reference_type();
+  }
+}
+inline uint32_t Expression_FieldReference_OuterReference::_internal_rel_reference() const {
+  if (_internal_has_rel_reference()) {
+    return outer_reference_type_.rel_reference_;
+  }
+  return 0u;
+}
+inline void Expression_FieldReference_OuterReference::_internal_set_rel_reference(uint32_t value) {
+  if (!_internal_has_rel_reference()) {
+    clear_outer_reference_type();
+    set_has_rel_reference();
+  }
+  outer_reference_type_.rel_reference_ = value;
+}
+inline uint32_t Expression_FieldReference_OuterReference::rel_reference() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.FieldReference.OuterReference.rel_reference)
+  return _internal_rel_reference();
+}
+inline void Expression_FieldReference_OuterReference::set_rel_reference(uint32_t value) {
+  _internal_set_rel_reference(value);
+  // @@protoc_insertion_point(field_set:substrait.Expression.FieldReference.OuterReference.rel_reference)
+}
+
+inline bool Expression_FieldReference_OuterReference::has_outer_reference_type() const {
+  return outer_reference_type_case() != OUTER_REFERENCE_TYPE_NOT_SET;
+}
+inline void Expression_FieldReference_OuterReference::clear_has_outer_reference_type() {
+  _oneof_case_[0] = OUTER_REFERENCE_TYPE_NOT_SET;
+}
+inline Expression_FieldReference_OuterReference::OuterReferenceTypeCase Expression_FieldReference_OuterReference::outer_reference_type_case() const {
+  return Expression_FieldReference_OuterReference::OuterReferenceTypeCase(_oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
+// Expression_FieldReference_LambdaParameterReference
+
+// uint32 steps_out = 1;
+inline void Expression_FieldReference_LambdaParameterReference::clear_steps_out() {
+  steps_out_ = 0u;
+}
+inline uint32_t Expression_FieldReference_LambdaParameterReference::_internal_steps_out() const {
+  return steps_out_;
+}
+inline uint32_t Expression_FieldReference_LambdaParameterReference::steps_out() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.FieldReference.LambdaParameterReference.steps_out)
+  return _internal_steps_out();
+}
+inline void Expression_FieldReference_LambdaParameterReference::_internal_set_steps_out(uint32_t value) {
+  
+  steps_out_ = value;
+}
+inline void Expression_FieldReference_LambdaParameterReference::set_steps_out(uint32_t value) {
+  _internal_set_steps_out(value);
+  // @@protoc_insertion_point(field_set:substrait.Expression.FieldReference.LambdaParameterReference.steps_out)
 }
 
 // -------------------------------------------------------------------
@@ -54068,6 +56100,80 @@ inline ::substrait::Expression_FieldReference_OuterReference* Expression_FieldRe
 inline ::substrait::Expression_FieldReference_OuterReference* Expression_FieldReference::mutable_outer_reference() {
   ::substrait::Expression_FieldReference_OuterReference* _msg = _internal_mutable_outer_reference();
   // @@protoc_insertion_point(field_mutable:substrait.Expression.FieldReference.outer_reference)
+  return _msg;
+}
+
+// .substrait.Expression.FieldReference.LambdaParameterReference lambda_parameter_reference = 6;
+inline bool Expression_FieldReference::_internal_has_lambda_parameter_reference() const {
+  return root_type_case() == kLambdaParameterReference;
+}
+inline bool Expression_FieldReference::has_lambda_parameter_reference() const {
+  return _internal_has_lambda_parameter_reference();
+}
+inline void Expression_FieldReference::set_has_lambda_parameter_reference() {
+  _oneof_case_[1] = kLambdaParameterReference;
+}
+inline void Expression_FieldReference::clear_lambda_parameter_reference() {
+  if (_internal_has_lambda_parameter_reference()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete root_type_.lambda_parameter_reference_;
+    }
+    clear_has_root_type();
+  }
+}
+inline ::substrait::Expression_FieldReference_LambdaParameterReference* Expression_FieldReference::release_lambda_parameter_reference() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.FieldReference.lambda_parameter_reference)
+  if (_internal_has_lambda_parameter_reference()) {
+    clear_has_root_type();
+      ::substrait::Expression_FieldReference_LambdaParameterReference* temp = root_type_.lambda_parameter_reference_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    root_type_.lambda_parameter_reference_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression_FieldReference_LambdaParameterReference& Expression_FieldReference::_internal_lambda_parameter_reference() const {
+  return _internal_has_lambda_parameter_reference()
+      ? *root_type_.lambda_parameter_reference_
+      : reinterpret_cast< ::substrait::Expression_FieldReference_LambdaParameterReference&>(::substrait::_Expression_FieldReference_LambdaParameterReference_default_instance_);
+}
+inline const ::substrait::Expression_FieldReference_LambdaParameterReference& Expression_FieldReference::lambda_parameter_reference() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.FieldReference.lambda_parameter_reference)
+  return _internal_lambda_parameter_reference();
+}
+inline ::substrait::Expression_FieldReference_LambdaParameterReference* Expression_FieldReference::unsafe_arena_release_lambda_parameter_reference() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.FieldReference.lambda_parameter_reference)
+  if (_internal_has_lambda_parameter_reference()) {
+    clear_has_root_type();
+    ::substrait::Expression_FieldReference_LambdaParameterReference* temp = root_type_.lambda_parameter_reference_;
+    root_type_.lambda_parameter_reference_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression_FieldReference::unsafe_arena_set_allocated_lambda_parameter_reference(::substrait::Expression_FieldReference_LambdaParameterReference* lambda_parameter_reference) {
+  clear_root_type();
+  if (lambda_parameter_reference) {
+    set_has_lambda_parameter_reference();
+    root_type_.lambda_parameter_reference_ = lambda_parameter_reference;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.FieldReference.lambda_parameter_reference)
+}
+inline ::substrait::Expression_FieldReference_LambdaParameterReference* Expression_FieldReference::_internal_mutable_lambda_parameter_reference() {
+  if (!_internal_has_lambda_parameter_reference()) {
+    clear_root_type();
+    set_has_lambda_parameter_reference();
+    root_type_.lambda_parameter_reference_ = CreateMaybeMessage< ::substrait::Expression_FieldReference_LambdaParameterReference >(GetArenaForAllocation());
+  }
+  return root_type_.lambda_parameter_reference_;
+}
+inline ::substrait::Expression_FieldReference_LambdaParameterReference* Expression_FieldReference::mutable_lambda_parameter_reference() {
+  ::substrait::Expression_FieldReference_LambdaParameterReference* _msg = _internal_mutable_lambda_parameter_reference();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.FieldReference.lambda_parameter_reference)
   return _msg;
 }
 
@@ -54966,6 +57072,217 @@ inline Expression_Subquery::SubqueryTypeCase Expression_Subquery::subquery_type_
 }
 // -------------------------------------------------------------------
 
+// Expression_ExecutionContextVariable
+
+// .substrait.Type.PrecisionTimestampTZ current_timestamp = 1;
+inline bool Expression_ExecutionContextVariable::_internal_has_current_timestamp() const {
+  return execution_context_variable_type_case() == kCurrentTimestamp;
+}
+inline bool Expression_ExecutionContextVariable::has_current_timestamp() const {
+  return _internal_has_current_timestamp();
+}
+inline void Expression_ExecutionContextVariable::set_has_current_timestamp() {
+  _oneof_case_[0] = kCurrentTimestamp;
+}
+inline ::substrait::Type_PrecisionTimestampTZ* Expression_ExecutionContextVariable::release_current_timestamp() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.ExecutionContextVariable.current_timestamp)
+  if (_internal_has_current_timestamp()) {
+    clear_has_execution_context_variable_type();
+      ::substrait::Type_PrecisionTimestampTZ* temp = execution_context_variable_type_.current_timestamp_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    execution_context_variable_type_.current_timestamp_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Type_PrecisionTimestampTZ& Expression_ExecutionContextVariable::_internal_current_timestamp() const {
+  return _internal_has_current_timestamp()
+      ? *execution_context_variable_type_.current_timestamp_
+      : reinterpret_cast< ::substrait::Type_PrecisionTimestampTZ&>(::substrait::_Type_PrecisionTimestampTZ_default_instance_);
+}
+inline const ::substrait::Type_PrecisionTimestampTZ& Expression_ExecutionContextVariable::current_timestamp() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.ExecutionContextVariable.current_timestamp)
+  return _internal_current_timestamp();
+}
+inline ::substrait::Type_PrecisionTimestampTZ* Expression_ExecutionContextVariable::unsafe_arena_release_current_timestamp() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.ExecutionContextVariable.current_timestamp)
+  if (_internal_has_current_timestamp()) {
+    clear_has_execution_context_variable_type();
+    ::substrait::Type_PrecisionTimestampTZ* temp = execution_context_variable_type_.current_timestamp_;
+    execution_context_variable_type_.current_timestamp_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression_ExecutionContextVariable::unsafe_arena_set_allocated_current_timestamp(::substrait::Type_PrecisionTimestampTZ* current_timestamp) {
+  clear_execution_context_variable_type();
+  if (current_timestamp) {
+    set_has_current_timestamp();
+    execution_context_variable_type_.current_timestamp_ = current_timestamp;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.ExecutionContextVariable.current_timestamp)
+}
+inline ::substrait::Type_PrecisionTimestampTZ* Expression_ExecutionContextVariable::_internal_mutable_current_timestamp() {
+  if (!_internal_has_current_timestamp()) {
+    clear_execution_context_variable_type();
+    set_has_current_timestamp();
+    execution_context_variable_type_.current_timestamp_ = CreateMaybeMessage< ::substrait::Type_PrecisionTimestampTZ >(GetArenaForAllocation());
+  }
+  return execution_context_variable_type_.current_timestamp_;
+}
+inline ::substrait::Type_PrecisionTimestampTZ* Expression_ExecutionContextVariable::mutable_current_timestamp() {
+  ::substrait::Type_PrecisionTimestampTZ* _msg = _internal_mutable_current_timestamp();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.ExecutionContextVariable.current_timestamp)
+  return _msg;
+}
+
+// .substrait.Type.String current_timezone = 2;
+inline bool Expression_ExecutionContextVariable::_internal_has_current_timezone() const {
+  return execution_context_variable_type_case() == kCurrentTimezone;
+}
+inline bool Expression_ExecutionContextVariable::has_current_timezone() const {
+  return _internal_has_current_timezone();
+}
+inline void Expression_ExecutionContextVariable::set_has_current_timezone() {
+  _oneof_case_[0] = kCurrentTimezone;
+}
+inline ::substrait::Type_String* Expression_ExecutionContextVariable::release_current_timezone() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.ExecutionContextVariable.current_timezone)
+  if (_internal_has_current_timezone()) {
+    clear_has_execution_context_variable_type();
+      ::substrait::Type_String* temp = execution_context_variable_type_.current_timezone_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    execution_context_variable_type_.current_timezone_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Type_String& Expression_ExecutionContextVariable::_internal_current_timezone() const {
+  return _internal_has_current_timezone()
+      ? *execution_context_variable_type_.current_timezone_
+      : reinterpret_cast< ::substrait::Type_String&>(::substrait::_Type_String_default_instance_);
+}
+inline const ::substrait::Type_String& Expression_ExecutionContextVariable::current_timezone() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.ExecutionContextVariable.current_timezone)
+  return _internal_current_timezone();
+}
+inline ::substrait::Type_String* Expression_ExecutionContextVariable::unsafe_arena_release_current_timezone() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.ExecutionContextVariable.current_timezone)
+  if (_internal_has_current_timezone()) {
+    clear_has_execution_context_variable_type();
+    ::substrait::Type_String* temp = execution_context_variable_type_.current_timezone_;
+    execution_context_variable_type_.current_timezone_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression_ExecutionContextVariable::unsafe_arena_set_allocated_current_timezone(::substrait::Type_String* current_timezone) {
+  clear_execution_context_variable_type();
+  if (current_timezone) {
+    set_has_current_timezone();
+    execution_context_variable_type_.current_timezone_ = current_timezone;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.ExecutionContextVariable.current_timezone)
+}
+inline ::substrait::Type_String* Expression_ExecutionContextVariable::_internal_mutable_current_timezone() {
+  if (!_internal_has_current_timezone()) {
+    clear_execution_context_variable_type();
+    set_has_current_timezone();
+    execution_context_variable_type_.current_timezone_ = CreateMaybeMessage< ::substrait::Type_String >(GetArenaForAllocation());
+  }
+  return execution_context_variable_type_.current_timezone_;
+}
+inline ::substrait::Type_String* Expression_ExecutionContextVariable::mutable_current_timezone() {
+  ::substrait::Type_String* _msg = _internal_mutable_current_timezone();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.ExecutionContextVariable.current_timezone)
+  return _msg;
+}
+
+// .substrait.Type.Date current_date = 3;
+inline bool Expression_ExecutionContextVariable::_internal_has_current_date() const {
+  return execution_context_variable_type_case() == kCurrentDate;
+}
+inline bool Expression_ExecutionContextVariable::has_current_date() const {
+  return _internal_has_current_date();
+}
+inline void Expression_ExecutionContextVariable::set_has_current_date() {
+  _oneof_case_[0] = kCurrentDate;
+}
+inline ::substrait::Type_Date* Expression_ExecutionContextVariable::release_current_date() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.ExecutionContextVariable.current_date)
+  if (_internal_has_current_date()) {
+    clear_has_execution_context_variable_type();
+      ::substrait::Type_Date* temp = execution_context_variable_type_.current_date_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    execution_context_variable_type_.current_date_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Type_Date& Expression_ExecutionContextVariable::_internal_current_date() const {
+  return _internal_has_current_date()
+      ? *execution_context_variable_type_.current_date_
+      : reinterpret_cast< ::substrait::Type_Date&>(::substrait::_Type_Date_default_instance_);
+}
+inline const ::substrait::Type_Date& Expression_ExecutionContextVariable::current_date() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.ExecutionContextVariable.current_date)
+  return _internal_current_date();
+}
+inline ::substrait::Type_Date* Expression_ExecutionContextVariable::unsafe_arena_release_current_date() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.ExecutionContextVariable.current_date)
+  if (_internal_has_current_date()) {
+    clear_has_execution_context_variable_type();
+    ::substrait::Type_Date* temp = execution_context_variable_type_.current_date_;
+    execution_context_variable_type_.current_date_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression_ExecutionContextVariable::unsafe_arena_set_allocated_current_date(::substrait::Type_Date* current_date) {
+  clear_execution_context_variable_type();
+  if (current_date) {
+    set_has_current_date();
+    execution_context_variable_type_.current_date_ = current_date;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.ExecutionContextVariable.current_date)
+}
+inline ::substrait::Type_Date* Expression_ExecutionContextVariable::_internal_mutable_current_date() {
+  if (!_internal_has_current_date()) {
+    clear_execution_context_variable_type();
+    set_has_current_date();
+    execution_context_variable_type_.current_date_ = CreateMaybeMessage< ::substrait::Type_Date >(GetArenaForAllocation());
+  }
+  return execution_context_variable_type_.current_date_;
+}
+inline ::substrait::Type_Date* Expression_ExecutionContextVariable::mutable_current_date() {
+  ::substrait::Type_Date* _msg = _internal_mutable_current_date();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.ExecutionContextVariable.current_date)
+  return _msg;
+}
+
+inline bool Expression_ExecutionContextVariable::has_execution_context_variable_type() const {
+  return execution_context_variable_type_case() != EXECUTION_CONTEXT_VARIABLE_TYPE_NOT_SET;
+}
+inline void Expression_ExecutionContextVariable::clear_has_execution_context_variable_type() {
+  _oneof_case_[0] = EXECUTION_CONTEXT_VARIABLE_TYPE_NOT_SET;
+}
+inline Expression_ExecutionContextVariable::ExecutionContextVariableTypeCase Expression_ExecutionContextVariable::execution_context_variable_type_case() const {
+  return Expression_ExecutionContextVariable::ExecutionContextVariableTypeCase(_oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
 // Expression
 
 // .substrait.Expression.Literal literal = 1;
@@ -55853,6 +58170,228 @@ inline ::substrait::DynamicParameter* Expression::_internal_mutable_dynamic_para
 inline ::substrait::DynamicParameter* Expression::mutable_dynamic_parameter() {
   ::substrait::DynamicParameter* _msg = _internal_mutable_dynamic_parameter();
   // @@protoc_insertion_point(field_mutable:substrait.Expression.dynamic_parameter)
+  return _msg;
+}
+
+// .substrait.Expression.Lambda lambda = 15;
+inline bool Expression::_internal_has_lambda() const {
+  return rex_type_case() == kLambda;
+}
+inline bool Expression::has_lambda() const {
+  return _internal_has_lambda();
+}
+inline void Expression::set_has_lambda() {
+  _oneof_case_[0] = kLambda;
+}
+inline void Expression::clear_lambda() {
+  if (_internal_has_lambda()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete rex_type_.lambda_;
+    }
+    clear_has_rex_type();
+  }
+}
+inline ::substrait::Expression_Lambda* Expression::release_lambda() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.lambda)
+  if (_internal_has_lambda()) {
+    clear_has_rex_type();
+      ::substrait::Expression_Lambda* temp = rex_type_.lambda_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    rex_type_.lambda_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression_Lambda& Expression::_internal_lambda() const {
+  return _internal_has_lambda()
+      ? *rex_type_.lambda_
+      : reinterpret_cast< ::substrait::Expression_Lambda&>(::substrait::_Expression_Lambda_default_instance_);
+}
+inline const ::substrait::Expression_Lambda& Expression::lambda() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.lambda)
+  return _internal_lambda();
+}
+inline ::substrait::Expression_Lambda* Expression::unsafe_arena_release_lambda() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.lambda)
+  if (_internal_has_lambda()) {
+    clear_has_rex_type();
+    ::substrait::Expression_Lambda* temp = rex_type_.lambda_;
+    rex_type_.lambda_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression::unsafe_arena_set_allocated_lambda(::substrait::Expression_Lambda* lambda) {
+  clear_rex_type();
+  if (lambda) {
+    set_has_lambda();
+    rex_type_.lambda_ = lambda;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.lambda)
+}
+inline ::substrait::Expression_Lambda* Expression::_internal_mutable_lambda() {
+  if (!_internal_has_lambda()) {
+    clear_rex_type();
+    set_has_lambda();
+    rex_type_.lambda_ = CreateMaybeMessage< ::substrait::Expression_Lambda >(GetArenaForAllocation());
+  }
+  return rex_type_.lambda_;
+}
+inline ::substrait::Expression_Lambda* Expression::mutable_lambda() {
+  ::substrait::Expression_Lambda* _msg = _internal_mutable_lambda();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.lambda)
+  return _msg;
+}
+
+// .substrait.Expression.LambdaInvocation lambda_invocation = 16;
+inline bool Expression::_internal_has_lambda_invocation() const {
+  return rex_type_case() == kLambdaInvocation;
+}
+inline bool Expression::has_lambda_invocation() const {
+  return _internal_has_lambda_invocation();
+}
+inline void Expression::set_has_lambda_invocation() {
+  _oneof_case_[0] = kLambdaInvocation;
+}
+inline void Expression::clear_lambda_invocation() {
+  if (_internal_has_lambda_invocation()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete rex_type_.lambda_invocation_;
+    }
+    clear_has_rex_type();
+  }
+}
+inline ::substrait::Expression_LambdaInvocation* Expression::release_lambda_invocation() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.lambda_invocation)
+  if (_internal_has_lambda_invocation()) {
+    clear_has_rex_type();
+      ::substrait::Expression_LambdaInvocation* temp = rex_type_.lambda_invocation_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    rex_type_.lambda_invocation_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression_LambdaInvocation& Expression::_internal_lambda_invocation() const {
+  return _internal_has_lambda_invocation()
+      ? *rex_type_.lambda_invocation_
+      : reinterpret_cast< ::substrait::Expression_LambdaInvocation&>(::substrait::_Expression_LambdaInvocation_default_instance_);
+}
+inline const ::substrait::Expression_LambdaInvocation& Expression::lambda_invocation() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.lambda_invocation)
+  return _internal_lambda_invocation();
+}
+inline ::substrait::Expression_LambdaInvocation* Expression::unsafe_arena_release_lambda_invocation() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.lambda_invocation)
+  if (_internal_has_lambda_invocation()) {
+    clear_has_rex_type();
+    ::substrait::Expression_LambdaInvocation* temp = rex_type_.lambda_invocation_;
+    rex_type_.lambda_invocation_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression::unsafe_arena_set_allocated_lambda_invocation(::substrait::Expression_LambdaInvocation* lambda_invocation) {
+  clear_rex_type();
+  if (lambda_invocation) {
+    set_has_lambda_invocation();
+    rex_type_.lambda_invocation_ = lambda_invocation;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.lambda_invocation)
+}
+inline ::substrait::Expression_LambdaInvocation* Expression::_internal_mutable_lambda_invocation() {
+  if (!_internal_has_lambda_invocation()) {
+    clear_rex_type();
+    set_has_lambda_invocation();
+    rex_type_.lambda_invocation_ = CreateMaybeMessage< ::substrait::Expression_LambdaInvocation >(GetArenaForAllocation());
+  }
+  return rex_type_.lambda_invocation_;
+}
+inline ::substrait::Expression_LambdaInvocation* Expression::mutable_lambda_invocation() {
+  ::substrait::Expression_LambdaInvocation* _msg = _internal_mutable_lambda_invocation();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.lambda_invocation)
+  return _msg;
+}
+
+// .substrait.Expression.ExecutionContextVariable execution_context_variable = 17;
+inline bool Expression::_internal_has_execution_context_variable() const {
+  return rex_type_case() == kExecutionContextVariable;
+}
+inline bool Expression::has_execution_context_variable() const {
+  return _internal_has_execution_context_variable();
+}
+inline void Expression::set_has_execution_context_variable() {
+  _oneof_case_[0] = kExecutionContextVariable;
+}
+inline void Expression::clear_execution_context_variable() {
+  if (_internal_has_execution_context_variable()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete rex_type_.execution_context_variable_;
+    }
+    clear_has_rex_type();
+  }
+}
+inline ::substrait::Expression_ExecutionContextVariable* Expression::release_execution_context_variable() {
+  // @@protoc_insertion_point(field_release:substrait.Expression.execution_context_variable)
+  if (_internal_has_execution_context_variable()) {
+    clear_has_rex_type();
+      ::substrait::Expression_ExecutionContextVariable* temp = rex_type_.execution_context_variable_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    rex_type_.execution_context_variable_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Expression_ExecutionContextVariable& Expression::_internal_execution_context_variable() const {
+  return _internal_has_execution_context_variable()
+      ? *rex_type_.execution_context_variable_
+      : reinterpret_cast< ::substrait::Expression_ExecutionContextVariable&>(::substrait::_Expression_ExecutionContextVariable_default_instance_);
+}
+inline const ::substrait::Expression_ExecutionContextVariable& Expression::execution_context_variable() const {
+  // @@protoc_insertion_point(field_get:substrait.Expression.execution_context_variable)
+  return _internal_execution_context_variable();
+}
+inline ::substrait::Expression_ExecutionContextVariable* Expression::unsafe_arena_release_execution_context_variable() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Expression.execution_context_variable)
+  if (_internal_has_execution_context_variable()) {
+    clear_has_rex_type();
+    ::substrait::Expression_ExecutionContextVariable* temp = rex_type_.execution_context_variable_;
+    rex_type_.execution_context_variable_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Expression::unsafe_arena_set_allocated_execution_context_variable(::substrait::Expression_ExecutionContextVariable* execution_context_variable) {
+  clear_rex_type();
+  if (execution_context_variable) {
+    set_has_execution_context_variable();
+    rex_type_.execution_context_variable_ = execution_context_variable;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Expression.execution_context_variable)
+}
+inline ::substrait::Expression_ExecutionContextVariable* Expression::_internal_mutable_execution_context_variable() {
+  if (!_internal_has_execution_context_variable()) {
+    clear_rex_type();
+    set_has_execution_context_variable();
+    rex_type_.execution_context_variable_ = CreateMaybeMessage< ::substrait::Expression_ExecutionContextVariable >(GetArenaForAllocation());
+  }
+  return rex_type_.execution_context_variable_;
+}
+inline ::substrait::Expression_ExecutionContextVariable* Expression::mutable_execution_context_variable() {
+  ::substrait::Expression_ExecutionContextVariable* _msg = _internal_mutable_execution_context_variable();
+  // @@protoc_insertion_point(field_mutable:substrait.Expression.execution_context_variable)
   return _msg;
 }
 
@@ -56819,6 +59358,16 @@ inline void ReferenceRel::set_subtree_ordinal(int32_t value) {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -56925,6 +59474,11 @@ template <> struct is_proto_enum< ::substrait::AggregateFunction_AggregationInvo
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::substrait::AggregateFunction_AggregationInvocation>() {
   return ::substrait::AggregateFunction_AggregationInvocation_descriptor();
+}
+template <> struct is_proto_enum< ::substrait::FetchMode> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::substrait::FetchMode>() {
+  return ::substrait::FetchMode_descriptor();
 }
 template <> struct is_proto_enum< ::substrait::AggregationPhase> : ::std::true_type {};
 template <>

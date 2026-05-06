@@ -154,8 +154,8 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		date_t date(literal.date());
 		return Value::DATE(date);
 	}
-	case substrait::Expression_Literal::LiteralTypeCase::kTime: {
-		dtime_t time(literal.time());
+	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTime: {
+		dtime_t time(literal.precision_time().value());
 		return Value::TIME(time);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kIntervalYearToMonth: {
@@ -169,7 +169,19 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		interval_t interval {};
 		interval.months = 0;
 		interval.days = literal.interval_day_to_second().days();
-		interval.micros = literal.interval_day_to_second().microseconds();
+		// Convert seconds to microseconds and add subseconds (with precision adjustment)
+		int64_t seconds_in_micros = literal.interval_day_to_second().seconds() * Interval::MICROS_PER_SEC;
+		int64_t subseconds = literal.interval_day_to_second().subseconds();
+		int32_t precision = literal.interval_day_to_second().precision();
+		// Adjust subseconds based on precision (e.g., precision 9 = nanoseconds, need to convert to microseconds)
+		if (precision > 6) {
+			// Convert from higher precision (e.g., nanoseconds) to microseconds
+			subseconds = subseconds / (int64_t)pow(10, precision - 6);
+		} else if (precision < 6) {
+			// Convert from lower precision (e.g., milliseconds) to microseconds
+			subseconds = subseconds * (int64_t)pow(10, 6 - precision);
+		}
+		interval.micros = seconds_in_micros + subseconds;
 		return Value::INTERVAL(interval);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
@@ -321,7 +333,7 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 	}
 	case substrait::Type::KindCase::kDate:
 		return {LogicalTypeId::DATE};
-	case substrait::Type::KindCase::kTime:
+	case substrait::Type::KindCase::kPrecisionTime:
 		return {LogicalTypeId::TIME};
 	case substrait::Type::KindCase::kVarchar:
 	case substrait::Type::KindCase::kString:
@@ -332,8 +344,6 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 		return {LogicalTypeId::FLOAT};
 	case substrait::Type::KindCase::kFp64:
 		return {LogicalTypeId::DOUBLE};
-	case substrait::Type::KindCase::kTimestamp:
-		return {LogicalTypeId::TIMESTAMP};
 	case substrait::Type::KindCase::kPrecisionTimestamp: {
 		auto &s_precision_timestamp = s_type.precision_timestamp();
 		auto precision = s_precision_timestamp.precision();
@@ -685,11 +695,20 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
 	vector<unique_ptr<ParsedExpression>> groups, expressions;
 
+	auto input_rel = TransformOp(sop.aggregate().input());
+
 	if (sop.aggregate().groupings_size() > 0) {
 		for (auto &sgrp : sop.aggregate().groupings()) {
-			for (auto &sgrpexpr : sgrp.grouping_expressions()) {
-				groups.push_back(TransformExpr(sgrpexpr));
-				expressions.push_back(TransformExpr(sgrpexpr));
+			// expression_references contains indices into the grouping_expressions array
+			for (auto ref_idx : sgrp.expression_references()) {
+				// Get the expression from the AggregateRel's grouping_expressions array
+				if (ref_idx < (uint32_t)sop.aggregate().grouping_expressions_size()) {
+					auto expr = TransformExpr(sop.aggregate().grouping_expressions(ref_idx));
+					groups.push_back(expr->Copy());
+					expressions.push_back(std::move(expr));
+				} else {
+					throw InternalException("Invalid expression reference index in grouping");
+				}
 			}
 		}
 	}
@@ -710,8 +729,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		                                                    nullptr, nullptr, is_distinct));
 	}
 
-	return make_shared_ptr<AggregateRelation>(TransformOp(sop.aggregate().input()), std::move(expressions),
-	                                          std::move(groups));
+	return make_shared_ptr<AggregateRelation>(input_rel, std::move(expressions), std::move(groups));
 }
 unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &schema_name, const string &table_name) {
 	// obtain the table info

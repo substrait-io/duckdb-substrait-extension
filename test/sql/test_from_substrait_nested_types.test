@@ -261,16 +261,16 @@ CALL from_substrait_json('{
       "names": ["id", "name", "profile"]
     }
   }],
-  "extension_uris": [
+  "extension_urns": [
     {
-      "extension_uri_anchor": 1,
-      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+      "extension_urn_anchor": 1,
+      "urn": "extension:substrait:extension_types"
     }
   ],
   "extensions": [
     {
       "extension_function": {
-        "extension_uri_reference": 1,
+        "extension_urn_reference": 1,
         "function_anchor": 1,
         "name": "struct"
       }
@@ -347,16 +347,16 @@ CALL from_substrait_json('{
       "names": ["id", "name", "contacts"]
     }
   }],
-  "extension_uris": [
+  "extension_urns": [
     {
-      "extension_uri_anchor": 1,
-      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+      "extension_urn_anchor": 1,
+      "urn": "extension:substrait:extension_types"
     }
   ],
   "extensions": [
     {
       "extension_function": {
-        "extension_uri_reference": 1,
+        "extension_urn_reference": 1,
         "function_anchor": 1,
         "name": "struct"
       }
@@ -433,16 +433,16 @@ CALL from_substrait_json('{
       "names": ["id", "name", "properties"]
     }
   }],
-  "extension_uris": [
+  "extension_urns": [
     {
-      "extension_uri_anchor": 1,
-      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+      "extension_urn_anchor": 1,
+      "urn": "extension:substrait:extension_types"
     }
   ],
   "extensions": [
     {
       "extension_function": {
-        "extension_uri_reference": 1,
+        "extension_urn_reference": 1,
         "function_anchor": 1,
         "name": "struct"
       }
@@ -544,16 +544,16 @@ CALL from_substrait_json('{
       "names": ["id", "name", "user_data"]
     }
   }],
-  "extension_uris": [
+  "extension_urns": [
     {
-      "extension_uri_anchor": 1,
-      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+      "extension_urn_anchor": 1,
+      "urn": "extension:substrait:extension_types"
     }
   ],
   "extensions": [
     {
       "extension_function": {
-        "extension_uri_reference": 1,
+        "extension_urn_reference": 1,
         "function_anchor": 1,
         "name": "struct"
       }
@@ -731,16 +731,16 @@ CALL from_substrait_json('{
       "names": ["id", "name", "categories"]
     }
   }],
-  "extension_uris": [
+  "extension_urns": [
     {
-      "extension_uri_anchor": 1,
-      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/extension_types.yaml"
+      "extension_urn_anchor": 1,
+      "urn": "extension:substrait:extension_types"
     }
   ],
   "extensions": [
     {
       "extension_function": {
-        "extension_uri_reference": 1,
+        "extension_urn_reference": 1,
         "function_anchor": 1,
         "name": "struct"
       }

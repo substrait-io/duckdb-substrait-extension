@@ -61,11 +61,11 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 Not implemented Error: literals of this type are not implemented: binary
 
-# timestamp
+# precision_timestamp
 statement error
-CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp":{"precision":6, "value":99999999}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type are not implemented: timestamp
+Not implemented Error: literals of this type are not implemented: precision_timestamp
 
 # date
 query I
@@ -73,9 +73,9 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 1997-05-18
 
-# time
+# precision_time
 query I
-CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"time":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_time":{"precision":6, "value":99999999}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
 00:01:39.999999
 
@@ -85,17 +85,17 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 2 months
 
-# interval day to second (deprecated microseconds) (wrong, should include seconds)
+# interval day to second with subseconds and precision
 query I
-CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_day_to_second":{"days":3,"seconds":2,"microseconds":23}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_day_to_second":{"days":3,"seconds":2,"precision":6,"subseconds":23}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-3 days 00:00:00.000023
+3 days 00:00:02.000023
 
-# interval day to second (precision) (wrong, should include seconds and subseconds)
+# interval day to second (precision) (wrong, should include subseconds)
 query I
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"interval_day_to_second":{"days":3,"seconds":2,"precision":9,"subseconds":23}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-3 days
+3 days 00:00:02
 
 # interval compound
 statement error
@@ -157,11 +157,11 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 Not implemented Error: literals of this type are not implemented: map
 
-# timestamp_tz
+# precision_timestamp_tz
 statement error
-CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"timestamp_tz":99999999, "nullable":true}}]}}, "names":["?column?"]}}]}')
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precisionTimestampTz":{"precision":6, "value":99999999}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-Not implemented Error: literals of this type are not implemented: timestamp_tz
+Not implemented Error: literals of this type are not implemented: precision_timestamp_tz
 
 # uuid
 statement error

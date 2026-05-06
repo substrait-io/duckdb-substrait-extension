@@ -415,7 +415,6 @@ class ExtendedExpression final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kExtensionUrisFieldNumber = 1,
     kExtensionsFieldNumber = 2,
     kReferredExprFieldNumber = 3,
     kExpectedTypeUrlsFieldNumber = 6,
@@ -424,24 +423,6 @@ class ExtendedExpression final :
     kAdvancedExtensionsFieldNumber = 5,
     kVersionFieldNumber = 7,
   };
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED int extension_uris_size() const;
-  private:
-  int _internal_extension_uris_size() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_extension_uris();
-  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* mutable_extension_uris(int index);
-  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
-      mutable_extension_uris();
-  private:
-  const ::substrait::extensions::SimpleExtensionURI& _internal_extension_uris(int index) const;
-  ::substrait::extensions::SimpleExtensionURI* _internal_add_extension_uris();
-  public:
-  PROTOBUF_DEPRECATED const ::substrait::extensions::SimpleExtensionURI& extension_uris(int index) const;
-  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* add_extension_uris();
-  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
-      extension_uris() const;
-
   // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
   int extensions_size() const;
   private:
@@ -581,7 +562,6 @@ class ExtendedExpression final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI > extension_uris_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionDeclaration > extensions_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::ExpressionReference > referred_expr_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> expected_type_urls_;
@@ -907,43 +887,6 @@ inline void ExtendedExpression::set_allocated_version(::substrait::Version* vers
   }
   version_ = version;
   // @@protoc_insertion_point(field_set_allocated:substrait.ExtendedExpression.version)
-}
-
-// repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-inline int ExtendedExpression::_internal_extension_uris_size() const {
-  return extension_uris_.size();
-}
-inline int ExtendedExpression::extension_uris_size() const {
-  return _internal_extension_uris_size();
-}
-inline ::substrait::extensions::SimpleExtensionURI* ExtendedExpression::mutable_extension_uris(int index) {
-  // @@protoc_insertion_point(field_mutable:substrait.ExtendedExpression.extension_uris)
-  return extension_uris_.Mutable(index);
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
-ExtendedExpression::mutable_extension_uris() {
-  // @@protoc_insertion_point(field_mutable_list:substrait.ExtendedExpression.extension_uris)
-  return &extension_uris_;
-}
-inline const ::substrait::extensions::SimpleExtensionURI& ExtendedExpression::_internal_extension_uris(int index) const {
-  return extension_uris_.Get(index);
-}
-inline const ::substrait::extensions::SimpleExtensionURI& ExtendedExpression::extension_uris(int index) const {
-  // @@protoc_insertion_point(field_get:substrait.ExtendedExpression.extension_uris)
-  return _internal_extension_uris(index);
-}
-inline ::substrait::extensions::SimpleExtensionURI* ExtendedExpression::_internal_add_extension_uris() {
-  return extension_uris_.Add();
-}
-inline ::substrait::extensions::SimpleExtensionURI* ExtendedExpression::add_extension_uris() {
-  ::substrait::extensions::SimpleExtensionURI* _add = _internal_add_extension_uris();
-  // @@protoc_insertion_point(field_add:substrait.ExtendedExpression.extension_uris)
-  return _add;
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
-ExtendedExpression::extension_uris() const {
-  // @@protoc_insertion_point(field_list:substrait.ExtendedExpression.extension_uris)
-  return extension_uris_;
 }
 
 // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;

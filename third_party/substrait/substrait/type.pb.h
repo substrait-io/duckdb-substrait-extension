@@ -48,7 +48,7 @@ struct TableStruct_substrait_2ftype_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[33]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[31]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -89,6 +89,9 @@ extern Type_FixedBinaryDefaultTypeInternal _Type_FixedBinary_default_instance_;
 class Type_FixedChar;
 struct Type_FixedCharDefaultTypeInternal;
 extern Type_FixedCharDefaultTypeInternal _Type_FixedChar_default_instance_;
+class Type_Func;
+struct Type_FuncDefaultTypeInternal;
+extern Type_FuncDefaultTypeInternal _Type_Func_default_instance_;
 class Type_I16;
 struct Type_I16DefaultTypeInternal;
 extern Type_I16DefaultTypeInternal _Type_I16_default_instance_;
@@ -134,15 +137,6 @@ extern Type_StringDefaultTypeInternal _Type_String_default_instance_;
 class Type_Struct;
 struct Type_StructDefaultTypeInternal;
 extern Type_StructDefaultTypeInternal _Type_Struct_default_instance_;
-class Type_Time;
-struct Type_TimeDefaultTypeInternal;
-extern Type_TimeDefaultTypeInternal _Type_Time_default_instance_;
-class Type_Timestamp;
-struct Type_TimestampDefaultTypeInternal;
-extern Type_TimestampDefaultTypeInternal _Type_Timestamp_default_instance_;
-class Type_TimestampTZ;
-struct Type_TimestampTZDefaultTypeInternal;
-extern Type_TimestampTZDefaultTypeInternal _Type_TimestampTZ_default_instance_;
 class Type_TypeAliasReference;
 struct Type_TypeAliasReferenceDefaultTypeInternal;
 extern Type_TypeAliasReferenceDefaultTypeInternal _Type_TypeAliasReference_default_instance_;
@@ -168,6 +162,7 @@ template<> ::substrait::Type_FP32* Arena::CreateMaybeMessage<::substrait::Type_F
 template<> ::substrait::Type_FP64* Arena::CreateMaybeMessage<::substrait::Type_FP64>(Arena*);
 template<> ::substrait::Type_FixedBinary* Arena::CreateMaybeMessage<::substrait::Type_FixedBinary>(Arena*);
 template<> ::substrait::Type_FixedChar* Arena::CreateMaybeMessage<::substrait::Type_FixedChar>(Arena*);
+template<> ::substrait::Type_Func* Arena::CreateMaybeMessage<::substrait::Type_Func>(Arena*);
 template<> ::substrait::Type_I16* Arena::CreateMaybeMessage<::substrait::Type_I16>(Arena*);
 template<> ::substrait::Type_I32* Arena::CreateMaybeMessage<::substrait::Type_I32>(Arena*);
 template<> ::substrait::Type_I64* Arena::CreateMaybeMessage<::substrait::Type_I64>(Arena*);
@@ -183,9 +178,6 @@ template<> ::substrait::Type_PrecisionTimestamp* Arena::CreateMaybeMessage<::sub
 template<> ::substrait::Type_PrecisionTimestampTZ* Arena::CreateMaybeMessage<::substrait::Type_PrecisionTimestampTZ>(Arena*);
 template<> ::substrait::Type_String* Arena::CreateMaybeMessage<::substrait::Type_String>(Arena*);
 template<> ::substrait::Type_Struct* Arena::CreateMaybeMessage<::substrait::Type_Struct>(Arena*);
-template<> ::substrait::Type_Time* Arena::CreateMaybeMessage<::substrait::Type_Time>(Arena*);
-template<> ::substrait::Type_Timestamp* Arena::CreateMaybeMessage<::substrait::Type_Timestamp>(Arena*);
-template<> ::substrait::Type_TimestampTZ* Arena::CreateMaybeMessage<::substrait::Type_TimestampTZ>(Arena*);
 template<> ::substrait::Type_TypeAliasReference* Arena::CreateMaybeMessage<::substrait::Type_TypeAliasReference>(Arena*);
 template<> ::substrait::Type_UUID* Arena::CreateMaybeMessage<::substrait::Type_UUID>(Arena*);
 template<> ::substrait::Type_UserDefined* Arena::CreateMaybeMessage<::substrait::Type_UserDefined>(Arena*);
@@ -1634,163 +1626,6 @@ class Type_Binary final :
 };
 // -------------------------------------------------------------------
 
-class Type_Timestamp final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.Timestamp) */ {
- public:
-  inline Type_Timestamp() : Type_Timestamp(nullptr) {}
-  ~Type_Timestamp() override;
-  explicit constexpr Type_Timestamp(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-
-  Type_Timestamp(const Type_Timestamp& from);
-  Type_Timestamp(Type_Timestamp&& from) noexcept
-    : Type_Timestamp() {
-    *this = ::std::move(from);
-  }
-
-  inline Type_Timestamp& operator=(const Type_Timestamp& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Type_Timestamp& operator=(Type_Timestamp&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetOwningArena() == from.GetOwningArena()
-  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetOwningArena() != nullptr
-  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Type_Timestamp& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const Type_Timestamp* internal_default_instance() {
-    return reinterpret_cast<const Type_Timestamp*>(
-               &_Type_Timestamp_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    9;
-
-  friend void swap(Type_Timestamp& a, Type_Timestamp& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(Type_Timestamp* other) {
-    if (other == this) return;
-  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() != nullptr &&
-        GetOwningArena() == other->GetOwningArena()) {
-   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() == other->GetOwningArena()) {
-  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Type_Timestamp* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Type_Timestamp* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<Type_Timestamp>(arena);
-  }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const Type_Timestamp& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom(const Type_Timestamp& from);
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
-  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  uint8_t* _InternalSerialize(
-      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Type_Timestamp* other);
-
-  private:
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "substrait.Type.Timestamp";
-  }
-  protected:
-  explicit Type_Timestamp(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                       bool is_message_owned = false);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kTypeVariationReferenceFieldNumber = 1,
-    kNullabilityFieldNumber = 2,
-  };
-  // uint32 type_variation_reference = 1;
-  void clear_type_variation_reference();
-  uint32_t type_variation_reference() const;
-  void set_type_variation_reference(uint32_t value);
-  private:
-  uint32_t _internal_type_variation_reference() const;
-  void _internal_set_type_variation_reference(uint32_t value);
-  public:
-
-  // .substrait.Type.Nullability nullability = 2;
-  void clear_nullability();
-  ::substrait::Type_Nullability nullability() const;
-  void set_nullability(::substrait::Type_Nullability value);
-  private:
-  ::substrait::Type_Nullability _internal_nullability() const;
-  void _internal_set_nullability(::substrait::Type_Nullability value);
-  public:
-
-  // @@protoc_insertion_point(class_scope:substrait.Type.Timestamp)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  uint32_t type_variation_reference_;
-  int nullability_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_substrait_2ftype_2eproto;
-};
-// -------------------------------------------------------------------
-
 class Type_Date final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.Date) */ {
  public:
@@ -1839,7 +1674,7 @@ class Type_Date final :
                &_Type_Date_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    9;
 
   friend void swap(Type_Date& a, Type_Date& b) {
     a.Swap(&b);
@@ -1948,320 +1783,6 @@ class Type_Date final :
 };
 // -------------------------------------------------------------------
 
-class Type_Time final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.Time) */ {
- public:
-  inline Type_Time() : Type_Time(nullptr) {}
-  ~Type_Time() override;
-  explicit constexpr Type_Time(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-
-  Type_Time(const Type_Time& from);
-  Type_Time(Type_Time&& from) noexcept
-    : Type_Time() {
-    *this = ::std::move(from);
-  }
-
-  inline Type_Time& operator=(const Type_Time& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Type_Time& operator=(Type_Time&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetOwningArena() == from.GetOwningArena()
-  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetOwningArena() != nullptr
-  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Type_Time& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const Type_Time* internal_default_instance() {
-    return reinterpret_cast<const Type_Time*>(
-               &_Type_Time_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    11;
-
-  friend void swap(Type_Time& a, Type_Time& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(Type_Time* other) {
-    if (other == this) return;
-  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() != nullptr &&
-        GetOwningArena() == other->GetOwningArena()) {
-   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() == other->GetOwningArena()) {
-  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Type_Time* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Type_Time* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<Type_Time>(arena);
-  }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const Type_Time& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom(const Type_Time& from);
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
-  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  uint8_t* _InternalSerialize(
-      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Type_Time* other);
-
-  private:
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "substrait.Type.Time";
-  }
-  protected:
-  explicit Type_Time(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                       bool is_message_owned = false);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kTypeVariationReferenceFieldNumber = 1,
-    kNullabilityFieldNumber = 2,
-  };
-  // uint32 type_variation_reference = 1;
-  void clear_type_variation_reference();
-  uint32_t type_variation_reference() const;
-  void set_type_variation_reference(uint32_t value);
-  private:
-  uint32_t _internal_type_variation_reference() const;
-  void _internal_set_type_variation_reference(uint32_t value);
-  public:
-
-  // .substrait.Type.Nullability nullability = 2;
-  void clear_nullability();
-  ::substrait::Type_Nullability nullability() const;
-  void set_nullability(::substrait::Type_Nullability value);
-  private:
-  ::substrait::Type_Nullability _internal_nullability() const;
-  void _internal_set_nullability(::substrait::Type_Nullability value);
-  public:
-
-  // @@protoc_insertion_point(class_scope:substrait.Type.Time)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  uint32_t type_variation_reference_;
-  int nullability_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_substrait_2ftype_2eproto;
-};
-// -------------------------------------------------------------------
-
-class Type_TimestampTZ final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.TimestampTZ) */ {
- public:
-  inline Type_TimestampTZ() : Type_TimestampTZ(nullptr) {}
-  ~Type_TimestampTZ() override;
-  explicit constexpr Type_TimestampTZ(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-
-  Type_TimestampTZ(const Type_TimestampTZ& from);
-  Type_TimestampTZ(Type_TimestampTZ&& from) noexcept
-    : Type_TimestampTZ() {
-    *this = ::std::move(from);
-  }
-
-  inline Type_TimestampTZ& operator=(const Type_TimestampTZ& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Type_TimestampTZ& operator=(Type_TimestampTZ&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetOwningArena() == from.GetOwningArena()
-  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetOwningArena() != nullptr
-  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Type_TimestampTZ& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const Type_TimestampTZ* internal_default_instance() {
-    return reinterpret_cast<const Type_TimestampTZ*>(
-               &_Type_TimestampTZ_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    12;
-
-  friend void swap(Type_TimestampTZ& a, Type_TimestampTZ& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(Type_TimestampTZ* other) {
-    if (other == this) return;
-  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() != nullptr &&
-        GetOwningArena() == other->GetOwningArena()) {
-   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() == other->GetOwningArena()) {
-  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Type_TimestampTZ* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Type_TimestampTZ* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<Type_TimestampTZ>(arena);
-  }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const Type_TimestampTZ& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom(const Type_TimestampTZ& from);
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
-  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  uint8_t* _InternalSerialize(
-      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Type_TimestampTZ* other);
-
-  private:
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "substrait.Type.TimestampTZ";
-  }
-  protected:
-  explicit Type_TimestampTZ(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                       bool is_message_owned = false);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kTypeVariationReferenceFieldNumber = 1,
-    kNullabilityFieldNumber = 2,
-  };
-  // uint32 type_variation_reference = 1;
-  void clear_type_variation_reference();
-  uint32_t type_variation_reference() const;
-  void set_type_variation_reference(uint32_t value);
-  private:
-  uint32_t _internal_type_variation_reference() const;
-  void _internal_set_type_variation_reference(uint32_t value);
-  public:
-
-  // .substrait.Type.Nullability nullability = 2;
-  void clear_nullability();
-  ::substrait::Type_Nullability nullability() const;
-  void set_nullability(::substrait::Type_Nullability value);
-  private:
-  ::substrait::Type_Nullability _internal_nullability() const;
-  void _internal_set_nullability(::substrait::Type_Nullability value);
-  public:
-
-  // @@protoc_insertion_point(class_scope:substrait.Type.TimestampTZ)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  uint32_t type_variation_reference_;
-  int nullability_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_substrait_2ftype_2eproto;
-};
-// -------------------------------------------------------------------
-
 class Type_IntervalYear final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.IntervalYear) */ {
  public:
@@ -2310,7 +1831,7 @@ class Type_IntervalYear final :
                &_Type_IntervalYear_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    10;
 
   friend void swap(Type_IntervalYear& a, Type_IntervalYear& b) {
     a.Swap(&b);
@@ -2467,7 +1988,7 @@ class Type_IntervalDay final :
                &_Type_IntervalDay_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    11;
 
   friend void swap(Type_IntervalDay& a, Type_IntervalDay& b) {
     a.Swap(&b);
@@ -2640,7 +2161,7 @@ class Type_IntervalCompound final :
                &_Type_IntervalCompound_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    12;
 
   friend void swap(Type_IntervalCompound& a, Type_IntervalCompound& b) {
     a.Swap(&b);
@@ -2808,7 +2329,7 @@ class Type_UUID final :
                &_Type_UUID_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    13;
 
   friend void swap(Type_UUID& a, Type_UUID& b) {
     a.Swap(&b);
@@ -2965,7 +2486,7 @@ class Type_FixedChar final :
                &_Type_FixedChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    14;
 
   friend void swap(Type_FixedChar& a, Type_FixedChar& b) {
     a.Swap(&b);
@@ -3133,7 +2654,7 @@ class Type_VarChar final :
                &_Type_VarChar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    15;
 
   friend void swap(Type_VarChar& a, Type_VarChar& b) {
     a.Swap(&b);
@@ -3301,7 +2822,7 @@ class Type_FixedBinary final :
                &_Type_FixedBinary_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    16;
 
   friend void swap(Type_FixedBinary& a, Type_FixedBinary& b) {
     a.Swap(&b);
@@ -3469,7 +2990,7 @@ class Type_Decimal final :
                &_Type_Decimal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    17;
 
   friend void swap(Type_Decimal& a, Type_Decimal& b) {
     a.Swap(&b);
@@ -3648,7 +3169,7 @@ class Type_PrecisionTime final :
                &_Type_PrecisionTime_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    18;
 
   friend void swap(Type_PrecisionTime& a, Type_PrecisionTime& b) {
     a.Swap(&b);
@@ -3816,7 +3337,7 @@ class Type_PrecisionTimestamp final :
                &_Type_PrecisionTimestamp_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    19;
 
   friend void swap(Type_PrecisionTimestamp& a, Type_PrecisionTimestamp& b) {
     a.Swap(&b);
@@ -3984,7 +3505,7 @@ class Type_PrecisionTimestampTZ final :
                &_Type_PrecisionTimestampTZ_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    20;
 
   friend void swap(Type_PrecisionTimestampTZ& a, Type_PrecisionTimestampTZ& b) {
     a.Swap(&b);
@@ -4152,7 +3673,7 @@ class Type_Struct final :
                &_Type_Struct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    21;
 
   friend void swap(Type_Struct& a, Type_Struct& b) {
     a.Swap(&b);
@@ -4329,7 +3850,7 @@ class Type_List final :
                &_Type_List_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    22;
 
   friend void swap(Type_List& a, Type_List& b) {
     a.Swap(&b);
@@ -4506,7 +4027,7 @@ class Type_Map final :
                &_Type_Map_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    23;
 
   friend void swap(Type_Map& a, Type_Map& b) {
     a.Swap(&b);
@@ -4655,6 +4176,192 @@ class Type_Map final :
 };
 // -------------------------------------------------------------------
 
+class Type_Func final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.Func) */ {
+ public:
+  inline Type_Func() : Type_Func(nullptr) {}
+  ~Type_Func() override;
+  explicit constexpr Type_Func(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Type_Func(const Type_Func& from);
+  Type_Func(Type_Func&& from) noexcept
+    : Type_Func() {
+    *this = ::std::move(from);
+  }
+
+  inline Type_Func& operator=(const Type_Func& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Type_Func& operator=(Type_Func&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Type_Func& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Type_Func* internal_default_instance() {
+    return reinterpret_cast<const Type_Func*>(
+               &_Type_Func_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    24;
+
+  friend void swap(Type_Func& a, Type_Func& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Type_Func* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Type_Func* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  Type_Func* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<Type_Func>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Type_Func& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Type_Func& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Type_Func* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.Type.Func";
+  }
+  protected:
+  explicit Type_Func(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kParameterTypesFieldNumber = 1,
+    kReturnTypeFieldNumber = 2,
+    kNullabilityFieldNumber = 3,
+  };
+  // repeated .substrait.Type parameter_types = 1;
+  int parameter_types_size() const;
+  private:
+  int _internal_parameter_types_size() const;
+  public:
+  void clear_parameter_types();
+  ::substrait::Type* mutable_parameter_types(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Type >*
+      mutable_parameter_types();
+  private:
+  const ::substrait::Type& _internal_parameter_types(int index) const;
+  ::substrait::Type* _internal_add_parameter_types();
+  public:
+  const ::substrait::Type& parameter_types(int index) const;
+  ::substrait::Type* add_parameter_types();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Type >&
+      parameter_types() const;
+
+  // .substrait.Type return_type = 2;
+  bool has_return_type() const;
+  private:
+  bool _internal_has_return_type() const;
+  public:
+  void clear_return_type();
+  const ::substrait::Type& return_type() const;
+  PROTOBUF_NODISCARD ::substrait::Type* release_return_type();
+  ::substrait::Type* mutable_return_type();
+  void set_allocated_return_type(::substrait::Type* return_type);
+  private:
+  const ::substrait::Type& _internal_return_type() const;
+  ::substrait::Type* _internal_mutable_return_type();
+  public:
+  void unsafe_arena_set_allocated_return_type(
+      ::substrait::Type* return_type);
+  ::substrait::Type* unsafe_arena_release_return_type();
+
+  // .substrait.Type.Nullability nullability = 3;
+  void clear_nullability();
+  ::substrait::Type_Nullability nullability() const;
+  void set_nullability(::substrait::Type_Nullability value);
+  private:
+  ::substrait::Type_Nullability _internal_nullability() const;
+  void _internal_set_nullability(::substrait::Type_Nullability value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.Type.Func)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Type > parameter_types_;
+  ::substrait::Type* return_type_;
+  int nullability_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2ftype_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Type_UserDefined final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.Type.UserDefined) */ {
  public:
@@ -4703,7 +4410,7 @@ class Type_UserDefined final :
                &_Type_UserDefined_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    25;
 
   friend void swap(Type_UserDefined& a, Type_UserDefined& b) {
     a.Swap(&b);
@@ -4901,7 +4608,7 @@ class Type_Parameter final :
                &_Type_Parameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    26;
 
   friend void swap(Type_Parameter& a, Type_Parameter& b) {
     a.Swap(&b);
@@ -5163,7 +4870,7 @@ class Type_TypeAliasReference final :
                &_Type_TypeAliasReference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    27;
 
   friend void swap(Type_TypeAliasReference& a, Type_TypeAliasReference& b) {
     a.Swap(&b);
@@ -5325,13 +5032,10 @@ class Type final :
     kFp64 = 11,
     kString = 12,
     kBinary = 13,
-    kTimestamp = 14,
     kDate = 16,
-    kTime = 17,
     kIntervalYear = 19,
     kIntervalDay = 20,
     kIntervalCompound = 35,
-    kTimestampTz = 29,
     kUuid = 32,
     kFixedChar = 21,
     kVarchar = 22,
@@ -5343,6 +5047,7 @@ class Type final :
     kStruct = 25,
     kList = 27,
     kMap = 28,
+    kFunc = 38,
     kUserDefined = 30,
     kUserDefinedTypeReference = 31,
     kAlias = 37,
@@ -5354,7 +5059,7 @@ class Type final :
                &_Type_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    28;
 
   friend void swap(Type& a, Type& b) {
     a.Swap(&b);
@@ -5434,10 +5139,7 @@ class Type final :
   typedef Type_FP64 FP64;
   typedef Type_String String;
   typedef Type_Binary Binary;
-  typedef Type_Timestamp Timestamp;
   typedef Type_Date Date;
-  typedef Type_Time Time;
-  typedef Type_TimestampTZ TimestampTZ;
   typedef Type_IntervalYear IntervalYear;
   typedef Type_IntervalDay IntervalDay;
   typedef Type_IntervalCompound IntervalCompound;
@@ -5452,6 +5154,7 @@ class Type final :
   typedef Type_Struct Struct;
   typedef Type_List List;
   typedef Type_Map Map;
+  typedef Type_Func Func;
   typedef Type_UserDefined UserDefined;
   typedef Type_Parameter Parameter;
   typedef Type_TypeAliasReference TypeAliasReference;
@@ -5500,13 +5203,10 @@ class Type final :
     kFp64FieldNumber = 11,
     kStringFieldNumber = 12,
     kBinaryFieldNumber = 13,
-    kTimestampFieldNumber = 14,
     kDateFieldNumber = 16,
-    kTimeFieldNumber = 17,
     kIntervalYearFieldNumber = 19,
     kIntervalDayFieldNumber = 20,
     kIntervalCompoundFieldNumber = 35,
-    kTimestampTzFieldNumber = 29,
     kUuidFieldNumber = 32,
     kFixedCharFieldNumber = 21,
     kVarcharFieldNumber = 22,
@@ -5518,6 +5218,7 @@ class Type final :
     kStructFieldNumber = 25,
     kListFieldNumber = 27,
     kMapFieldNumber = 28,
+    kFuncFieldNumber = 38,
     kUserDefinedFieldNumber = 30,
     kUserDefinedTypeReferenceFieldNumber = 31,
     kAliasFieldNumber = 37,
@@ -5684,24 +5385,6 @@ class Type final :
       ::substrait::Type_Binary* binary);
   ::substrait::Type_Binary* unsafe_arena_release_binary();
 
-  // .substrait.Type.Timestamp timestamp = 14 [deprecated = true];
-  PROTOBUF_DEPRECATED bool has_timestamp() const;
-  private:
-  bool _internal_has_timestamp() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_timestamp();
-  PROTOBUF_DEPRECATED const ::substrait::Type_Timestamp& timestamp() const;
-  PROTOBUF_NODISCARD PROTOBUF_DEPRECATED ::substrait::Type_Timestamp* release_timestamp();
-  PROTOBUF_DEPRECATED ::substrait::Type_Timestamp* mutable_timestamp();
-  PROTOBUF_DEPRECATED void set_allocated_timestamp(::substrait::Type_Timestamp* timestamp);
-  private:
-  const ::substrait::Type_Timestamp& _internal_timestamp() const;
-  ::substrait::Type_Timestamp* _internal_mutable_timestamp();
-  public:
-  PROTOBUF_DEPRECATED void unsafe_arena_set_allocated_timestamp(
-      ::substrait::Type_Timestamp* timestamp);
-  PROTOBUF_DEPRECATED ::substrait::Type_Timestamp* unsafe_arena_release_timestamp();
-
   // .substrait.Type.Date date = 16;
   bool has_date() const;
   private:
@@ -5719,24 +5402,6 @@ class Type final :
   void unsafe_arena_set_allocated_date(
       ::substrait::Type_Date* date);
   ::substrait::Type_Date* unsafe_arena_release_date();
-
-  // .substrait.Type.Time time = 17;
-  bool has_time() const;
-  private:
-  bool _internal_has_time() const;
-  public:
-  void clear_time();
-  const ::substrait::Type_Time& time() const;
-  PROTOBUF_NODISCARD ::substrait::Type_Time* release_time();
-  ::substrait::Type_Time* mutable_time();
-  void set_allocated_time(::substrait::Type_Time* time);
-  private:
-  const ::substrait::Type_Time& _internal_time() const;
-  ::substrait::Type_Time* _internal_mutable_time();
-  public:
-  void unsafe_arena_set_allocated_time(
-      ::substrait::Type_Time* time);
-  ::substrait::Type_Time* unsafe_arena_release_time();
 
   // .substrait.Type.IntervalYear interval_year = 19;
   bool has_interval_year() const;
@@ -5791,24 +5456,6 @@ class Type final :
   void unsafe_arena_set_allocated_interval_compound(
       ::substrait::Type_IntervalCompound* interval_compound);
   ::substrait::Type_IntervalCompound* unsafe_arena_release_interval_compound();
-
-  // .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
-  PROTOBUF_DEPRECATED bool has_timestamp_tz() const;
-  private:
-  bool _internal_has_timestamp_tz() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_timestamp_tz();
-  PROTOBUF_DEPRECATED const ::substrait::Type_TimestampTZ& timestamp_tz() const;
-  PROTOBUF_NODISCARD PROTOBUF_DEPRECATED ::substrait::Type_TimestampTZ* release_timestamp_tz();
-  PROTOBUF_DEPRECATED ::substrait::Type_TimestampTZ* mutable_timestamp_tz();
-  PROTOBUF_DEPRECATED void set_allocated_timestamp_tz(::substrait::Type_TimestampTZ* timestamp_tz);
-  private:
-  const ::substrait::Type_TimestampTZ& _internal_timestamp_tz() const;
-  ::substrait::Type_TimestampTZ* _internal_mutable_timestamp_tz();
-  public:
-  PROTOBUF_DEPRECATED void unsafe_arena_set_allocated_timestamp_tz(
-      ::substrait::Type_TimestampTZ* timestamp_tz);
-  PROTOBUF_DEPRECATED ::substrait::Type_TimestampTZ* unsafe_arena_release_timestamp_tz();
 
   // .substrait.Type.UUID uuid = 32;
   bool has_uuid() const;
@@ -6008,6 +5655,24 @@ class Type final :
       ::substrait::Type_Map* map);
   ::substrait::Type_Map* unsafe_arena_release_map();
 
+  // .substrait.Type.Func func = 38;
+  bool has_func() const;
+  private:
+  bool _internal_has_func() const;
+  public:
+  void clear_func();
+  const ::substrait::Type_Func& func() const;
+  PROTOBUF_NODISCARD ::substrait::Type_Func* release_func();
+  ::substrait::Type_Func* mutable_func();
+  void set_allocated_func(::substrait::Type_Func* func);
+  private:
+  const ::substrait::Type_Func& _internal_func() const;
+  ::substrait::Type_Func* _internal_mutable_func();
+  public:
+  void unsafe_arena_set_allocated_func(
+      ::substrait::Type_Func* func);
+  ::substrait::Type_Func* unsafe_arena_release_func();
+
   // .substrait.Type.UserDefined user_defined = 30;
   bool has_user_defined() const;
   private:
@@ -6071,13 +5736,10 @@ class Type final :
   void set_has_fp64();
   void set_has_string();
   void set_has_binary();
-  void set_has_timestamp();
   void set_has_date();
-  void set_has_time();
   void set_has_interval_year();
   void set_has_interval_day();
   void set_has_interval_compound();
-  void set_has_timestamp_tz();
   void set_has_uuid();
   void set_has_fixed_char();
   void set_has_varchar();
@@ -6089,6 +5751,7 @@ class Type final :
   void set_has_struct_();
   void set_has_list();
   void set_has_map();
+  void set_has_func();
   void set_has_user_defined();
   void set_has_user_defined_type_reference();
   void set_has_alias();
@@ -6111,13 +5774,10 @@ class Type final :
     ::substrait::Type_FP64* fp64_;
     ::substrait::Type_String* string_;
     ::substrait::Type_Binary* binary_;
-    ::substrait::Type_Timestamp* timestamp_;
     ::substrait::Type_Date* date_;
-    ::substrait::Type_Time* time_;
     ::substrait::Type_IntervalYear* interval_year_;
     ::substrait::Type_IntervalDay* interval_day_;
     ::substrait::Type_IntervalCompound* interval_compound_;
-    ::substrait::Type_TimestampTZ* timestamp_tz_;
     ::substrait::Type_UUID* uuid_;
     ::substrait::Type_FixedChar* fixed_char_;
     ::substrait::Type_VarChar* varchar_;
@@ -6129,6 +5789,7 @@ class Type final :
     ::substrait::Type_Struct* struct__;
     ::substrait::Type_List* list_;
     ::substrait::Type_Map* map_;
+    ::substrait::Type_Func* func_;
     ::substrait::Type_UserDefined* user_defined_;
     uint32_t user_defined_type_reference_;
     ::substrait::Type_TypeAliasReference* alias_;
@@ -6188,7 +5849,7 @@ class TypeAlias final :
                &_TypeAlias_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    29;
 
   friend void swap(TypeAlias& a, TypeAlias& b) {
     a.Swap(&b);
@@ -6354,7 +6015,7 @@ class NamedStruct final :
                &_NamedStruct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    30;
 
   friend void swap(NamedStruct& a, NamedStruct& b) {
     a.Swap(&b);
@@ -6890,50 +6551,6 @@ inline void Type_Binary::set_nullability(::substrait::Type_Nullability value) {
 
 // -------------------------------------------------------------------
 
-// Type_Timestamp
-
-// uint32 type_variation_reference = 1;
-inline void Type_Timestamp::clear_type_variation_reference() {
-  type_variation_reference_ = 0u;
-}
-inline uint32_t Type_Timestamp::_internal_type_variation_reference() const {
-  return type_variation_reference_;
-}
-inline uint32_t Type_Timestamp::type_variation_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.Timestamp.type_variation_reference)
-  return _internal_type_variation_reference();
-}
-inline void Type_Timestamp::_internal_set_type_variation_reference(uint32_t value) {
-  
-  type_variation_reference_ = value;
-}
-inline void Type_Timestamp::set_type_variation_reference(uint32_t value) {
-  _internal_set_type_variation_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.Timestamp.type_variation_reference)
-}
-
-// .substrait.Type.Nullability nullability = 2;
-inline void Type_Timestamp::clear_nullability() {
-  nullability_ = 0;
-}
-inline ::substrait::Type_Nullability Type_Timestamp::_internal_nullability() const {
-  return static_cast< ::substrait::Type_Nullability >(nullability_);
-}
-inline ::substrait::Type_Nullability Type_Timestamp::nullability() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.Timestamp.nullability)
-  return _internal_nullability();
-}
-inline void Type_Timestamp::_internal_set_nullability(::substrait::Type_Nullability value) {
-  
-  nullability_ = value;
-}
-inline void Type_Timestamp::set_nullability(::substrait::Type_Nullability value) {
-  _internal_set_nullability(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.Timestamp.nullability)
-}
-
-// -------------------------------------------------------------------
-
 // Type_Date
 
 // uint32 type_variation_reference = 1;
@@ -6974,94 +6591,6 @@ inline void Type_Date::_internal_set_nullability(::substrait::Type_Nullability v
 inline void Type_Date::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.Type.Date.nullability)
-}
-
-// -------------------------------------------------------------------
-
-// Type_Time
-
-// uint32 type_variation_reference = 1;
-inline void Type_Time::clear_type_variation_reference() {
-  type_variation_reference_ = 0u;
-}
-inline uint32_t Type_Time::_internal_type_variation_reference() const {
-  return type_variation_reference_;
-}
-inline uint32_t Type_Time::type_variation_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.Time.type_variation_reference)
-  return _internal_type_variation_reference();
-}
-inline void Type_Time::_internal_set_type_variation_reference(uint32_t value) {
-  
-  type_variation_reference_ = value;
-}
-inline void Type_Time::set_type_variation_reference(uint32_t value) {
-  _internal_set_type_variation_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.Time.type_variation_reference)
-}
-
-// .substrait.Type.Nullability nullability = 2;
-inline void Type_Time::clear_nullability() {
-  nullability_ = 0;
-}
-inline ::substrait::Type_Nullability Type_Time::_internal_nullability() const {
-  return static_cast< ::substrait::Type_Nullability >(nullability_);
-}
-inline ::substrait::Type_Nullability Type_Time::nullability() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.Time.nullability)
-  return _internal_nullability();
-}
-inline void Type_Time::_internal_set_nullability(::substrait::Type_Nullability value) {
-  
-  nullability_ = value;
-}
-inline void Type_Time::set_nullability(::substrait::Type_Nullability value) {
-  _internal_set_nullability(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.Time.nullability)
-}
-
-// -------------------------------------------------------------------
-
-// Type_TimestampTZ
-
-// uint32 type_variation_reference = 1;
-inline void Type_TimestampTZ::clear_type_variation_reference() {
-  type_variation_reference_ = 0u;
-}
-inline uint32_t Type_TimestampTZ::_internal_type_variation_reference() const {
-  return type_variation_reference_;
-}
-inline uint32_t Type_TimestampTZ::type_variation_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.TimestampTZ.type_variation_reference)
-  return _internal_type_variation_reference();
-}
-inline void Type_TimestampTZ::_internal_set_type_variation_reference(uint32_t value) {
-  
-  type_variation_reference_ = value;
-}
-inline void Type_TimestampTZ::set_type_variation_reference(uint32_t value) {
-  _internal_set_type_variation_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.TimestampTZ.type_variation_reference)
-}
-
-// .substrait.Type.Nullability nullability = 2;
-inline void Type_TimestampTZ::clear_nullability() {
-  nullability_ = 0;
-}
-inline ::substrait::Type_Nullability Type_TimestampTZ::_internal_nullability() const {
-  return static_cast< ::substrait::Type_Nullability >(nullability_);
-}
-inline ::substrait::Type_Nullability Type_TimestampTZ::nullability() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.TimestampTZ.nullability)
-  return _internal_nullability();
-}
-inline void Type_TimestampTZ::_internal_set_nullability(::substrait::Type_Nullability value) {
-  
-  nullability_ = value;
-}
-inline void Type_TimestampTZ::set_nullability(::substrait::Type_Nullability value) {
-  _internal_set_nullability(value);
-  // @@protoc_insertion_point(field_set:substrait.Type.TimestampTZ.nullability)
 }
 
 // -------------------------------------------------------------------
@@ -8196,6 +7725,160 @@ inline void Type_Map::_internal_set_nullability(::substrait::Type_Nullability va
 inline void Type_Map::set_nullability(::substrait::Type_Nullability value) {
   _internal_set_nullability(value);
   // @@protoc_insertion_point(field_set:substrait.Type.Map.nullability)
+}
+
+// -------------------------------------------------------------------
+
+// Type_Func
+
+// repeated .substrait.Type parameter_types = 1;
+inline int Type_Func::_internal_parameter_types_size() const {
+  return parameter_types_.size();
+}
+inline int Type_Func::parameter_types_size() const {
+  return _internal_parameter_types_size();
+}
+inline void Type_Func::clear_parameter_types() {
+  parameter_types_.Clear();
+}
+inline ::substrait::Type* Type_Func::mutable_parameter_types(int index) {
+  // @@protoc_insertion_point(field_mutable:substrait.Type.Func.parameter_types)
+  return parameter_types_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Type >*
+Type_Func::mutable_parameter_types() {
+  // @@protoc_insertion_point(field_mutable_list:substrait.Type.Func.parameter_types)
+  return &parameter_types_;
+}
+inline const ::substrait::Type& Type_Func::_internal_parameter_types(int index) const {
+  return parameter_types_.Get(index);
+}
+inline const ::substrait::Type& Type_Func::parameter_types(int index) const {
+  // @@protoc_insertion_point(field_get:substrait.Type.Func.parameter_types)
+  return _internal_parameter_types(index);
+}
+inline ::substrait::Type* Type_Func::_internal_add_parameter_types() {
+  return parameter_types_.Add();
+}
+inline ::substrait::Type* Type_Func::add_parameter_types() {
+  ::substrait::Type* _add = _internal_add_parameter_types();
+  // @@protoc_insertion_point(field_add:substrait.Type.Func.parameter_types)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::Type >&
+Type_Func::parameter_types() const {
+  // @@protoc_insertion_point(field_list:substrait.Type.Func.parameter_types)
+  return parameter_types_;
+}
+
+// .substrait.Type return_type = 2;
+inline bool Type_Func::_internal_has_return_type() const {
+  return this != internal_default_instance() && return_type_ != nullptr;
+}
+inline bool Type_Func::has_return_type() const {
+  return _internal_has_return_type();
+}
+inline void Type_Func::clear_return_type() {
+  if (GetArenaForAllocation() == nullptr && return_type_ != nullptr) {
+    delete return_type_;
+  }
+  return_type_ = nullptr;
+}
+inline const ::substrait::Type& Type_Func::_internal_return_type() const {
+  const ::substrait::Type* p = return_type_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::Type&>(
+      ::substrait::_Type_default_instance_);
+}
+inline const ::substrait::Type& Type_Func::return_type() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.Func.return_type)
+  return _internal_return_type();
+}
+inline void Type_Func::unsafe_arena_set_allocated_return_type(
+    ::substrait::Type* return_type) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(return_type_);
+  }
+  return_type_ = return_type;
+  if (return_type) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.Func.return_type)
+}
+inline ::substrait::Type* Type_Func::release_return_type() {
+  
+  ::substrait::Type* temp = return_type_;
+  return_type_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::Type* Type_Func::unsafe_arena_release_return_type() {
+  // @@protoc_insertion_point(field_release:substrait.Type.Func.return_type)
+  
+  ::substrait::Type* temp = return_type_;
+  return_type_ = nullptr;
+  return temp;
+}
+inline ::substrait::Type* Type_Func::_internal_mutable_return_type() {
+  
+  if (return_type_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::Type>(GetArenaForAllocation());
+    return_type_ = p;
+  }
+  return return_type_;
+}
+inline ::substrait::Type* Type_Func::mutable_return_type() {
+  ::substrait::Type* _msg = _internal_mutable_return_type();
+  // @@protoc_insertion_point(field_mutable:substrait.Type.Func.return_type)
+  return _msg;
+}
+inline void Type_Func::set_allocated_return_type(::substrait::Type* return_type) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete return_type_;
+  }
+  if (return_type) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::Type>::GetOwningArena(return_type);
+    if (message_arena != submessage_arena) {
+      return_type = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, return_type, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  return_type_ = return_type;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Type.Func.return_type)
+}
+
+// .substrait.Type.Nullability nullability = 3;
+inline void Type_Func::clear_nullability() {
+  nullability_ = 0;
+}
+inline ::substrait::Type_Nullability Type_Func::_internal_nullability() const {
+  return static_cast< ::substrait::Type_Nullability >(nullability_);
+}
+inline ::substrait::Type_Nullability Type_Func::nullability() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.Func.nullability)
+  return _internal_nullability();
+}
+inline void Type_Func::_internal_set_nullability(::substrait::Type_Nullability value) {
+  
+  nullability_ = value;
+}
+inline void Type_Func::set_nullability(::substrait::Type_Nullability value) {
+  _internal_set_nullability(value);
+  // @@protoc_insertion_point(field_set:substrait.Type.Func.nullability)
 }
 
 // -------------------------------------------------------------------
@@ -9409,80 +9092,6 @@ inline ::substrait::Type_Binary* Type::mutable_binary() {
   return _msg;
 }
 
-// .substrait.Type.Timestamp timestamp = 14 [deprecated = true];
-inline bool Type::_internal_has_timestamp() const {
-  return kind_case() == kTimestamp;
-}
-inline bool Type::has_timestamp() const {
-  return _internal_has_timestamp();
-}
-inline void Type::set_has_timestamp() {
-  _oneof_case_[0] = kTimestamp;
-}
-inline void Type::clear_timestamp() {
-  if (_internal_has_timestamp()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete kind_.timestamp_;
-    }
-    clear_has_kind();
-  }
-}
-inline ::substrait::Type_Timestamp* Type::release_timestamp() {
-  // @@protoc_insertion_point(field_release:substrait.Type.timestamp)
-  if (_internal_has_timestamp()) {
-    clear_has_kind();
-      ::substrait::Type_Timestamp* temp = kind_.timestamp_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    kind_.timestamp_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::substrait::Type_Timestamp& Type::_internal_timestamp() const {
-  return _internal_has_timestamp()
-      ? *kind_.timestamp_
-      : reinterpret_cast< ::substrait::Type_Timestamp&>(::substrait::_Type_Timestamp_default_instance_);
-}
-inline const ::substrait::Type_Timestamp& Type::timestamp() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.timestamp)
-  return _internal_timestamp();
-}
-inline ::substrait::Type_Timestamp* Type::unsafe_arena_release_timestamp() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Type.timestamp)
-  if (_internal_has_timestamp()) {
-    clear_has_kind();
-    ::substrait::Type_Timestamp* temp = kind_.timestamp_;
-    kind_.timestamp_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void Type::unsafe_arena_set_allocated_timestamp(::substrait::Type_Timestamp* timestamp) {
-  clear_kind();
-  if (timestamp) {
-    set_has_timestamp();
-    kind_.timestamp_ = timestamp;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.timestamp)
-}
-inline ::substrait::Type_Timestamp* Type::_internal_mutable_timestamp() {
-  if (!_internal_has_timestamp()) {
-    clear_kind();
-    set_has_timestamp();
-    kind_.timestamp_ = CreateMaybeMessage< ::substrait::Type_Timestamp >(GetArenaForAllocation());
-  }
-  return kind_.timestamp_;
-}
-inline ::substrait::Type_Timestamp* Type::mutable_timestamp() {
-  ::substrait::Type_Timestamp* _msg = _internal_mutable_timestamp();
-  // @@protoc_insertion_point(field_mutable:substrait.Type.timestamp)
-  return _msg;
-}
-
 // .substrait.Type.Date date = 16;
 inline bool Type::_internal_has_date() const {
   return kind_case() == kDate;
@@ -9554,80 +9163,6 @@ inline ::substrait::Type_Date* Type::_internal_mutable_date() {
 inline ::substrait::Type_Date* Type::mutable_date() {
   ::substrait::Type_Date* _msg = _internal_mutable_date();
   // @@protoc_insertion_point(field_mutable:substrait.Type.date)
-  return _msg;
-}
-
-// .substrait.Type.Time time = 17;
-inline bool Type::_internal_has_time() const {
-  return kind_case() == kTime;
-}
-inline bool Type::has_time() const {
-  return _internal_has_time();
-}
-inline void Type::set_has_time() {
-  _oneof_case_[0] = kTime;
-}
-inline void Type::clear_time() {
-  if (_internal_has_time()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete kind_.time_;
-    }
-    clear_has_kind();
-  }
-}
-inline ::substrait::Type_Time* Type::release_time() {
-  // @@protoc_insertion_point(field_release:substrait.Type.time)
-  if (_internal_has_time()) {
-    clear_has_kind();
-      ::substrait::Type_Time* temp = kind_.time_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    kind_.time_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::substrait::Type_Time& Type::_internal_time() const {
-  return _internal_has_time()
-      ? *kind_.time_
-      : reinterpret_cast< ::substrait::Type_Time&>(::substrait::_Type_Time_default_instance_);
-}
-inline const ::substrait::Type_Time& Type::time() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.time)
-  return _internal_time();
-}
-inline ::substrait::Type_Time* Type::unsafe_arena_release_time() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Type.time)
-  if (_internal_has_time()) {
-    clear_has_kind();
-    ::substrait::Type_Time* temp = kind_.time_;
-    kind_.time_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void Type::unsafe_arena_set_allocated_time(::substrait::Type_Time* time) {
-  clear_kind();
-  if (time) {
-    set_has_time();
-    kind_.time_ = time;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.time)
-}
-inline ::substrait::Type_Time* Type::_internal_mutable_time() {
-  if (!_internal_has_time()) {
-    clear_kind();
-    set_has_time();
-    kind_.time_ = CreateMaybeMessage< ::substrait::Type_Time >(GetArenaForAllocation());
-  }
-  return kind_.time_;
-}
-inline ::substrait::Type_Time* Type::mutable_time() {
-  ::substrait::Type_Time* _msg = _internal_mutable_time();
-  // @@protoc_insertion_point(field_mutable:substrait.Type.time)
   return _msg;
 }
 
@@ -9850,80 +9385,6 @@ inline ::substrait::Type_IntervalCompound* Type::_internal_mutable_interval_comp
 inline ::substrait::Type_IntervalCompound* Type::mutable_interval_compound() {
   ::substrait::Type_IntervalCompound* _msg = _internal_mutable_interval_compound();
   // @@protoc_insertion_point(field_mutable:substrait.Type.interval_compound)
-  return _msg;
-}
-
-// .substrait.Type.TimestampTZ timestamp_tz = 29 [deprecated = true];
-inline bool Type::_internal_has_timestamp_tz() const {
-  return kind_case() == kTimestampTz;
-}
-inline bool Type::has_timestamp_tz() const {
-  return _internal_has_timestamp_tz();
-}
-inline void Type::set_has_timestamp_tz() {
-  _oneof_case_[0] = kTimestampTz;
-}
-inline void Type::clear_timestamp_tz() {
-  if (_internal_has_timestamp_tz()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete kind_.timestamp_tz_;
-    }
-    clear_has_kind();
-  }
-}
-inline ::substrait::Type_TimestampTZ* Type::release_timestamp_tz() {
-  // @@protoc_insertion_point(field_release:substrait.Type.timestamp_tz)
-  if (_internal_has_timestamp_tz()) {
-    clear_has_kind();
-      ::substrait::Type_TimestampTZ* temp = kind_.timestamp_tz_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    kind_.timestamp_tz_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::substrait::Type_TimestampTZ& Type::_internal_timestamp_tz() const {
-  return _internal_has_timestamp_tz()
-      ? *kind_.timestamp_tz_
-      : reinterpret_cast< ::substrait::Type_TimestampTZ&>(::substrait::_Type_TimestampTZ_default_instance_);
-}
-inline const ::substrait::Type_TimestampTZ& Type::timestamp_tz() const {
-  // @@protoc_insertion_point(field_get:substrait.Type.timestamp_tz)
-  return _internal_timestamp_tz();
-}
-inline ::substrait::Type_TimestampTZ* Type::unsafe_arena_release_timestamp_tz() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Type.timestamp_tz)
-  if (_internal_has_timestamp_tz()) {
-    clear_has_kind();
-    ::substrait::Type_TimestampTZ* temp = kind_.timestamp_tz_;
-    kind_.timestamp_tz_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void Type::unsafe_arena_set_allocated_timestamp_tz(::substrait::Type_TimestampTZ* timestamp_tz) {
-  clear_kind();
-  if (timestamp_tz) {
-    set_has_timestamp_tz();
-    kind_.timestamp_tz_ = timestamp_tz;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.timestamp_tz)
-}
-inline ::substrait::Type_TimestampTZ* Type::_internal_mutable_timestamp_tz() {
-  if (!_internal_has_timestamp_tz()) {
-    clear_kind();
-    set_has_timestamp_tz();
-    kind_.timestamp_tz_ = CreateMaybeMessage< ::substrait::Type_TimestampTZ >(GetArenaForAllocation());
-  }
-  return kind_.timestamp_tz_;
-}
-inline ::substrait::Type_TimestampTZ* Type::mutable_timestamp_tz() {
-  ::substrait::Type_TimestampTZ* _msg = _internal_mutable_timestamp_tz();
-  // @@protoc_insertion_point(field_mutable:substrait.Type.timestamp_tz)
   return _msg;
 }
 
@@ -10741,6 +10202,80 @@ inline ::substrait::Type_Map* Type::mutable_map() {
   return _msg;
 }
 
+// .substrait.Type.Func func = 38;
+inline bool Type::_internal_has_func() const {
+  return kind_case() == kFunc;
+}
+inline bool Type::has_func() const {
+  return _internal_has_func();
+}
+inline void Type::set_has_func() {
+  _oneof_case_[0] = kFunc;
+}
+inline void Type::clear_func() {
+  if (_internal_has_func()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete kind_.func_;
+    }
+    clear_has_kind();
+  }
+}
+inline ::substrait::Type_Func* Type::release_func() {
+  // @@protoc_insertion_point(field_release:substrait.Type.func)
+  if (_internal_has_func()) {
+    clear_has_kind();
+      ::substrait::Type_Func* temp = kind_.func_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    kind_.func_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::substrait::Type_Func& Type::_internal_func() const {
+  return _internal_has_func()
+      ? *kind_.func_
+      : reinterpret_cast< ::substrait::Type_Func&>(::substrait::_Type_Func_default_instance_);
+}
+inline const ::substrait::Type_Func& Type::func() const {
+  // @@protoc_insertion_point(field_get:substrait.Type.func)
+  return _internal_func();
+}
+inline ::substrait::Type_Func* Type::unsafe_arena_release_func() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:substrait.Type.func)
+  if (_internal_has_func()) {
+    clear_has_kind();
+    ::substrait::Type_Func* temp = kind_.func_;
+    kind_.func_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Type::unsafe_arena_set_allocated_func(::substrait::Type_Func* func) {
+  clear_kind();
+  if (func) {
+    set_has_func();
+    kind_.func_ = func;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Type.func)
+}
+inline ::substrait::Type_Func* Type::_internal_mutable_func() {
+  if (!_internal_has_func()) {
+    clear_kind();
+    set_has_func();
+    kind_.func_ = CreateMaybeMessage< ::substrait::Type_Func >(GetArenaForAllocation());
+  }
+  return kind_.func_;
+}
+inline ::substrait::Type_Func* Type::mutable_func() {
+  ::substrait::Type_Func* _msg = _internal_mutable_func();
+  // @@protoc_insertion_point(field_mutable:substrait.Type.func)
+  return _msg;
+}
+
 // .substrait.Type.UserDefined user_defined = 30;
 inline bool Type::_internal_has_user_defined() const {
   return kind_case() == kUserDefined;
@@ -11222,10 +10757,6 @@ inline void NamedStruct::set_allocated_struct_(::substrait::Type_Struct* struct_
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

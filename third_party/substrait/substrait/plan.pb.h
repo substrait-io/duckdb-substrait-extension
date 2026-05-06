@@ -30,6 +30,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "substrait/algebra.pb.h"
 #include "substrait/extensions/extensions.pb.h"
@@ -49,7 +50,7 @@ struct TableStruct_substrait_2fplan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[6]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -60,6 +61,9 @@ namespace substrait {
 class DynamicParameterBinding;
 struct DynamicParameterBindingDefaultTypeInternal;
 extern DynamicParameterBindingDefaultTypeInternal _DynamicParameterBinding_default_instance_;
+class ExecutionBehavior;
+struct ExecutionBehaviorDefaultTypeInternal;
+extern ExecutionBehaviorDefaultTypeInternal _ExecutionBehavior_default_instance_;
 class Plan;
 struct PlanDefaultTypeInternal;
 extern PlanDefaultTypeInternal _Plan_default_instance_;
@@ -75,6 +79,7 @@ extern VersionDefaultTypeInternal _Version_default_instance_;
 }  // namespace substrait
 PROTOBUF_NAMESPACE_OPEN
 template<> ::substrait::DynamicParameterBinding* Arena::CreateMaybeMessage<::substrait::DynamicParameterBinding>(Arena*);
+template<> ::substrait::ExecutionBehavior* Arena::CreateMaybeMessage<::substrait::ExecutionBehavior>(Arena*);
 template<> ::substrait::Plan* Arena::CreateMaybeMessage<::substrait::Plan>(Arena*);
 template<> ::substrait::PlanRel* Arena::CreateMaybeMessage<::substrait::PlanRel>(Arena*);
 template<> ::substrait::PlanVersion* Arena::CreateMaybeMessage<::substrait::PlanVersion>(Arena*);
@@ -82,6 +87,32 @@ template<> ::substrait::Version* Arena::CreateMaybeMessage<::substrait::Version>
 PROTOBUF_NAMESPACE_CLOSE
 namespace substrait {
 
+enum ExecutionBehavior_VariableEvaluationMode : int {
+  ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_UNSPECIFIED = 0,
+  ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_PER_PLAN = 1,
+  ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_PER_RECORD = 2,
+  ExecutionBehavior_VariableEvaluationMode_ExecutionBehavior_VariableEvaluationMode_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  ExecutionBehavior_VariableEvaluationMode_ExecutionBehavior_VariableEvaluationMode_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool ExecutionBehavior_VariableEvaluationMode_IsValid(int value);
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_MIN = ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_UNSPECIFIED;
+constexpr ExecutionBehavior_VariableEvaluationMode ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_MAX = ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_PER_RECORD;
+constexpr int ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_ARRAYSIZE = ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ExecutionBehavior_VariableEvaluationMode_descriptor();
+template<typename T>
+inline const std::string& ExecutionBehavior_VariableEvaluationMode_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, ExecutionBehavior_VariableEvaluationMode>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function ExecutionBehavior_VariableEvaluationMode_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    ExecutionBehavior_VariableEvaluationMode_descriptor(), enum_t_value);
+}
+inline bool ExecutionBehavior_VariableEvaluationMode_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, ExecutionBehavior_VariableEvaluationMode* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<ExecutionBehavior_VariableEvaluationMode>(
+    ExecutionBehavior_VariableEvaluationMode_descriptor(), name, value);
+}
 // ===================================================================
 
 class PlanRel final :
@@ -400,7 +431,6 @@ class Plan final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kExtensionUrisFieldNumber = 1,
     kExtensionsFieldNumber = 2,
     kRelationsFieldNumber = 3,
     kExpectedTypeUrlsFieldNumber = 5,
@@ -409,25 +439,8 @@ class Plan final :
     kTypeAliasesFieldNumber = 9,
     kAdvancedExtensionsFieldNumber = 4,
     kVersionFieldNumber = 6,
+    kExecutionBehaviorFieldNumber = 10,
   };
-  // repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED int extension_uris_size() const;
-  private:
-  int _internal_extension_uris_size() const;
-  public:
-  PROTOBUF_DEPRECATED void clear_extension_uris();
-  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* mutable_extension_uris(int index);
-  PROTOBUF_DEPRECATED ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
-      mutable_extension_uris();
-  private:
-  const ::substrait::extensions::SimpleExtensionURI& _internal_extension_uris(int index) const;
-  ::substrait::extensions::SimpleExtensionURI* _internal_add_extension_uris();
-  public:
-  PROTOBUF_DEPRECATED const ::substrait::extensions::SimpleExtensionURI& extension_uris(int index) const;
-  PROTOBUF_DEPRECATED ::substrait::extensions::SimpleExtensionURI* add_extension_uris();
-  PROTOBUF_DEPRECATED const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
-      extension_uris() const;
-
   // repeated .substrait.extensions.SimpleExtensionDeclaration extensions = 2;
   int extensions_size() const;
   private:
@@ -578,6 +591,24 @@ class Plan final :
       ::substrait::Version* version);
   ::substrait::Version* unsafe_arena_release_version();
 
+  // .substrait.ExecutionBehavior execution_behavior = 10;
+  bool has_execution_behavior() const;
+  private:
+  bool _internal_has_execution_behavior() const;
+  public:
+  void clear_execution_behavior();
+  const ::substrait::ExecutionBehavior& execution_behavior() const;
+  PROTOBUF_NODISCARD ::substrait::ExecutionBehavior* release_execution_behavior();
+  ::substrait::ExecutionBehavior* mutable_execution_behavior();
+  void set_allocated_execution_behavior(::substrait::ExecutionBehavior* execution_behavior);
+  private:
+  const ::substrait::ExecutionBehavior& _internal_execution_behavior() const;
+  ::substrait::ExecutionBehavior* _internal_mutable_execution_behavior();
+  public:
+  void unsafe_arena_set_allocated_execution_behavior(
+      ::substrait::ExecutionBehavior* execution_behavior);
+  ::substrait::ExecutionBehavior* unsafe_arena_release_execution_behavior();
+
   // @@protoc_insertion_point(class_scope:substrait.Plan)
  private:
   class _Internal;
@@ -585,7 +616,6 @@ class Plan final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI > extension_uris_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionDeclaration > extensions_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::PlanRel > relations_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> expected_type_urls_;
@@ -594,6 +624,7 @@ class Plan final :
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias > type_aliases_;
   ::substrait::extensions::AdvancedExtension* advanced_extensions_;
   ::substrait::Version* version_;
+  ::substrait::ExecutionBehavior* execution_behavior_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2fplan_2eproto;
 };
@@ -1118,6 +1149,184 @@ class DynamicParameterBinding final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_substrait_2fplan_2eproto;
 };
+// -------------------------------------------------------------------
+
+class ExecutionBehavior final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.ExecutionBehavior) */ {
+ public:
+  inline ExecutionBehavior() : ExecutionBehavior(nullptr) {}
+  ~ExecutionBehavior() override;
+  explicit constexpr ExecutionBehavior(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ExecutionBehavior(const ExecutionBehavior& from);
+  ExecutionBehavior(ExecutionBehavior&& from) noexcept
+    : ExecutionBehavior() {
+    *this = ::std::move(from);
+  }
+
+  inline ExecutionBehavior& operator=(const ExecutionBehavior& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ExecutionBehavior& operator=(ExecutionBehavior&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ExecutionBehavior& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ExecutionBehavior* internal_default_instance() {
+    return reinterpret_cast<const ExecutionBehavior*>(
+               &_ExecutionBehavior_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(ExecutionBehavior& a, ExecutionBehavior& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ExecutionBehavior* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ExecutionBehavior* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ExecutionBehavior* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ExecutionBehavior>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ExecutionBehavior& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ExecutionBehavior& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ExecutionBehavior* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "substrait.ExecutionBehavior";
+  }
+  protected:
+  explicit ExecutionBehavior(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  typedef ExecutionBehavior_VariableEvaluationMode VariableEvaluationMode;
+  static constexpr VariableEvaluationMode VARIABLE_EVALUATION_MODE_UNSPECIFIED =
+    ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_UNSPECIFIED;
+  static constexpr VariableEvaluationMode VARIABLE_EVALUATION_MODE_PER_PLAN =
+    ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_PER_PLAN;
+  static constexpr VariableEvaluationMode VARIABLE_EVALUATION_MODE_PER_RECORD =
+    ExecutionBehavior_VariableEvaluationMode_VARIABLE_EVALUATION_MODE_PER_RECORD;
+  static inline bool VariableEvaluationMode_IsValid(int value) {
+    return ExecutionBehavior_VariableEvaluationMode_IsValid(value);
+  }
+  static constexpr VariableEvaluationMode VariableEvaluationMode_MIN =
+    ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_MIN;
+  static constexpr VariableEvaluationMode VariableEvaluationMode_MAX =
+    ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_MAX;
+  static constexpr int VariableEvaluationMode_ARRAYSIZE =
+    ExecutionBehavior_VariableEvaluationMode_VariableEvaluationMode_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  VariableEvaluationMode_descriptor() {
+    return ExecutionBehavior_VariableEvaluationMode_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& VariableEvaluationMode_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, VariableEvaluationMode>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function VariableEvaluationMode_Name.");
+    return ExecutionBehavior_VariableEvaluationMode_Name(enum_t_value);
+  }
+  static inline bool VariableEvaluationMode_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      VariableEvaluationMode* value) {
+    return ExecutionBehavior_VariableEvaluationMode_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kVariableEvalModeFieldNumber = 1,
+  };
+  // .substrait.ExecutionBehavior.VariableEvaluationMode variable_eval_mode = 1;
+  void clear_variable_eval_mode();
+  ::substrait::ExecutionBehavior_VariableEvaluationMode variable_eval_mode() const;
+  void set_variable_eval_mode(::substrait::ExecutionBehavior_VariableEvaluationMode value);
+  private:
+  ::substrait::ExecutionBehavior_VariableEvaluationMode _internal_variable_eval_mode() const;
+  void _internal_set_variable_eval_mode(::substrait::ExecutionBehavior_VariableEvaluationMode value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:substrait.ExecutionBehavior)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  int variable_eval_mode_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_substrait_2fplan_2eproto;
+};
 // ===================================================================
 
 
@@ -1362,43 +1571,6 @@ inline void Plan::set_allocated_version(::substrait::Version* version) {
   }
   version_ = version;
   // @@protoc_insertion_point(field_set_allocated:substrait.Plan.version)
-}
-
-// repeated .substrait.extensions.SimpleExtensionURI extension_uris = 1 [deprecated = true];
-inline int Plan::_internal_extension_uris_size() const {
-  return extension_uris_.size();
-}
-inline int Plan::extension_uris_size() const {
-  return _internal_extension_uris_size();
-}
-inline ::substrait::extensions::SimpleExtensionURI* Plan::mutable_extension_uris(int index) {
-  // @@protoc_insertion_point(field_mutable:substrait.Plan.extension_uris)
-  return extension_uris_.Mutable(index);
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >*
-Plan::mutable_extension_uris() {
-  // @@protoc_insertion_point(field_mutable_list:substrait.Plan.extension_uris)
-  return &extension_uris_;
-}
-inline const ::substrait::extensions::SimpleExtensionURI& Plan::_internal_extension_uris(int index) const {
-  return extension_uris_.Get(index);
-}
-inline const ::substrait::extensions::SimpleExtensionURI& Plan::extension_uris(int index) const {
-  // @@protoc_insertion_point(field_get:substrait.Plan.extension_uris)
-  return _internal_extension_uris(index);
-}
-inline ::substrait::extensions::SimpleExtensionURI* Plan::_internal_add_extension_uris() {
-  return extension_uris_.Add();
-}
-inline ::substrait::extensions::SimpleExtensionURI* Plan::add_extension_uris() {
-  ::substrait::extensions::SimpleExtensionURI* _add = _internal_add_extension_uris();
-  // @@protoc_insertion_point(field_add:substrait.Plan.extension_uris)
-  return _add;
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::extensions::SimpleExtensionURI >&
-Plan::extension_uris() const {
-  // @@protoc_insertion_point(field_list:substrait.Plan.extension_uris)
-  return extension_uris_;
 }
 
 // repeated .substrait.extensions.SimpleExtensionURN extension_urns = 8;
@@ -1751,6 +1923,96 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::substrait::TypeAlias >
 Plan::type_aliases() const {
   // @@protoc_insertion_point(field_list:substrait.Plan.type_aliases)
   return type_aliases_;
+}
+
+// .substrait.ExecutionBehavior execution_behavior = 10;
+inline bool Plan::_internal_has_execution_behavior() const {
+  return this != internal_default_instance() && execution_behavior_ != nullptr;
+}
+inline bool Plan::has_execution_behavior() const {
+  return _internal_has_execution_behavior();
+}
+inline void Plan::clear_execution_behavior() {
+  if (GetArenaForAllocation() == nullptr && execution_behavior_ != nullptr) {
+    delete execution_behavior_;
+  }
+  execution_behavior_ = nullptr;
+}
+inline const ::substrait::ExecutionBehavior& Plan::_internal_execution_behavior() const {
+  const ::substrait::ExecutionBehavior* p = execution_behavior_;
+  return p != nullptr ? *p : reinterpret_cast<const ::substrait::ExecutionBehavior&>(
+      ::substrait::_ExecutionBehavior_default_instance_);
+}
+inline const ::substrait::ExecutionBehavior& Plan::execution_behavior() const {
+  // @@protoc_insertion_point(field_get:substrait.Plan.execution_behavior)
+  return _internal_execution_behavior();
+}
+inline void Plan::unsafe_arena_set_allocated_execution_behavior(
+    ::substrait::ExecutionBehavior* execution_behavior) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(execution_behavior_);
+  }
+  execution_behavior_ = execution_behavior;
+  if (execution_behavior) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:substrait.Plan.execution_behavior)
+}
+inline ::substrait::ExecutionBehavior* Plan::release_execution_behavior() {
+  
+  ::substrait::ExecutionBehavior* temp = execution_behavior_;
+  execution_behavior_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::substrait::ExecutionBehavior* Plan::unsafe_arena_release_execution_behavior() {
+  // @@protoc_insertion_point(field_release:substrait.Plan.execution_behavior)
+  
+  ::substrait::ExecutionBehavior* temp = execution_behavior_;
+  execution_behavior_ = nullptr;
+  return temp;
+}
+inline ::substrait::ExecutionBehavior* Plan::_internal_mutable_execution_behavior() {
+  
+  if (execution_behavior_ == nullptr) {
+    auto* p = CreateMaybeMessage<::substrait::ExecutionBehavior>(GetArenaForAllocation());
+    execution_behavior_ = p;
+  }
+  return execution_behavior_;
+}
+inline ::substrait::ExecutionBehavior* Plan::mutable_execution_behavior() {
+  ::substrait::ExecutionBehavior* _msg = _internal_mutable_execution_behavior();
+  // @@protoc_insertion_point(field_mutable:substrait.Plan.execution_behavior)
+  return _msg;
+}
+inline void Plan::set_allocated_execution_behavior(::substrait::ExecutionBehavior* execution_behavior) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete execution_behavior_;
+  }
+  if (execution_behavior) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::substrait::ExecutionBehavior>::GetOwningArena(execution_behavior);
+    if (message_arena != submessage_arena) {
+      execution_behavior = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, execution_behavior, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  execution_behavior_ = execution_behavior;
+  // @@protoc_insertion_point(field_set_allocated:substrait.Plan.execution_behavior)
 }
 
 // -------------------------------------------------------------------
@@ -2123,9 +2385,35 @@ inline void DynamicParameterBinding::set_allocated_value(::substrait::Expression
   // @@protoc_insertion_point(field_set_allocated:substrait.DynamicParameterBinding.value)
 }
 
+// -------------------------------------------------------------------
+
+// ExecutionBehavior
+
+// .substrait.ExecutionBehavior.VariableEvaluationMode variable_eval_mode = 1;
+inline void ExecutionBehavior::clear_variable_eval_mode() {
+  variable_eval_mode_ = 0;
+}
+inline ::substrait::ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::_internal_variable_eval_mode() const {
+  return static_cast< ::substrait::ExecutionBehavior_VariableEvaluationMode >(variable_eval_mode_);
+}
+inline ::substrait::ExecutionBehavior_VariableEvaluationMode ExecutionBehavior::variable_eval_mode() const {
+  // @@protoc_insertion_point(field_get:substrait.ExecutionBehavior.variable_eval_mode)
+  return _internal_variable_eval_mode();
+}
+inline void ExecutionBehavior::_internal_set_variable_eval_mode(::substrait::ExecutionBehavior_VariableEvaluationMode value) {
+  
+  variable_eval_mode_ = value;
+}
+inline void ExecutionBehavior::set_variable_eval_mode(::substrait::ExecutionBehavior_VariableEvaluationMode value) {
+  _internal_set_variable_eval_mode(value);
+  // @@protoc_insertion_point(field_set:substrait.ExecutionBehavior.variable_eval_mode)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
@@ -2138,6 +2426,16 @@ inline void DynamicParameterBinding::set_allocated_value(::substrait::Expression
 // @@protoc_insertion_point(namespace_scope)
 
 }  // namespace substrait
+
+PROTOBUF_NAMESPACE_OPEN
+
+template <> struct is_proto_enum< ::substrait::ExecutionBehavior_VariableEvaluationMode> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::substrait::ExecutionBehavior_VariableEvaluationMode>() {
+  return ::substrait::ExecutionBehavior_VariableEvaluationMode_descriptor();
+}
+
+PROTOBUF_NAMESPACE_CLOSE
 
 // @@protoc_insertion_point(global_scope)
 
