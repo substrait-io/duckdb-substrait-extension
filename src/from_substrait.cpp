@@ -699,23 +699,34 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
-	vector<unique_ptr<ParsedExpression>> groups, expressions;
+	vector<unique_ptr<ParsedExpression>> expressions;
+	GroupByNode group_node;
 
 	auto input_rel = TransformOp(sop.aggregate().input());
 
 	if (sop.aggregate().groupings_size() > 0) {
-		for (auto &sgrp : sop.aggregate().groupings()) {
+		// First, add ALL grouping expressions to the GroupByNode
+		for (int i = 0; i < sop.aggregate().grouping_expressions_size(); i++) {
+			auto expr = TransformExpr(sop.aggregate().grouping_expressions(i));
+			// Add to output expressions
+			expressions.push_back(expr->Copy());
+			// Add to group_node
+			group_node.group_expressions.push_back(std::move(expr));
+		}
+		
+		// Now convert each Substrait grouping to a DuckDB grouping set
+		for (int g = 0; g < sop.aggregate().groupings_size(); g++) {
+			auto &sgrp = sop.aggregate().groupings(g);
+			GroupingSet grouping_set;
 			// expression_references contains indices into the grouping_expressions array
 			for (auto ref_idx : sgrp.expression_references()) {
-				// Get the expression from the AggregateRel's grouping_expressions array
 				if (ref_idx < (uint32_t)sop.aggregate().grouping_expressions_size()) {
-					auto expr = TransformExpr(sop.aggregate().grouping_expressions(ref_idx));
-					groups.push_back(expr->Copy());
-					expressions.push_back(std::move(expr));
+					grouping_set.insert(ref_idx);
 				} else {
 					throw InternalException("Invalid expression reference index in grouping");
 				}
 			}
+			group_node.grouping_sets.push_back(grouping_set);
 		}
 	}
 
@@ -735,7 +746,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		                                                    nullptr, nullptr, is_distinct));
 	}
 
-	return make_shared_ptr<AggregateRelation>(input_rel, std::move(expressions), std::move(groups));
+	return make_shared_ptr<AggregateRelation>(input_rel, std::move(expressions), std::move(group_node));
 }
 unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &schema_name, const string &table_name) {
 	// obtain the table info
@@ -829,8 +840,52 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			} else {
 				scan = make_shared_ptr<ValueRelation>(context_wrapper, expression_rows, column_names);
 			}
-		} else {
+		} else if (!sget.virtual_table().expressions().empty()) {
 			scan = GetValuesExpression(sget.virtual_table().expressions());
+		} else {
+			// Empty virtual table represents an empty result (EMPTY_RESULT operator)
+			// Extract schema from base_schema if available
+			vector<string> column_names;
+			vector<LogicalType> column_types;
+			
+			if (sget.has_base_schema()) {
+				auto &base_schema = sget.base_schema();
+				auto &struct_type = base_schema.struct_();
+				
+				// Extract column names and types from base_schema
+				for (int i = 0; i < base_schema.names_size() && i < struct_type.types_size(); i++) {
+					column_names.push_back(base_schema.names(i));
+					column_types.push_back(SubstraitToDuckType(struct_type.types(i)));
+				}
+			}
+			
+			// Create a ValueRelation with one row of NULLs to preserve schema, then filter with FALSE to get 0 rows
+			// Using Filter with FALSE ensures the row is eliminated before any aggregations
+			if (!column_types.empty()) {
+				vector<vector<Value>> one_null_row;
+				vector<Value> null_values;
+				for (auto &type : column_types) {
+					null_values.push_back(Value(type));
+				}
+				one_null_row.push_back(null_values);
+				
+				shared_ptr<Relation> values_rel;
+				if (acquire_lock) {
+					values_rel = make_shared_ptr<ValueRelation>(context, one_null_row, column_names);
+				} else {
+					values_rel = make_shared_ptr<ValueRelation>(context_wrapper, one_null_row, column_names);
+				}
+				// Filter with 1=0 to get empty result with schema (eliminates row before aggregation)
+				scan = values_rel->Filter("1=0");
+			} else {
+				// Fallback: empty result with no schema
+				vector<vector<Value>> empty_rows;
+				if (acquire_lock) {
+					scan = make_shared_ptr<ValueRelation>(context, empty_rows, column_names);
+				} else {
+					scan = make_shared_ptr<ValueRelation>(context_wrapper, empty_rows, column_names);
+				}
+			}
 		}
 	} else if (sget.has_iceberg_table()) {
 		if (sget.iceberg_table().direct().metadata_uri().empty()) {
