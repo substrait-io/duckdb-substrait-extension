@@ -182,7 +182,7 @@ private:
 
 	//! Variables used to register functions
 	unordered_map<string, uint64_t> functions_map;
-	unordered_map<string, uint64_t> extension_uri_map;
+	unordered_map<string, uint64_t> extension_urn_map;
 
 	//! Remapped DuckDB functions names to Substrait compatible function names
 	static const unordered_map<std::string, std::string> function_names_remap;
@@ -190,7 +190,7 @@ private:
 	//! Variable that holds information about yaml function extensions
 	static const SubstraitCustomFunctions custom_functions;
 	uint64_t last_function_id = 1;
-	uint64_t last_uri_id = 1;
+	uint64_t last_urn_id = 1;
 	//! The substrait Plan
 	substrait::Plan plan;
 	ClientContext &context;

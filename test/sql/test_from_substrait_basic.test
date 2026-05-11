@@ -105,7 +105,7 @@ CALL from_substrait_json('{
     {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "gt"}}
   ],
   "extension_urns": [
-    {"extension_urn_anchor": 0, "urn": "extension:substrait:functions_comparison"}
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
   ]
 }')
 ----

@@ -17,23 +17,23 @@ CALL from_substrait_json('{
   "extensionUrns": [
     {
       "extensionUrnAnchor": 1,
-      "urn": "extension:substrait:functions_comparison"
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
       "extensionUrnAnchor": 2,
-      "urn": "extension:substrait:functions_arithmetic"
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
       "extensionUrnAnchor": 3,
-      "urn": "extension:substrait:functions_aggregate_generic"
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
       "extensionUrnAnchor": 4,
-      "urn": "extension:substrait:functions_boolean"
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
       "extensionUrnAnchor": 5,
-      "urn": "extension:substrait:functions_string"
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
@@ -269,23 +269,23 @@ CALL from_substrait_json('{
   "extensionUrns": [
     {
       "extensionUrnAnchor": 1,
-      "urn": "extension:substrait:functions_comparison"
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
       "extensionUrnAnchor": 2,
-      "urn": "extension:substrait:functions_arithmetic"
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
       "extensionUrnAnchor": 3,
-      "urn": "extension:substrait:functions_aggregate_generic"
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
       "extensionUrnAnchor": 4,
-      "urn": "extension:substrait:functions_boolean"
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
       "extensionUrnAnchor": 5,
-      "urn": "extension:substrait:functions_string"
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
@@ -512,23 +512,23 @@ CALL from_substrait_json('
   "extensionUrns": [
     {
       "extensionUrnAnchor": 1,
-      "urn": "extension:substrait:functions_comparison"
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
       "extensionUrnAnchor": 2,
-      "urn": "extension:substrait:functions_arithmetic"
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
       "extensionUrnAnchor": 3,
-      "urn": "extension:substrait:functions_aggregate_generic"
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
       "extensionUrnAnchor": 4,
-      "urn": "extension:substrait:functions_boolean"
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
       "extensionUrnAnchor": 5,
-      "urn": "extension:substrait:functions_string"
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
@@ -1232,23 +1232,23 @@ CALL from_substrait_json('
   "extensionUrns": [
     {
       "extensionUrnAnchor": 1,
-      "urn": "/functions_comparison.yaml"
+      "urn": "/extension:io.substrait:unctions_comparison"
     },
     {
       "extensionUrnAnchor": 2,
-      "urn": "/functions_arithmetic.yaml"
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
       "extensionUrnAnchor": 3,
-      "urn": "/functions_aggregate_generic.yaml"
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
       "extensionUrnAnchor": 4,
-      "urn": "/functions_boolean.yaml"
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
       "extensionUrnAnchor": 5,
-      "urn": "/functions_string.yaml"
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
@@ -2363,7 +2363,7 @@ CALL from_substrait_json('
     }
   ],
   "version": {
-    "minorNumber": 52,
+    "minorNumber": 89,
     "producer": "spark-substrait-gateway"
   }
 }

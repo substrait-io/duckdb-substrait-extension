@@ -1,6 +1,7 @@
 #include "from_substrait.hpp"
 
 #include <cinttypes>
+#include <cmath>
 
 #include "duckdb/common/types/value.hpp"
 #include "duckdb/parser/expression/list.hpp"

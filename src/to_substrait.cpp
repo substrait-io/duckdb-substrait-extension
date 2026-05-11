@@ -601,16 +601,16 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 	auto function = custom_functions.Get(name, args_types);
 	auto substrait_extensions = plan.mutable_extension_urns();
 	if (!function.IsNative()) {
-		auto extensionURN = function.GetExtensionURI();
-		auto it = extension_uri_map.find(extensionURN);
-		if (it == extension_uri_map.end()) {
+		auto extensionURN = function.GetExtensionURN();
+		auto it = extension_urn_map.find(extensionURN);
+		if (it == extension_urn_map.end()) {
 			// We have to add this extension
-			extension_uri_map[extensionURN] = last_uri_id;
+			extension_urn_map[extensionURN] = last_urn_id;
 			auto urn = new substrait::extensions::SimpleExtensionURN();
 			urn->set_urn(extensionURN);
-			urn->set_extension_urn_anchor(last_uri_id);
+			urn->set_extension_urn_anchor(last_urn_id);
 			substrait_extensions->AddAllocated(urn);
-			last_uri_id++;
+			last_urn_id++;
 		}
 	}
 	if (functions_map.find(function.function.GetName()) == functions_map.end()) {
@@ -620,7 +620,7 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 		sfun->set_name(function.function.GetName());
 		if (!function.IsNative()) {
 			// We only define URN if not native
-			sfun->set_extension_urn_reference(extension_uri_map[function.GetExtensionURI()]);
+			sfun->set_extension_urn_reference(extension_urn_map[function.GetExtensionURN()]);
 		} else {
 			// Function was not found in the yaml files
 			sfun->set_extension_urn_reference(0);
