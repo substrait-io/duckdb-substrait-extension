@@ -14,95 +14,95 @@ call dbgen(sf=0.01)
 
 statement ok
 CALL from_substrait_json('{
-  "extensionUris": [
+  "extensionUrns": [
     {
-      "extensionUriAnchor": 1,
-      "uri": "/functions_comparison.yaml"
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
-      "extensionUriAnchor": 2,
-      "uri": "/functions_arithmetic.yaml"
+      "extensionUrnAnchor": 2,
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
-      "extensionUriAnchor": 3,
-      "uri": "/functions_aggregate_generic.yaml"
+      "extensionUrnAnchor": 3,
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
-      "extensionUriAnchor": 4,
-      "uri": "/functions_boolean.yaml"
+      "extensionUrnAnchor": 4,
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
-      "extensionUriAnchor": 5,
-      "uri": "/functions_string.yaml"
+      "extensionUrnAnchor": 5,
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 1,
         "name": "lte:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 2,
         "name": "sum:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 3,
         "name": "multiply:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 4,
         "name": "subtract:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 5,
         "name": "add:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 6,
         "name": "avg:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 3,
+        "extensionUrnReference": 3,
         "functionAnchor": 7,
         "name": "count:any"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 4,
+        "extensionUrnReference": 4,
         "functionAnchor": 8,
         "name": "and:bool_bool"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 9,
         "name": "equal:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 5,
+        "extensionUrnReference": 5,
         "functionAnchor": 10,
         "name": "ends_with:str_str"
       }
@@ -266,102 +266,102 @@ CALL from_substrait_json('{
 
 statement ok
 CALL from_substrait_json('{
-  "extensionUris": [
+  "extensionUrns": [
     {
-      "extensionUriAnchor": 1,
-      "uri": "/functions_comparison.yaml"
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
-      "extensionUriAnchor": 2,
-      "uri": "/functions_arithmetic.yaml"
+      "extensionUrnAnchor": 2,
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
-      "extensionUriAnchor": 3,
-      "uri": "/functions_aggregate_generic.yaml"
+      "extensionUrnAnchor": 3,
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
-      "extensionUriAnchor": 4,
-      "uri": "/functions_boolean.yaml"
+      "extensionUrnAnchor": 4,
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
-      "extensionUriAnchor": 5,
-      "uri": "/functions_string.yaml"
+      "extensionUrnAnchor": 5,
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 1,
         "name": "lte:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 2,
         "name": "sum:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 3,
         "name": "multiply:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 4,
         "name": "subtract:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 5,
         "name": "add:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 6,
         "name": "avg:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 3,
+        "extensionUrnReference": 3,
         "functionAnchor": 7,
         "name": "count:any"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 4,
+        "extensionUrnReference": 4,
         "functionAnchor": 8,
         "name": "and:bool_bool"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 9,
         "name": "equal:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 5,
+        "extensionUrnReference": 5,
         "functionAnchor": 10,
         "name": "ends_with:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 11,
         "name": "lt:i64_i64"
       }
@@ -509,95 +509,95 @@ CALL from_substrait_json('{
 query IIIIIIIIIIIIIIIIIIIIIIIIIIII
 CALL from_substrait_json('
 {
-  "extensionUris": [
+  "extensionUrns": [
     {
-      "extensionUriAnchor": 1,
-      "uri": "/functions_comparison.yaml"
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_comparison"
     },
     {
-      "extensionUriAnchor": 2,
-      "uri": "/functions_arithmetic.yaml"
+      "extensionUrnAnchor": 2,
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
-      "extensionUriAnchor": 3,
-      "uri": "/functions_aggregate_generic.yaml"
+      "extensionUrnAnchor": 3,
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
-      "extensionUriAnchor": 4,
-      "uri": "/functions_boolean.yaml"
+      "extensionUrnAnchor": 4,
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
-      "extensionUriAnchor": 5,
-      "uri": "/functions_string.yaml"
+      "extensionUrnAnchor": 5,
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 1,
         "name": "lte:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 2,
         "name": "sum:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 3,
         "name": "multiply:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 4,
         "name": "subtract:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 5,
         "name": "add:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 6,
         "name": "avg:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 3,
+        "extensionUrnReference": 3,
         "functionAnchor": 7,
         "name": "count:any"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 4,
+        "extensionUrnReference": 4,
         "functionAnchor": 8,
         "name": "and:bool_bool"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 9,
         "name": "equal:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 5,
+        "extensionUrnReference": 5,
         "functionAnchor": 10,
         "name": "ends_with:str_str"
       }
@@ -1229,137 +1229,137 @@ CALL from_substrait_json('
 query III
 CALL from_substrait_json('
 {
-  "extensionUris": [
+  "extensionUrns": [
     {
-      "extensionUriAnchor": 1,
-      "uri": "/functions_comparison.yaml"
+      "extensionUrnAnchor": 1,
+      "urn": "/extension:io.substrait:unctions_comparison"
     },
     {
-      "extensionUriAnchor": 2,
-      "uri": "/functions_arithmetic.yaml"
+      "extensionUrnAnchor": 2,
+      "urn": "extension:io.substrait:functions_arithmetic"
     },
     {
-      "extensionUriAnchor": 3,
-      "uri": "/functions_aggregate_generic.yaml"
+      "extensionUrnAnchor": 3,
+      "urn": "extension:io.substrait:functions_aggregate_generic"
     },
     {
-      "extensionUriAnchor": 4,
-      "uri": "/functions_boolean.yaml"
+      "extensionUrnAnchor": 4,
+      "urn": "extension:io.substrait:functions_boolean"
     },
     {
-      "extensionUriAnchor": 5,
-      "uri": "/functions_string.yaml"
+      "extensionUrnAnchor": 5,
+      "urn": "extension:io.substrait:functions_string"
     }
   ],
   "extensions": [
     {
       "extensionFunction": {
-        "extensionUriReference": 3,
+        "extensionUrnReference": 3,
         "functionAnchor": 12,
         "name": "any_value:any"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 1,
         "name": "lte:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 2,
         "name": "sum:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 3,
         "name": "multiply:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 4,
         "name": "subtract:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 5,
         "name": "add:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 2,
+        "extensionUrnReference": 2,
         "functionAnchor": 6,
         "name": "avg:int"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 3,
+        "extensionUrnReference": 3,
         "functionAnchor": 7,
         "name": "count:any"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 4,
+        "extensionUrnReference": 4,
         "functionAnchor": 8,
         "name": "and:bool_bool"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 9,
         "name": "equal:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 5,
+        "extensionUrnReference": 5,
         "functionAnchor": 10,
         "name": "ends_with:str_str"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 11,
         "name": "lt:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 13,
         "name": "gte:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 4,
+        "extensionUrnReference": 4,
         "functionAnchor": 14,
         "name": "or:bool_bool"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 1,
+        "extensionUrnReference": 1,
         "functionAnchor": 16,
         "name": "gt:i64_i64"
       }
     },
     {
       "extensionFunction": {
-        "extensionUriReference": 5,
+        "extensionUrnReference": 5,
         "functionAnchor": 15,
         "name": "substring:str_int_int"
       }
@@ -1766,18 +1766,19 @@ CALL from_substrait_json('
                                 ]
                               }
                             },
+                            "groupingExpressions": [
+                              {
+                                "selection": {
+                                  "directReference": {
+                                    "structField": {}
+                                  },
+                                  "rootReference": {}
+                                }
+                              }
+                            ],
                             "groupings": [
                               {
-                                "groupingExpressions": [
-                                  {
-                                    "selection": {
-                                      "directReference": {
-                                        "structField": {}
-                                      },
-                                      "rootReference": {}
-                                    }
-                                  }
-                                ]
+                                "expressionReferences": [0]
                               }
                             ],
                             "measures": [
@@ -2362,7 +2363,7 @@ CALL from_substrait_json('
     }
   ],
   "version": {
-    "minorNumber": 52,
+    "minorNumber": 89,
     "producer": "spark-substrait-gateway"
   }
 }

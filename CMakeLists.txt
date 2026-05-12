@@ -86,12 +86,9 @@ set(PROTOBUF_SOURCES
 
 set(SUBSTRAIT_SOURCES
     third_party/substrait/substrait/algebra.pb.cc
-    third_party/substrait/substrait/capabilities.pb.cc
-    third_party/substrait/substrait/function.pb.cc
-    third_party/substrait/substrait/parameterized_types.pb.cc
+    third_party/substrait/substrait/extended_expression.pb.cc
     third_party/substrait/substrait/plan.pb.cc
     third_party/substrait/substrait/type.pb.cc
-    third_party/substrait/substrait/type_expressions.pb.cc
     third_party/substrait/substrait/extensions/extensions.pb.cc)
 
 set(EXTENSION_SOURCES

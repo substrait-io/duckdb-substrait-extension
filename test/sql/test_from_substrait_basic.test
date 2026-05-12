@@ -102,10 +102,10 @@ CALL from_substrait_json('{
     }
   }],
   "extensions": [
-    {"extensionFunction": {"extensionUriReference": 0, "functionAnchor": 1, "name": "gt"}}
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "gt"}}
   ],
-  "extensionUris": [
-    {"extensionUriAnchor": 0, "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/functions_comparison.yaml"}
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
   ]
 }')
 ----

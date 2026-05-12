@@ -303,16 +303,16 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Function Varchar Literal", "[subs
 	    "minorNumber": 78,
 	    "producer": "substrait-go v3.5.0 darwin/arm64"
 	  },
-	  "extensionUris": [
+	  "extensionUrns": [
 	    {
-	      "extensionUriAnchor": 1,
-	      "uri": "https://github.com/substrait-io/substrait/blob/main/extensions/functions_comparison.yaml"
+	      "extensionUrnAnchor": 1,
+	      "urn": "https://github.com/substrait-io/substrait/blob/main/extensions/functions_comparison.yaml"
 	    }
 	  ],
 	  "extensions": [
 	    {
 	      "extensionFunction": {
-	        "extensionUriReference": 1,
+	        "extensionUrnReference": 1,
 	        "functionAnchor": 1,
 	        "name": "equal"
 	      }

@@ -33,7 +33,7 @@ public:
 	    : function(std::move(function_p)), extension_path(std::move(extension_path_p)) {};
 	SubstraitFunctionExtensions() = default;
 
-	string GetExtensionURI() const;
+	string GetExtensionURN() const;
 	bool IsNative() const;
 
 	SubstraitCustomFunction function;

@@ -47,7 +47,7 @@ struct TableStruct_substrait_2fextensions_2fextensions_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[6]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -71,9 +71,6 @@ extern SimpleExtensionDeclaration_ExtensionTypeDefaultTypeInternal _SimpleExtens
 class SimpleExtensionDeclaration_ExtensionTypeVariation;
 struct SimpleExtensionDeclaration_ExtensionTypeVariationDefaultTypeInternal;
 extern SimpleExtensionDeclaration_ExtensionTypeVariationDefaultTypeInternal _SimpleExtensionDeclaration_ExtensionTypeVariation_default_instance_;
-class SimpleExtensionURI;
-struct SimpleExtensionURIDefaultTypeInternal;
-extern SimpleExtensionURIDefaultTypeInternal _SimpleExtensionURI_default_instance_;
 class SimpleExtensionURN;
 struct SimpleExtensionURNDefaultTypeInternal;
 extern SimpleExtensionURNDefaultTypeInternal _SimpleExtensionURN_default_instance_;
@@ -85,175 +82,12 @@ template<> ::substrait::extensions::SimpleExtensionDeclaration* Arena::CreateMay
 template<> ::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction* Arena::CreateMaybeMessage<::substrait::extensions::SimpleExtensionDeclaration_ExtensionFunction>(Arena*);
 template<> ::substrait::extensions::SimpleExtensionDeclaration_ExtensionType* Arena::CreateMaybeMessage<::substrait::extensions::SimpleExtensionDeclaration_ExtensionType>(Arena*);
 template<> ::substrait::extensions::SimpleExtensionDeclaration_ExtensionTypeVariation* Arena::CreateMaybeMessage<::substrait::extensions::SimpleExtensionDeclaration_ExtensionTypeVariation>(Arena*);
-template<> ::substrait::extensions::SimpleExtensionURI* Arena::CreateMaybeMessage<::substrait::extensions::SimpleExtensionURI>(Arena*);
 template<> ::substrait::extensions::SimpleExtensionURN* Arena::CreateMaybeMessage<::substrait::extensions::SimpleExtensionURN>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace substrait {
 namespace extensions {
 
 // ===================================================================
-
-class SimpleExtensionURI final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.extensions.SimpleExtensionURI) */ {
- public:
-  inline SimpleExtensionURI() : SimpleExtensionURI(nullptr) {}
-  ~SimpleExtensionURI() override;
-  explicit constexpr SimpleExtensionURI(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-
-  SimpleExtensionURI(const SimpleExtensionURI& from);
-  SimpleExtensionURI(SimpleExtensionURI&& from) noexcept
-    : SimpleExtensionURI() {
-    *this = ::std::move(from);
-  }
-
-  inline SimpleExtensionURI& operator=(const SimpleExtensionURI& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline SimpleExtensionURI& operator=(SimpleExtensionURI&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetOwningArena() == from.GetOwningArena()
-  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetOwningArena() != nullptr
-  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const SimpleExtensionURI& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const SimpleExtensionURI* internal_default_instance() {
-    return reinterpret_cast<const SimpleExtensionURI*>(
-               &_SimpleExtensionURI_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    0;
-
-  friend void swap(SimpleExtensionURI& a, SimpleExtensionURI& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(SimpleExtensionURI* other) {
-    if (other == this) return;
-  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() != nullptr &&
-        GetOwningArena() == other->GetOwningArena()) {
-   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() == other->GetOwningArena()) {
-  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(SimpleExtensionURI* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  SimpleExtensionURI* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<SimpleExtensionURI>(arena);
-  }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const SimpleExtensionURI& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom(const SimpleExtensionURI& from);
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
-  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  uint8_t* _InternalSerialize(
-      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(SimpleExtensionURI* other);
-
-  private:
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "substrait.extensions.SimpleExtensionURI";
-  }
-  protected:
-  explicit SimpleExtensionURI(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                       bool is_message_owned = false);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kUriFieldNumber = 2,
-    kExtensionUriAnchorFieldNumber = 1,
-  };
-  // string uri = 2;
-  void clear_uri();
-  const std::string& uri() const;
-  template <typename ArgT0 = const std::string&, typename... ArgT>
-  void set_uri(ArgT0&& arg0, ArgT... args);
-  std::string* mutable_uri();
-  PROTOBUF_NODISCARD std::string* release_uri();
-  void set_allocated_uri(std::string* uri);
-  private:
-  const std::string& _internal_uri() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_uri(const std::string& value);
-  std::string* _internal_mutable_uri();
-  public:
-
-  // uint32 extension_uri_anchor = 1;
-  void clear_extension_uri_anchor();
-  uint32_t extension_uri_anchor() const;
-  void set_extension_uri_anchor(uint32_t value);
-  private:
-  uint32_t _internal_extension_uri_anchor() const;
-  void _internal_set_extension_uri_anchor(uint32_t value);
-  public:
-
-  // @@protoc_insertion_point(class_scope:substrait.extensions.SimpleExtensionURI)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr uri_;
-  uint32_t extension_uri_anchor_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_substrait_2fextensions_2fextensions_2eproto;
-};
-// -------------------------------------------------------------------
 
 class SimpleExtensionURN final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:substrait.extensions.SimpleExtensionURN) */ {
@@ -303,7 +137,7 @@ class SimpleExtensionURN final :
                &_SimpleExtensionURN_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    1;
+    0;
 
   friend void swap(SimpleExtensionURN& a, SimpleExtensionURN& b) {
     a.Swap(&b);
@@ -465,7 +299,7 @@ class SimpleExtensionDeclaration_ExtensionType final :
                &_SimpleExtensionDeclaration_ExtensionType_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    2;
+    1;
 
   friend void swap(SimpleExtensionDeclaration_ExtensionType& a, SimpleExtensionDeclaration_ExtensionType& b) {
     a.Swap(&b);
@@ -540,7 +374,6 @@ class SimpleExtensionDeclaration_ExtensionType final :
 
   enum : int {
     kNameFieldNumber = 3,
-    kExtensionUriReferenceFieldNumber = 1,
     kTypeAnchorFieldNumber = 2,
     kExtensionUrnReferenceFieldNumber = 4,
   };
@@ -556,15 +389,6 @@ class SimpleExtensionDeclaration_ExtensionType final :
   const std::string& _internal_name() const;
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(const std::string& value);
   std::string* _internal_mutable_name();
-  public:
-
-  // uint32 extension_uri_reference = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED void clear_extension_uri_reference();
-  PROTOBUF_DEPRECATED uint32_t extension_uri_reference() const;
-  PROTOBUF_DEPRECATED void set_extension_uri_reference(uint32_t value);
-  private:
-  uint32_t _internal_extension_uri_reference() const;
-  void _internal_set_extension_uri_reference(uint32_t value);
   public:
 
   // uint32 type_anchor = 2;
@@ -593,7 +417,6 @@ class SimpleExtensionDeclaration_ExtensionType final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
-  uint32_t extension_uri_reference_;
   uint32_t type_anchor_;
   uint32_t extension_urn_reference_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -649,7 +472,7 @@ class SimpleExtensionDeclaration_ExtensionTypeVariation final :
                &_SimpleExtensionDeclaration_ExtensionTypeVariation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    3;
+    2;
 
   friend void swap(SimpleExtensionDeclaration_ExtensionTypeVariation& a, SimpleExtensionDeclaration_ExtensionTypeVariation& b) {
     a.Swap(&b);
@@ -724,7 +547,6 @@ class SimpleExtensionDeclaration_ExtensionTypeVariation final :
 
   enum : int {
     kNameFieldNumber = 3,
-    kExtensionUriReferenceFieldNumber = 1,
     kTypeVariationAnchorFieldNumber = 2,
     kExtensionUrnReferenceFieldNumber = 4,
   };
@@ -740,15 +562,6 @@ class SimpleExtensionDeclaration_ExtensionTypeVariation final :
   const std::string& _internal_name() const;
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(const std::string& value);
   std::string* _internal_mutable_name();
-  public:
-
-  // uint32 extension_uri_reference = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED void clear_extension_uri_reference();
-  PROTOBUF_DEPRECATED uint32_t extension_uri_reference() const;
-  PROTOBUF_DEPRECATED void set_extension_uri_reference(uint32_t value);
-  private:
-  uint32_t _internal_extension_uri_reference() const;
-  void _internal_set_extension_uri_reference(uint32_t value);
   public:
 
   // uint32 type_variation_anchor = 2;
@@ -777,7 +590,6 @@ class SimpleExtensionDeclaration_ExtensionTypeVariation final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
-  uint32_t extension_uri_reference_;
   uint32_t type_variation_anchor_;
   uint32_t extension_urn_reference_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -833,7 +645,7 @@ class SimpleExtensionDeclaration_ExtensionFunction final :
                &_SimpleExtensionDeclaration_ExtensionFunction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    3;
 
   friend void swap(SimpleExtensionDeclaration_ExtensionFunction& a, SimpleExtensionDeclaration_ExtensionFunction& b) {
     a.Swap(&b);
@@ -908,7 +720,6 @@ class SimpleExtensionDeclaration_ExtensionFunction final :
 
   enum : int {
     kNameFieldNumber = 3,
-    kExtensionUriReferenceFieldNumber = 1,
     kFunctionAnchorFieldNumber = 2,
     kExtensionUrnReferenceFieldNumber = 4,
   };
@@ -924,15 +735,6 @@ class SimpleExtensionDeclaration_ExtensionFunction final :
   const std::string& _internal_name() const;
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(const std::string& value);
   std::string* _internal_mutable_name();
-  public:
-
-  // uint32 extension_uri_reference = 1 [deprecated = true];
-  PROTOBUF_DEPRECATED void clear_extension_uri_reference();
-  PROTOBUF_DEPRECATED uint32_t extension_uri_reference() const;
-  PROTOBUF_DEPRECATED void set_extension_uri_reference(uint32_t value);
-  private:
-  uint32_t _internal_extension_uri_reference() const;
-  void _internal_set_extension_uri_reference(uint32_t value);
   public:
 
   // uint32 function_anchor = 2;
@@ -961,7 +763,6 @@ class SimpleExtensionDeclaration_ExtensionFunction final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
-  uint32_t extension_uri_reference_;
   uint32_t function_anchor_;
   uint32_t extension_urn_reference_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -1024,7 +825,7 @@ class SimpleExtensionDeclaration final :
                &_SimpleExtensionDeclaration_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    4;
 
   friend void swap(SimpleExtensionDeclaration& a, SimpleExtensionDeclaration& b) {
     a.Swap(&b);
@@ -1237,7 +1038,7 @@ class AdvancedExtension final :
                &_AdvancedExtension_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    5;
 
   friend void swap(AdvancedExtension& a, AdvancedExtension& b) {
     a.Swap(&b);
@@ -1371,81 +1172,6 @@ class AdvancedExtension final :
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// SimpleExtensionURI
-
-// uint32 extension_uri_anchor = 1;
-inline void SimpleExtensionURI::clear_extension_uri_anchor() {
-  extension_uri_anchor_ = 0u;
-}
-inline uint32_t SimpleExtensionURI::_internal_extension_uri_anchor() const {
-  return extension_uri_anchor_;
-}
-inline uint32_t SimpleExtensionURI::extension_uri_anchor() const {
-  // @@protoc_insertion_point(field_get:substrait.extensions.SimpleExtensionURI.extension_uri_anchor)
-  return _internal_extension_uri_anchor();
-}
-inline void SimpleExtensionURI::_internal_set_extension_uri_anchor(uint32_t value) {
-  
-  extension_uri_anchor_ = value;
-}
-inline void SimpleExtensionURI::set_extension_uri_anchor(uint32_t value) {
-  _internal_set_extension_uri_anchor(value);
-  // @@protoc_insertion_point(field_set:substrait.extensions.SimpleExtensionURI.extension_uri_anchor)
-}
-
-// string uri = 2;
-inline void SimpleExtensionURI::clear_uri() {
-  uri_.ClearToEmpty();
-}
-inline const std::string& SimpleExtensionURI::uri() const {
-  // @@protoc_insertion_point(field_get:substrait.extensions.SimpleExtensionURI.uri)
-  return _internal_uri();
-}
-template <typename ArgT0, typename... ArgT>
-inline PROTOBUF_ALWAYS_INLINE
-void SimpleExtensionURI::set_uri(ArgT0&& arg0, ArgT... args) {
- 
- uri_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:substrait.extensions.SimpleExtensionURI.uri)
-}
-inline std::string* SimpleExtensionURI::mutable_uri() {
-  std::string* _s = _internal_mutable_uri();
-  // @@protoc_insertion_point(field_mutable:substrait.extensions.SimpleExtensionURI.uri)
-  return _s;
-}
-inline const std::string& SimpleExtensionURI::_internal_uri() const {
-  return uri_.Get();
-}
-inline void SimpleExtensionURI::_internal_set_uri(const std::string& value) {
-  
-  uri_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
-}
-inline std::string* SimpleExtensionURI::_internal_mutable_uri() {
-  
-  return uri_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
-}
-inline std::string* SimpleExtensionURI::release_uri() {
-  // @@protoc_insertion_point(field_release:substrait.extensions.SimpleExtensionURI.uri)
-  return uri_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
-}
-inline void SimpleExtensionURI::set_allocated_uri(std::string* uri) {
-  if (uri != nullptr) {
-    
-  } else {
-    
-  }
-  uri_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), uri,
-      GetArenaForAllocation());
-#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (uri_.IsDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited())) {
-    uri_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
-  }
-#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:substrait.extensions.SimpleExtensionURI.uri)
-}
-
-// -------------------------------------------------------------------
-
 // SimpleExtensionURN
 
 // uint32 extension_urn_anchor = 1;
@@ -1522,26 +1248,6 @@ inline void SimpleExtensionURN::set_allocated_urn(std::string* urn) {
 // -------------------------------------------------------------------
 
 // SimpleExtensionDeclaration_ExtensionType
-
-// uint32 extension_uri_reference = 1 [deprecated = true];
-inline void SimpleExtensionDeclaration_ExtensionType::clear_extension_uri_reference() {
-  extension_uri_reference_ = 0u;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionType::_internal_extension_uri_reference() const {
-  return extension_uri_reference_;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionType::extension_uri_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.extensions.SimpleExtensionDeclaration.ExtensionType.extension_uri_reference)
-  return _internal_extension_uri_reference();
-}
-inline void SimpleExtensionDeclaration_ExtensionType::_internal_set_extension_uri_reference(uint32_t value) {
-  
-  extension_uri_reference_ = value;
-}
-inline void SimpleExtensionDeclaration_ExtensionType::set_extension_uri_reference(uint32_t value) {
-  _internal_set_extension_uri_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.extensions.SimpleExtensionDeclaration.ExtensionType.extension_uri_reference)
-}
 
 // uint32 extension_urn_reference = 4;
 inline void SimpleExtensionDeclaration_ExtensionType::clear_extension_urn_reference() {
@@ -1638,26 +1344,6 @@ inline void SimpleExtensionDeclaration_ExtensionType::set_allocated_name(std::st
 
 // SimpleExtensionDeclaration_ExtensionTypeVariation
 
-// uint32 extension_uri_reference = 1 [deprecated = true];
-inline void SimpleExtensionDeclaration_ExtensionTypeVariation::clear_extension_uri_reference() {
-  extension_uri_reference_ = 0u;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionTypeVariation::_internal_extension_uri_reference() const {
-  return extension_uri_reference_;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionTypeVariation::extension_uri_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.extensions.SimpleExtensionDeclaration.ExtensionTypeVariation.extension_uri_reference)
-  return _internal_extension_uri_reference();
-}
-inline void SimpleExtensionDeclaration_ExtensionTypeVariation::_internal_set_extension_uri_reference(uint32_t value) {
-  
-  extension_uri_reference_ = value;
-}
-inline void SimpleExtensionDeclaration_ExtensionTypeVariation::set_extension_uri_reference(uint32_t value) {
-  _internal_set_extension_uri_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.extensions.SimpleExtensionDeclaration.ExtensionTypeVariation.extension_uri_reference)
-}
-
 // uint32 extension_urn_reference = 4;
 inline void SimpleExtensionDeclaration_ExtensionTypeVariation::clear_extension_urn_reference() {
   extension_urn_reference_ = 0u;
@@ -1752,26 +1438,6 @@ inline void SimpleExtensionDeclaration_ExtensionTypeVariation::set_allocated_nam
 // -------------------------------------------------------------------
 
 // SimpleExtensionDeclaration_ExtensionFunction
-
-// uint32 extension_uri_reference = 1 [deprecated = true];
-inline void SimpleExtensionDeclaration_ExtensionFunction::clear_extension_uri_reference() {
-  extension_uri_reference_ = 0u;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionFunction::_internal_extension_uri_reference() const {
-  return extension_uri_reference_;
-}
-inline uint32_t SimpleExtensionDeclaration_ExtensionFunction::extension_uri_reference() const {
-  // @@protoc_insertion_point(field_get:substrait.extensions.SimpleExtensionDeclaration.ExtensionFunction.extension_uri_reference)
-  return _internal_extension_uri_reference();
-}
-inline void SimpleExtensionDeclaration_ExtensionFunction::_internal_set_extension_uri_reference(uint32_t value) {
-  
-  extension_uri_reference_ = value;
-}
-inline void SimpleExtensionDeclaration_ExtensionFunction::set_extension_uri_reference(uint32_t value) {
-  _internal_set_extension_uri_reference(value);
-  // @@protoc_insertion_point(field_set:substrait.extensions.SimpleExtensionDeclaration.ExtensionFunction.extension_uri_reference)
-}
 
 // uint32 extension_urn_reference = 4;
 inline void SimpleExtensionDeclaration_ExtensionFunction::clear_extension_urn_reference() {
@@ -2229,8 +1895,6 @@ inline void AdvancedExtension::set_allocated_enhancement(::PROTOBUF_NAMESPACE_ID
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

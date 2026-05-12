@@ -109,11 +109,11 @@ string SubstraitCustomFunction::GetName() {
 	return function_signature;
 }
 
-string SubstraitFunctionExtensions::GetExtensionURI() const {
+string SubstraitFunctionExtensions::GetExtensionURN() const {
 	if (IsNative()) {
 		return "";
 	}
-	return "https://github.com/substrait-io/substrait/blob/main/extensions/" + extension_path;
+	return "extension:io.substrait:" + extension_path;
 }
 
 bool SubstraitFunctionExtensions::IsNative() const {
