@@ -550,6 +550,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
 		djointype = JoinType::SEMI;
 		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI:
+		djointype = JoinType::RIGHT_SEMI;
+		break;
 	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_OUTER:
 		djointype = JoinType::OUTER;
 		break;

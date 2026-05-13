@@ -1150,20 +1150,86 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	auto res = new substrait::Rel();
 	auto sjoin = res->mutable_join();
 	auto &djoin = dop.Cast<LogicalComparisonJoin>();
-	sjoin->set_allocated_left(TransformOp(*dop.children[0]));
-	sjoin->set_allocated_right(TransformOp(*dop.children[1]));
+	
+	// RIGHT_SEMI is equivalent to LEFT_SEMI with swapped children
+	bool is_right_semi = djoin.join_type == JoinType::RIGHT_SEMI;
+	idx_t left_child_idx = is_right_semi ? 1 : 0;
+	idx_t right_child_idx = is_right_semi ? 0 : 1;
+	
+	sjoin->set_allocated_left(TransformOp(*dop.children[left_child_idx]));
+	sjoin->set_allocated_right(TransformOp(*dop.children[right_child_idx]));
 
-	auto left_col_count = dop.children[0]->types.size();
-	if (dop.children[0]->type == LogicalOperatorType::LOGICAL_COMPARISON_JOIN) {
-		auto &child_join = dop.children[0]->Cast<LogicalComparisonJoin>();
-		if (child_join.join_type != JoinType::SEMI && child_join.join_type != JoinType::ANTI) {
+	auto left_col_count = dop.children[left_child_idx]->types.size();
+	if (dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_COMPARISON_JOIN) {
+		auto &child_join = dop.children[left_child_idx]->Cast<LogicalComparisonJoin>();
+		if (child_join.join_type != JoinType::SEMI && child_join.join_type != JoinType::ANTI && child_join.join_type != JoinType::RIGHT_SEMI) {
 			left_col_count = child_join.left_projection_map.size() + child_join.right_projection_map.size();
 		} else {
 			left_col_count = child_join.left_projection_map.size();
 		}
 	}
-	sjoin->set_allocated_expression(CreateConjunction(
-	    djoin.conditions, [&](const JoinCondition &in) { return TransformJoinCond(in, left_col_count); }));
+	
+	// For RIGHT_SEMI, we need to swap the column references in join conditions
+	auto right_col_count = dop.children[right_child_idx]->types.size();
+	if (is_right_semi) {
+		// For RIGHT_SEMI, swap left and right expressions in conditions
+		sjoin->set_allocated_expression(CreateConjunction(
+		    djoin.conditions, [&](const JoinCondition &in) {
+				// Create expression with swapped left/right
+				auto expr = new substrait::Expression();
+				string join_comparision;
+				switch (in.comparison) {
+				case ExpressionType::COMPARE_EQUAL:
+					join_comparision = "equal";
+					break;
+				case ExpressionType::COMPARE_NOTEQUAL:
+					join_comparision = "not_equal";
+					break;
+				case ExpressionType::COMPARE_GREATERTHAN:
+					// Swap: left > right becomes right < left
+					join_comparision = "lt";
+					break;
+				case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
+					join_comparision = "is_not_distinct_from";
+					break;
+				case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
+					// Swap: left >= right becomes right <= left
+					join_comparision = "lte";
+					break;
+				case ExpressionType::COMPARE_LESSTHANOREQUALTO:
+					// Swap: left <= right becomes right >= left
+					join_comparision = "gte";
+					break;
+				case ExpressionType::COMPARE_LESSTHAN:
+					// Swap: left < right becomes right > left
+					join_comparision = "gt";
+					break;
+				default:
+					throw NotImplementedException("Unsupported join comparison: " + ExpressionTypeToOperator(in.comparison));
+				}
+				vector<::substrait::Type> args_types;
+				auto scalar_fun = expr->mutable_scalar_function();
+				
+				// Swap: right expression first (no offset)
+				auto s_arg = scalar_fun->add_arguments();
+				TransformExpr(*in.right, *s_arg->mutable_value());
+				args_types.emplace_back(DuckToSubstraitType(in.right->return_type));
+				
+				// Then left expression (with offset)
+				s_arg = scalar_fun->add_arguments();
+				TransformExpr(*in.left, *s_arg->mutable_value(), left_col_count);
+				args_types.emplace_back(DuckToSubstraitType(in.left->return_type));
+				
+				LogicalType bool_type = LogicalType::BOOLEAN;
+				*scalar_fun->mutable_output_type() = DuckToSubstraitType(bool_type);
+				scalar_fun->set_function_reference(RegisterFunction(join_comparision, args_types));
+				
+				return expr;
+			}));
+	} else {
+		sjoin->set_allocated_expression(CreateConjunction(
+		    djoin.conditions, [&](const JoinCondition &in) { return TransformJoinCond(in, left_col_count); }));
+	}
 
 	switch (djoin.join_type) {
 	case JoinType::INNER:
@@ -1179,6 +1245,10 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE);
 		break;
 	case JoinType::SEMI:
+		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI);
+		break;
+	case JoinType::RIGHT_SEMI:
+		// Convert RIGHT_SEMI to LEFT_SEMI since we swapped the children
 		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI);
 		break;
 	case JoinType::OUTER:
@@ -1201,12 +1271,16 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	// TODO this projection seems redundant but from_substrait does not work without it
 	auto proj_rel = new substrait::Rel();
 	auto projection = proj_rel->mutable_project();
-	auto child_column_count = GetColumnCount(*dop.children[0]);
-	for (auto left_idx : djoin.left_projection_map) {
-		CreateFieldRef(projection->add_expressions(), left_idx);
+	auto child_column_count = GetColumnCount(*dop.children[left_child_idx]);
+	
+	// For RIGHT_SEMI (now converted to LEFT_SEMI with swapped children), use right_projection_map
+	// For SEMI, use left_projection_map
+	auto &projection_map = is_right_semi ? djoin.right_projection_map : djoin.left_projection_map;
+	for (auto idx : projection_map) {
+		CreateFieldRef(projection->add_expressions(), idx);
 	}
-	if (djoin.join_type != JoinType::SEMI) {
-		child_column_count += GetColumnCount(*dop.children[1]);
+	if (djoin.join_type != JoinType::SEMI && djoin.join_type != JoinType::RIGHT_SEMI) {
+		child_column_count += GetColumnCount(*dop.children[right_child_idx]);
 		for (auto right_idx : djoin.right_projection_map) {
 			CreateFieldRef(projection->add_expressions(), right_idx + left_col_count);
 		}
