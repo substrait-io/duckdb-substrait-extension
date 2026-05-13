@@ -114,6 +114,7 @@ private:
 	void TransformNotNullExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformIsNullExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformNotExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
+	void TransformCoalesceExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformCaseExpression(Expression &dexpr, substrait::Expression &sexpr);
 	void TransformInExpression(Expression &dexpr, substrait::Expression &sexpr);
 	//! Transforms a DuckDB Logical Type into a Substrait Type

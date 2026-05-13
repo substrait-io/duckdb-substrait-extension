@@ -292,6 +292,11 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 	} else if (function_name == "between") {
 		D_ASSERT(children.size() == 3);
 		return make_uniq<BetweenExpression>(std::move(children[0]), std::move(children[1]), std::move(children[2]));
+	} else if (function_name == "coalesce") {
+		// COALESCE is a variadic function that returns the first non-NULL value
+		// Convert to DuckDB's OPERATOR_COALESCE
+		D_ASSERT(children.size() >= 1);
+		return make_uniq<OperatorExpression>(ExpressionType::OPERATOR_COALESCE, std::move(children));
 	} else if (function_name == "extract") {
 		D_ASSERT(enum_expressions.size() == 1);
 		auto &subfield = enum_expressions[0];

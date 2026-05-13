@@ -544,6 +544,23 @@ void DuckDBToSubstrait::TransformNotExpression(Expression &dexpr, substrait::Exp
 	*scalar_fun->mutable_output_type() = DuckToSubstraitType(dop.return_type);
 }
 
+void DuckDBToSubstrait::TransformCoalesceExpression(Expression &dexpr, substrait::Expression &sexpr,
+                                                     uint64_t col_offset) {
+	auto &dop = dexpr.Cast<BoundOperatorExpression>();
+	auto scalar_fun = sexpr.mutable_scalar_function();
+	vector<::substrait::Type> args_types;
+	
+	// COALESCE is variadic - add all children as arguments
+	for (auto &child : dop.children) {
+		auto s_arg = scalar_fun->add_arguments();
+		TransformExpr(*child, *s_arg->mutable_value(), col_offset);
+		args_types.emplace_back(DuckToSubstraitType(child->return_type));
+	}
+	
+	scalar_fun->set_function_reference(RegisterFunction("coalesce", args_types));
+	*scalar_fun->mutable_output_type() = DuckToSubstraitType(dop.return_type);
+}
+
 void DuckDBToSubstrait::TransformExpr(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset) {
 	switch (dexpr.type) {
 	case ExpressionType::BOUND_REF:
@@ -588,6 +605,9 @@ void DuckDBToSubstrait::TransformExpr(Expression &dexpr, substrait::Expression &
 		break;
 	case ExpressionType::OPERATOR_NOT:
 		TransformNotExpression(dexpr, sexpr, col_offset);
+		break;
+	case ExpressionType::OPERATOR_COALESCE:
+		TransformCoalesceExpression(dexpr, sexpr, col_offset);
 		break;
 	default:
 		throw NotImplementedException(ExpressionTypeToString(dexpr.type));
