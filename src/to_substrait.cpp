@@ -858,6 +858,9 @@ substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition 
 	case ExpressionType::COMPARE_EQUAL:
 		join_comparision = "equal";
 		break;
+	case ExpressionType::COMPARE_NOTEQUAL:
+		join_comparision = "not_equal";
+		break;
 	case ExpressionType::COMPARE_GREATERTHAN:
 		join_comparision = "gt";
 		break;
