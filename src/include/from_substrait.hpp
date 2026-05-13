@@ -73,6 +73,7 @@ private:
 	shared_ptr<Relation> TransformProjectOp(const substrait::Rel &sop,
 	                                        const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformAggregateOp(const substrait::Rel &sop);
+	shared_ptr<Relation> TransformWindowOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformReadOp(const substrait::Rel &sop);
 	shared_ptr<Relation> GetValueRelationWithSingleBoolColumn();
 	shared_ptr<Relation>

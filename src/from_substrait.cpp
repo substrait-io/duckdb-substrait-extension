@@ -986,6 +986,125 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformSortOp(const substrait::Rel &so
 	return make_shared_ptr<OrderRelation>(TransformOp(sop.sort().input(), names), std::move(order_nodes));
 }
 
+shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &sop) {
+	// Get the input relation
+	auto input_rel = TransformOp(sop.window().input());
+	
+	// Build window expressions from the window functions
+	vector<unique_ptr<ParsedExpression>> expressions;
+	vector<string> aliases;
+	
+	// First, add all input columns to preserve them in the output
+	auto num_input_columns = input_rel->Columns().size();
+	for (size_t i = 0; i < num_input_columns; i++) {
+		expressions.push_back(make_uniq<PositionalReferenceExpression>(i + 1));
+		aliases.push_back(""); // Empty alias, DuckDB will use the original column name
+	}
+	
+	// Then add the window function expressions
+	for (auto &window_func : sop.window().window_functions()) {
+		// Get the function name
+		auto function_name = FindFunction(window_func.function_reference());
+		auto remapped_name = RemapFunctionName(function_name);
+		
+		// Determine the expression type based on the function name
+		ExpressionType expr_type;
+		if (remapped_name == "row_number") {
+			expr_type = ExpressionType::WINDOW_ROW_NUMBER;
+		} else if (remapped_name == "rank") {
+			expr_type = ExpressionType::WINDOW_RANK;
+		} else if (remapped_name == "dense_rank") {
+			expr_type = ExpressionType::WINDOW_RANK_DENSE;
+		} else if (remapped_name == "percent_rank") {
+			expr_type = ExpressionType::WINDOW_PERCENT_RANK;
+		} else if (remapped_name == "cume_dist") {
+			expr_type = ExpressionType::WINDOW_CUME_DIST;
+		} else if (remapped_name == "ntile") {
+			expr_type = ExpressionType::WINDOW_NTILE;
+		} else if (remapped_name == "lag") {
+			expr_type = ExpressionType::WINDOW_LAG;
+		} else if (remapped_name == "lead") {
+			expr_type = ExpressionType::WINDOW_LEAD;
+		} else if (remapped_name == "first_value") {
+			expr_type = ExpressionType::WINDOW_FIRST_VALUE;
+		} else if (remapped_name == "last_value") {
+			expr_type = ExpressionType::WINDOW_LAST_VALUE;
+		} else if (remapped_name == "nth_value") {
+			expr_type = ExpressionType::WINDOW_NTH_VALUE;
+		} else {
+			// Default to WINDOW_AGGREGATE for aggregate functions used as window functions
+			expr_type = ExpressionType::WINDOW_AGGREGATE;
+		}
+		
+		// Create window expression
+		auto window_expr = make_uniq<WindowExpression>(expr_type, "", "", remapped_name);
+		
+		// Add function arguments
+		for (auto &arg : window_func.arguments()) {
+			window_expr->children.push_back(TransformExpr(arg.value()));
+		}
+		
+		// Add partition expressions
+		for (auto &partition_expr : sop.window().partition_expressions()) {
+			window_expr->partitions.push_back(TransformExpr(partition_expr));
+		}
+		
+		// Add order by expressions
+		for (auto &sort_field : sop.window().sorts()) {
+			window_expr->orders.push_back(TransformOrder(sort_field));
+		}
+		
+		// Handle window bounds
+		if (window_func.has_lower_bound() || window_func.has_upper_bound()) {
+			// Determine bounds type (ROWS or RANGE)
+			bool is_rows = window_func.bounds_type() == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			
+			// Transform lower bound
+			if (window_func.has_lower_bound()) {
+				auto &lower = window_func.lower_bound();
+				if (lower.has_unbounded()) {
+					window_expr->start = WindowBoundary::UNBOUNDED_PRECEDING;
+				} else if (lower.has_current_row()) {
+					window_expr->start = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
+				} else if (lower.has_preceding()) {
+					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.preceding().offset()));
+					window_expr->start = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
+				} else if (lower.has_following()) {
+					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.following().offset()));
+					window_expr->start = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
+				}
+			}
+			
+			// Transform upper bound
+			if (window_func.has_upper_bound()) {
+				auto &upper = window_func.upper_bound();
+				if (upper.has_unbounded()) {
+					window_expr->end = WindowBoundary::UNBOUNDED_FOLLOWING;
+				} else if (upper.has_current_row()) {
+					window_expr->end = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
+				} else if (upper.has_preceding()) {
+					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.preceding().offset()));
+					window_expr->end = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
+				} else if (upper.has_following()) {
+					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.following().offset()));
+					window_expr->end = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
+				}
+			}
+		}
+		
+		// Handle invocation (DISTINCT, etc.)
+		window_expr->distinct =
+			window_func.invocation() == substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
+		
+		expressions.push_back(std::move(window_expr));
+		aliases.push_back(""); // Empty alias, DuckDB will generate one
+	}
+	
+	// Return a projection with the window expressions
+	// Window functions in DuckDB are handled as projections with window expressions
+	return input_rel->Project(std::move(expressions), aliases);
+}
+
 static SetOperationType TransformSetOperationType(substrait::SetRel_SetOp setop) {
 	switch (setop) {
 	case substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_UNION_ALL: {
@@ -1095,6 +1214,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		return TransformReadOp(sop);
 	case substrait::Rel::RelTypeCase::kSort:
 		return TransformSortOp(sop, names);
+	case substrait::Rel::RelTypeCase::kWindow:
+		return TransformWindowOp(sop);
 	case substrait::Rel::RelTypeCase::kSet:
 		return TransformSetOp(sop, names);
 	case substrait::Rel::RelTypeCase::kWrite:
