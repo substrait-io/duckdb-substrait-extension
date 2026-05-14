@@ -1,0 +1,214 @@
+# name: test/sql/test_coalesce.test
+# description: Test COALESCE function roundtrip
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+# Create test tables with various data types
+statement ok
+CREATE TABLE t_int AS SELECT 1 as a, 2 as b, NULL::INTEGER as c, 4 as d;
+
+statement ok
+CREATE TABLE t_string AS SELECT 'hello' as s1, NULL::VARCHAR as s2, 'world' as s3;
+
+statement ok
+CREATE TABLE t_decimal AS SELECT 1.5::DECIMAL(10,2) as d1, NULL::DECIMAL(10,2) as d2, 3.7::DECIMAL(10,2) as d3;
+
+statement ok
+CREATE TABLE t_mixed AS SELECT 1 as id, NULL::INTEGER as val1, 5 as val2, NULL::INTEGER as val3, 10 as val4;
+
+# Test 1: Basic COALESCE with 2 arguments (integers)
+query I
+SELECT COALESCE(a, b) FROM t_int;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT COALESCE(a, b) FROM t_int', strict = true)
+
+# Test 2: COALESCE with NULL as first argument
+query I
+SELECT COALESCE(c, b) FROM t_int;
+----
+2
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, b) FROM t_int')
+
+# Test 3: COALESCE with multiple arguments (3+)
+query I
+SELECT COALESCE(c, NULL, d) FROM t_int;
+----
+4
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, NULL, d) FROM t_int')
+
+# Test 4: COALESCE with 4 arguments
+query I
+SELECT COALESCE(c, NULL, NULL, b) FROM t_int;
+----
+2
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, NULL, NULL, b) FROM t_int')
+
+# Test 5: COALESCE with all NULL values except last
+query I
+SELECT COALESCE(c, NULL, NULL, d) FROM t_int;
+----
+4
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, NULL, NULL, d) FROM t_int')
+
+# Test 6: COALESCE with strings
+query I
+SELECT COALESCE(s2, s1) FROM t_string;
+----
+hello
+
+statement ok
+CALL get_substrait('SELECT COALESCE(s2, s1) FROM t_string')
+
+# Test 7: COALESCE with multiple string arguments
+query I
+SELECT COALESCE(s2, NULL, s3) FROM t_string;
+----
+world
+
+statement ok
+CALL get_substrait('SELECT COALESCE(s2, NULL, s3) FROM t_string')
+
+# Test 8: COALESCE with decimals
+query I
+SELECT COALESCE(d2, d1) FROM t_decimal;
+----
+1.50
+
+statement ok
+CALL get_substrait('SELECT COALESCE(d2, d1) FROM t_decimal')
+
+# Test 9: COALESCE with multiple decimal arguments
+query I
+SELECT COALESCE(d2, NULL, d3) FROM t_decimal;
+----
+3.70
+
+statement ok
+CALL get_substrait('SELECT COALESCE(d2, NULL, d3) FROM t_decimal')
+
+# Test 10: COALESCE in WHERE clause
+query I
+SELECT id FROM t_mixed WHERE COALESCE(val1, val2) > 3;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT id FROM t_mixed WHERE COALESCE(val1, val2) > 3')
+
+# Test 11: COALESCE in WHERE clause with multiple arguments
+query I
+SELECT id FROM t_mixed WHERE COALESCE(val1, val3, val4) = 10;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT id FROM t_mixed WHERE COALESCE(val1, val3, val4) = 10')
+
+# Test 12: COALESCE with expressions as arguments
+query I
+SELECT COALESCE(c, a + b) FROM t_int;
+----
+3
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, a + b) FROM t_int')
+
+# Test 13: COALESCE with function calls as arguments
+query I
+SELECT COALESCE(c, ABS(a)) FROM t_int;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, ABS(a)) FROM t_int')
+
+# Test 14: Nested COALESCE
+query I
+SELECT COALESCE(c, COALESCE(NULL, b)) FROM t_int;
+----
+2
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, COALESCE(NULL, b)) FROM t_int')
+
+# Test 15: COALESCE in aggregation context
+query I
+SELECT SUM(COALESCE(val1, val2)) FROM t_mixed;
+----
+5
+
+statement ok
+CALL get_substrait('SELECT SUM(COALESCE(val1, val2)) FROM t_mixed')
+
+# Test 16: COALESCE with single argument (edge case)
+query I
+SELECT COALESCE(a) FROM t_int;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT COALESCE(a) FROM t_int', strict = true)
+
+# Test 17: COALESCE with single NULL argument
+query I
+SELECT COALESCE(c) FROM t_int;
+----
+NULL
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c) FROM t_int', strict = true)
+
+# Test 18: COALESCE in SELECT list with multiple columns
+query II
+SELECT COALESCE(c, a) as col1, COALESCE(c, b, d) as col2 FROM t_int;
+----
+1	2
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, a) as col1, COALESCE(c, b, d) as col2 FROM t_int')
+
+# Test 19: COALESCE with CAST
+query I
+SELECT COALESCE(c, CAST(a AS BIGINT)) FROM t_int;
+----
+1
+
+statement ok
+CALL get_substrait('SELECT COALESCE(c, CAST(a AS BIGINT)) FROM t_int')
+
+# Test 20: COALESCE in ORDER BY
+query I
+SELECT id FROM t_mixed ORDER BY COALESCE(val1, val2);
+----
+1
+
+statement ok
+CALL get_substrait('SELECT id FROM t_mixed ORDER BY COALESCE(val1, val2)')
+
+# Clean up
+statement ok
+DROP TABLE t_int;
+
+statement ok
+DROP TABLE t_string;
+
+statement ok
+DROP TABLE t_decimal;
+
+statement ok
+DROP TABLE t_mixed;
