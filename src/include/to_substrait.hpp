@@ -77,6 +77,7 @@ private:
 	substrait::Rel *TransformCTERef(LogicalOperator &dop);
 	static vector<LogicalType>::size_type GetColumnCount(LogicalOperator &dop);
 	static substrait::Rel *TransformDummyScan();
+	substrait::Rel *TransformEmptyResult(LogicalOperator &dop);
 	static substrait::RelCommon *CreateOutputMapping(vector<int32_t> vector);
 	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping);
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)

@@ -1337,11 +1337,21 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		TransformExpr(*dgrp, *grouping_expr);
 	}
 	
-	// we only do a single grouping set for now
-	auto sgrp = saggr->add_groupings();
-	// Add references to all grouping expressions (0, 1, 2, ...)
-	for (idx_t i = 0; i < daggr.groups.size(); i++) {
-		sgrp->add_expression_references(i);
+	// Handle multiple grouping sets (for ROLLUP, CUBE, GROUPING SETS)
+	if (daggr.grouping_sets.empty()) {
+		// No explicit grouping sets - create a single grouping set with all groups
+		auto sgrp = saggr->add_groupings();
+		for (idx_t i = 0; i < daggr.groups.size(); i++) {
+			sgrp->add_expression_references(i);
+		}
+	} else {
+		// Multiple grouping sets - convert each one
+		for (auto &grouping_set : daggr.grouping_sets) {
+			auto sgrp = saggr->add_groupings();
+			for (auto &group_idx : grouping_set) {
+				sgrp->add_expression_references(group_idx);
+			}
+		}
 	}
 	for (auto &dmeas : daggr.expressions) {
 		auto smeas = saggr->add_measures()->mutable_measure();
@@ -1643,6 +1653,37 @@ substrait::Rel *DuckDBToSubstrait::TransformDummyScan() {
 	// Add a dummy value to emit one row
 	auto dummy_struct = virtual_table->add_values();
 	dummy_struct->add_fields()->set_i32(42);
+	return get_rel;
+}
+
+substrait::Rel *DuckDBToSubstrait::TransformEmptyResult(LogicalOperator &dop) {
+	// Create an empty virtual table to represent an empty result
+	// An empty virtual table (no rows) naturally represents an empty result
+	auto get_rel = new substrait::Rel();
+	auto sget = get_rel->mutable_read();
+	sget->mutable_virtual_table();
+	// Don't add any expressions - this creates an empty virtual table with no rows
+	
+	// Add base_schema to preserve the schema information
+	auto &empty_result = dop.Cast<LogicalEmptyResult>();
+	auto base_schema = new substrait::NamedStruct();
+	auto type_info = new substrait::Type_Struct();
+	type_info->set_nullability(substrait::Type_Nullability_NULLABILITY_REQUIRED);
+	
+	for (idx_t i = 0; i < empty_result.return_types.size(); i++) {
+		auto cur_type = empty_result.return_types[i];
+		// Use generic column names since LogicalEmptyResult doesn't have column names
+		base_schema->add_names("col" + std::to_string(i));
+		auto depth_names = DepthFirstNames(cur_type);
+		for (auto &name : depth_names) {
+			base_schema->add_names(name);
+		}
+		auto new_type = type_info->add_types();
+		*new_type = DuckToSubstraitType(cur_type, nullptr, false);
+	}
+	base_schema->set_allocated_struct_(type_info);
+	sget->set_allocated_base_schema(base_schema);
+	
 	return get_rel;
 }
 
@@ -1972,6 +2013,8 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformIntersect(dop);
 	case LogicalOperatorType::LOGICAL_DUMMY_SCAN:
 		return TransformDummyScan();
+	case LogicalOperatorType::LOGICAL_EMPTY_RESULT:
+		return TransformEmptyResult(dop);
 	case LogicalOperatorType::LOGICAL_CREATE_TABLE:
 		return TransformCreateTable(dop);
 	case LogicalOperatorType::LOGICAL_INSERT:
