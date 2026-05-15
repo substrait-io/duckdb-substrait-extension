@@ -181,7 +181,7 @@ static void VerifySubstraitRoundtrip(unique_ptr<LogicalOperator> &query_plan, Cl
 	string error_message;
 	if (!ColumnDataCollection::ResultEquals(actual_col_coll, subs_col_coll, error_message)) {
 		// Check if the error is due to NaN vs NULL mismatch (common with division by zero)
-		if (error_message.find("nan") != string::npos && error_message.find("NULL") != string::npos) {
+		if (error_message.rfind("nan <> NULL", 1) != string::npos) {
 			// This is a known incompatibility: DuckDB returns NaN for division by zero with decimals,
 			// while Substrait returns NULL. We treat these as equivalent.
 			return;
