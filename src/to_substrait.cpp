@@ -1442,7 +1442,7 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 	substrait::Rel *current_input = TransformOp(*dop.children[0]);
 	
 	for (auto &spec : window_specs) {
-		auto res = new substrait::Rel();
+		auto res = make_uniq<substrait::Rel>();
 		auto swindow = res->mutable_window();
 		
 		// Set the input (either the original input or the previous window relation)
@@ -1589,108 +1589,76 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		
 		swin_func->set_bounds_type(bounds_type);
 		
+		// Helper function to transform window boundaries
+		auto TransformWindowBoundary = [](WindowBoundary boundary_type,
+		                                   const unique_ptr<Expression>& boundary_expr,
+		                                   substrait::Expression_WindowFunction_Bound* bound,
+		                                   bool is_start_bound) {
+			switch (boundary_type) {
+			case WindowBoundary::UNBOUNDED_PRECEDING:
+			case WindowBoundary::UNBOUNDED_FOLLOWING:
+				bound->mutable_unbounded();
+				break;
+			case WindowBoundary::CURRENT_ROW_ROWS:
+			case WindowBoundary::CURRENT_ROW_RANGE:
+			case WindowBoundary::CURRENT_ROW_GROUPS:
+				bound->mutable_current_row();
+				break;
+			case WindowBoundary::EXPR_PRECEDING_ROWS:
+			case WindowBoundary::EXPR_PRECEDING_RANGE:
+			case WindowBoundary::EXPR_PRECEDING_GROUPS:
+				if (boundary_expr) {
+					// For now, we only support constant integer offsets
+					// TODO: Support expression-based offsets
+					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
+						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						auto preceding = bound->mutable_preceding();
+						preceding->set_offset(const_expr.value.GetValue<int64_t>());
+					} else {
+						throw NotImplementedException("Only constant offsets are supported for window bounds");
+					}
+				} else {
+					throw InternalException("Window boundary expression missing for PRECEDING");
+				}
+				break;
+			case WindowBoundary::EXPR_FOLLOWING_ROWS:
+			case WindowBoundary::EXPR_FOLLOWING_RANGE:
+			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
+				if (boundary_expr) {
+					// For now, we only support constant integer offsets
+					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
+						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						auto following = bound->mutable_following();
+						following->set_offset(const_expr.value.GetValue<int64_t>());
+					} else {
+						throw NotImplementedException("Only constant offsets are supported for window bounds");
+					}
+				} else {
+					throw InternalException("Window boundary expression missing for FOLLOWING");
+				}
+				break;
+			default:
+				// Default to UNBOUNDED PRECEDING for start, CURRENT ROW for end
+				if (is_start_bound) {
+					bound->mutable_unbounded();
+				} else {
+					bound->mutable_current_row();
+				}
+				break;
+			}
+		};
+		
 		// Transform start bound
 		auto lower_bound = swin_func->mutable_lower_bound();
-		switch (dwin_expr.start) {
-		case WindowBoundary::UNBOUNDED_PRECEDING:
-			lower_bound->mutable_unbounded();
-			break;
-		case WindowBoundary::CURRENT_ROW_ROWS:
-		case WindowBoundary::CURRENT_ROW_RANGE:
-		case WindowBoundary::CURRENT_ROW_GROUPS:
-			lower_bound->mutable_current_row();
-			break;
-		case WindowBoundary::EXPR_PRECEDING_ROWS:
-		case WindowBoundary::EXPR_PRECEDING_RANGE:
-		case WindowBoundary::EXPR_PRECEDING_GROUPS:
-			if (dwin_expr.start_expr) {
-				// For now, we only support constant integer offsets
-				// TODO: Support expression-based offsets
-				if (dwin_expr.start_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-					auto &const_expr = dwin_expr.start_expr->Cast<BoundConstantExpression>();
-					auto preceding = lower_bound->mutable_preceding();
-					preceding->set_offset(const_expr.value.GetValue<int64_t>());
-				} else {
-					throw NotImplementedException("Only constant offsets are supported for window bounds");
-				}
-			} else {
-				throw InternalException("Window boundary expression missing for PRECEDING");
-			}
-			break;
-		case WindowBoundary::EXPR_FOLLOWING_ROWS:
-		case WindowBoundary::EXPR_FOLLOWING_RANGE:
-		case WindowBoundary::EXPR_FOLLOWING_GROUPS:
-			if (dwin_expr.start_expr) {
-				// For now, we only support constant integer offsets
-				if (dwin_expr.start_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-					auto &const_expr = dwin_expr.start_expr->Cast<BoundConstantExpression>();
-					auto following = lower_bound->mutable_following();
-					following->set_offset(const_expr.value.GetValue<int64_t>());
-				} else {
-					throw NotImplementedException("Only constant offsets are supported for window bounds");
-				}
-			} else {
-				throw InternalException("Window boundary expression missing for FOLLOWING");
-			}
-			break;
-		default:
-			// Default to UNBOUNDED PRECEDING
-			lower_bound->mutable_unbounded();
-			break;
-		}
+		TransformWindowBoundary(dwin_expr.start, dwin_expr.start_expr, lower_bound, true);
 		
 		// Transform end bound
 		auto upper_bound = swin_func->mutable_upper_bound();
-		switch (dwin_expr.end) {
-		case WindowBoundary::UNBOUNDED_FOLLOWING:
-			upper_bound->mutable_unbounded();
-			break;
-		case WindowBoundary::CURRENT_ROW_ROWS:
-		case WindowBoundary::CURRENT_ROW_RANGE:
-		case WindowBoundary::CURRENT_ROW_GROUPS:
-			upper_bound->mutable_current_row();
-			break;
-		case WindowBoundary::EXPR_PRECEDING_ROWS:
-		case WindowBoundary::EXPR_PRECEDING_RANGE:
-		case WindowBoundary::EXPR_PRECEDING_GROUPS:
-			if (dwin_expr.end_expr) {
-				// For now, we only support constant integer offsets
-				if (dwin_expr.end_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-					auto &const_expr = dwin_expr.end_expr->Cast<BoundConstantExpression>();
-					auto preceding = upper_bound->mutable_preceding();
-					preceding->set_offset(const_expr.value.GetValue<int64_t>());
-				} else {
-					throw NotImplementedException("Only constant offsets are supported for window bounds");
-				}
-			} else {
-				throw InternalException("Window boundary expression missing for PRECEDING");
-			}
-			break;
-		case WindowBoundary::EXPR_FOLLOWING_ROWS:
-		case WindowBoundary::EXPR_FOLLOWING_RANGE:
-		case WindowBoundary::EXPR_FOLLOWING_GROUPS:
-			if (dwin_expr.end_expr) {
-				// For now, we only support constant integer offsets
-				if (dwin_expr.end_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-					auto &const_expr = dwin_expr.end_expr->Cast<BoundConstantExpression>();
-					auto following = upper_bound->mutable_following();
-					following->set_offset(const_expr.value.GetValue<int64_t>());
-				} else {
-					throw NotImplementedException("Only constant offsets are supported for window bounds");
-				}
-			} else {
-				throw InternalException("Window boundary expression missing for FOLLOWING");
-			}
-			break;
-		default:
-			// Default to CURRENT ROW
-			upper_bound->mutable_current_row();
-			break;
-		}
+		TransformWindowBoundary(dwin_expr.end, dwin_expr.end_expr, upper_bound, false);
 		}
 		
 		// Update current_input to chain the next window relation
-		current_input = res;
+		current_input = res.release();
 	}
 	
 	// Return the last window relation in the chain
