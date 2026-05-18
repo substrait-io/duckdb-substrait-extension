@@ -62,11 +62,9 @@ Not implemented Error: DELIM_JOIN
 statement ok
 CALL get_substrait('WITH year_total AS (SELECT c_customer_id customer_id, c_first_name customer_first_name , c_last_name customer_last_name, c_preferred_cust_flag customer_preferred_cust_flag , c_birth_country customer_birth_country, c_login customer_login, c_email_address customer_email_address, d_year dyear, Sum(ss_ext_list_price - ss_ext_discount_amt) year_total, ''s'' sale_type FROM customer, store_sales, date_dim WHERE c_customer_sk = ss_customer_sk AND ss_sold_date_sk = d_date_sk GROUP BY c_customer_id, c_first_name, c_last_name, c_preferred_cust_flag, c_birth_country, c_login, c_email_address, d_year UNION ALL SELECT c_customer_id customer_id, c_first_name customer_first_name , c_last_name customer_last_name, c_preferred_cust_flag customer_preferred_cust_flag , c_birth_country customer_birth_country, c_login customer_login, c_email_address customer_email_address, d_year dyear, Sum(ws_ext_list_price - ws_ext_discount_amt) year_total, ''w'' sale_type FROM customer, web_sales, date_dim WHERE c_customer_sk = ws_bill_customer_sk AND ws_sold_date_sk = d_date_sk GROUP BY c_customer_id, c_first_name, c_last_name, c_preferred_cust_flag, c_birth_country, c_login, c_email_address, d_year) SELECT t_s_secyear.customer_id, t_s_secyear.customer_first_name, t_s_secyear.customer_last_name, t_s_secyear.customer_birth_country FROM year_total t_s_firstyear, year_total t_s_secyear, year_total t_w_firstyear, year_total t_w_secyear WHERE t_s_secyear.customer_id = t_s_firstyear.customer_id AND t_s_firstyear.customer_id = t_w_secyear.customer_id AND t_s_firstyear.customer_id = t_w_firstyear.customer_id AND t_s_firstyear.sale_type = ''s'' AND t_w_firstyear.sale_type = ''w'' AND t_s_secyear.sale_type = ''s'' AND t_w_secyear.sale_type = ''w'' AND t_s_firstyear.dyear = 2001 AND t_s_secyear.dyear = 2001 + 1 AND t_w_firstyear.dyear = 2001 AND t_w_secyear.dyear = 2001 + 1 AND t_s_firstyear.year_total > 0 AND t_w_firstyear.year_total > 0 AND CASE WHEN t_w_firstyear.year_total > 0 THEN t_w_secyear.year_total / t_w_firstyear.year_total ELSE 0.0 END > CASE WHEN t_s_firstyear.year_total > 0 THEN t_s_secyear.year_total / t_s_firstyear.year_total ELSE 0.0 END ORDER BY t_s_secyear.customer_id, t_s_secyear.customer_first_name, t_s_secyear.customer_last_name, t_s_secyear.customer_birth_country LIMIT 100; ')
 
-#Q 12 (WINDOW)
-statement error
+#Q 12
+statement ok
 CALL get_substrait('SELECT i_item_id , i_item_desc , i_category , i_class , i_current_price , Sum(ws_ext_sales_price) AS itemrevenue , Sum(ws_ext_sales_price)*100/Sum(Sum(ws_ext_sales_price)) OVER (partition BY i_class) AS revenueratio FROM web_sales , item , date_dim WHERE ws_item_sk = i_item_sk AND i_category IN (''Home'', ''Men'', ''Women'') AND ws_sold_date_sk = d_date_sk AND d_date BETWEEN Cast(''2000-05-11'' AS DATE) AND ( Cast(''2000-05-11'' AS DATE) + INTERVAL ''30'' day) GROUP BY i_item_id , i_item_desc , i_category , i_class , i_current_price ORDER BY i_category , i_class , i_item_id , i_item_desc , revenueratio LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 13
 statement ok
@@ -99,11 +97,9 @@ statement ok
 CALL get_substrait('SELECT i_brand_id brand_id, i_brand brand, i_manufact_id, i_manufact, Sum(ss_ext_sales_price) ext_price FROM date_dim, store_sales, item, customer, customer_address, store WHERE d_date_sk = ss_sold_date_sk AND ss_item_sk = i_item_sk AND i_manager_id = 38 AND d_moy = 12 AND d_year = 1998 AND ss_customer_sk = c_customer_sk AND c_current_addr_sk = ca_address_sk AND Substr(ca_zip, 1, 5) <> Substr(s_zip, 1, 5) AND ss_store_sk = s_store_sk GROUP BY i_brand, i_brand_id, i_manufact_id, i_manufact ORDER BY ext_price DESC, i_brand, i_brand_id, i_manufact_id, i_manufact LIMIT 100; ')
 
 
-#Q 20 (WINDOW)
-statement error
+#Q 20
+statement ok
 CALL get_substrait('SELECT i_item_id , i_item_desc , i_category , i_class , i_current_price , Sum(cs_ext_sales_price) AS itemrevenue , Sum(cs_ext_sales_price)*100/Sum(Sum(cs_ext_sales_price)) OVER (partition BY i_class) AS revenueratio FROM catalog_sales , item , date_dim WHERE cs_item_sk = i_item_sk AND i_category IN (''Children'', ''Women'', ''Electronics'') AND cs_sold_date_sk = d_date_sk AND d_date BETWEEN Cast(''2001-02-03'' AS DATE) AND ( Cast(''2001-02-03'' AS DATE) + INTERVAL ''30'' day) GROUP BY i_item_id , i_item_desc , i_category , i_class , i_current_price ORDER BY i_category , i_class , i_item_id , i_item_desc , revenueratio LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 21
 statement ok
@@ -175,11 +171,11 @@ CALL get_substrait('SELECT ca_state, cd_gender, cd_marital_status, cd_dep_count,
 ----
 Not implemented Error: DELIM_JOIN
 
-#Q 36 (WINDOW)
+#Q 36 (Grouping)
 statement error
 CALL get_substrait('SELECT Sum(ss_net_profit) / Sum(ss_ext_sales_price) AS gross_margin, i_category, i_class, Grouping(i_category) + Grouping(i_class) AS lochierarchy, Rank() OVER ( partition BY Grouping(i_category)+Grouping(i_class), CASE WHEN Grouping( i_class) = 0 THEN i_category END ORDER BY Sum(ss_net_profit)/Sum(ss_ext_sales_price) ASC) AS rank_within_parent FROM store_sales, date_dim d1, item, store WHERE d1.d_year = 2000 AND d1.d_date_sk = ss_sold_date_sk AND i_item_sk = ss_item_sk AND s_store_sk = ss_store_sk AND s_state IN ( ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'' ) GROUP BY rollup( i_category, i_class ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN i_category END, rank_within_parent LIMIT 100; ')
 ----
-Not implemented Error: WINDOW
+Not implemented Error: Grouping functions not supported yet
 
 #Q 37
 statement ok
@@ -213,11 +209,9 @@ CALL get_substrait('SELECT dt.d_year, item.i_category_id, item.i_category, Sum(s
 statement ok
 CALL get_substrait('SELECT s_store_name, s_store_id, Sum(CASE WHEN ( d_day_name = ''Sunday'' ) THEN ss_sales_price ELSE NULL END) sun_sales, Sum(CASE WHEN ( d_day_name = ''Monday'' ) THEN ss_sales_price ELSE NULL END) mon_sales, Sum(CASE WHEN ( d_day_name = ''Tuesday'' ) THEN ss_sales_price ELSE NULL END) tue_sales, Sum(CASE WHEN ( d_day_name = ''Wednesday'' ) THEN ss_sales_price ELSE NULL END) wed_sales, Sum(CASE WHEN ( d_day_name = ''Thursday'' ) THEN ss_sales_price ELSE NULL END) thu_sales, Sum(CASE WHEN ( d_day_name = ''Friday'' ) THEN ss_sales_price ELSE NULL END) fri_sales, Sum(CASE WHEN ( d_day_name = ''Saturday'' ) THEN ss_sales_price ELSE NULL END) sat_sales FROM date_dim, store_sales, store WHERE d_date_sk = ss_sold_date_sk AND s_store_sk = ss_store_sk AND s_gmt_offset = -5 AND d_year = 2002 GROUP BY s_store_name, s_store_id ORDER BY s_store_name, s_store_id, sun_sales, mon_sales, tue_sales, wed_sales, thu_sales, fri_sales, sat_sales LIMIT 100; ')
 
-#Q 44 (WINDOW)
-statement error
+#Q 44
+statement ok
 CALL get_substrait('SELECT asceding.rnk, i1.i_product_name best_performing, i2.i_product_name worst_performing FROM (SELECT * FROM (SELECT item_sk, Rank() OVER ( ORDER BY rank_col ASC) rnk FROM (SELECT ss_item_sk item_sk, Avg(ss_net_profit) rank_col FROM store_sales ss1 WHERE ss_store_sk = 4 GROUP BY ss_item_sk HAVING Avg(ss_net_profit) > 0.9 * (SELECT Avg(ss_net_profit) rank_col FROM store_sales WHERE ss_store_sk = 4 AND ss_cdemo_sk IS NULL GROUP BY ss_store_sk))V1) V11 WHERE rnk < 11) asceding, (SELECT * FROM (SELECT item_sk, Rank() OVER ( ORDER BY rank_col DESC) rnk FROM (SELECT ss_item_sk item_sk, Avg(ss_net_profit) rank_col FROM store_sales ss1 WHERE ss_store_sk = 4 GROUP BY ss_item_sk HAVING Avg(ss_net_profit) > 0.9 * (SELECT Avg(ss_net_profit) rank_col FROM store_sales WHERE ss_store_sk = 4 AND ss_cdemo_sk IS NULL GROUP BY ss_store_sk))V2) V21 WHERE rnk < 11) descending, item i1, item i2 WHERE asceding.rnk = descending.rnk AND i1.i_item_sk = asceding.item_sk AND i2.i_item_sk = descending.item_sk ORDER BY asceding.rnk LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 45 (MARK)
 statement error
@@ -229,41 +223,33 @@ Not implemented Error: Unsupported join type MARK
 statement ok
 CALL get_substrait('SELECT c_last_name, c_first_name, ca_city, bought_city, ss_ticket_number, amt, profit FROM (SELECT ss_ticket_number, ss_customer_sk, ca_city bought_city, Sum(ss_coupon_amt) amt, Sum(ss_net_profit) profit FROM store_sales, date_dim, store, household_demographics, customer_address WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk AND store_sales.ss_store_sk = store.s_store_sk AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk AND store_sales.ss_addr_sk = customer_address.ca_address_sk AND ( household_demographics.hd_dep_count = 6 OR household_demographics.hd_vehicle_count = 0 ) AND date_dim.d_dow IN ( 6, 0 ) AND date_dim.d_year IN ( 2000, 2000 + 1, 2000 + 2 ) AND store.s_city IN ( ''Midway'', ''Fairview'', ''Fairview'', ''Fairview'', ''Fairview'' ) GROUP BY ss_ticket_number, ss_customer_sk, ss_addr_sk, ca_city) dn, customer, customer_address current_addr WHERE ss_customer_sk = c_customer_sk AND customer.c_current_addr_sk = current_addr.ca_address_sk AND current_addr.ca_city <> bought_city ORDER BY c_last_name, c_first_name, ca_city, bought_city, ss_ticket_number LIMIT 100; ')
 
-#Q 47 (WINDOW)
-statement error
+#Q 47
+statement ok
 CALL get_substrait('WITH v1 AS (SELECT i_category, i_brand, s_store_name, s_company_name, d_year, d_moy, Sum(ss_sales_price) sum_sales, Avg(Sum(ss_sales_price)) OVER ( partition BY i_category, i_brand, s_store_name, s_company_name, d_year) avg_monthly_sales, Rank() OVER ( partition BY i_category, i_brand, s_store_name, s_company_name ORDER BY d_year, d_moy) rn FROM item, store_sales, date_dim, store WHERE ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND ss_store_sk = s_store_sk AND ( d_year = 1999 OR ( d_year = 1999 - 1 AND d_moy = 12 ) OR ( d_year = 1999 + 1 AND d_moy = 1 ) ) GROUP BY i_category, i_brand, s_store_name, s_company_name, d_year, d_moy), v2 AS (SELECT v1.i_category, v1.d_year, v1.d_moy, v1.avg_monthly_sales, v1.sum_sales, v1_lag.sum_sales psum, v1_lead.sum_sales nsum FROM v1, v1 v1_lag, v1 v1_lead WHERE v1.i_category = v1_lag.i_category AND v1.i_category = v1_lead.i_category AND v1.i_brand = v1_lag.i_brand AND v1.i_brand = v1_lead.i_brand AND v1.s_store_name = v1_lag.s_store_name AND v1.s_store_name = v1_lead.s_store_name AND v1.s_company_name = v1_lag.s_company_name AND v1.s_company_name = v1_lead.s_company_name AND v1.rn = v1_lag.rn + 1 AND v1.rn = v1_lead.rn - 1) SELECT * FROM v2 WHERE d_year = 1999 AND avg_monthly_sales > 0 AND CASE WHEN avg_monthly_sales > 0 THEN Abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE NULL END > 0.1 ORDER BY sum_sales - avg_monthly_sales, 3 LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 48
 statement ok
 CALL get_substrait('SELECT Sum (ss_quantity) FROM store_sales, store, customer_demographics, customer_address, date_dim WHERE s_store_sk = ss_store_sk AND ss_sold_date_sk = d_date_sk AND d_year = 1999 AND ( ( cd_demo_sk = ss_cdemo_sk AND cd_marital_status = ''W'' AND cd_education_status = ''Secondary'' AND ss_sales_price BETWEEN 100.00 AND 150.00 ) OR ( cd_demo_sk = ss_cdemo_sk AND cd_marital_status = ''M'' AND cd_education_status = ''Advanced Degree'' AND ss_sales_price BETWEEN 50.00 AND 100.00 ) OR ( cd_demo_sk = ss_cdemo_sk AND cd_marital_status = ''D'' AND cd_education_status = ''2 yr Degree'' AND ss_sales_price BETWEEN 150.00 AND 200.00 ) ) AND ( ( ss_addr_sk = ca_address_sk AND ca_country = ''United States'' AND ca_state IN ( ''TX'', ''NE'', ''MO'' ) AND ss_net_profit BETWEEN 0 AND 2000 ) OR ( ss_addr_sk = ca_address_sk AND ca_country = ''United States'' AND ca_state IN ( ''CO'', ''TN'', ''ND'' ) AND ss_net_profit BETWEEN 150 AND 3000 ) OR ( ss_addr_sk = ca_address_sk AND ca_country = ''United States'' AND ca_state IN ( ''OK'', ''PA'', ''CA'' ) AND ss_net_profit BETWEEN 50 AND 25000 ) ); ')
 
-#Q 49 (WINDOW)
-statement error
+#Q 49
+statement ok
 CALL get_substrait('SELECT ''web'' AS channel, web.item, web.return_ratio, web.return_rank, web.currency_rank FROM (SELECT item, return_ratio, currency_ratio, Rank() OVER ( ORDER BY return_ratio) AS return_rank, Rank() OVER ( ORDER BY currency_ratio) AS currency_rank FROM (SELECT ws.ws_item_sk AS item, ( Cast(Sum(COALESCE(wr.wr_return_quantity, 0)) AS DEC(15, 4)) / Cast( Sum(COALESCE(ws.ws_quantity, 0)) AS DEC(15, 4)) ) AS return_ratio, ( Cast(Sum(COALESCE(wr.wr_return_amt, 0)) AS DEC(15, 4)) / Cast( Sum( COALESCE(ws.ws_net_paid, 0)) AS DEC(15, 4)) ) AS currency_ratio FROM web_sales ws LEFT OUTER JOIN web_returns wr ON ( ws.ws_order_number = wr.wr_order_number AND ws.ws_item_sk = wr.wr_item_sk ), date_dim WHERE wr.wr_return_amt > 10000 AND ws.ws_net_profit > 1 AND ws.ws_net_paid > 0 AND ws.ws_quantity > 0 AND ws_sold_date_sk = d_date_sk AND d_year = 1999 AND d_moy = 12 GROUP BY ws.ws_item_sk) in_web) web WHERE ( web.return_rank <= 10 OR web.currency_rank <= 10 ) UNION SELECT ''catalog'' AS channel, catalog.item, catalog.return_ratio, catalog.return_rank, catalog.currency_rank FROM (SELECT item, return_ratio, currency_ratio, Rank() OVER ( ORDER BY return_ratio) AS return_rank, Rank() OVER ( ORDER BY currency_ratio) AS currency_rank FROM (SELECT cs.cs_item_sk AS item, ( Cast(Sum(COALESCE(cr.cr_return_quantity, 0)) AS DEC(15, 4)) / Cast( Sum(COALESCE(cs.cs_quantity, 0)) AS DEC(15, 4)) ) AS return_ratio, ( Cast(Sum(COALESCE(cr.cr_return_amount, 0)) AS DEC(15, 4 )) / Cast(Sum( COALESCE(cs.cs_net_paid, 0)) AS DEC( 15, 4)) ) AS currency_ratio FROM catalog_sales cs LEFT OUTER JOIN catalog_returns cr ON ( cs.cs_order_number = cr.cr_order_number AND cs.cs_item_sk = cr.cr_item_sk ), date_dim WHERE cr.cr_return_amount > 10000 AND cs.cs_net_profit > 1 AND cs.cs_net_paid > 0 AND cs.cs_quantity > 0 AND cs_sold_date_sk = d_date_sk AND d_year = 1999 AND d_moy = 12 GROUP BY cs.cs_item_sk) in_cat) catalog WHERE ( catalog.return_rank <= 10 OR catalog.currency_rank <= 10 ) UNION SELECT ''store'' AS channel, store.item, store.return_ratio, store.return_rank, store.currency_rank FROM (SELECT item, return_ratio, currency_ratio, Rank() OVER ( ORDER BY return_ratio) AS return_rank, Rank() OVER ( ORDER BY currency_ratio) AS currency_rank FROM (SELECT sts.ss_item_sk AS item, ( Cast(Sum(COALESCE(sr.sr_return_quantity, 0)) AS DEC(15, 4)) / Cast( Sum(COALESCE(sts.ss_quantity, 0)) AS DEC(15, 4)) ) AS return_ratio, ( Cast(Sum(COALESCE(sr.sr_return_amt, 0)) AS DEC(15, 4)) / Cast( Sum( COALESCE(sts.ss_net_paid, 0)) AS DEC(15, 4)) ) AS currency_ratio FROM store_sales sts LEFT OUTER JOIN store_returns sr ON ( sts.ss_ticket_number = sr.sr_ticket_number AND sts.ss_item_sk = sr.sr_item_sk ), date_dim WHERE sr.sr_return_amt > 10000 AND sts.ss_net_profit > 1 AND sts.ss_net_paid > 0 AND sts.ss_quantity > 0 AND ss_sold_date_sk = d_date_sk AND d_year = 1999 AND d_moy = 12 GROUP BY sts.ss_item_sk) in_store) store WHERE ( store.return_rank <= 10 OR store.currency_rank <= 10 ) ORDER BY 1, 4, 5 LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 50
 statement ok
 CALL get_substrait('SELECT s_store_name, s_company_id, s_street_number, s_street_name, s_street_type, s_suite_number, s_city, s_county, s_state, s_zip, Sum(CASE WHEN ( sr_returned_date_sk - ss_sold_date_sk <= 30 ) THEN 1 ELSE 0 END) AS "30 days", Sum(CASE WHEN ( sr_returned_date_sk - ss_sold_date_sk > 30 ) AND ( sr_returned_date_sk - ss_sold_date_sk <= 60 ) THEN 1 ELSE 0 END) AS "31-60 days", Sum(CASE WHEN ( sr_returned_date_sk - ss_sold_date_sk > 60 ) AND ( sr_returned_date_sk - ss_sold_date_sk <= 90 ) THEN 1 ELSE 0 END) AS "61-90 days", Sum(CASE WHEN ( sr_returned_date_sk - ss_sold_date_sk > 90 ) AND ( sr_returned_date_sk - ss_sold_date_sk <= 120 ) THEN 1 ELSE 0 END) AS "91-120 days", Sum(CASE WHEN ( sr_returned_date_sk - ss_sold_date_sk > 120 ) THEN 1 ELSE 0 END) AS ">120 days" FROM store_sales, store_returns, store, date_dim d1, date_dim d2 WHERE d2.d_year = 2002 AND d2.d_moy = 9 AND ss_ticket_number = sr_ticket_number AND ss_item_sk = sr_item_sk AND ss_sold_date_sk = d1.d_date_sk AND sr_returned_date_sk = d2.d_date_sk AND ss_customer_sk = sr_customer_sk AND ss_store_sk = s_store_sk GROUP BY s_store_name, s_company_id, s_street_number, s_street_name, s_street_type, s_suite_number, s_city, s_county, s_state, s_zip ORDER BY s_store_name, s_company_id, s_street_number, s_street_name, s_street_type, s_suite_number, s_city, s_county, s_state, s_zip LIMIT 100; ')
 
-#Q 51 (WINDOW)
-statement error
+#Q 51
+statement ok
 CALL get_substrait('WITH web_v1 AS ( SELECT ws_item_sk item_sk, d_date, sum(Sum(ws_sales_price)) OVER (partition BY ws_item_sk ORDER BY d_date rows BETWEEN UNBOUNDED PRECEDING AND CURRENT row) cume_sales FROM web_sales , date_dim WHERE ws_sold_date_sk=d_date_sk AND d_month_seq BETWEEN 1192 AND 1192+11 AND ws_item_sk IS NOT NULL GROUP BY ws_item_sk, d_date), store_v1 AS ( SELECT ss_item_sk item_sk, d_date, sum(sum(ss_sales_price)) OVER (partition BY ss_item_sk ORDER BY d_date rows BETWEEN UNBOUNDED PRECEDING AND CURRENT row) cume_sales FROM store_sales , date_dim WHERE ss_sold_date_sk=d_date_sk AND d_month_seq BETWEEN 1192 AND 1192+11 AND ss_item_sk IS NOT NULL GROUP BY ss_item_sk, d_date) SELECT * FROM ( SELECT item_sk , d_date , web_sales , store_sales , max(web_sales) OVER (partition BY item_sk ORDER BY d_date rows BETWEEN UNBOUNDED PRECEDING AND CURRENT row) web_cumulative , max(store_sales) OVER (partition BY item_sk ORDER BY d_date rows BETWEEN UNBOUNDED PRECEDING AND CURRENT row) store_cumulative FROM ( SELECT CASE WHEN web.item_sk IS NOT NULL THEN web.item_sk ELSE store.item_sk END item_sk , CASE WHEN web.d_date IS NOT NULL THEN web.d_date ELSE store.d_date END d_date , web.cume_sales web_sales , store.cume_sales store_sales FROM web_v1 web FULL OUTER JOIN store_v1 store ON ( web.item_sk = store.item_sk AND web.d_date = store.d_date) )x )y WHERE web_cumulative > store_cumulative ORDER BY item_sk , d_date LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 52
 statement ok
 CALL get_substrait('SELECT dt.d_year, item.i_brand_id brand_id, item.i_brand brand, Sum(ss_ext_sales_price) ext_price FROM date_dim dt, store_sales, item WHERE dt.d_date_sk = store_sales.ss_sold_date_sk AND store_sales.ss_item_sk = item.i_item_sk AND item.i_manager_id = 1 AND dt.d_moy = 11 AND dt.d_year = 1999 GROUP BY dt.d_year, item.i_brand, item.i_brand_id ORDER BY dt.d_year, ext_price DESC, brand_id LIMIT 100; ')
 
-#Q 53 (WINDOW)
-statement error
+#Q 53
+statement ok
 CALL get_substrait('SELECT * FROM (SELECT i_manufact_id, Sum(ss_sales_price) sum_sales, Avg(Sum(ss_sales_price)) OVER ( partition BY i_manufact_id) avg_quarterly_sales FROM item, store_sales, date_dim, store WHERE ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND ss_store_sk = s_store_sk AND d_month_seq IN ( 1199, 1199 + 1, 1199 + 2, 1199 + 3, 1199 + 4, 1199 + 5, 1199 + 6, 1199 + 7, 1199 + 8, 1199 + 9, 1199 + 10, 1199 + 11 ) AND ( ( i_category IN ( ''Books'', ''Children'', ''Electronics'' ) AND i_class IN ( ''personal'', ''portable'', ''reference'', ''self-help'' ) AND i_brand IN ( ''scholaramalgamalg #14'', ''scholaramalgamalg #7'' , ''exportiunivamalg #9'', ''scholaramalgamalg #9'' ) ) OR ( i_category IN ( ''Women'', ''Music'', ''Men'' ) AND i_class IN ( ''accessories'', ''classical'', ''fragrances'', ''pants'' ) AND i_brand IN ( ''amalgimporto #1'', ''edu packscholar #1'', ''exportiimporto #1'', ''importoamalg #1'' ) ) ) GROUP BY i_manufact_id, d_qoy) tmp1 WHERE CASE WHEN avg_quarterly_sales > 0 THEN Abs (sum_sales - avg_quarterly_sales) / avg_quarterly_sales ELSE NULL END > 0.1 ORDER BY avg_quarterly_sales, sum_sales, i_manufact_id LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 54 (unexpected child in distinct)
 statement error
@@ -279,11 +265,9 @@ CALL get_substrait('SELECT i_brand_id brand_id, i_brand brand, Sum(ss_ext_sales_
 statement ok
 CALL get_substrait('WITH ss AS (SELECT i_item_id, Sum(ss_ext_sales_price) total_sales FROM store_sales, date_dim, customer_address, item WHERE i_item_id IN (SELECT i_item_id FROM item WHERE i_color IN ( ''firebrick'', ''rosy'', ''white'' ) ) AND ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND d_year = 1998 AND d_moy = 3 AND ss_addr_sk = ca_address_sk AND ca_gmt_offset = -6 GROUP BY i_item_id), cs AS (SELECT i_item_id, Sum(cs_ext_sales_price) total_sales FROM catalog_sales, date_dim, customer_address, item WHERE i_item_id IN (SELECT i_item_id FROM item WHERE i_color IN ( ''firebrick'', ''rosy'', ''white'' ) ) AND cs_item_sk = i_item_sk AND cs_sold_date_sk = d_date_sk AND d_year = 1998 AND d_moy = 3 AND cs_bill_addr_sk = ca_address_sk AND ca_gmt_offset = -6 GROUP BY i_item_id), ws AS (SELECT i_item_id, Sum(ws_ext_sales_price) total_sales FROM web_sales, date_dim, customer_address, item WHERE i_item_id IN (SELECT i_item_id FROM item WHERE i_color IN ( ''firebrick'', ''rosy'', ''white'' ) ) AND ws_item_sk = i_item_sk AND ws_sold_date_sk = d_date_sk AND d_year = 1998 AND d_moy = 3 AND ws_bill_addr_sk = ca_address_sk AND ca_gmt_offset = -6 GROUP BY i_item_id) SELECT i_item_id, Sum(total_sales) total_sales FROM (SELECT * FROM ss UNION ALL SELECT * FROM cs UNION ALL SELECT * FROM ws) tmp1 GROUP BY i_item_id ORDER BY total_sales LIMIT 100; ')
 
-#Q 57 (WINDOW)
-statement error
+#Q 57
+statement ok
 CALL get_substrait('WITH v1 AS (SELECT i_category, i_brand, cc_name, d_year, d_moy, Sum(cs_sales_price) sum_sales , Avg(Sum(cs_sales_price)) OVER ( partition BY i_category, i_brand, cc_name, d_year) avg_monthly_sales , Rank() OVER ( partition BY i_category, i_brand, cc_name ORDER BY d_year, d_moy) rn FROM item, catalog_sales, date_dim, call_center WHERE cs_item_sk = i_item_sk AND cs_sold_date_sk = d_date_sk AND cc_call_center_sk = cs_call_center_sk AND ( d_year = 2000 OR ( d_year = 2000 - 1 AND d_moy = 12 ) OR ( d_year = 2000 + 1 AND d_moy = 1 ) ) GROUP BY i_category, i_brand, cc_name, d_year, d_moy), v2 AS (SELECT v1.i_brand, v1.d_year, v1.avg_monthly_sales, v1.sum_sales, v1_lag.sum_sales psum, v1_lead.sum_sales nsum FROM v1, v1 v1_lag, v1 v1_lead WHERE v1.i_category = v1_lag.i_category AND v1.i_category = v1_lead.i_category AND v1.i_brand = v1_lag.i_brand AND v1.i_brand = v1_lead.i_brand AND v1. cc_name = v1_lag. cc_name AND v1. cc_name = v1_lead. cc_name AND v1.rn = v1_lag.rn + 1 AND v1.rn = v1_lead.rn - 1) SELECT * FROM v2 WHERE d_year = 2000 AND avg_monthly_sales > 0 AND CASE WHEN avg_monthly_sales > 0 THEN Abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE NULL END > 0.1 ORDER BY sum_sales - avg_monthly_sales, 3 LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 58 (Ambiguous reference)
 statement error
@@ -309,11 +293,9 @@ CALL get_substrait('SELECT Substr(w_warehouse_name, 1, 20), sm_type, web_name, S
 ----
 Not implemented Error: No expressions in groupings yet
 
-#Q 63 (WINDOW)
-statement error
+#Q 63
+statement ok
 CALL get_substrait('SELECT * FROM (SELECT i_manager_id, Sum(ss_sales_price) sum_sales, Avg(Sum(ss_sales_price)) OVER ( partition BY i_manager_id) avg_monthly_sales FROM item, store_sales, date_dim, store WHERE ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND ss_store_sk = s_store_sk AND d_month_seq IN ( 1200, 1200 + 1, 1200 + 2, 1200 + 3, 1200 + 4, 1200 + 5, 1200 + 6, 1200 + 7, 1200 + 8, 1200 + 9, 1200 + 10, 1200 + 11 ) AND ( ( i_category IN ( ''Books'', ''Children'', ''Electronics'' ) AND i_class IN ( ''personal'', ''portable'', ''reference'', ''self-help'' ) AND i_brand IN ( ''scholaramalgamalg #14'', ''scholaramalgamalg #7'' , ''exportiunivamalg #9'', ''scholaramalgamalg #9'' ) ) OR ( i_category IN ( ''Women'', ''Music'', ''Men'' ) AND i_class IN ( ''accessories'', ''classical'', ''fragrances'', ''pants'' ) AND i_brand IN ( ''amalgimporto #1'', ''edu packscholar #1'', ''exportiimporto #1'', ''importoamalg #1'' ) ) ) GROUP BY i_manager_id, d_moy) tmp1 WHERE CASE WHEN avg_monthly_sales > 0 THEN Abs (sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE NULL END > 0.1 ORDER BY i_manager_id, avg_monthly_sales, sum_sales LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 64 (Serialization issue with complex CTE - disabled until fixed)
 # statement error
@@ -345,11 +327,11 @@ CALL get_substrait('SELECT cd_gender, cd_marital_status, cd_education_status, Co
 ----
 Not implemented Error: DELIM_JOIN
 
-#Q 70 (WINDOW)
+#Q 70 (Grouping)
 statement error
 CALL get_substrait('SELECT Sum(ss_net_profit) AS total_sum, s_state, s_county, Grouping(s_state) + Grouping(s_county) AS lochierarchy, Rank() OVER ( partition BY Grouping(s_state)+Grouping(s_county), CASE WHEN Grouping( s_county) = 0 THEN s_state END ORDER BY Sum(ss_net_profit) DESC) AS rank_within_parent FROM store_sales, date_dim d1, store WHERE d1.d_month_seq BETWEEN 1200 AND 1200 + 11 AND d1.d_date_sk = ss_sold_date_sk AND s_store_sk = ss_store_sk AND s_state IN (SELECT s_state FROM (SELECT s_state AS s_state, Rank() OVER ( partition BY s_state ORDER BY Sum(ss_net_profit) DESC) AS ranking FROM store_sales, store, date_dim WHERE d_month_seq BETWEEN 1200 AND 1200 + 11 AND d_date_sk = ss_sold_date_sk AND s_store_sk = ss_store_sk GROUP BY s_state) tmp1 WHERE ranking <= 5) GROUP BY rollup( s_state, s_county ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN s_state END, rank_within_parent LIMIT 100; ')
 ----
-Not implemented Error: WINDOW
+Not implemented Error: Grouping functions not supported yet
 
 #Q 71
 statement ok
@@ -415,11 +397,11 @@ CALL get_substrait('SELECT c_customer_id AS customer_id, c_last_name || '', '' |
 statement ok
 CALL get_substrait('SELECT Substr(r_reason_desc, 1, 20), Avg(ws_quantity), Avg(wr_refunded_cash), Avg(wr_fee) FROM web_sales, web_returns, web_page, customer_demographics cd1, customer_demographics cd2, customer_address, date_dim, reason WHERE ws_web_page_sk = wp_web_page_sk AND ws_item_sk = wr_item_sk AND ws_order_number = wr_order_number AND ws_sold_date_sk = d_date_sk AND d_year = 2001 AND cd1.cd_demo_sk = wr_refunded_cdemo_sk AND cd2.cd_demo_sk = wr_returning_cdemo_sk AND ca_address_sk = wr_refunded_addr_sk AND r_reason_sk = wr_reason_sk AND ( ( cd1.cd_marital_status = ''W'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Primary'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 100.00 AND 150.00 ) OR ( cd1.cd_marital_status = ''D'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Secondary'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 50.00 AND 100.00 ) OR ( cd1.cd_marital_status = ''M'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Advanced Degree'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 150.00 AND 200.00 ) ) AND ( ( ca_country = ''United States'' AND ca_state IN ( ''KY'', ''ME'', ''IL'' ) AND ws_net_profit BETWEEN 100 AND 200 ) OR ( ca_country = ''United States'' AND ca_state IN ( ''OK'', ''NE'', ''MN'' ) AND ws_net_profit BETWEEN 150 AND 300 ) OR ( ca_country = ''United States'' AND ca_state IN ( ''FL'', ''WI'', ''KS'' ) AND ws_net_profit BETWEEN 50 AND 250 ) ) GROUP BY r_reason_desc ORDER BY Substr(r_reason_desc, 1, 20), Avg(ws_quantity), Avg(wr_refunded_cash), Avg(wr_fee) LIMIT 100; ')
 
-#Q 86 (WINDOW)
+#Q 86 (Grouping)
 statement error
 CALL get_substrait('SELECT Sum(ws_net_paid) AS total_sum, i_category, i_class, Grouping(i_category) + Grouping(i_class) AS lochierarchy, Rank() OVER ( partition BY Grouping(i_category)+Grouping(i_class), CASE WHEN Grouping( i_class) = 0 THEN i_category END ORDER BY Sum(ws_net_paid) DESC) AS rank_within_parent FROM web_sales, date_dim d1, item WHERE d1.d_month_seq BETWEEN 1183 AND 1183 + 11 AND d1.d_date_sk = ws_sold_date_sk AND i_item_sk = ws_item_sk GROUP BY rollup( i_category, i_class ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN i_category END, rank_within_parent LIMIT 100; ')
 ----
-Not implemented Error: WINDOW
+Not implemented Error: Grouping functions not supported yet
 
 #Q 87 (unexpected child in distinct)
 statement error
@@ -431,11 +413,9 @@ Not implemented Error: Found unexpected child type in Distinct operator
 statement ok
 CALL get_substrait('select * from (select count(*) h8_30_to_9 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 8 and time_dim.t_minute >= 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s1, (select count(*) h9_to_9_30 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 9 and time_dim.t_minute < 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s2, (select count(*) h9_30_to_10 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 9 and time_dim.t_minute >= 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s3, (select count(*) h10_to_10_30 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 10 and time_dim.t_minute < 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s4, (select count(*) h10_30_to_11 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 10 and time_dim.t_minute >= 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s5, (select count(*) h11_to_11_30 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 11 and time_dim.t_minute < 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s6, (select count(*) h11_30_to_12 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 11 and time_dim.t_minute >= 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s7, (select count(*) h12_to_12_30 from store_sales, household_demographics , time_dim, store where ss_sold_time_sk = time_dim.t_time_sk and ss_hdemo_sk = household_demographics.hd_demo_sk and ss_store_sk = s_store_sk and time_dim.t_hour = 12 and time_dim.t_minute < 30 and ((household_demographics.hd_dep_count = -1 and household_demographics.hd_vehicle_count<=-1+2) or (household_demographics.hd_dep_count = 2 and household_demographics.hd_vehicle_count<=2+2) or (household_demographics.hd_dep_count = 3 and household_demographics.hd_vehicle_count<=3+2)) and store.s_store_name = ''ese'') s8 ; ')
 
-#Q 89 (WINDOW)
-statement error
+#Q 89
+statement ok
 CALL get_substrait('SELECT * FROM (SELECT i_category, i_class, i_brand, s_store_name, s_company_name, d_moy, Sum(ss_sales_price) sum_sales, Avg(Sum(ss_sales_price)) OVER ( partition BY i_category, i_brand, s_store_name, s_company_name ) avg_monthly_sales FROM item, store_sales, date_dim, store WHERE ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND ss_store_sk = s_store_sk AND d_year IN ( 2002 ) AND ( ( i_category IN ( ''Home'', ''Men'', ''Sports'' ) AND i_class IN ( ''paint'', ''accessories'', ''fitness'' ) ) OR ( i_category IN ( ''Shoes'', ''Jewelry'', ''Women'' ) AND i_class IN ( ''mens'', ''pendants'', ''swimwear'' ) ) ) GROUP BY i_category, i_class, i_brand, s_store_name, s_company_name, d_moy) tmp1 WHERE CASE WHEN ( avg_monthly_sales <> 0 ) THEN ( Abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ) ELSE NULL END > 0.1 ORDER BY sum_sales - avg_monthly_sales, s_store_name LIMIT 100; ')
-----
-Not implemented Error: WINDOW
 
 #Q 90
 statement ok
@@ -461,11 +441,9 @@ CALL get_substrait('SELECT Count(DISTINCT ws_order_number) AS "order count" , Su
 ----
 Not implemented Error: DELIM_JOIN
 
-#Q 95 (EMPTY_RESULT)
-statement error
+#Q 95
+statement ok
 CALL get_substrait('WITH ws_wh AS ( SELECT ws1.ws_order_number, ws1.ws_warehouse_sk wh1, ws2.ws_warehouse_sk wh2 FROM web_sales ws1, web_sales ws2 WHERE ws1.ws_order_number = ws2.ws_order_number AND ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk) SELECT Count(DISTINCT ws_order_number) AS "order count" , Sum(ws_ext_ship_cost) AS "total shipping cost" , Sum(ws_net_profit) AS "total net profit" FROM web_sales ws1 , date_dim , customer_address , web_site WHERE d_date BETWEEN ''2000-4-01'' AND ( Cast(''2000-4-01'' AS DATE) + INTERVAL ''60'' day) AND ws1.ws_ship_date_sk = d_date_sk AND ws1.ws_ship_addr_sk = ca_address_sk AND ca_state = ''IN'' AND ws1.ws_web_site_sk = web_site_sk AND web_company_name = ''pri'' AND ws1.ws_order_number IN ( SELECT ws_order_number FROM ws_wh) AND ws1.ws_order_number IN ( SELECT wr_order_number FROM web_returns, ws_wh WHERE wr_order_number = ws_wh.ws_order_number) ORDER BY count(DISTINCT ws_order_number) LIMIT 100; ')
-----
-Not implemented Error: EMPTY_RESULT
 
 #Q 96
 statement ok
@@ -475,11 +453,9 @@ CALL get_substrait('SELECT Count(*) FROM store_sales, household_demographics, ti
 statement ok
 CALL get_substrait('WITH ssci AS (SELECT ss_customer_sk customer_sk, ss_item_sk item_sk FROM store_sales, date_dim WHERE ss_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1196 AND 1196 + 11 GROUP BY ss_customer_sk, ss_item_sk), csci AS (SELECT cs_bill_customer_sk customer_sk, cs_item_sk item_sk FROM catalog_sales, date_dim WHERE cs_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1196 AND 1196 + 11 GROUP BY cs_bill_customer_sk, cs_item_sk) SELECT Sum(CASE WHEN ssci.customer_sk IS NOT NULL AND csci.customer_sk IS NULL THEN 1 ELSE 0 END) store_only, Sum(CASE WHEN ssci.customer_sk IS NULL AND csci.customer_sk IS NOT NULL THEN 1 ELSE 0 END) catalog_only, Sum(CASE WHEN ssci.customer_sk IS NOT NULL AND csci.customer_sk IS NOT NULL THEN 1 ELSE 0 END) store_and_catalog FROM ssci FULL OUTER JOIN csci ON ( ssci.customer_sk = csci.customer_sk AND ssci.item_sk = csci.item_sk ) LIMIT 100; ')
 
-#Q 98 (WINDOW)
-statement error
+#Q 98
+statement ok
 CALL get_substrait('SELECT i_item_id, i_item_desc, i_category, i_class, i_current_price, Sum(ss_ext_sales_price) AS itemrevenue, Sum(ss_ext_sales_price) * 100 / Sum(Sum(ss_ext_sales_price)) OVER ( PARTITION BY i_class) AS revenueratio FROM store_sales, item, date_dim WHERE ss_item_sk = i_item_sk AND i_category IN ( ''Men'', ''Home'', ''Electronics'' ) AND ss_sold_date_sk = d_date_sk AND d_date BETWEEN CAST(''2000-05-18'' AS DATE) AND ( CAST(''2000-05-18'' AS DATE) + INTERVAL ''30'' DAY ) GROUP BY i_item_id, i_item_desc, i_category, i_class, i_current_price ORDER BY i_category, i_class, i_item_id, i_item_desc, revenueratio; ')
-----
-Not implemented Error: WINDOW
 
 #Q 99 (No expressions in groupings yet)
 statement error

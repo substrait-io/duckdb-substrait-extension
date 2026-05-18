@@ -29,6 +29,7 @@ def parse_yaml(file_path):
 	functions = []
 	functions = parse_function_data(functions,yaml_data,'scalar_functions')
 	functions = parse_function_data(functions,yaml_data,'aggregate_functions')
+	functions = parse_function_data(functions,yaml_data,'window_functions')
 	return functions
 
 def get_custom_functions():
@@ -46,7 +47,9 @@ def get_custom_functions():
 					if (len(type_value) != 0):
 						type_set.add(type_value)
 						type_str += f"\"{type_value}\","
-				type_str = type_str[:-1]
+				# Remove trailing comma if present
+				if type_str.endswith(","):
+					type_str = type_str[:-1]
 				type_str += "}"
 				function_name = function["name"]
 				inner_code += f"\tInsertCustomFunction(\"{function_name}\", {type_str}, \"{custom_function_path}\");\n" 

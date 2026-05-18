@@ -1376,6 +1376,295 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	return res;
 }
 
+substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
+	auto &dwindow = dop.Cast<LogicalWindow>();
+	
+	// Group window expressions by their partition and order specifications
+	// Key: hash of partition expressions + order expressions
+	// Value: vector of indices into dwindow.expressions
+	struct WindowSpec {
+		vector<unique_ptr<Expression>> partitions;
+		vector<BoundOrderByNode> orders;
+		vector<idx_t> expression_indices;
+		
+		// Helper to create a signature for comparison
+		string GetSignature() const {
+			string sig = "P:";
+			for (auto &part : partitions) {
+				sig += part->ToString() + ";";
+			}
+			sig += "O:";
+			for (auto &order : orders) {
+				sig += order.expression->ToString() + ":" +
+				       (order.type == OrderType::ASCENDING ? "ASC" : "DESC") + ";";
+			}
+			return sig;
+		}
+	};
+	
+	vector<WindowSpec> window_specs;
+	
+	// Group expressions by their window specifications
+	for (idx_t i = 0; i < dwindow.expressions.size(); i++) {
+		auto &dexpr = dwindow.expressions[i];
+		if (dexpr->GetExpressionClass() != ExpressionClass::BOUND_WINDOW) {
+			throw NotImplementedException("Only window expressions are supported in window operator");
+		}
+		
+		auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
+		
+		// Create a spec for this expression
+		WindowSpec current_spec;
+		for (auto &part : dwin_expr.partitions) {
+			current_spec.partitions.push_back(part->Copy());
+		}
+		for (auto &order : dwin_expr.orders) {
+			current_spec.orders.push_back(order.Copy());
+		}
+		
+		// Find if we already have this spec
+		bool found = false;
+		for (auto &spec : window_specs) {
+			if (spec.GetSignature() == current_spec.GetSignature()) {
+				spec.expression_indices.push_back(i);
+				found = true;
+				break;
+			}
+		}
+		
+		if (!found) {
+			current_spec.expression_indices.push_back(i);
+			window_specs.push_back(std::move(current_spec));
+		}
+	}
+	
+	// Now create chained window relations, one for each unique spec
+	substrait::Rel *current_input = TransformOp(*dop.children[0]);
+	
+	for (auto &spec : window_specs) {
+		auto res = make_uniq<substrait::Rel>();
+		auto swindow = res->mutable_window();
+		
+		// Set the input (either the original input or the previous window relation)
+		swindow->set_allocated_input(current_input);
+		
+		// Set partition expressions at relation level
+		for (auto &dpart : spec.partitions) {
+			TransformExpr(*dpart, *swindow->add_partition_expressions());
+		}
+		
+		// Set sort specifications at relation level
+		for (auto &dorder : spec.orders) {
+			TransformOrder(dorder, *swindow->add_sorts());
+		}
+		
+		// Process each window function expression in this group
+		for (auto expr_idx : spec.expression_indices) {
+			auto &dexpr = dwindow.expressions[expr_idx];
+			auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
+		auto swin_func = swindow->add_window_functions();
+		
+		// Set output type
+		*swin_func->mutable_output_type() = DuckToSubstraitType(dwin_expr.return_type);
+		
+		// Determine function name and add arguments
+		string function_name;
+		vector<::substrait::Type> args_types;
+		
+		if (dwin_expr.type == ExpressionType::WINDOW_AGGREGATE) {
+			// This is an aggregate function used as a window function
+			if (!dwin_expr.aggregate) {
+				throw InternalException("Window aggregate expression missing aggregate function");
+			}
+			function_name = dwin_expr.aggregate->name;
+			
+			// Handle DISTINCT aggregates
+			if (dwin_expr.distinct) {
+				swin_func->set_invocation(substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT);
+			}
+		} else {
+			// This is a window-specific function (ROW_NUMBER, RANK, DENSE_RANK, etc.)
+			switch (dwin_expr.type) {
+			case ExpressionType::WINDOW_ROW_NUMBER:
+				function_name = "row_number";
+				break;
+			case ExpressionType::WINDOW_RANK:
+				function_name = "rank";
+				break;
+			case ExpressionType::WINDOW_RANK_DENSE:
+				function_name = "dense_rank";
+				break;
+			case ExpressionType::WINDOW_PERCENT_RANK:
+				function_name = "percent_rank";
+				break;
+			case ExpressionType::WINDOW_CUME_DIST:
+				function_name = "cume_dist";
+				break;
+			case ExpressionType::WINDOW_NTILE:
+				function_name = "ntile";
+				break;
+			case ExpressionType::WINDOW_LAG:
+				function_name = "lag";
+				break;
+			case ExpressionType::WINDOW_LEAD:
+				function_name = "lead";
+				break;
+			case ExpressionType::WINDOW_FIRST_VALUE:
+				function_name = "first_value";
+				break;
+			case ExpressionType::WINDOW_LAST_VALUE:
+				function_name = "last_value";
+				break;
+			case ExpressionType::WINDOW_NTH_VALUE:
+				function_name = "nth_value";
+				break;
+			default:
+				throw NotImplementedException("Unsupported window function type: " + ExpressionTypeToString(dwin_expr.type));
+			}
+		}
+		
+		// Add function arguments
+		for (auto &darg : dwin_expr.children) {
+			auto s_arg = swin_func->add_arguments();
+			args_types.emplace_back(DuckToSubstraitType(darg->return_type));
+			TransformExpr(*darg, *s_arg->mutable_value());
+		}
+		
+		// Add offset and default for LAG/LEAD
+		if (dwin_expr.offset_expr) {
+			auto s_arg = swin_func->add_arguments();
+			args_types.emplace_back(DuckToSubstraitType(dwin_expr.offset_expr->return_type));
+			TransformExpr(*dwin_expr.offset_expr, *s_arg->mutable_value());
+		}
+		if (dwin_expr.default_expr) {
+			auto s_arg = swin_func->add_arguments();
+			args_types.emplace_back(DuckToSubstraitType(dwin_expr.default_expr->return_type));
+			TransformExpr(*dwin_expr.default_expr, *s_arg->mutable_value());
+		}
+		
+		swin_func->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
+		
+		// Set window frame bounds
+		// Determine frame type (ROWS, RANGE, or GROUPS)
+		substrait::Expression_WindowFunction_BoundsType bounds_type;
+		
+		switch (dwin_expr.start) {
+		case WindowBoundary::CURRENT_ROW_ROWS:
+		case WindowBoundary::EXPR_PRECEDING_ROWS:
+		case WindowBoundary::EXPR_FOLLOWING_ROWS:
+			bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			break;
+		case WindowBoundary::CURRENT_ROW_GROUPS:
+		case WindowBoundary::EXPR_PRECEDING_GROUPS:
+		case WindowBoundary::EXPR_FOLLOWING_GROUPS:
+			// GROUPS is not supported in this version of Substrait, treat as ROWS
+			bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			break;
+		case WindowBoundary::CURRENT_ROW_RANGE:
+		case WindowBoundary::EXPR_PRECEDING_RANGE:
+		case WindowBoundary::EXPR_FOLLOWING_RANGE:
+			bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_RANGE;
+			break;
+		default:
+			// Check end boundary
+			switch (dwin_expr.end) {
+			case WindowBoundary::CURRENT_ROW_ROWS:
+			case WindowBoundary::EXPR_PRECEDING_ROWS:
+			case WindowBoundary::EXPR_FOLLOWING_ROWS:
+				bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+				break;
+			case WindowBoundary::CURRENT_ROW_GROUPS:
+			case WindowBoundary::EXPR_PRECEDING_GROUPS:
+			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
+				// GROUPS is not supported in this version of Substrait, treat as ROWS
+				bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+				break;
+			default:
+				// Default to RANGE
+				bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_RANGE;
+				break;
+			}
+			break;
+		}
+		
+		swin_func->set_bounds_type(bounds_type);
+		
+		// Helper function to transform window boundaries
+		auto TransformWindowBoundary = [](WindowBoundary boundary_type,
+		                                   const unique_ptr<Expression>& boundary_expr,
+		                                   substrait::Expression_WindowFunction_Bound* bound,
+		                                   bool is_start_bound) {
+			switch (boundary_type) {
+			case WindowBoundary::UNBOUNDED_PRECEDING:
+			case WindowBoundary::UNBOUNDED_FOLLOWING:
+				bound->mutable_unbounded();
+				break;
+			case WindowBoundary::CURRENT_ROW_ROWS:
+			case WindowBoundary::CURRENT_ROW_RANGE:
+			case WindowBoundary::CURRENT_ROW_GROUPS:
+				bound->mutable_current_row();
+				break;
+			case WindowBoundary::EXPR_PRECEDING_ROWS:
+			case WindowBoundary::EXPR_PRECEDING_RANGE:
+			case WindowBoundary::EXPR_PRECEDING_GROUPS:
+				if (boundary_expr) {
+					// For now, we only support constant integer offsets
+					// TODO: Support expression-based offsets
+					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
+						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						auto preceding = bound->mutable_preceding();
+						preceding->set_offset(const_expr.value.GetValue<int64_t>());
+					} else {
+						throw NotImplementedException("Only constant offsets are supported for window bounds");
+					}
+				} else {
+					throw InternalException("Window boundary expression missing for PRECEDING");
+				}
+				break;
+			case WindowBoundary::EXPR_FOLLOWING_ROWS:
+			case WindowBoundary::EXPR_FOLLOWING_RANGE:
+			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
+				if (boundary_expr) {
+					// For now, we only support constant integer offsets
+					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
+						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						auto following = bound->mutable_following();
+						following->set_offset(const_expr.value.GetValue<int64_t>());
+					} else {
+						throw NotImplementedException("Only constant offsets are supported for window bounds");
+					}
+				} else {
+					throw InternalException("Window boundary expression missing for FOLLOWING");
+				}
+				break;
+			default:
+				// Default to UNBOUNDED PRECEDING for start, CURRENT ROW for end
+				if (is_start_bound) {
+					bound->mutable_unbounded();
+				} else {
+					bound->mutable_current_row();
+				}
+				break;
+			}
+		};
+		
+		// Transform start bound
+		auto lower_bound = swin_func->mutable_lower_bound();
+		TransformWindowBoundary(dwin_expr.start, dwin_expr.start_expr, lower_bound, true);
+		
+		// Transform end bound
+		auto upper_bound = swin_func->mutable_upper_bound();
+		TransformWindowBoundary(dwin_expr.end, dwin_expr.end_expr, upper_bound, false);
+		}
+		
+		// Update current_input to chain the next window relation
+		current_input = res.release();
+	}
+	
+	// Return the last window relation in the chain
+	return current_input;
+}
+
 int32_t GetTimestampPrecision(LogicalTypeId type) {
 	switch (type) {
 	case LogicalTypeId::TIMESTAMP_SEC:
@@ -1997,6 +2286,8 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformComparisonJoin(dop);
 	case LogicalOperatorType::LOGICAL_AGGREGATE_AND_GROUP_BY:
 		return TransformAggregateGroup(dop);
+	case LogicalOperatorType::LOGICAL_WINDOW:
+		return TransformWindow(dop);
 	case LogicalOperatorType::LOGICAL_GET:
 		return TransformGet(dop);
 	case LogicalOperatorType::LOGICAL_EXPRESSION_GET:

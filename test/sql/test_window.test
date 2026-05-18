@@ -1,0 +1,151 @@
+# name: test/sql/test_window.test
+# description: Test get_substrait with window functions and window relation options
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE window_test_data AS
+SELECT * FROM (
+    VALUES
+        (1, 'A', 'X', 1, 10, 100),
+        (2, 'A', 'X', 2, 20, 200),
+        (3, 'A', 'Y', 3, NULL, 300),
+        (4, 'A', 'Y', NULL, 40, 400),
+        (5, 'B', 'X', 1, 15, 150),
+        (6, 'B', 'X', 2, NULL, 250),
+        (7, 'B', 'Y', 2, 35, 350),
+        (8, 'B', 'Y', 3, 45, 450),
+        (9, 'C', 'Z', NULL, 50, 500),
+        (10, 'C', 'Z', 1, 60, NULL)
+) AS t(id, part1, part2, ord_key, val, val2)
+
+# Ranking Functions
+
+statement ok
+CALL get_substrait('SELECT id, row_number() OVER () AS rn FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, part1, row_number() OVER (PARTITION BY part1 ORDER BY ord_key, id) AS rn FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, rank() OVER (ORDER BY val DESC) AS rnk FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, dense_rank() OVER (ORDER BY ord_key NULLS LAST, id) AS drnk FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, percent_rank() OVER (ORDER BY val, id) AS prank FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, cume_dist() OVER (ORDER BY val NULLS FIRST, id) AS cdist FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, ntile(2) OVER (ORDER BY val2, id) AS bucket2 FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, ntile(4) OVER (PARTITION BY part1 ORDER BY val2 DESC, id) AS bucket4 FROM window_test_data')
+
+# Value Functions
+
+statement ok
+CALL get_substrait('SELECT id, lag(val) OVER (ORDER BY id) AS prev_val FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, lead(val) OVER (ORDER BY id) AS next_val FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, first_value(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS first_val FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, last_value(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_val FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, nth_value(val, 2) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nth_val FROM window_test_data')
+
+# Aggregate Window Functions
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER () AS total_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, part1, sum(val) OVER (PARTITION BY part1) AS part_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (ORDER BY id) AS running_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS rows_running_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS full_rows_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rows_preceding_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS rows_centered_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) AS rows_following_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY ord_key RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS range_running_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY ord_key RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS range_following_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, avg(val) OVER () AS total_avg FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, avg(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS moving_avg FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, max(val) OVER (PARTITION BY part1, part2 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS moving_max FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, min(val) OVER (PARTITION BY part1 ORDER BY id DESC NULLS LAST ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) AS moving_min FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, count(val) OVER () AS cnt_val FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, count(val) OVER (PARTITION BY part1, part2 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_cnt FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, count(DISTINCT val) OVER (PARTITION BY part1) AS distinct_cnt FROM window_test_data')
+
+# Window Options Coverage
+
+statement ok
+CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1, part2 ORDER BY ord_key DESC NULLS FIRST, id ASC NULLS LAST) AS complex_window_sum FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, avg(val) OVER (ORDER BY ord_key DESC NULLS FIRST, id) AS ordered_avg FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, count(*) OVER (PARTITION BY part1, part2) AS multi_partition_count FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, max(val2) OVER (ORDER BY ord_key NULLS LAST, id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS rows_nulls_last_max FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, min(val2) OVER (ORDER BY ord_key NULLS FIRST, id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS range_nulls_first_min FROM window_test_data')
+
+statement ok
+CALL get_substrait('SELECT id, sum(val2) OVER (PARTITION BY part1, part2 ORDER BY ord_key, id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS mixed_frame_sum FROM window_test_data')
+
+# Combination Tests
+
+statement ok
+CALL get_substrait('SELECT id, part1, part2, first_value(val) OVER (PARTITION BY part1, part2 ORDER BY ord_key NULLS LAST, id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS first_val, last_value(val) OVER (PARTITION BY part1, part2 ORDER BY ord_key NULLS LAST, id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_val, avg(val) OVER (PARTITION BY part1, part2 ORDER BY ord_key NULLS LAST, id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS range_avg FROM window_test_data')
+
+statement ok
+CALL get_substrait('WITH grouped AS (SELECT part1, part2, sum(val2) AS total_val2, count(*) AS cnt FROM window_test_data GROUP BY part1, part2) SELECT part1, part2, total_val2, cnt, sum(total_val2) OVER (PARTITION BY part1 ORDER BY total_val2 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS grouped_running_sum, dense_rank() OVER (PARTITION BY part1 ORDER BY total_val2 DESC) AS grouped_rank FROM grouped')
+
+statement ok
+CALL get_substrait('WITH sales AS (SELECT part1 AS category, part2 AS subcategory, sum(val) AS sales_amt FROM window_test_data GROUP BY part1, part2) SELECT category, subcategory, sales_amt, sales_amt * 100.0 / sum(sales_amt) OVER (PARTITION BY category) AS pct_in_category, row_number() OVER (PARTITION BY category ORDER BY sales_amt DESC, subcategory) AS sales_pos FROM sales')

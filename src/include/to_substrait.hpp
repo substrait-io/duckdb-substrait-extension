@@ -64,6 +64,7 @@ private:
 	substrait::Rel *TransformOrderBy(LogicalOperator &dop);
 	substrait::Rel *TransformComparisonJoin(LogicalOperator &dop);
 	substrait::Rel *TransformAggregateGroup(LogicalOperator &dop);
+	substrait::Rel *TransformWindow(LogicalOperator &dop);
 	substrait::Rel *TransformExpressionGet(LogicalOperator &dop);
 	substrait::Rel *TransformGet(LogicalOperator &dop);
 	substrait::Rel *TransformCrossProduct(LogicalOperator &dop);
