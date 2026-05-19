@@ -1328,11 +1328,8 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	// In v0.89.0, grouping expressions are stored at the AggregateRel level
 	// and groupings reference them by index
 	for (auto &dgrp : daggr.groups) {
-		if (dgrp->type != ExpressionType::BOUND_REF) {
-			// TODO push projection or push substrait to allow expressions here
-			throw NotImplementedException("No expressions in groupings yet");
-		}
 		// Add the expression to the AggregateRel's grouping_expressions array
+		// This supports both simple column references (BOUND_REF) and complex expressions
 		auto grouping_expr = saggr->add_grouping_expressions();
 		TransformExpr(*dgrp, *grouping_expr);
 	}

@@ -1,0 +1,530 @@
+# name: test/sql/test_aggregate.test
+# description: Test get_substrait with complex expressions in GROUP BY clauses
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+# ============================================================================
+# Test 1: String Functions in GROUP BY
+# ============================================================================
+
+# Test 1.1: UPPER() function in GROUP BY
+statement ok
+CREATE TABLE test_string_upper (id INTEGER, name VARCHAR, value INTEGER);
+
+statement ok
+INSERT INTO test_string_upper VALUES (1, 'Alice', 100), (2, 'alice', 200), (3, 'Bob', 150), (4, 'bob', 50);
+
+statement ok
+CALL get_substrait('SELECT UPPER(name) as upper_name, SUM(value) as total FROM test_string_upper GROUP BY UPPER(name)');
+
+statement ok
+DROP TABLE test_string_upper;
+
+# Test 1.2: LOWER() function in GROUP BY
+statement ok
+CREATE TABLE test_string_lower (id INTEGER, name VARCHAR, value INTEGER);
+
+statement ok
+INSERT INTO test_string_lower VALUES (1, 'ALICE', 100), (2, 'Alice', 200), (3, 'BOB', 150);
+
+statement ok
+CALL get_substrait('SELECT LOWER(name) as lower_name, COUNT(*) as cnt FROM test_string_lower GROUP BY LOWER(name)');
+
+statement ok
+DROP TABLE test_string_lower;
+
+# Test 1.3: SUBSTR() function in GROUP BY
+statement ok
+CREATE TABLE test_string_substr (id INTEGER, code VARCHAR, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_string_substr VALUES (1, 'ABC123', 100.50), (2, 'ABC456', 200.75), (3, 'DEF789', 150.25);
+
+statement ok
+CALL get_substrait('SELECT SUBSTR(code, 1, 3) as prefix, SUM(amount) as total FROM test_string_substr GROUP BY SUBSTR(code, 1, 3)');
+
+statement ok
+DROP TABLE test_string_substr;
+
+# Test 1.4: SUBSTRING() function in GROUP BY (alternative syntax)
+statement ok
+CREATE TABLE test_string_substring (id INTEGER, product_code VARCHAR, sales INTEGER);
+
+statement ok
+INSERT INTO test_string_substring VALUES (1, 'PROD-001', 100), (2, 'PROD-002', 200), (3, 'SERV-001', 150);
+
+statement ok
+CALL get_substrait('SELECT SUBSTRING(product_code, 1, 4) as category, AVG(sales) as avg_sales FROM test_string_substring GROUP BY SUBSTRING(product_code, 1, 4)');
+
+statement ok
+DROP TABLE test_string_substring;
+
+# Test 1.5: CONCAT() function in GROUP BY
+statement ok
+CREATE TABLE test_string_concat (id INTEGER, first_name VARCHAR, last_name VARCHAR, score INTEGER);
+
+statement ok
+INSERT INTO test_string_concat VALUES (1, 'John', 'Doe', 85), (2, 'Jane', 'Smith', 90), (3, 'John', 'Doe', 95);
+
+statement ok
+CALL get_substrait('SELECT CONCAT(first_name, '' '', last_name) as full_name, MAX(score) as max_score FROM test_string_concat GROUP BY CONCAT(first_name, '' '', last_name)');
+
+statement ok
+DROP TABLE test_string_concat;
+
+# Test 1.6: TRIM() function in GROUP BY
+statement ok
+CREATE TABLE test_string_trim (id INTEGER, category VARCHAR, value INTEGER);
+
+statement ok
+INSERT INTO test_string_trim VALUES (1, '  Electronics  ', 100), (2, 'Electronics', 200), (3, '  Books  ', 150);
+
+statement ok
+CALL get_substrait('SELECT TRIM(category) as clean_category, SUM(value) as total FROM test_string_trim GROUP BY TRIM(category)');
+
+statement ok
+DROP TABLE test_string_trim;
+
+# Test 1.7: LTRIM() function in GROUP BY
+statement ok
+CREATE TABLE test_string_ltrim (id INTEGER, tag VARCHAR, count INTEGER);
+
+statement ok
+INSERT INTO test_string_ltrim VALUES (1, '  tag1', 10), (2, 'tag1', 20), (3, '  tag2', 15);
+
+statement ok
+CALL get_substrait('SELECT LTRIM(tag) as clean_tag, SUM(count) as total_count FROM test_string_ltrim GROUP BY LTRIM(tag)');
+
+statement ok
+DROP TABLE test_string_ltrim;
+
+# Test 1.8: RTRIM() function in GROUP BY
+statement ok
+CREATE TABLE test_string_rtrim (id INTEGER, label VARCHAR, quantity INTEGER);
+
+statement ok
+INSERT INTO test_string_rtrim VALUES (1, 'label1  ', 10), (2, 'label1', 20), (3, 'label2  ', 15);
+
+statement ok
+CALL get_substrait('SELECT RTRIM(label) as clean_label, SUM(quantity) as total_qty FROM test_string_rtrim GROUP BY RTRIM(label)');
+
+statement ok
+DROP TABLE test_string_rtrim;
+
+# ============================================================================
+# Test 2: Arithmetic Expressions in GROUP BY
+# ============================================================================
+
+# Test 2.1: Simple addition in GROUP BY
+statement ok
+CREATE TABLE test_arith_add (id INTEGER, base_value INTEGER, sales INTEGER);
+
+statement ok
+INSERT INTO test_arith_add VALUES (1, 10, 100), (2, 11, 200), (3, 10, 150), (4, 11, 250);
+
+statement ok
+CALL get_substrait('SELECT base_value + 1 as adjusted_value, SUM(sales) as total_sales FROM test_arith_add GROUP BY base_value + 1');
+
+statement ok
+DROP TABLE test_arith_add;
+
+# Test 2.2: Simple multiplication in GROUP BY
+statement ok
+CREATE TABLE test_arith_mult (id INTEGER, category_id INTEGER, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_arith_mult VALUES (1, 5, 100.00), (2, 10, 200.00), (3, 5, 150.00);
+
+statement ok
+CALL get_substrait('SELECT category_id * 2 as doubled_category, AVG(amount) as avg_amount FROM test_arith_mult GROUP BY category_id * 2');
+
+statement ok
+DROP TABLE test_arith_mult;
+
+# Test 2.3: Simple division in GROUP BY
+statement ok
+CREATE TABLE test_arith_div (id INTEGER, price INTEGER, quantity INTEGER);
+
+statement ok
+INSERT INTO test_arith_div VALUES (1, 100, 10), (2, 200, 10), (3, 100, 10);
+
+statement ok
+CALL get_substrait('SELECT price / 10 as price_tier, COUNT(*) as count FROM test_arith_div GROUP BY price / 10');
+
+statement ok
+DROP TABLE test_arith_div;
+
+# Test 2.4: Complex arithmetic expression in GROUP BY
+statement ok
+CREATE TABLE test_arith_complex (id INTEGER, value1 INTEGER, value2 INTEGER, sales INTEGER);
+
+statement ok
+INSERT INTO test_arith_complex VALUES (1, 10, 5, 100), (2, 20, 10, 200), (3, 10, 5, 150);
+
+statement ok
+CALL get_substrait('SELECT (value1 + value2) * 100 as computed_key, SUM(sales) as total_sales FROM test_arith_complex GROUP BY (value1 + value2) * 100');
+
+statement ok
+DROP TABLE test_arith_complex;
+
+# Test 2.5: Modulo operation in GROUP BY
+statement ok
+CREATE TABLE test_arith_mod (id INTEGER, order_id INTEGER, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_arith_mod VALUES (1, 101, 100.00), (2, 102, 200.00), (3, 103, 150.00), (4, 104, 250.00);
+
+statement ok
+CALL get_substrait('SELECT order_id % 2 as parity, SUM(amount) as total FROM test_arith_mod GROUP BY order_id % 2');
+
+statement ok
+DROP TABLE test_arith_mod;
+
+# ============================================================================
+# Test 3: Date/Time Functions in GROUP BY
+# ============================================================================
+
+# Test 3.1: YEAR() function in GROUP BY
+statement ok
+CREATE TABLE test_date_year (id INTEGER, sale_date DATE, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_date_year VALUES (1, '2023-01-15', 100.00), (2, '2023-06-20', 200.00), (3, '2024-03-10', 150.00);
+
+statement ok
+CALL get_substrait('SELECT YEAR(sale_date) as sale_year, SUM(amount) as total_sales FROM test_date_year GROUP BY YEAR(sale_date)');
+
+statement ok
+DROP TABLE test_date_year;
+
+# Test 3.2: MONTH() function in GROUP BY
+statement ok
+CREATE TABLE test_date_month (id INTEGER, transaction_date DATE, value INTEGER);
+
+statement ok
+INSERT INTO test_date_month VALUES (1, '2023-01-15', 100), (2, '2023-01-20', 200), (3, '2023-02-10', 150);
+
+statement ok
+CALL get_substrait('SELECT MONTH(transaction_date) as month_num, AVG(value) as avg_value FROM test_date_month GROUP BY MONTH(transaction_date)');
+
+statement ok
+DROP TABLE test_date_month;
+
+# Test 3.3: DAY() function in GROUP BY
+statement ok
+CREATE TABLE test_date_day (id INTEGER, event_date DATE, count INTEGER);
+
+statement ok
+INSERT INTO test_date_day VALUES (1, '2023-01-15', 10), (2, '2023-02-15', 20), (3, '2023-03-15', 15);
+
+statement ok
+CALL get_substrait('SELECT DAY(event_date) as day_of_month, SUM(count) as total_count FROM test_date_day GROUP BY DAY(event_date)');
+
+statement ok
+DROP TABLE test_date_day;
+
+# Test 3.4: DATE_TRUNC() function in GROUP BY
+statement ok
+CREATE TABLE test_date_trunc (id INTEGER, timestamp_col TIMESTAMP, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_date_trunc VALUES (1, '2023-01-15 10:30:00', 100.00), (2, '2023-01-15 14:45:00', 200.00), (3, '2023-01-16 09:00:00', 150.00);
+
+statement ok
+CALL get_substrait('SELECT DATE_TRUNC(''day'', timestamp_col) as day, SUM(amount) as daily_total FROM test_date_trunc GROUP BY DATE_TRUNC(''day'', timestamp_col)');
+
+statement ok
+DROP TABLE test_date_trunc;
+
+# Test 3.5: EXTRACT() function in GROUP BY
+statement ok
+CREATE TABLE test_date_extract (id INTEGER, order_date DATE, revenue DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_date_extract VALUES (1, '2023-01-15', 100.00), (2, '2023-02-20', 200.00), (3, '2023-01-25', 150.00);
+
+statement ok
+CALL get_substrait('SELECT EXTRACT(month FROM order_date) as month_extracted, SUM(revenue) as total_revenue FROM test_date_extract GROUP BY EXTRACT(month FROM order_date)');
+
+statement ok
+DROP TABLE test_date_extract;
+
+# Test 3.6: Multiple date functions in GROUP BY
+statement ok
+CREATE TABLE test_date_multiple (id INTEGER, sale_date DATE, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_date_multiple VALUES (1, '2023-01-15', 100.00), (2, '2023-01-20', 200.00), (3, '2024-01-15', 150.00);
+
+statement ok
+CALL get_substrait('SELECT YEAR(sale_date) as year, MONTH(sale_date) as month, SUM(amount) as total FROM test_date_multiple GROUP BY YEAR(sale_date), MONTH(sale_date)');
+
+statement ok
+DROP TABLE test_date_multiple;
+
+# ============================================================================
+# Test 4: Conditional Expressions in GROUP BY
+# ============================================================================
+
+# Test 4.1: Simple CASE expression in GROUP BY
+statement ok
+CREATE TABLE test_case_simple (id INTEGER, status VARCHAR, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_case_simple VALUES (1, 'active', 100.00), (2, 'inactive', 200.00), (3, 'active', 150.00);
+
+statement ok
+CALL get_substrait('SELECT CASE WHEN status = ''active'' THEN ''Active'' ELSE ''Inactive'' END as status_group, SUM(amount) as total FROM test_case_simple GROUP BY CASE WHEN status = ''active'' THEN ''Active'' ELSE ''Inactive'' END');
+
+statement ok
+DROP TABLE test_case_simple;
+
+# Test 4.2: Complex CASE expression in GROUP BY
+statement ok
+CREATE TABLE test_case_complex (id INTEGER, score INTEGER, sales INTEGER);
+
+statement ok
+INSERT INTO test_case_complex VALUES (1, 85, 100), (2, 92, 200), (3, 78, 150), (4, 95, 250);
+
+statement ok
+CALL get_substrait('SELECT CASE WHEN score >= 90 THEN ''A'' WHEN score >= 80 THEN ''B'' ELSE ''C'' END as grade, AVG(sales) as avg_sales FROM test_case_complex GROUP BY CASE WHEN score >= 90 THEN ''A'' WHEN score >= 80 THEN ''B'' ELSE ''C'' END');
+
+statement ok
+DROP TABLE test_case_complex;
+
+# Test 4.3: COALESCE() function in GROUP BY
+statement ok
+CREATE TABLE test_coalesce (id INTEGER, category VARCHAR, backup_category VARCHAR, value INTEGER);
+
+statement ok
+INSERT INTO test_coalesce VALUES (1, NULL, 'default', 100), (2, 'electronics', 'default', 200), (3, NULL, 'default', 150);
+
+statement ok
+CALL get_substrait('SELECT COALESCE(category, backup_category) as final_category, SUM(value) as total FROM test_coalesce GROUP BY COALESCE(category, backup_category)');
+
+statement ok
+DROP TABLE test_coalesce;
+
+# Test 4.4: CASE with arithmetic in GROUP BY
+statement ok
+CREATE TABLE test_case_arith (id INTEGER, quantity INTEGER, price DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_case_arith VALUES (1, 5, 10.00), (2, 15, 20.00), (3, 25, 30.00);
+
+statement ok
+CALL get_substrait('SELECT CASE WHEN quantity < 10 THEN ''Small'' WHEN quantity < 20 THEN ''Medium'' ELSE ''Large'' END as size_category, SUM(quantity * price) as total_value FROM test_case_arith GROUP BY CASE WHEN quantity < 10 THEN ''Small'' WHEN quantity < 20 THEN ''Medium'' ELSE ''Large'' END');
+
+statement ok
+DROP TABLE test_case_arith;
+
+# ============================================================================
+# Test 5: Type Casting in GROUP BY
+# ============================================================================
+
+# Test 5.1: CAST to INTEGER in GROUP BY
+statement ok
+CREATE TABLE test_cast_int (id INTEGER, value_str VARCHAR, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_cast_int VALUES (1, '10', 100.00), (2, '20', 200.00), (3, '10', 150.00);
+
+statement ok
+CALL get_substrait('SELECT CAST(value_str AS INTEGER) as value_int, SUM(amount) as total FROM test_cast_int GROUP BY CAST(value_str AS INTEGER)');
+
+statement ok
+DROP TABLE test_cast_int;
+
+# Test 5.2: CAST to VARCHAR in GROUP BY
+statement ok
+CREATE TABLE test_cast_varchar (id INTEGER, code INTEGER, sales INTEGER);
+
+statement ok
+INSERT INTO test_cast_varchar VALUES (1, 100, 1000), (2, 200, 2000), (3, 100, 1500);
+
+statement ok
+CALL get_substrait('SELECT CAST(code AS VARCHAR) as code_str, AVG(sales) as avg_sales FROM test_cast_varchar GROUP BY CAST(code AS VARCHAR)');
+
+statement ok
+DROP TABLE test_cast_varchar;
+
+# Test 5.3: CAST to DECIMAL in GROUP BY
+statement ok
+CREATE TABLE test_cast_decimal (id INTEGER, price_int INTEGER, quantity INTEGER);
+
+statement ok
+INSERT INTO test_cast_decimal VALUES (1, 10, 5), (2, 20, 10), (3, 10, 15);
+
+statement ok
+CALL get_substrait('SELECT CAST(price_int AS DECIMAL(10,2)) as price_decimal, SUM(quantity) as total_qty FROM test_cast_decimal GROUP BY CAST(price_int AS DECIMAL(10,2))');
+
+statement ok
+DROP TABLE test_cast_decimal;
+
+# Test 5.4: CAST to DATE in GROUP BY
+statement ok
+CREATE TABLE test_cast_date (id INTEGER, date_str VARCHAR, value INTEGER);
+
+statement ok
+INSERT INTO test_cast_date VALUES (1, '2023-01-15', 100), (2, '2023-01-15', 200), (3, '2023-02-20', 150);
+
+statement ok
+CALL get_substrait('SELECT CAST(date_str AS DATE) as date_val, SUM(value) as total FROM test_cast_date GROUP BY CAST(date_str AS DATE)');
+
+statement ok
+DROP TABLE test_cast_date;
+
+# ============================================================================
+# Test 6: Multiple Complex Expressions in GROUP BY
+# ============================================================================
+
+# Test 6.1: Multiple string functions in GROUP BY
+statement ok
+CREATE TABLE test_multi_string (id INTEGER, first_name VARCHAR, last_name VARCHAR, sales INTEGER);
+
+statement ok
+INSERT INTO test_multi_string VALUES (1, 'john', 'DOE', 100), (2, 'JOHN', 'doe', 200), (3, 'jane', 'SMITH', 150);
+
+statement ok
+CALL get_substrait('SELECT UPPER(first_name) as first, LOWER(last_name) as last, SUM(sales) as total FROM test_multi_string GROUP BY UPPER(first_name), LOWER(last_name)');
+
+statement ok
+DROP TABLE test_multi_string;
+
+# Test 6.2: Mix of string and arithmetic expressions in GROUP BY
+statement ok
+CREATE TABLE test_multi_mixed (id INTEGER, category VARCHAR, price INTEGER, quantity INTEGER);
+
+statement ok
+INSERT INTO test_multi_mixed VALUES (1, 'electronics', 100, 5), (2, 'ELECTRONICS', 100, 10), (3, 'books', 50, 20);
+
+statement ok
+CALL get_substrait('SELECT LOWER(category) as cat, price * 10 as price_tier, SUM(quantity) as total_qty FROM test_multi_mixed GROUP BY LOWER(category), price * 10');
+
+statement ok
+DROP TABLE test_multi_mixed;
+
+# Test 6.3: Mix of date and arithmetic expressions in GROUP BY
+statement ok
+CREATE TABLE test_multi_date_arith (id INTEGER, sale_date DATE, amount INTEGER, discount_pct INTEGER);
+
+statement ok
+INSERT INTO test_multi_date_arith VALUES (1, '2023-01-15', 100, 10), (2, '2023-01-20', 200, 10), (3, '2023-02-15', 150, 20);
+
+statement ok
+CALL get_substrait('SELECT YEAR(sale_date) as year, discount_pct / 10 as discount_tier, SUM(amount) as total FROM test_multi_date_arith GROUP BY YEAR(sale_date), discount_pct / 10');
+
+statement ok
+DROP TABLE test_multi_date_arith;
+
+# Test 6.4: Mix of CASE and string functions in GROUP BY
+statement ok
+CREATE TABLE test_multi_case_string (id INTEGER, status VARCHAR, region VARCHAR, revenue DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_multi_case_string VALUES (1, 'active', 'NORTH', 100.00), (2, 'inactive', 'north', 200.00), (3, 'active', 'SOUTH', 150.00);
+
+statement ok
+CALL get_substrait('SELECT CASE WHEN status = ''active'' THEN 1 ELSE 0 END as is_active, LOWER(region) as region_lower, SUM(revenue) as total FROM test_multi_case_string GROUP BY CASE WHEN status = ''active'' THEN 1 ELSE 0 END, LOWER(region)');
+
+statement ok
+DROP TABLE test_multi_case_string;
+
+# Test 6.5: Complex nested expressions in GROUP BY
+statement ok
+CREATE TABLE test_multi_nested (id INTEGER, code VARCHAR, value INTEGER, multiplier INTEGER);
+
+statement ok
+INSERT INTO test_multi_nested VALUES (1, 'ABC123', 10, 2), (2, 'ABC456', 20, 2), (3, 'DEF789', 15, 3);
+
+statement ok
+CALL get_substrait('SELECT SUBSTR(UPPER(code), 1, 3) as prefix, (value * multiplier) / 10 as computed, COUNT(*) as cnt FROM test_multi_nested GROUP BY SUBSTR(UPPER(code), 1, 3), (value * multiplier) / 10');
+
+statement ok
+DROP TABLE test_multi_nested;
+
+# Test 6.6: Mix of simple columns and complex expressions in GROUP BY
+statement ok
+CREATE TABLE test_multi_simple_complex (id INTEGER, region VARCHAR, category VARCHAR, amount DECIMAL(10,2));
+
+statement ok
+INSERT INTO test_multi_simple_complex VALUES (1, 'North', 'electronics', 100.00), (2, 'North', 'ELECTRONICS', 200.00), (3, 'South', 'books', 150.00);
+
+statement ok
+CALL get_substrait('SELECT region, LOWER(category) as cat_lower, SUM(amount) as total FROM test_multi_simple_complex GROUP BY region, LOWER(category)');
+
+statement ok
+DROP TABLE test_multi_simple_complex;
+
+# ============================================================================
+# Test 7: Edge Cases and Complex Scenarios
+# ============================================================================
+
+# Test 7.1: Expression with NULL handling in GROUP BY
+statement ok
+CREATE TABLE test_edge_null (id INTEGER, value INTEGER, category VARCHAR);
+
+statement ok
+INSERT INTO test_edge_null VALUES (1, NULL, 'A'), (2, 10, 'A'), (3, NULL, 'B');
+
+statement ok
+CALL get_substrait('SELECT COALESCE(value, 0) as value_clean, category, COUNT(*) as cnt FROM test_edge_null GROUP BY COALESCE(value, 0), category');
+
+statement ok
+DROP TABLE test_edge_null;
+
+# Test 7.2: Expression with string concatenation and functions in GROUP BY
+statement ok
+CREATE TABLE test_edge_concat (id INTEGER, prefix VARCHAR, suffix VARCHAR, amount INTEGER);
+
+statement ok
+INSERT INTO test_edge_concat VALUES (1, 'pre', 'SUF', 100), (2, 'PRE', 'suf', 200), (3, 'pre', 'SUF', 150);
+
+statement ok
+CALL get_substrait('SELECT CONCAT(LOWER(prefix), ''_'', UPPER(suffix)) as combined, SUM(amount) as total FROM test_edge_concat GROUP BY CONCAT(LOWER(prefix), ''_'', UPPER(suffix))');
+
+statement ok
+DROP TABLE test_edge_concat;
+
+# Test 7.3: Expression with date arithmetic in GROUP BY
+statement ok
+CREATE TABLE test_edge_date_arith (id INTEGER, base_date DATE, offset_days INTEGER, value INTEGER);
+
+statement ok
+INSERT INTO test_edge_date_arith VALUES (1, '2023-01-01', 10, 100), (2, '2023-01-01', 10, 200), (3, '2023-01-01', 20, 150);
+
+statement ok
+CALL get_substrait('SELECT base_date + offset_days as computed_date, SUM(value) as total FROM test_edge_date_arith GROUP BY base_date + offset_days');
+
+statement ok
+DROP TABLE test_edge_date_arith;
+
+# Test 7.4: Expression with multiple CASE statements in GROUP BY
+statement ok
+CREATE TABLE test_edge_multi_case (id INTEGER, score1 INTEGER, score2 INTEGER, value INTEGER);
+
+statement ok
+INSERT INTO test_edge_multi_case VALUES (1, 85, 90, 100), (2, 92, 88, 200), (3, 78, 95, 150);
+
+statement ok
+CALL get_substrait('SELECT CASE WHEN score1 >= 90 THEN ''High'' ELSE ''Low'' END as grade1, CASE WHEN score2 >= 90 THEN ''High'' ELSE ''Low'' END as grade2, AVG(value) as avg_val FROM test_edge_multi_case GROUP BY CASE WHEN score1 >= 90 THEN ''High'' ELSE ''Low'' END, CASE WHEN score2 >= 90 THEN ''High'' ELSE ''Low'' END');
+
+statement ok
+DROP TABLE test_edge_multi_case;
+
+# Test 7.5: Expression combining all types in GROUP BY
+statement ok
+CREATE TABLE test_edge_combined (id INTEGER, name VARCHAR, sale_date DATE, amount INTEGER, category_id INTEGER);
+
+statement ok
+INSERT INTO test_edge_combined VALUES (1, 'alice', '2023-01-15', 100, 5), (2, 'ALICE', '2023-01-20', 200, 10), (3, 'bob', '2023-02-15', 150, 5);
+
+statement ok
+CALL get_substrait('SELECT UPPER(name) as name_upper, YEAR(sale_date) as year, category_id * 2 as cat_doubled, CASE WHEN amount > 150 THEN ''High'' ELSE ''Low'' END as amount_tier, SUM(amount) as total FROM test_edge_combined GROUP BY UPPER(name), YEAR(sale_date), category_id * 2, CASE WHEN amount > 150 THEN ''High'' ELSE ''Low'' END');
+
+statement ok
+DROP TABLE test_edge_combined;
