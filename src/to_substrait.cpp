@@ -2098,33 +2098,61 @@ substrait::Rel *DuckDBToSubstrait::TransformUnion(LogicalOperator &dop) {
 	return rel;
 }
 
-substrait::Rel *DuckDBToSubstrait::TransformDistinct(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
-
+substrait::Rel *DuckDBToSubstrait::CreateSetOperation(LogicalOperator &child_op,
+                                                       substrait::SetRel_SetOp set_op_type) {
+	auto rel = make_uniq<substrait::Rel>();
 	auto set_op = rel->mutable_set();
-
-	D_ASSERT(dop.children.size() == 1);
-	auto &set_operation_p = dop.children[0];
-
-	switch (set_operation_p->type) {
-	case LogicalOperatorType::LOGICAL_EXCEPT:
-		set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_MINUS_PRIMARY);
-		break;
-	case LogicalOperatorType::LOGICAL_INTERSECT:
-		set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
-		break;
-	default:
-		throw NotImplementedException("Found unexpected child type in Distinct operator " +
-		                              LogicalOperatorToString(set_operation_p->type));
-	}
-	auto &set_operation = set_operation_p->Cast<LogicalSetOperation>();
-
+	set_op->set_op(set_op_type);
+	auto &set_operation = child_op.Cast<LogicalSetOperation>();
 	auto inputs = set_op->mutable_inputs();
-
 	inputs->AddAllocated(TransformOp(*set_operation.children[0]));
 	inputs->AddAllocated(TransformOp(*set_operation.children[1]));
-	auto bindings = dop.GetColumnBindings();
-	return rel;
+	return rel.release();
+}
+
+substrait::Rel *DuckDBToSubstrait::TransformDistinct(LogicalOperator &dop) {
+	D_ASSERT(dop.children.size() == 1);
+	auto &child_op = dop.children[0];
+
+	// Check if this is a DISTINCT used with set operations (EXCEPT/INTERSECT)
+	// or a standalone DISTINCT operation
+	switch (child_op->type) {
+	case LogicalOperatorType::LOGICAL_EXCEPT:
+		// DISTINCT with EXCEPT - use SetRel
+		return CreateSetOperation(*child_op, substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_MINUS_PRIMARY);
+	case LogicalOperatorType::LOGICAL_INTERSECT:
+		// DISTINCT with INTERSECT - use SetRel
+		return CreateSetOperation(*child_op, substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
+	default: {
+		// Standalone DISTINCT operation - use AggregateRel with grouping but no measures
+		// This handles cases like: SELECT DISTINCT col1, col2 FROM table
+		auto rel = make_uniq<substrait::Rel>();
+		auto saggr = rel->mutable_aggregate();
+		
+		// Set the input relation
+		saggr->set_allocated_input(TransformOp(*child_op));
+		
+		// Get the column bindings from the DISTINCT operator
+		auto bindings = dop.GetColumnBindings();
+		
+		// Add all columns as grouping expressions
+		// In a standalone DISTINCT, all output columns become grouping keys
+		for (idx_t i = 0; i < bindings.size(); i++) {
+			auto grouping_expr = saggr->add_grouping_expressions();
+			auto field_ref = grouping_expr->mutable_selection()->mutable_direct_reference()->mutable_struct_field();
+			field_ref->set_field(i);
+		}
+		
+		// Create a single grouping set with all columns
+		auto sgrp = saggr->add_groupings();
+		for (idx_t i = 0; i < bindings.size(); i++) {
+			sgrp->add_expression_references(i);
+		}
+		
+		// No measures needed for DISTINCT - it's just grouping
+		return rel.release();
+	}
+	}
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformExcept(LogicalOperator &dop) {

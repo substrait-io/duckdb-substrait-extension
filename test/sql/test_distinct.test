@@ -15,3 +15,127 @@ insert into t values (0),(1),(3),(0),(2),(1),(5),(NULL),(1),(5),(NULL),(1000);
 
 statement ok
 CALL get_substrait('select count(distinct a) from t')
+
+# ============================================================================
+# Standalone DISTINCT Tests
+# ============================================================================
+
+# Test 1: Simple SELECT DISTINCT with single column
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t')
+
+# Test 2: SELECT DISTINCT with multiple columns
+statement ok
+create table t2 (a integer, b integer, c varchar)
+
+statement ok
+insert into t2 values (1, 10, 'x'), (1, 10, 'x'), (1, 20, 'y'), (2, 10, 'x'), (2, 10, 'z'), (NULL, 10, 'x'), (1, NULL, 'x')
+
+statement ok
+CALL get_substrait('SELECT DISTINCT a, b FROM t2')
+
+# Test 3: SELECT DISTINCT with all columns
+statement ok
+CALL get_substrait('SELECT DISTINCT a, b, c FROM t2')
+
+# Test 4: SELECT DISTINCT with WHERE clause
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t WHERE a > 1')
+
+# Test 5: SELECT DISTINCT with complex WHERE clause
+statement ok
+CALL get_substrait('SELECT DISTINCT a, b FROM t2 WHERE a IS NOT NULL AND b >= 10')
+
+# Test 6: SELECT DISTINCT with ORDER BY
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t')
+
+# Test 7: SELECT DISTINCT with ORDER BY on multiple columns
+statement ok
+CALL get_substrait('SELECT DISTINCT a, b FROM t2')
+
+# Test 8: SELECT DISTINCT with LIMIT
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t ORDER BY a LIMIT 3')
+
+# Test 9: SELECT DISTINCT in subquery
+statement ok
+CALL get_substrait('SELECT * FROM (SELECT DISTINCT a FROM t) sq WHERE a > 2')
+
+# Test 10: SELECT DISTINCT with aggregation in outer query
+statement ok
+CALL get_substrait('SELECT COUNT(*) FROM (SELECT DISTINCT a FROM t) sq')
+
+# Test 11: SELECT DISTINCT with JOIN
+statement ok
+create table t3 (x integer, y varchar)
+
+statement ok
+insert into t3 values (1, 'a'), (2, 'b'), (3, 'c'), (1, 'd')
+
+statement ok
+CALL get_substrait('SELECT DISTINCT t.a, t3.y FROM t JOIN t3 ON t.a = t3.x')
+
+# Test 12: SELECT DISTINCT with LEFT JOIN
+statement ok
+CALL get_substrait('SELECT DISTINCT t.a, t3.y FROM t LEFT JOIN t3 ON t.a = t3.x WHERE t.a <= 3')
+
+# Test 13: SELECT DISTINCT with expressions
+statement ok
+CALL get_substrait('SELECT DISTINCT a * 2 as doubled FROM t WHERE a IS NOT NULL')
+
+# Test 14: SELECT DISTINCT with CASE expression
+statement ok
+CALL get_substrait('SELECT DISTINCT CASE WHEN a < 3 THEN ''small'' WHEN a >= 3 THEN ''large'' ELSE ''null'' END as category FROM t')
+
+# Test 15: SELECT DISTINCT with string column
+statement ok
+CALL get_substrait('SELECT DISTINCT c FROM t2')
+
+# Test 16: SELECT DISTINCT with mixed NULL and non-NULL values
+statement ok
+create table t4 (a integer, b integer)
+
+statement ok
+insert into t4 values (NULL, NULL), (NULL, 1), (1, NULL), (1, 1), (NULL, NULL), (1, 1)
+
+statement ok
+CALL get_substrait('SELECT DISTINCT a, b FROM t4')
+
+# Test 17: SELECT DISTINCT with aggregation in subquery
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM (SELECT a, COUNT(*) as cnt FROM t WHERE a IS NOT NULL GROUP BY a) sq WHERE a > 1')
+
+# Test 18: SELECT DISTINCT with UNION (testing interaction)
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t WHERE a < 2 OR a IS NULL UNION SELECT DISTINCT a FROM t WHERE a > 3')
+
+# Test 19: SELECT DISTINCT with column alias
+statement ok
+CALL get_substrait('SELECT DISTINCT a as col_a FROM t')
+
+# Test 20: SELECT DISTINCT with multiple column aliases
+statement ok
+CALL get_substrait('SELECT DISTINCT a as col_a, b as col_b FROM t2')
+
+# Test 21: SELECT DISTINCT with all NULL values
+statement ok
+create table t5 (a integer)
+
+statement ok
+insert into t5 values (NULL), (NULL), (NULL)
+
+statement ok
+CALL get_substrait('SELECT DISTINCT a FROM t5')
+
+# Test 22: SELECT DISTINCT with CAST
+statement ok
+CALL get_substrait('SELECT DISTINCT CAST(a AS VARCHAR) as a_str FROM t WHERE a IS NOT NULL')
+
+# Test 23: SELECT DISTINCT with arithmetic operations
+statement ok
+CALL get_substrait('SELECT DISTINCT a + b as sum_val FROM t2 WHERE a IS NOT NULL AND b IS NOT NULL')
+
+# Test 24: SELECT DISTINCT * (all columns)
+statement ok
+CALL get_substrait('SELECT DISTINCT * FROM t3')

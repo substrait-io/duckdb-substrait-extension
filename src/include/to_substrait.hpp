@@ -70,6 +70,7 @@ private:
 	substrait::Rel *TransformCrossProduct(LogicalOperator &dop);
 	substrait::Rel *TransformUnion(LogicalOperator &dop);
 	substrait::Rel *TransformDistinct(LogicalOperator &dop);
+	substrait::Rel *CreateSetOperation(LogicalOperator &child_op, substrait::SetRel_SetOp set_op_type);
 	substrait::Rel *TransformExcept(LogicalOperator &dop);
 	substrait::Rel *TransformIntersect(LogicalOperator &dop);
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
