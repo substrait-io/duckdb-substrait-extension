@@ -181,11 +181,9 @@ Not implemented Error: Grouping functions not supported yet
 statement ok
 CALL get_substrait('SELECT i_item_id , i_item_desc , i_current_price FROM item, inventory, date_dim, catalog_sales WHERE i_current_price BETWEEN 20 AND 20 + 30 AND inv_item_sk = i_item_sk AND d_date_sk=inv_date_sk AND d_date BETWEEN Cast(''1999-03-06'' AS DATE) AND ( Cast(''1999-03-06'' AS DATE) + INTERVAL ''60'' day) AND i_manufact_id IN (843,815,850,840) AND inv_quantity_on_hand BETWEEN 100 AND 500 AND cs_item_sk = i_item_sk GROUP BY i_item_id, i_item_desc, i_current_price ORDER BY i_item_id LIMIT 100; ')
 
-#Q 38 (unexpected child in distinct)
-statement error
+#Q 38
+statement ok
 CALL get_substrait('SELECT Count(*) FROM (SELECT DISTINCT c_last_name, c_first_name, d_date FROM store_sales, date_dim, customer WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk AND store_sales.ss_customer_sk = customer.c_customer_sk AND d_month_seq BETWEEN 1188 AND 1188 + 11 INTERSECT SELECT DISTINCT c_last_name, c_first_name, d_date FROM catalog_sales, date_dim, customer WHERE catalog_sales.cs_sold_date_sk = date_dim.d_date_sk AND catalog_sales.cs_bill_customer_sk = customer.c_customer_sk AND d_month_seq BETWEEN 1188 AND 1188 + 11 INTERSECT SELECT DISTINCT c_last_name, c_first_name, d_date FROM web_sales, date_dim, customer WHERE web_sales.ws_sold_date_sk = date_dim.d_date_sk AND web_sales.ws_bill_customer_sk = customer.c_customer_sk AND d_month_seq BETWEEN 1188 AND 1188 + 11) hot_cust LIMIT 100; ')
-----
-Not implemented Error: Found unexpected child type in Distinct operator
 
 #Q 39
 statement ok
@@ -195,11 +193,11 @@ CALL get_substrait('WITH inv AS (SELECT w_warehouse_name, w_warehouse_sk, i_item
 statement ok
 CALL get_substrait('SELECT w_state , i_item_id , Sum( CASE WHEN ( Cast(d_date AS DATE) < Cast (''2002-06-01'' AS DATE)) THEN cs_sales_price - COALESCE(cr_refunded_cash,0) ELSE 0 END) AS sales_before , Sum( CASE WHEN ( Cast(d_date AS DATE) >= Cast (''2002-06-01'' AS DATE)) THEN cs_sales_price - COALESCE(cr_refunded_cash,0) ELSE 0 END) AS sales_after FROM catalog_sales LEFT OUTER JOIN catalog_returns ON ( cs_order_number = cr_order_number AND cs_item_sk = cr_item_sk) , warehouse , item , date_dim WHERE i_current_price BETWEEN 0.99 AND 1.49 AND i_item_sk = cs_item_sk AND cs_warehouse_sk = w_warehouse_sk AND cs_sold_date_sk = d_date_sk AND d_date BETWEEN (Cast (''2002-06-01'' AS DATE) - INTERVAL ''30'' day) AND ( cast (''2002-06-01'' AS date) + INTERVAL ''30'' day) GROUP BY w_state, i_item_id ORDER BY w_state, i_item_id LIMIT 100; ')
 
-#Q 41 (unexpected child in distinct)
+#Q 41
 statement error
 CALL get_substrait('SELECT Distinct(i_product_name) FROM item i1 WHERE i_manufact_id BETWEEN 765 AND 765 + 40 AND (SELECT Count(*) AS item_cnt FROM item WHERE ( i_manufact = i1.i_manufact AND ( ( i_category = ''Women'' AND ( i_color = ''dim'' OR i_color = ''green'' ) AND ( i_units = ''Gross'' OR i_units = ''Dozen'' ) AND ( i_size = ''economy'' OR i_size = ''petite'' ) ) OR ( i_category = ''Women'' AND ( i_color = ''navajo'' OR i_color = ''aquamarine'' ) AND ( i_units = ''Case'' OR i_units = ''Unknown'' ) AND ( i_size = ''large'' OR i_size = ''N/A'' ) ) OR ( i_category = ''Men'' AND ( i_color = ''indian'' OR i_color = ''dark'' ) AND ( i_units = ''Oz'' OR i_units = ''Lb'' ) AND ( i_size = ''extra large'' OR i_size = ''small'' ) ) OR ( i_category = ''Men'' AND ( i_color = ''peach'' OR i_color = ''purple'' ) AND ( i_units = ''Tbl'' OR i_units = ''Bunch'' ) AND ( i_size = ''economy'' OR i_size = ''petite'' ) ) ) ) OR ( i_manufact = i1.i_manufact AND ( ( i_category = ''Women'' AND ( i_color = ''orchid'' OR i_color = ''peru'' ) AND ( i_units = ''Carton'' OR i_units = ''Cup'' ) AND ( i_size = ''economy'' OR i_size = ''petite'' ) ) OR ( i_category = ''Women'' AND ( i_color = ''violet'' OR i_color = ''papaya'' ) AND ( i_units = ''Ounce'' OR i_units = ''Box'' ) AND ( i_size = ''large'' OR i_size = ''N/A'' ) ) OR ( i_category = ''Men'' AND ( i_color = ''drab'' OR i_color = ''grey'' ) AND ( i_units = ''Each'' OR i_units = ''N/A'' ) AND ( i_size = ''extra large'' OR i_size = ''small'' ) ) OR ( i_category = ''Men'' AND ( i_color = ''chocolate'' OR i_color = ''antique'' ) AND ( i_units = ''Dram'' OR i_units = ''Gram'' ) AND ( i_size = ''economy'' OR i_size = ''petite'' ) ) ) )) > 0 ORDER BY i_product_name LIMIT 100; ')
 ----
-Not implemented Error: Found unexpected child type in Distinct operator
+Not implemented Error: DELIM_JOIN
 
 #Q 42
 statement ok
@@ -251,11 +249,9 @@ CALL get_substrait('SELECT dt.d_year, item.i_brand_id brand_id, item.i_brand bra
 statement ok
 CALL get_substrait('SELECT * FROM (SELECT i_manufact_id, Sum(ss_sales_price) sum_sales, Avg(Sum(ss_sales_price)) OVER ( partition BY i_manufact_id) avg_quarterly_sales FROM item, store_sales, date_dim, store WHERE ss_item_sk = i_item_sk AND ss_sold_date_sk = d_date_sk AND ss_store_sk = s_store_sk AND d_month_seq IN ( 1199, 1199 + 1, 1199 + 2, 1199 + 3, 1199 + 4, 1199 + 5, 1199 + 6, 1199 + 7, 1199 + 8, 1199 + 9, 1199 + 10, 1199 + 11 ) AND ( ( i_category IN ( ''Books'', ''Children'', ''Electronics'' ) AND i_class IN ( ''personal'', ''portable'', ''reference'', ''self-help'' ) AND i_brand IN ( ''scholaramalgamalg #14'', ''scholaramalgamalg #7'' , ''exportiunivamalg #9'', ''scholaramalgamalg #9'' ) ) OR ( i_category IN ( ''Women'', ''Music'', ''Men'' ) AND i_class IN ( ''accessories'', ''classical'', ''fragrances'', ''pants'' ) AND i_brand IN ( ''amalgimporto #1'', ''edu packscholar #1'', ''exportiimporto #1'', ''importoamalg #1'' ) ) ) GROUP BY i_manufact_id, d_qoy) tmp1 WHERE CASE WHEN avg_quarterly_sales > 0 THEN Abs (sum_sales - avg_quarterly_sales) / avg_quarterly_sales ELSE NULL END > 0.1 ORDER BY avg_quarterly_sales, sum_sales, i_manufact_id LIMIT 100; ')
 
-#Q 54 (unexpected child in distinct)
-statement error
+#Q 54
+statement ok
 CALL get_substrait('WITH my_customers AS (SELECT DISTINCT c_customer_sk, c_current_addr_sk FROM (SELECT cs_sold_date_sk sold_date_sk, cs_bill_customer_sk customer_sk, cs_item_sk item_sk FROM catalog_sales UNION ALL SELECT ws_sold_date_sk sold_date_sk, ws_bill_customer_sk customer_sk, ws_item_sk item_sk FROM web_sales) cs_or_ws_sales, item, date_dim, customer WHERE sold_date_sk = d_date_sk AND item_sk = i_item_sk AND i_category = ''Sports'' AND i_class = ''fitness'' AND c_customer_sk = cs_or_ws_sales.customer_sk AND d_moy = 5 AND d_year = 2000), my_revenue AS (SELECT c_customer_sk, Sum(ss_ext_sales_price) AS revenue FROM my_customers, store_sales, customer_address, store, date_dim WHERE c_current_addr_sk = ca_address_sk AND ca_county = s_county AND ca_state = s_state AND ss_sold_date_sk = d_date_sk AND c_customer_sk = ss_customer_sk AND d_month_seq BETWEEN (SELECT DISTINCT d_month_seq + 1 FROM date_dim WHERE d_year = 2000 AND d_moy = 5) AND (SELECT DISTINCT d_month_seq + 3 FROM date_dim WHERE d_year = 2000 AND d_moy = 5) GROUP BY c_customer_sk), segments AS (SELECT Cast(( revenue / 50 ) AS INT) AS segment FROM my_revenue) SELECT segment, Count(*) AS num_customers, segment * 50 AS segment_base FROM segments GROUP BY segment ORDER BY segment, num_customers LIMIT 100; ')
-----
-Not implemented Error: Found unexpected child type in Distinct operator
 
 #Q 55
 statement ok
@@ -403,11 +399,9 @@ CALL get_substrait('SELECT Sum(ws_net_paid) AS total_sum, i_category, i_class, G
 ----
 Not implemented Error: Grouping functions not supported yet
 
-#Q 87 (unexpected child in distinct)
-statement error
+#Q 87
+statement ok
 CALL get_substrait('select count(*) from ((select distinct c_last_name, c_first_name, d_date from store_sales, date_dim, customer where store_sales.ss_sold_date_sk = date_dim.d_date_sk and store_sales.ss_customer_sk = customer.c_customer_sk and d_month_seq between 1188 and 1188+11) except (select distinct c_last_name, c_first_name, d_date from catalog_sales, date_dim, customer where catalog_sales.cs_sold_date_sk = date_dim.d_date_sk and catalog_sales.cs_bill_customer_sk = customer.c_customer_sk and d_month_seq between 1188 and 1188+11) except (select distinct c_last_name, c_first_name, d_date from web_sales, date_dim, customer where web_sales.ws_sold_date_sk = date_dim.d_date_sk and web_sales.ws_bill_customer_sk = customer.c_customer_sk and d_month_seq between 1188 and 1188+11) ) cool_cust ; ')
-----
-Not implemented Error: Found unexpected child type in Distinct operator
 
 #Q 88
 statement ok
