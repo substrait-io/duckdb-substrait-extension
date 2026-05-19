@@ -362,11 +362,11 @@ TEST_CASE("Test tpcds Q32", "[substrait-api]") {
 		" LIMIT 100;"
 		;
 
-	REQUIRE_THROWS(GetSubstraitJSON(con, query_text1)); // TODO enable this after supporting grouping_sets
-	// auto res1 = FromSubstraitJSON(con, jsonPlan1);
+	auto jsonPlan1 = GetSubstraitJSON(con, query_text1);
+	auto res1 = FromSubstraitJSON(con, jsonPlan1);
 	// Printer::Print(jsonPlan1);
 
-	auto res1 = con.Query(query_text1);
+	// auto res1 = con.Query(query_text1);
 	REQUIRE(CHECK_COLUMN(res1, 0, {"I001", "I001", "I002", "I002", "I003", "I003", "I005", "I005", duckdb::Value{}}));
 	REQUIRE(CHECK_COLUMN(res1, 1, { "TN", duckdb::Value{}, "TN", duckdb::Value{}, "TX", duckdb::Value{}, "NY", duckdb::Value{}, duckdb::Value{}}));
 	REQUIRE(CHECK_COLUMN(res1, 2, {0, 1, 0, 1, 0, 1, 0, 1, 1}));

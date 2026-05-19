@@ -741,15 +741,43 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		auto &s_aggr_function = smeas.measure();
 		bool is_distinct = s_aggr_function.invocation() ==
 		                   substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
-		for (auto &sarg : s_aggr_function.arguments()) {
-			children.push_back(TransformExpr(sarg.value()));
-		}
 		auto function_name = FindFunction(s_aggr_function.function_reference());
-		if (function_name == "count" && children.empty()) {
-			function_name = "count_star";
+		
+		// Special handling for GROUPING() function
+		// GROUPING() is not a regular aggregate function - it's a special operator
+		if (function_name == "grouping") {
+			// For GROUPING(), the arguments are field references to grouping columns
+			// We need to resolve these to copies of the actual grouping expressions
+			for (auto &sarg : s_aggr_function.arguments()) {
+				auto arg_expr = TransformExpr(sarg.value());
+				// Check if this is a positional reference
+				if (arg_expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
+					auto &pos_ref = arg_expr->Cast<PositionalReferenceExpression>();
+					// The position is 1-based, convert to 0-based index
+					idx_t group_idx = pos_ref.index - 1;
+					// Get the corresponding grouping expression and make a copy
+					if (group_idx < group_node.group_expressions.size()) {
+						children.push_back(group_node.group_expressions[group_idx]->Copy());
+					} else {
+						throw InternalException("GROUPING function references invalid grouping column index");
+					}
+				} else {
+					// If it's not a positional reference, use it as-is
+					children.push_back(std::move(arg_expr));
+				}
+			}
+			// Create an OperatorExpression with GROUPING_FUNCTION type
+			expressions.push_back(make_uniq<OperatorExpression>(ExpressionType::GROUPING_FUNCTION, std::move(children)));
+		} else {
+			for (auto &sarg : s_aggr_function.arguments()) {
+				children.push_back(TransformExpr(sarg.value()));
+			}
+			if (function_name == "count" && children.empty()) {
+				function_name = "count_star";
+			}
+			expressions.push_back(make_uniq<FunctionExpression>(RemapFunctionName(function_name), std::move(children),
+			                                                    nullptr, nullptr, is_distinct));
 		}
-		expressions.push_back(make_uniq<FunctionExpression>(RemapFunctionName(function_name), std::move(children),
-		                                                    nullptr, nullptr, is_distinct));
 	}
 
 	return make_shared_ptr<AggregateRelation>(input_rel, std::move(expressions), std::move(group_node));
