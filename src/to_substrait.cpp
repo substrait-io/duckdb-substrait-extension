@@ -1324,9 +1324,6 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	auto &daggr = dop.Cast<LogicalAggregate>();
 	auto saggr = res->mutable_aggregate();
 	saggr->set_allocated_input(TransformOp(*dop.children[0]));
-	if (!daggr.grouping_functions.empty()) {
-		throw NotImplementedException("Grouping functions not supported yet");
-	}
 	
 	// In v0.89.0, grouping expressions are stored at the AggregateRel level
 	// and groupings reference them by index
@@ -1373,6 +1370,35 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 			smeas->set_invocation(substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT);
 		}
 	}
+	
+	// Transform GROUPING() function calls
+	// Each grouping function is represented as an aggregate function measure
+	// that takes field references to the grouping columns it references
+	for (auto &grouping_func : daggr.grouping_functions) {
+		auto smeas = saggr->add_measures()->mutable_measure();
+		
+		// Build argument types - each argument is a reference to a grouping column
+		vector<::substrait::Type> args_types;
+		for (auto &group_idx : grouping_func) {
+			// Each argument is a field reference to a grouping expression
+			if (group_idx >= daggr.groups.size()) {
+				throw InternalException("Grouping index out of bounds");
+			}
+			auto s_arg = smeas->add_arguments();
+			auto field_ref = s_arg->mutable_value();
+			CreateFieldRef(field_ref, group_idx);
+			
+			// Get the type of the grouping column
+			args_types.emplace_back(DuckToSubstraitType(daggr.groups[group_idx]->return_type));
+		}
+		
+		// Register the "grouping" function as an aggregate function
+		smeas->set_function_reference(RegisterFunction("grouping", args_types));
+		
+		// GROUPING() returns BIGINT in DuckDB
+		*smeas->mutable_output_type() = DuckToSubstraitType(LogicalType::BIGINT);
+	}
+	
 	return res;
 }
 

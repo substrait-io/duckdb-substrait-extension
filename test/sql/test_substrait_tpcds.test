@@ -125,11 +125,9 @@ CALL get_substrait('SELECT i_item_id, i_item_desc, s_store_id, s_store_name, Max
 statement ok
 CALL get_substrait('SELECT i_item_id, Avg(cs_quantity) agg1, Avg(cs_list_price) agg2, Avg(cs_coupon_amt) agg3, Avg(cs_sales_price) agg4 FROM catalog_sales, customer_demographics, date_dim, item, promotion WHERE cs_sold_date_sk = d_date_sk AND cs_item_sk = i_item_sk AND cs_bill_cdemo_sk = cd_demo_sk AND cs_promo_sk = p_promo_sk AND cd_gender = ''F'' AND cd_marital_status = ''W'' AND cd_education_status = ''Secondary'' AND ( p_channel_email = ''N'' OR p_channel_event = ''N'' ) AND d_year = 2000 GROUP BY i_item_id ORDER BY i_item_id LIMIT 100; ')
 
-#Q 27 (Reference out of range)
-statement error
+#Q 27
+statement ok
 CALL get_substrait('SELECT i_item_id, s_state, Grouping(s_state) g_state, Avg(ss_quantity) agg1, Avg(ss_list_price) agg2, Avg(ss_coupon_amt) agg3, Avg(ss_sales_price) agg4 FROM store_sales, customer_demographics, date_dim, store, item WHERE ss_sold_date_sk = d_date_sk AND ss_item_sk = i_item_sk AND ss_store_sk = s_store_sk AND ss_cdemo_sk = cd_demo_sk AND cd_gender = ''M'' AND cd_marital_status = ''D'' AND cd_education_status = ''College'' AND d_year = 2000 AND s_state IN ( ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'' ) GROUP BY rollup ( i_item_id, s_state ) ORDER BY i_item_id, s_state LIMIT 100; ')
-----
-Not implemented Error: Grouping functions not supported yet
 
 #Q 28
 statement ok
@@ -169,11 +167,9 @@ CALL get_substrait('SELECT ca_state, cd_gender, cd_marital_status, cd_dep_count,
 ----
 Not implemented Error: DELIM_JOIN
 
-#Q 36 (Grouping)
-statement error
+#Q 36
+statement ok
 CALL get_substrait('SELECT Sum(ss_net_profit) / Sum(ss_ext_sales_price) AS gross_margin, i_category, i_class, Grouping(i_category) + Grouping(i_class) AS lochierarchy, Rank() OVER ( partition BY Grouping(i_category)+Grouping(i_class), CASE WHEN Grouping( i_class) = 0 THEN i_category END ORDER BY Sum(ss_net_profit)/Sum(ss_ext_sales_price) ASC) AS rank_within_parent FROM store_sales, date_dim d1, item, store WHERE d1.d_year = 2000 AND d1.d_date_sk = ss_sold_date_sk AND i_item_sk = ss_item_sk AND s_store_sk = ss_store_sk AND s_state IN ( ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'', ''TN'' ) GROUP BY rollup( i_category, i_class ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN i_category END, rank_within_parent LIMIT 100; ')
-----
-Not implemented Error: Grouping functions not supported yet
 
 #Q 37
 statement ok
@@ -317,11 +313,9 @@ CALL get_substrait('SELECT cd_gender, cd_marital_status, cd_education_status, Co
 ----
 Not implemented Error: DELIM_JOIN
 
-#Q 70 (Grouping)
-statement error
+#Q 70
+statement ok
 CALL get_substrait('SELECT Sum(ss_net_profit) AS total_sum, s_state, s_county, Grouping(s_state) + Grouping(s_county) AS lochierarchy, Rank() OVER ( partition BY Grouping(s_state)+Grouping(s_county), CASE WHEN Grouping( s_county) = 0 THEN s_state END ORDER BY Sum(ss_net_profit) DESC) AS rank_within_parent FROM store_sales, date_dim d1, store WHERE d1.d_month_seq BETWEEN 1200 AND 1200 + 11 AND d1.d_date_sk = ss_sold_date_sk AND s_store_sk = ss_store_sk AND s_state IN (SELECT s_state FROM (SELECT s_state AS s_state, Rank() OVER ( partition BY s_state ORDER BY Sum(ss_net_profit) DESC) AS ranking FROM store_sales, store, date_dim WHERE d_month_seq BETWEEN 1200 AND 1200 + 11 AND d_date_sk = ss_sold_date_sk AND s_store_sk = ss_store_sk GROUP BY s_state) tmp1 WHERE ranking <= 5) GROUP BY rollup( s_state, s_county ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN s_state END, rank_within_parent LIMIT 100; ')
-----
-Not implemented Error: Grouping functions not supported yet
 
 #Q 71
 statement ok
@@ -387,11 +381,9 @@ CALL get_substrait('SELECT c_customer_id AS customer_id, c_last_name || '', '' |
 statement ok
 CALL get_substrait('SELECT Substr(r_reason_desc, 1, 20), Avg(ws_quantity), Avg(wr_refunded_cash), Avg(wr_fee) FROM web_sales, web_returns, web_page, customer_demographics cd1, customer_demographics cd2, customer_address, date_dim, reason WHERE ws_web_page_sk = wp_web_page_sk AND ws_item_sk = wr_item_sk AND ws_order_number = wr_order_number AND ws_sold_date_sk = d_date_sk AND d_year = 2001 AND cd1.cd_demo_sk = wr_refunded_cdemo_sk AND cd2.cd_demo_sk = wr_returning_cdemo_sk AND ca_address_sk = wr_refunded_addr_sk AND r_reason_sk = wr_reason_sk AND ( ( cd1.cd_marital_status = ''W'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Primary'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 100.00 AND 150.00 ) OR ( cd1.cd_marital_status = ''D'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Secondary'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 50.00 AND 100.00 ) OR ( cd1.cd_marital_status = ''M'' AND cd1.cd_marital_status = cd2.cd_marital_status AND cd1.cd_education_status = ''Advanced Degree'' AND cd1.cd_education_status = cd2.cd_education_status AND ws_sales_price BETWEEN 150.00 AND 200.00 ) ) AND ( ( ca_country = ''United States'' AND ca_state IN ( ''KY'', ''ME'', ''IL'' ) AND ws_net_profit BETWEEN 100 AND 200 ) OR ( ca_country = ''United States'' AND ca_state IN ( ''OK'', ''NE'', ''MN'' ) AND ws_net_profit BETWEEN 150 AND 300 ) OR ( ca_country = ''United States'' AND ca_state IN ( ''FL'', ''WI'', ''KS'' ) AND ws_net_profit BETWEEN 50 AND 250 ) ) GROUP BY r_reason_desc ORDER BY Substr(r_reason_desc, 1, 20), Avg(ws_quantity), Avg(wr_refunded_cash), Avg(wr_fee) LIMIT 100; ')
 
-#Q 86 (Grouping)
-statement error
+#Q 86
+statement ok
 CALL get_substrait('SELECT Sum(ws_net_paid) AS total_sum, i_category, i_class, Grouping(i_category) + Grouping(i_class) AS lochierarchy, Rank() OVER ( partition BY Grouping(i_category)+Grouping(i_class), CASE WHEN Grouping( i_class) = 0 THEN i_category END ORDER BY Sum(ws_net_paid) DESC) AS rank_within_parent FROM web_sales, date_dim d1, item WHERE d1.d_month_seq BETWEEN 1183 AND 1183 + 11 AND d1.d_date_sk = ws_sold_date_sk AND i_item_sk = ws_item_sk GROUP BY rollup( i_category, i_class ) ORDER BY lochierarchy DESC, CASE WHEN lochierarchy = 0 THEN i_category END, rank_within_parent LIMIT 100; ')
-----
-Not implemented Error: Grouping functions not supported yet
 
 #Q 87
 statement ok
