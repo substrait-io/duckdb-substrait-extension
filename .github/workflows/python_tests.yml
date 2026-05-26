@@ -1,0 +1,37 @@
+name: Python Integration Tests
+
+on: [push, pull_request, repository_dispatch]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pythonTests:
+    name: Python integration tests
+    runs-on: macos-latest
+    env:
+      GEN: ninja
+
+    steps:
+    - name: Install Ninja
+      run: brew install ninja
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: pip install duckdb protobuf substrait
+
+    - name: Build extension
+      run: make release
+
+    - name: Run Python tests
+      run: python test/python/test_named_table_resolution.py
