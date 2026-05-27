@@ -692,7 +692,14 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 			if (mapping[i] < num_input_columns) {
 				expressions[i] = make_uniq<PositionalReferenceExpression>(mapping[i] + 1);
 			} else {
-				expressions[i] = TransformExpr(sop.project().expressions(mapping[i] - num_input_columns), &iterator);
+				auto expr_idx = mapping[i] - num_input_columns;
+				if (expr_idx >= (size_t)sop.project().expressions_size()) {
+					throw InvalidInputException(
+					    "Project emit mapping references expression index %d, but only %d expressions exist "
+					    "(possible schema mismatch: plan declares more columns than actual table)",
+					    expr_idx, sop.project().expressions_size());
+				}
+				expressions[i] = TransformExpr(sop.project().expressions(expr_idx), &iterator);
 			}
 		}
 	}
