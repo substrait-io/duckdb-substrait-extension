@@ -34,12 +34,11 @@ DUCKDB_SUBSTRAIT_EXTENSION_PATH=/path/to/substrait.duckdb_extension \
 ### `test_named_table_resolution.py`
 
 Verifies that `from_substrait` correctly resolves multi-component
-`namedTable.names` when tables reside in attached databases (via `ATTACH`).
+`namedTable.names` when tables reside in non-default schemas.
 
-Tables in attached databases live in a separate catalog namespace and cannot
-be found through single-component names alone — the extension must parse all
-components and use the leading component (database name) for catalog resolution.
+The test creates a schema (`myschema`) with a table, generates a substrait plan
+template from a same-shaped table in the default schema, rewrites
+`namedTable.names` to 1-, 2-, and 3-component formats, and verifies that
+`from_substrait` resolves them correctly.
 
-The test creates temporary SQLite databases, generates a substrait plan template
-from a native DuckDB table, rewrites `namedTable.names` to various formats, and
-verifies that `from_substrait` resolves them correctly.
+No external databases or ATTACH are required — the test runs entirely in-memory.
