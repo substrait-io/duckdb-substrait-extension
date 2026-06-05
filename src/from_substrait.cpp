@@ -950,6 +950,39 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		throw NotImplementedException("Unsupported type of read operator for substrait");
 	}
 
+	// When a named table's physical schema has more columns than the plan's
+	// baseSchema declares, add a projection to narrow down to only the declared
+	// columns. Without this, downstream emit mappings (which assume baseSchema
+	// column count) compute wrong expression indices.
+	if (sget.has_named_table() && sget.has_base_schema() && !sget.has_projection()) {
+		auto &base_schema = sget.base_schema();
+		auto physical_cols = scan->Columns().size();
+		auto declared_cols = (size_t)base_schema.names_size();
+		if (declared_cols > 0 && declared_cols < physical_cols) {
+			// Match baseSchema column names to physical column positions
+			vector<unique_ptr<ParsedExpression>> proj_exprs;
+			vector<string> proj_aliases;
+			auto &scan_columns = scan->Columns();
+			for (int i = 0; i < base_schema.names_size(); i++) {
+				auto &col_name = base_schema.names(i);
+				bool found = false;
+				for (size_t j = 0; j < scan_columns.size(); j++) {
+					if (StringUtil::CIEquals(scan_columns[j].Name(), col_name)) {
+						proj_exprs.push_back(make_uniq<PositionalReferenceExpression>(j + 1));
+						proj_aliases.push_back(col_name);
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					throw InvalidInputException(
+					    "baseSchema column '%s' not found in physical table (schema mismatch)", col_name);
+				}
+			}
+			scan = make_shared_ptr<ProjectionRelation>(std::move(scan), std::move(proj_exprs), std::move(proj_aliases));
+		}
+	}
+
 	if (sget.has_filter()) {
 		scan = make_shared_ptr<FilterRelation>(std::move(scan), TransformExpr(sget.filter()));
 	}
