@@ -2398,33 +2398,65 @@ substrait::RelRoot *DuckDBToSubstrait::TransformRootOp(LogicalOperator &dop) {
 	LogicalOperator *current_op = &dop;
 	bool weird_scenario = current_op->type == LogicalOperatorType::LOGICAL_PROJECTION &&
 	                      current_op->children[0]->type == LogicalOperatorType::LOGICAL_TOP_N;
-	if (weird_scenario) {
-		// This is a weird scenario where a projection is put on top of a top-k but
-		// the actual aliases are on the projection below the top-k still.
+	// Detect pass-through projection: when ORDER BY (or similar) sits between
+	// the output projection and the alias-defining projection, the top
+	// projection only contains BoundReferenceExpressions whose names are
+	// positional (#0, #1, ...). The actual aliases live in the child projection
+	// below the sort. We distinguish this from a normal column-reference
+	// projection (which also uses BoundRef but carries proper column names)
+	// by checking that ALL expressions have positional names starting with '#'.
+	bool passthrough_projection = false;
+	if (!weird_scenario && current_op->type == LogicalOperatorType::LOGICAL_PROJECTION) {
+		auto &proj = current_op->Cast<LogicalProjection>();
+		if (!proj.expressions.empty()) {
+			passthrough_projection = true;
+			for (auto &expr : proj.expressions) {
+				if (expr->type != ExpressionType::BOUND_REF) {
+					passthrough_projection = false;
+					break;
+				}
+				auto name = expr->GetName();
+				if (name.empty() || name[0] != '#') {
+					passthrough_projection = false;
+					break;
+				}
+			}
+		}
+	}
+	if (weird_scenario || passthrough_projection) {
+		// The actual aliases are on the projection below the top-k/order/etc.
 		current_op = current_op->children[0].get();
 	}
 	// If the root operator is not a projection, we must go down until we find the
 	// first projection to get the aliases
-	while (current_op->type != LogicalOperatorType::LOGICAL_PROJECTION) {
+	bool found_projection = current_op->type == LogicalOperatorType::LOGICAL_PROJECTION;
+	while (!found_projection) {
 		if (IsSetOperation(*current_op)) {
 			// Take the projection from the first child of the set operation
 			D_ASSERT(current_op->children.size() == 2);
 			current_op = current_op->children[1].get();
-			continue;
+		} else if (current_op->children.size() != 1) {
+			break;
+		} else {
+			current_op = current_op->children[0].get();
 		}
-		if (current_op->children.size() != 1) {
-			if (current_op->type == LogicalOperatorType::LOGICAL_CREATE_TABLE) {
-				break;
-			}
-			throw InternalException("Root node has more than 1, or 0 children (%d) up to "
-			                        "reaching a projection node. Type %d",
-			                        current_op->children.size(), current_op->type);
-		}
-		current_op = current_op->children[0].get();
+		found_projection = current_op->type == LogicalOperatorType::LOGICAL_PROJECTION;
 	}
 	root_rel->set_allocated_input(TransformOp(dop));
-	auto &dproj = current_op->Cast<LogicalProjection>();
-	if (!weird_scenario) {
+	if (found_projection && (weird_scenario || passthrough_projection)) {
+		// The top projection is a pass-through (BoundRefs with #N names).
+		// Get actual aliases from the inner projection using the BoundRef indices.
+		auto &dproj = current_op->Cast<LogicalProjection>();
+		for (auto &expression : dop.expressions) {
+			auto &b_expr = expression->Cast<BoundReferenceExpression>();
+			root_rel->add_names(dproj.expressions[b_expr.index]->GetName());
+			auto depth_names = DepthFirstNames(expression->return_type);
+			for (auto &name : depth_names) {
+				root_rel->add_names(name);
+			}
+		}
+	} else if (found_projection) {
+		auto &dproj = current_op->Cast<LogicalProjection>();
 		for (auto &expression : dproj.expressions) {
 			root_rel->add_names(expression->GetName());
 			auto depth_names = DepthFirstNames(expression->return_type);
@@ -2433,13 +2465,10 @@ substrait::RelRoot *DuckDBToSubstrait::TransformRootOp(LogicalOperator &dop) {
 			}
 		}
 	} else {
-		for (auto &expression : dop.expressions) {
-			auto &b_expr = expression->Cast<BoundReferenceExpression>();
-			root_rel->add_names(dproj.expressions[b_expr.index]->GetName());
-			auto depth_names = DepthFirstNames(expression->return_type);
-			for (auto &name : depth_names) {
-				root_rel->add_names(name);
-			}
+		// No projection found in the plan tree — use the planner's output
+		// column names (set when the optimizer eliminates the projection).
+		for (auto &name : plan_names) {
+			root_rel->add_names(name);
 		}
 	}
 

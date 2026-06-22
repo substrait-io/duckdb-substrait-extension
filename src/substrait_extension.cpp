@@ -34,6 +34,8 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 	//! We will fail the conversion on possible warnings
 	bool strict = false;
 	bool finished = false;
+	//! Output column names from the planner
+	vector<string> plan_names;
 	//! Original options from the connection
 	ClientConfig original_config;
 	set<OptimizerType> original_disabled_optimizers;
@@ -74,6 +76,7 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 			planner.CreatePlan(std::move(parser.statements[0]));
 			D_ASSERT(planner.plan);
 
+			plan_names = planner.names;
 			plan = std::move(planner.plan);
 
 			if (context.config.enable_optimizer) {
@@ -209,7 +212,7 @@ static void ToSubFunctionInternal(ClientContext &context, ToSubstraitFunctionDat
                                   unique_ptr<LogicalOperator> &query_plan, string &serialized) {
 	output.SetCardinality(1);
 	query_plan = data.ExtractPlan(context);
-	auto transformer_d2s = DuckDBToSubstrait(context, *query_plan, data.strict);
+	auto transformer_d2s = DuckDBToSubstrait(context, *query_plan, data.strict, data.plan_names);
 	serialized = transformer_d2s.SerializeToString();
 	output.SetValue(0, 0, Value::BLOB_RAW(serialized));
 }
@@ -218,8 +221,7 @@ static void ToJsonFunctionInternal(ClientContext &context, ToSubstraitFunctionDa
                                    unique_ptr<LogicalOperator> &query_plan, string &serialized) {
 	output.SetCardinality(1);
 	query_plan = data.ExtractPlan(context);
-	auto transformer_d2s = DuckDBToSubstrait(context, *query_plan, data.strict);
-	;
+	auto transformer_d2s = DuckDBToSubstrait(context, *query_plan, data.strict, data.plan_names);
 	serialized = transformer_d2s.SerializeToJson();
 	output.SetValue(0, 0, serialized);
 }
