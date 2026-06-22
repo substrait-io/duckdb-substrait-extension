@@ -1,0 +1,24 @@
+# name: test/sql/test_no_projection_crash.test
+# description: Test that get_substrait does not crash when the plan has no LogicalProjection
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE fin_customer_risk_profile (customer_id INTEGER NOT NULL, risk_rating VARCHAR NOT NULL, aml_risk_level VARCHAR NOT NULL);
+
+# NOT NULL constraints are critical here: they allow the optimizer to
+# push column selection into the scan and eliminate the LogicalProjection
+# node entirely. Previously this caused:
+#   "Root node has more than 1, or 0 children (0) up to reaching a
+#    projection node. Type 30"
+# The fix gracefully handles plans without a projection node.
+
+statement ok
+CALL get_substrait('SELECT customer_id, aml_risk_level FROM fin_customer_risk_profile WHERE risk_rating = ''HIGH''')
+
+statement ok
+CALL get_substrait_json('SELECT customer_id, aml_risk_level FROM fin_customer_risk_profile WHERE risk_rating = ''HIGH''')
