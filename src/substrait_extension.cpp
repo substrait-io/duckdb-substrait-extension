@@ -81,6 +81,7 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 				plan = optimizer.Optimize(std::move(plan));
 			}
 
+			plan->ResolveOperatorTypes();
 			ColumnBindingResolver resolver;
 			ColumnBindingResolver::Verify(*plan);
 			resolver.VisitOperator(*plan);
