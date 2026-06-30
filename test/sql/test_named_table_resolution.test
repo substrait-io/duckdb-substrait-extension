@@ -1,0 +1,22 @@
+# name: test/sql/test_named_table_resolution.test
+# description: Test from_substrait_json resolves multi-component namedTable.names
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE SCHEMA myschema
+
+statement ok
+CREATE TABLE myschema.suppliers (supplier_id BIGINT, supplier_name VARCHAR)
+
+statement ok
+INSERT INTO myschema.suppliers VALUES (1, 'Acme Corp'), (2, 'Widgets Ltd'), (3, 'Gizmo Inc')
+
+# 2-component: ["myschema", "suppliers"]
+query IT
+CALL from_substrait_json('{"relations":[{"root":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["supplier_id","supplier_name"],"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["myschema","suppliers"]}}},"offset":"0","count":"5"}},"names":["supplier_id","supplier_name"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+1	Acme Corp
+2	Widgets Ltd
+3	Gizmo Inc
