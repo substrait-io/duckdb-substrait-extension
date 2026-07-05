@@ -17,6 +17,7 @@
 #include "duckdb/parser/expression/comparison_expression.hpp"
 
 #include "duckdb/main/client_data.hpp"
+#include "google/protobuf/unknown_field_set.h"
 #include "google/protobuf/util/json_util.h"
 #include "substrait/plan.pb.h"
 
@@ -402,9 +403,31 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 		return {LogicalTypeId::UUID};
 	case substrait::Type::KindCase::kIntervalDay:
 		return {LogicalTypeId::INTERVAL};
-	default:
-		throw NotImplementedException("Substrait type not yet supported: %s",
-		                              substrait::Type::GetDescriptor()->FindFieldByNumber(s_type.kind_case())->name());
+	default: {
+		// Handle deprecated Substrait types that are excluded from the generated
+		// C++ protobuf code (timestamp=14, timestamp_tz=29, time=17).
+		// These appear as unknown fields with kind_case() == KIND_NOT_SET.
+		if (s_type.kind_case() == substrait::Type::KIND_NOT_SET) {
+			auto &unknown_fields = s_type.GetReflection()->GetUnknownFields(s_type);
+			for (int i = 0; i < unknown_fields.field_count(); i++) {
+				int field_num = unknown_fields.field(i).number();
+				switch (field_num) {
+				case 14: // deprecated Type.Timestamp (replaced by PrecisionTimestamp)
+					return {LogicalTypeId::TIMESTAMP};
+				case 17: // deprecated Type.Time (replaced by PrecisionTime)
+					return {LogicalTypeId::TIME};
+				case 29: // deprecated Type.TimestampTZ (replaced by PrecisionTimestampTZ)
+					return {LogicalTypeId::TIMESTAMP_TZ};
+				default:
+					throw NotImplementedException(
+					    "Substrait type not yet supported: deprecated/unknown field %d", field_num);
+				}
+			}
+		}
+		auto field_desc = substrait::Type::GetDescriptor()->FindFieldByNumber(s_type.kind_case());
+		string type_name = field_desc ? field_desc->name() : ("unknown (field " + to_string(s_type.kind_case()) + ")");
+		throw NotImplementedException("Substrait type not yet supported: %s", type_name);
+	}
 	}
 }
 
