@@ -1,0 +1,68 @@
+# name: test/sql/test_schema_mismatch_crash.test
+# description: Test that schema mismatch in project emit mapping raises an error instead of crashing (issue #190)
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE orders (order_id INTEGER, customer_id INTEGER, order_date VARCHAR, total DOUBLE);
+
+statement ok
+INSERT INTO orders VALUES (1, 100, '2024-01-01', 99.99), (2, 101, '2024-01-02', 149.50);
+
+# Plan declares 10 columns in baseSchema but the actual table only has 4.
+# The emit mapping [10] means: output the item at index 10, which should be
+# expression index 10 - 10 = 0 (relative to 10 declared input columns).
+# At runtime, num_input_columns = 4 (actual table), so the code computes
+# expression index 10 - 4 = 6, but only 1 expression exists -> out of bounds.
+# Before the fix this caused a segfault; after the fix it raises an error.
+statement error
+CALL from_substrait_json('{
+  "relations": [{
+    "root": {
+      "input": {
+        "project": {
+          "common": {
+            "emit": {
+              "outputMapping": [10]
+            }
+          },
+          "input": {
+            "read": {
+              "common": {"direct": {}},
+              "baseSchema": {
+                "names": ["order_id", "customer_id", "order_date", "total", "col5", "col6", "col7", "col8", "col9", "col10"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"fp64": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+                    {"string": {"nullability": "NULLABILITY_NULLABLE"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["orders"]}
+            }
+          },
+          "expressions": [{
+            "selection": {
+              "directReference": {"structField": {"field": 3}},
+              "rootReference": {}
+            }
+          }]
+        }
+      },
+      "names": ["total"]
+    }
+  }],
+  "version": {"minorNumber": 85}
+}')
+----
+expression index

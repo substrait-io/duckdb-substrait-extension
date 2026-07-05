@@ -692,7 +692,14 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 			if (mapping[i] < num_input_columns) {
 				expressions[i] = make_uniq<PositionalReferenceExpression>(mapping[i] + 1);
 			} else {
-				expressions[i] = TransformExpr(sop.project().expressions(mapping[i] - num_input_columns), &iterator);
+				auto expr_idx = mapping[i] - num_input_columns;
+				if (expr_idx >= (size_t)sop.project().expressions_size()) {
+					throw InvalidInputException(
+					    "Project emit mapping references expression index %d, but only %d expressions exist "
+					    "(possible schema mismatch: plan declares more columns than actual table)",
+					    expr_idx, sop.project().expressions_size());
+				}
+				expressions[i] = TransformExpr(sop.project().expressions(expr_idx), &iterator);
 			}
 		}
 	}
@@ -797,15 +804,33 @@ unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &sch
 	return result;
 }
 
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &sop) {
 	auto &sget = sop.read();
 	shared_ptr<Relation> scan;
 	auto context_wrapper = make_shared_ptr<RelationContextWrapper>(context);
 	if (sget.has_named_table()) {
-		auto table_name = sget.named_table().names(0);
+		auto &named_table = sget.named_table();
+		auto names_size = named_table.names_size();
+		string table_name;
+		string schema_name = DEFAULT_SCHEMA;
+		string catalog_name = "";
+		if (names_size == 3) {
+			catalog_name = named_table.names(0);
+			schema_name = named_table.names(1);
+			table_name = named_table.names(2);
+		} else if (names_size == 2) {
+			schema_name = named_table.names(0);
+			table_name = named_table.names(1);
+		} else {
+			table_name = named_table.names(0);
+		}
+		// Resolve the effective schema for lookup: for 3-component names (catalog.schema.table),
+		// use catalog as the schema since DuckDB resolves attached DB names as schemas.
+		string effective_schema = (!catalog_name.empty()) ? catalog_name : schema_name;
 		// If we can't find a table with that name, let's try a view.
 		try {
-			auto table_info = TableInfo(*context, DEFAULT_SCHEMA, table_name);
+			auto table_info = TableInfo(*context, effective_schema, table_name);
 			if (!table_info) {
 				throw CatalogException("Table '%s' does not exist!", table_name);
 			}
@@ -817,10 +842,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			}
 		} catch (...) {
 			if (acquire_lock) {
-				scan = make_shared_ptr<ViewRelation>(context, DEFAULT_SCHEMA, table_name);
+				scan = make_shared_ptr<ViewRelation>(context, effective_schema, table_name);
 
 			} else {
-				scan = make_shared_ptr<ViewRelation>(context_wrapper, DEFAULT_SCHEMA, table_name);
+				scan = make_shared_ptr<ViewRelation>(context_wrapper, effective_schema, table_name);
 			}
 		}
 	} else if (sget.has_local_files()) {
