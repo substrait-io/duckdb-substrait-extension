@@ -1,0 +1,27 @@
+# name: test/sql/test_groupby_having_order.test
+# description: Test get_substrait with JOIN + GROUP BY + HAVING + ORDER BY on aggregate alias
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE customers (customer_id INTEGER NOT NULL, first_name VARCHAR NOT NULL, last_name VARCHAR NOT NULL, email VARCHAR NOT NULL);
+
+statement ok
+CREATE TABLE orders (order_id INTEGER NOT NULL, customer_id INTEGER NOT NULL);
+
+statement ok
+INSERT INTO customers VALUES (1, 'Alice', 'Smith', 'alice@example.com'), (2, 'Bob', 'Jones', 'bob@example.com');
+
+statement ok
+INSERT INTO orders VALUES (1, 1), (2, 1), (3, 1), (4, 1), (5, 2);
+
+# JOIN + GROUP BY + HAVING + ORDER BY on aggregate alias triggers:
+#   "Failed to bind column reference "customer_id" [0.0]:
+#    inequal num bindings/types (6 != 5)"
+
+statement ok
+CALL get_substrait('SELECT c.customer_id, c.first_name, c.last_name, c.email, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.first_name, c.last_name, c.email HAVING COUNT(o.order_id) > 3 ORDER BY order_count DESC')
+
+statement ok
+CALL get_substrait_json('SELECT c.customer_id, c.first_name, c.last_name, c.email, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.first_name, c.last_name, c.email HAVING COUNT(o.order_id) > 3 ORDER BY order_count DESC')
