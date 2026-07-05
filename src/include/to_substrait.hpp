@@ -24,8 +24,9 @@
 namespace duckdb {
 class DuckDBToSubstrait {
 public:
-	explicit DuckDBToSubstrait(ClientContext &context, LogicalOperator &dop, bool strict_p)
-	    : context(context), strict(strict_p) {
+	explicit DuckDBToSubstrait(ClientContext &context, LogicalOperator &dop, bool strict_p,
+	                           vector<string> plan_names_p = {})
+	    : context(context), strict(strict_p), plan_names(std::move(plan_names_p)) {
 		TransformPlan(dop);
 	};
 
@@ -203,6 +204,8 @@ private:
 	//! If we are generating a query plan on strict mode we will error if
 	//! things don't go perfectly shiny
 	bool strict;
+	//! Output column names from the planner (fallback when no projection in plan)
+	vector<string> plan_names;
 	string errors;
 };
 } // namespace duckdb
