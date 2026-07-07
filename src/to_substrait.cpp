@@ -81,9 +81,8 @@ string DuckDBToSubstrait::SerializeToJson() const {
 
 void DuckDBToSubstrait::AllocateFunctionArgument(substrait::Expression_ScalarFunction *scalar_fun,
                                                  substrait::Expression *value) {
-	auto function_argument = new substrait::FunctionArgument();
+	auto function_argument = scalar_fun->mutable_arguments()->Add();
 	function_argument->set_allocated_value(value);
-	scalar_fun->mutable_arguments()->AddAllocated(function_argument);
 }
 
 string GetRawValue(hugeint_t value) {
@@ -103,7 +102,7 @@ string GetRawValue(hugeint_t value) {
 
 void DuckDBToSubstrait::TransformDecimal(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
-	auto *allocated_decimal = new substrait::Expression_Literal_Decimal();
+	auto *allocated_decimal = sval.mutable_decimal();
 	uint8_t scale, width;
 	hugeint_t hugeint_value {};
 	Value mock_value;
@@ -145,10 +144,7 @@ void DuckDBToSubstrait::TransformDecimal(const Value &dval, substrait::Expressio
 
 	allocated_decimal->set_scale(scale);
 	allocated_decimal->set_precision(width);
-	auto *decimal_value = new string();
-	*decimal_value = raw_value;
-	allocated_decimal->set_allocated_value(decimal_value);
-	sval.set_allocated_decimal(allocated_decimal);
+	allocated_decimal->set_value(raw_value);
 }
 
 void DuckDBToSubstrait::TransformInteger(const Value &dval, substrait::Expression &sexpr) {
@@ -226,16 +222,12 @@ void DuckDBToSubstrait::TransformBoolean(const Value &dval, substrait::Expressio
 
 void DuckDBToSubstrait::TransformHugeInt(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
-	auto *allocated_decimal = new substrait::Expression_Literal_Decimal();
+	auto *allocated_decimal = sval.mutable_decimal();
 	auto hugeint = dval.GetValueUnsafe<hugeint_t>();
 	auto raw_value = GetRawValue(hugeint);
 	allocated_decimal->set_scale(0);
 	allocated_decimal->set_precision(38);
-
-	auto *decimal_value = new string();
-	*decimal_value = raw_value;
-	allocated_decimal->set_allocated_value(decimal_value);
-	sval.set_allocated_decimal(allocated_decimal);
+	allocated_decimal->set_value(raw_value);
 }
 
 void DuckDBToSubstrait::TransformEnum(const Value &dval, substrait::Expression &sexpr) {
@@ -491,23 +483,15 @@ void DuckDBToSubstrait::TransformCaseExpression(Expression &dexpr, substrait::Ex
 	for (auto &dcheck : dcase.case_checks) {
 		auto sif = scase->mutable_ifs()->Add();
 		TransformExpr(*dcheck.when_expr, *sif->mutable_if_());
-		auto then_expr = new substrait::Expression();
-		TransformExpr(*dcheck.then_expr, *then_expr);
 		// Push a Cast
-		auto then = sif->mutable_then();
-		auto scast = new substrait::Expression_Cast();
+		auto scast = sif->mutable_then()->mutable_cast();
+		TransformExpr(*dcheck.then_expr, *scast->mutable_input());
 		*scast->mutable_type() = DuckToSubstraitType(dcase.return_type);
-		scast->set_allocated_input(then_expr);
-		then->set_allocated_cast(scast);
 	}
-	auto else_expr = new substrait::Expression();
-	TransformExpr(*dcase.else_expr, *else_expr);
 	// Push a Cast
-	auto mutable_else = scase->mutable_else_();
-	auto scast = new substrait::Expression_Cast();
-	*scast->mutable_type() = DuckToSubstraitType(dcase.return_type);
-	scast->set_allocated_input(else_expr);
-	mutable_else->set_allocated_cast(scast);
+	auto else_cast = scase->mutable_else_()->mutable_cast();
+	TransformExpr(*dcase.else_expr, *else_cast->mutable_input());
+	*else_cast->mutable_type() = DuckToSubstraitType(dcase.return_type);
 }
 
 void DuckDBToSubstrait::TransformInExpression(Expression &dexpr, substrait::Expression &sexpr) {
@@ -630,10 +614,9 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 		if (it == extension_urn_map.end()) {
 			// We have to add this extension
 			extension_urn_map[extensionURN] = last_urn_id;
-			auto urn = new substrait::extensions::SimpleExtensionURN();
+			auto urn = substrait_extensions->Add();
 			urn->set_urn(extensionURN);
 			urn->set_extension_urn_anchor(last_urn_id);
-			substrait_extensions->AddAllocated(urn);
 			last_urn_id++;
 		}
 	}
@@ -670,12 +653,10 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 }
 
 void DuckDBToSubstrait::CreateFieldRef(substrait::Expression *expr, uint64_t col_idx) {
-	auto selection = new substrait::Expression_FieldReference();
+	auto selection = expr->mutable_selection();
 	selection->mutable_direct_reference()->mutable_struct_field()->set_field(static_cast<int32_t>(col_idx));
-	auto root_reference = new substrait::Expression_FieldReference_RootReference();
-	selection->set_allocated_root_reference(root_reference);
+	selection->mutable_root_reference();
 	D_ASSERT(selection->root_type_case() == substrait::Expression_FieldReference::RootTypeCase::kRootReference);
-	expr->set_allocated_selection(selection);
 	D_ASSERT(expr->has_selection());
 }
 
@@ -699,7 +680,7 @@ void DuckDBToSubstrait::DepthFirstNamesRecurse(vector<string> &names, const Logi
 substrait::Expression *DuckDBToSubstrait::TransformIsNotNullFilter(uint64_t col_idx, const LogicalType &column_type,
                                                                    const TableFilter &dfilter,
                                                                    const LogicalType &return_type) {
-	auto s_expr = new substrait::Expression();
+	auto s_expr = make_uniq<substrait::Expression>();
 	auto scalar_fun = s_expr->mutable_scalar_function();
 	vector<substrait::Type> args_types;
 
@@ -709,13 +690,13 @@ substrait::Expression *DuckDBToSubstrait::TransformIsNotNullFilter(uint64_t col_
 	auto s_arg = scalar_fun->add_arguments();
 	CreateFieldRef(s_arg->mutable_value(), col_idx);
 	*scalar_fun->mutable_output_type() = DuckToSubstraitType(return_type);
-	return s_expr;
+	return s_expr.release();
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformIsNullFilter(uint64_t col_idx, const LogicalType &column_type,
                                                                 const TableFilter &dfilter,
                                                                 const LogicalType &return_type) {
-	auto s_expr = new substrait::Expression();
+	auto s_expr = make_uniq<substrait::Expression>();
 	auto scalar_fun = s_expr->mutable_scalar_function();
 	vector<substrait::Type> args_types;
 
@@ -725,22 +706,14 @@ substrait::Expression *DuckDBToSubstrait::TransformIsNullFilter(uint64_t col_idx
 	auto s_arg = scalar_fun->add_arguments();
 	CreateFieldRef(s_arg->mutable_value(), col_idx);
 	*scalar_fun->mutable_output_type() = DuckToSubstraitType(return_type);
-	return s_expr;
+	return s_expr.release();
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformStructExtractFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
 	auto &struct_filter = dfilter.Cast<StructFilter>();
 
-	// Create a field reference to the child_idx within the struct
-	auto s_field_ref = new substrait::Expression();
-	auto selection = new substrait::Expression_FieldReference();
-	selection->mutable_direct_reference()->mutable_struct_field()->set_field(static_cast<int32_t>(struct_filter.child_idx));
-	auto root_reference = new substrait::Expression_FieldReference_RootReference();
-	selection->set_allocated_root_reference(root_reference);
-	s_field_ref->set_allocated_selection(selection);
-
-	// Now, apply the child filter to this new field reference
-	// The col_idx for the recursive call should be 0 because s_field_ref is now the "root" of the expression for the child filter
+	// Apply the child filter to the struct's child field. The col_idx for the
+	// recursive call is 0 because the child type becomes the "root" for the child filter.
 	return TransformFilter(0, StructType::GetChildType(column_type, struct_filter.child_idx),
 	                       *struct_filter.child_filter, return_type);
 }
@@ -765,7 +738,7 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
                                                                             const LogicalType &column_type,
                                                                             const TableFilter &dfilter,
                                                                             const LogicalType &return_type) {
-	auto s_expr = new substrait::Expression();
+	auto s_expr = make_uniq<substrait::Expression>();
 	auto s_scalar = s_expr->mutable_scalar_function();
 	auto &constant_filter = dfilter.Cast<ConstantFilter>();
 	*s_scalar->mutable_output_type() = DuckToSubstraitType(LogicalTypeId::BOOLEAN);
@@ -807,12 +780,12 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 		throw InternalException(ExpressionTypeToString(constant_filter.comparison_type));
 	}
 	s_scalar->set_function_reference(function_id);
-	return s_expr;
+	return s_expr.release();
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformInFilter(uint64_t col_idx, const LogicalType &column_type,
                                                             const TableFilter &dfilter, const LogicalType &return_type) {
-	auto s_expr = new substrait::Expression();
+	auto s_expr = make_uniq<substrait::Expression>();
 	auto &in_filter = dfilter.Cast<InFilter>();
 	auto singular_or_list = s_expr->mutable_singular_or_list();
 
@@ -824,7 +797,7 @@ substrait::Expression *DuckDBToSubstrait::TransformInFilter(uint64_t col_idx, co
 		TransformConstant(constant_value, *singular_or_list->add_options());
 	}
 
-	return s_expr;
+	return s_expr.release();
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
@@ -837,7 +810,7 @@ substrait::Expression *DuckDBToSubstrait::TransformDynamicFilter(uint64_t col_id
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
-	auto s_expr = new substrait::Expression();
+	auto s_expr = make_uniq<substrait::Expression>();
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
 
 	// Create a proper column reference for the ToExpression method
@@ -846,7 +819,7 @@ substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col
 
 	// Transform the properly bound expression
 	TransformExpr(*bound_expr, *s_expr);
-	return s_expr;
+	return s_expr.release();
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, const LogicalType &column_type,
@@ -879,7 +852,7 @@ substrait::Expression *DuckDBToSubstrait::TransformFilter(uint64_t col_idx, cons
 }
 
 substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition &dcond, uint64_t left_ncol) {
-	auto expr = new substrait::Expression();
+	auto expr = make_uniq<substrait::Expression>();
 	string join_comparision;
 	switch (dcond.comparison) {
 	case ExpressionType::COMPARE_EQUAL:
@@ -923,7 +896,7 @@ substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition 
 	*scalar_fun->mutable_output_type() = DuckToSubstraitType(bool_type);
 	scalar_fun->set_function_reference(RegisterFunction(join_comparision, args_types));
 
-	return expr;
+	return expr.release();
 }
 
 void DuckDBToSubstrait::TransformOrder(const BoundOrderByNode &dordf, substrait::SortField &sordf) {
@@ -975,9 +948,9 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 		filter->mutable_filter()->set_allocated_input(res.release());
 		filter->mutable_filter()->set_allocated_condition(
 		    CreateConjunction(dfilter.expressions, [&](const unique_ptr<Expression> &in) {
-			    auto expr = new substrait::Expression();
+			    auto expr = make_uniq<substrait::Expression>();
 			    TransformExpr(*in, *expr);
-			    return expr;
+			    return expr.release();
 		    }));
 		res = std::move(filter);
 	}
@@ -1002,12 +975,12 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 }
 
 substrait::RelCommon *DuckDBToSubstrait::CreateOutputMapping(vector<int32_t> vector) {
-	auto rel_common = new substrait::RelCommon();
+	auto rel_common = make_uniq<substrait::RelCommon>();
 	auto output_mapping = rel_common->mutable_emit()->mutable_output_mapping();
 	for (auto &col_idx : vector) {
 		output_mapping->Add(col_idx);
 	}
-	return rel_common;
+	return rel_common.release();
 }
 
 bool DuckDBToSubstrait::IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count,
@@ -1190,7 +1163,7 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 		sjoin->set_allocated_expression(CreateConjunction(
 		    djoin.conditions, [&](const JoinCondition &in) {
 				// Create expression with swapped left/right
-				auto expr = new substrait::Expression();
+				auto expr = make_uniq<substrait::Expression>();
 				string join_comparision;
 				switch (in.comparison) {
 				case ExpressionType::COMPARE_EQUAL:
@@ -1241,7 +1214,7 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 				*scalar_fun->mutable_output_type() = DuckToSubstraitType(bool_type);
 				scalar_fun->set_function_reference(RegisterFunction(join_comparision, args_types));
 				
-				return expr;
+				return expr.release();
 			}));
 	} else {
 		sjoin->set_allocated_expression(CreateConjunction(
@@ -1714,16 +1687,14 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 	}
 	switch (type.id()) {
 	case LogicalTypeId::BOOLEAN: {
-		auto bool_type = new substrait::Type_Boolean;
+		auto bool_type = s_type.mutable_bool_();
 		bool_type->set_nullability(type_nullability);
-		s_type.set_allocated_bool_(bool_type);
 		return s_type;
 	}
 
 	case LogicalTypeId::TINYINT: {
-		auto integral_type = new substrait::Type_I8;
+		auto integral_type = s_type.mutable_i8();
 		integral_type->set_nullability(type_nullability);
-		s_type.set_allocated_i8(integral_type);
 		return s_type;
 	}
 		// Substrait ppl think unsigned types are not common, so we have to upcast
@@ -1731,119 +1702,103 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 		// for
 	case LogicalTypeId::UTINYINT:
 	case LogicalTypeId::SMALLINT: {
-		auto integral_type = new substrait::Type_I16;
+		auto integral_type = s_type.mutable_i16();
 		integral_type->set_nullability(type_nullability);
-		s_type.set_allocated_i16(integral_type);
 		return s_type;
 	}
 	case LogicalTypeId::USMALLINT:
 	case LogicalTypeId::INTEGER: {
-		auto integral_type = new substrait::Type_I32;
+		auto integral_type = s_type.mutable_i32();
 		integral_type->set_nullability(type_nullability);
-		s_type.set_allocated_i32(integral_type);
 		return s_type;
 	}
 	case LogicalTypeId::UINTEGER:
 	case LogicalTypeId::BIGINT: {
-		auto integral_type = new substrait::Type_I64;
+		auto integral_type = s_type.mutable_i64();
 		integral_type->set_nullability(type_nullability);
-		s_type.set_allocated_i64(integral_type);
 		return s_type;
 	}
 	case LogicalTypeId::UBIGINT:
 	case LogicalTypeId::HUGEINT: {
 		// FIXME: Support for hugeint types?
-		auto s_decimal = new substrait::Type_Decimal();
+		auto s_decimal = s_type.mutable_decimal();
 		s_decimal->set_scale(0);
 		s_decimal->set_precision(38);
 		s_decimal->set_nullability(type_nullability);
-		s_type.set_allocated_decimal(s_decimal);
 		return s_type;
 	}
 	case LogicalTypeId::DATE: {
-		auto date_type = new substrait::Type_Date;
+		auto date_type = s_type.mutable_date();
 		date_type->set_nullability(type_nullability);
-		s_type.set_allocated_date(date_type);
 		return s_type;
 	}
 	case LogicalTypeId::TIME_TZ:
 	case LogicalTypeId::TIME: {
-		auto time_type = new substrait::Type_PrecisionTimestamp;
+		auto time_type = s_type.mutable_precision_timestamp();
 		time_type->set_precision(6); // microseconds
 		time_type->set_nullability(type_nullability);
-		s_type.set_allocated_precision_timestamp(time_type);
 		return s_type;
 	}
 	case LogicalTypeId::TIMESTAMP:
 	case LogicalTypeId::TIMESTAMP_MS:
 	case LogicalTypeId::TIMESTAMP_NS:
 	case LogicalTypeId::TIMESTAMP_SEC: {
-		auto timestamp_type = new substrait::Type_PrecisionTimestamp;
+		auto timestamp_type = s_type.mutable_precision_timestamp();
 		timestamp_type->set_precision(GetTimestampPrecision(type.id()));
 		timestamp_type->set_nullability(type_nullability);
-		s_type.set_allocated_precision_timestamp(timestamp_type);
 		return s_type;
 	}
 	case LogicalTypeId::TIMESTAMP_TZ: {
-		auto timestamp_type = new substrait::Type_PrecisionTimestampTZ;
+		auto timestamp_type = s_type.mutable_precision_timestamp_tz();
 		// Timestamp tz is always 'us'
 		timestamp_type->set_precision(6);
 		timestamp_type->set_nullability(type_nullability);
-		s_type.set_allocated_precision_timestamp_tz(timestamp_type);
 		return s_type;
 	}
 	case LogicalTypeId::INTERVAL: {
-		auto interval_type = new substrait::Type_IntervalDay();
+		auto interval_type = s_type.mutable_interval_day();
 		interval_type->set_nullability(type_nullability);
-		s_type.set_allocated_interval_day(interval_type);
 		return s_type;
 	}
 	case LogicalTypeId::FLOAT: {
-		auto float_type = new substrait::Type_FP32;
+		auto float_type = s_type.mutable_fp32();
 		float_type->set_nullability(type_nullability);
-		s_type.set_allocated_fp32(float_type);
 		return s_type;
 	}
 	case LogicalTypeId::DOUBLE: {
-		auto double_type = new substrait::Type_FP64;
+		auto double_type = s_type.mutable_fp64();
 		double_type->set_nullability(type_nullability);
-		s_type.set_allocated_fp64(double_type);
 		return s_type;
 	}
 	case LogicalTypeId::DECIMAL: {
-		auto decimal_type = new substrait::Type_Decimal;
+		auto decimal_type = s_type.mutable_decimal();
 		decimal_type->set_nullability(type_nullability);
 		decimal_type->set_precision(DecimalType::GetWidth(type));
 		decimal_type->set_scale(DecimalType::GetScale(type));
-		s_type.set_allocated_decimal(decimal_type);
 		return s_type;
 	}
 	case LogicalTypeId::VARCHAR: {
-		auto string_type = new substrait::Type_String;
+		auto string_type = s_type.mutable_string();
 		string_type->set_nullability(type_nullability);
-		s_type.set_allocated_string(string_type);
 		return s_type;
 	}
 	case LogicalTypeId::BLOB: {
-		auto binary_type = new substrait::Type_Binary;
+		auto binary_type = s_type.mutable_binary();
 		binary_type->set_nullability(type_nullability);
-		s_type.set_allocated_binary(binary_type);
 		return s_type;
 	}
 	case LogicalTypeId::UUID: {
-		auto uuid_type = new substrait::Type_UUID;
+		auto uuid_type = s_type.mutable_uuid();
 		uuid_type->set_nullability(type_nullability);
-		s_type.set_allocated_uuid(uuid_type);
 		return s_type;
 	}
 	case LogicalTypeId::ENUM: {
-		auto enum_type = new substrait::Type_UserDefined;
+		auto enum_type = s_type.mutable_user_defined();
 		enum_type->set_nullability(type_nullability);
-		s_type.set_allocated_user_defined(enum_type);
 		return s_type;
 	}
 	case LogicalTypeId::STRUCT: {
-		auto struct_type = new substrait::Type_Struct;
+		auto struct_type = s_type.mutable_struct_();
 		struct_type->set_nullability(type_nullability);
 		// ok lets get the children of our struct
 		auto children = StructType::GetChildTypes(type);
@@ -1851,38 +1806,28 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 			auto new_type = struct_type->add_types();
 			*new_type = DuckToSubstraitType(child.second, column_statistics, not_null);
 		}
-		s_type.set_allocated_struct_(struct_type);
 		return s_type;
 	}
 	case LogicalTypeId::MAP: {
-		auto map_type = new substrait::Type_Map;
+		auto map_type = s_type.mutable_map();
 		map_type->set_nullability(type_nullability);
 
 		auto key_type = MapType::KeyType(type);
 		auto value_type = MapType::ValueType(type);
 
-		auto key = new substrait::Type();
-		*key = DuckToSubstraitType(key_type, column_statistics, not_null);
-		map_type->set_allocated_key(key);
+		*map_type->mutable_key() = DuckToSubstraitType(key_type, column_statistics, not_null);
+		*map_type->mutable_value() = DuckToSubstraitType(value_type, column_statistics, not_null);
 
-		auto value = new substrait::Type();
-		*value = DuckToSubstraitType(value_type, column_statistics, not_null);
-		map_type->set_allocated_value(value);
-
-		s_type.set_allocated_map(map_type);
 		return s_type;
 	}
 	case LogicalTypeId::LIST: {
-		auto list_type = new substrait::Type_List;
+		auto list_type = s_type.mutable_list();
 		list_type->set_nullability(type_nullability);
 
 		auto child_type = ListType::GetChildType(type);
 
-		auto element_type = new substrait::Type();
-		*element_type = DuckToSubstraitType(child_type, column_statistics, not_null);
-		list_type->set_allocated_type(element_type);
+		*list_type->mutable_type() = DuckToSubstraitType(child_type, column_statistics, not_null);
 
-		s_type.set_allocated_list(list_type);
 		return s_type;
 	}
 	default:
@@ -1944,9 +1889,7 @@ void DuckDBToSubstrait::TransformParquetScanToSubstrait(LogicalGet &dget, substr
 	for (auto &file_path : files_path) {
 		auto parquet_item = sget->mutable_local_files()->add_items();
 		// FIXME: should this be uri or file ogw
-		auto *path = new string();
-		*path = file_path;
-		parquet_item->set_allocated_uri_file(path);
+		parquet_item->set_uri_file(file_path);
 		parquet_item->mutable_parquet();
 	}
 
@@ -2082,20 +2025,19 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 			output_positions.push_back(read_position(column->GetPrimaryIndex()));
 		}
 
-		auto projection = new substrait::Expression_MaskExpression();
+		auto projection = make_uniq<substrait::Expression_MaskExpression>();
 		projection->set_maintain_singular_struct(true);
-		auto select = new substrait::Expression_MaskExpression_StructSelect();
+		auto select = projection->mutable_select();
 		for (auto col_idx : read_columns) {
 			auto struct_item = select->add_struct_items();
 			struct_item->set_field(static_cast<int32_t>(col_idx));
 		}
-		projection->set_allocated_select(select);
-		sget->set_allocated_projection(projection);
+		sget->set_allocated_projection(projection.release());
 	} else if (!output_columns.empty()) {
-		auto projection = new substrait::Expression_MaskExpression();
+		auto projection = make_uniq<substrait::Expression_MaskExpression>();
 		// fixme: whatever this means
 		projection->set_maintain_singular_struct(true);
-		auto select = new substrait::Expression_MaskExpression_StructSelect();
+		auto select = projection->mutable_select();
 		for (auto column : output_columns) {
 			// The two branches below are intentionally asymmetric for row id columns.
 			// When the scan has a pushed-down projection (projection_ids) -- e.g. under
@@ -2118,11 +2060,7 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 			}
 		}
 		if (select->struct_items_size() != 0) {
-			projection->set_allocated_select(select);
-			sget->set_allocated_projection(projection);
-		} else {
-			delete select;
-			delete projection;
+			sget->set_allocated_projection(projection.release());
 		}
 	}
 
@@ -2562,8 +2500,6 @@ void DuckDBToSubstrait::TransformPlan(LogicalOperator &dop) {
 	version->set_major_number(0);
 	version->set_minor_number(78);
 	version->set_patch_number(0);
-	auto *producer_name = new string();
-	*producer_name = "DuckDB";
-	version->set_allocated_producer(producer_name);
+	version->set_producer("DuckDB");
 }
 } // namespace duckdb
