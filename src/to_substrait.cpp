@@ -2145,20 +2145,12 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 	}
 
 	if (has_pushdown_extract) {
-		// Wrap the read in a projection performing the struct extraction the scan
-		// would have done, emitting only the extracted values.
-		auto proj_rel = new substrait::Rel();
-		auto sproj = proj_rel->mutable_project();
-		sproj->set_allocated_input(get_rel);
-		vector<int32_t> output_mapping;
-		auto read_column_count = static_cast<int32_t>(read_columns.size());
-		for (idx_t i = 0; i < output_columns.size(); i++) {
-			auto column = output_columns[i];
-			auto expr = sproj->add_expressions();
-			auto selection = new substrait::Expression_FieldReference();
-			selection->set_allocated_root_reference(new substrait::Expression_FieldReference_RootReference());
-			auto segment = selection->mutable_direct_reference()->mutable_struct_field();
-			segment->set_field(static_cast<int32_t>(output_positions[i]));
+		// Resolve the struct field path for each output column first, so any
+		// unsupported case throws before we allocate protobuf objects (which
+		// would otherwise leak on the exception path).
+		vector<vector<int32_t>> extract_paths;
+		for (auto column : output_columns) {
+			vector<int32_t> path;
 			auto current = column;
 			while (current->HasChildren()) {
 				D_ASSERT(current->ChildIndexCount() == 1);
@@ -2167,11 +2159,28 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 					throw NotImplementedException("Field-name based struct extract pushdown is not supported in "
 					                              "the to_substrait function");
 				}
-				segment = segment->mutable_child()->mutable_struct_field();
-				segment->set_field(static_cast<int32_t>(child.GetPrimaryIndex()));
+				path.push_back(static_cast<int32_t>(child.GetPrimaryIndex()));
 				current = &child;
 			}
-			expr->set_allocated_selection(selection);
+			extract_paths.push_back(std::move(path));
+		}
+
+		// Wrap the read in a projection performing the struct extraction the scan
+		// would have done, emitting only the extracted values.
+		auto proj_rel = new substrait::Rel();
+		auto sproj = proj_rel->mutable_project();
+		sproj->set_allocated_input(get_rel);
+		vector<int32_t> output_mapping;
+		auto read_column_count = static_cast<int32_t>(read_columns.size());
+		for (idx_t i = 0; i < output_columns.size(); i++) {
+			auto selection = sproj->add_expressions()->mutable_selection();
+			selection->mutable_root_reference();
+			auto segment = selection->mutable_direct_reference()->mutable_struct_field();
+			segment->set_field(static_cast<int32_t>(output_positions[i]));
+			for (auto field : extract_paths[i]) {
+				segment = segment->mutable_child()->mutable_struct_field();
+				segment->set_field(field);
+			}
 			output_mapping.push_back(read_column_count + static_cast<int32_t>(i));
 		}
 		sproj->set_allocated_common(CreateOutputMapping(output_mapping));
@@ -2301,16 +2310,17 @@ substrait::Rel *DuckDBToSubstrait::TransformExcept(LogicalOperator &dop) {
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformIntersect(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
-	auto set_op = rel->mutable_set();
-	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
 	auto &set_operation = dop.Cast<LogicalSetOperation>();
 	if (set_operation.children.size() != 2) {
 		// DuckDB's multi-child INTERSECT semantics (present in every child) do not
-		// match INTERSECTION_PRIMARY (present in any secondary input)
+		// match INTERSECTION_PRIMARY (present in any secondary input). Check before
+		// allocating so we don't leak on the exception path.
 		throw NotImplementedException("INTERSECT with more than two children is not yet supported in the "
 		                              "to_substrait function");
 	}
+	auto rel = new substrait::Rel();
+	auto set_op = rel->mutable_set();
+	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
 	auto inputs = set_op->mutable_inputs();
 	inputs->AddAllocated(TransformOp(*set_operation.children[0]));
 	inputs->AddAllocated(TransformOp(*set_operation.children[1]));
