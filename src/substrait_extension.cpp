@@ -60,6 +60,9 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		disabled_optimizers.insert(OptimizerType::IN_CLAUSE);
 		disabled_optimizers.insert(OptimizerType::COMPRESSED_MATERIALIZATION);
 		disabled_optimizers.insert(OptimizerType::MATERIALIZED_CTE);
+		// The CommonSubplan optimizer deduplicates repeated subplans into
+		// materialized CTEs, which cannot be expressed in Substrait.
+		disabled_optimizers.insert(OptimizerType::COMMON_SUBPLAN);
 		// If error(varchar) gets implemented in substrait this can be removed
 		DBConfig::GetConfig(context).SetOption(ScalarSubqueryErrorOnMultipleRowsSetting::Name, false);
 		DBConfig::GetConfig(context).options.disabled_optimizers = disabled_optimizers;

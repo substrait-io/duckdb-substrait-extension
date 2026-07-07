@@ -203,7 +203,20 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const sub
 	if (!sexpr.selection().has_direct_reference() || !sexpr.selection().direct_reference().has_struct_field()) {
 		throw SyntaxException("Can only have direct struct references in selections");
 	}
-	return make_uniq<PositionalReferenceExpression>(sexpr.selection().direct_reference().struct_field().field() + 1);
+	auto *struct_field = &sexpr.selection().direct_reference().struct_field();
+	unique_ptr<ParsedExpression> expr = make_uniq<PositionalReferenceExpression>(struct_field->field() + 1);
+	// Nested reference segments select fields within a struct column
+	while (struct_field->has_child()) {
+		if (!struct_field->child().has_struct_field()) {
+			throw SyntaxException("Only struct field children are supported in field references");
+		}
+		struct_field = &struct_field->child().struct_field();
+		vector<unique_ptr<ParsedExpression>> children;
+		children.push_back(std::move(expr));
+		children.push_back(make_uniq<ConstantExpression>(Value::BIGINT(struct_field->field() + 1)));
+		expr = make_uniq<FunctionExpression>("struct_extract_at", std::move(children));
+	}
+	return expr;
 }
 
 void SubstraitToDuckDB::VerifyCorrectExtractSubfield(const string &subfield) {
@@ -289,6 +302,10 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 	} else if (function_name == "is_not_distinct_from") {
 		D_ASSERT(children.size() == 2);
 		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_NOT_DISTINCT_FROM, std::move(children[0]),
+		                                       std::move(children[1]));
+	} else if (function_name == "is_distinct_from") {
+		D_ASSERT(children.size() == 2);
+		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_DISTINCT_FROM, std::move(children[0]),
 		                                       std::move(children[1]));
 	} else if (function_name == "between") {
 		D_ASSERT(children.size() == 3);
@@ -1244,13 +1261,18 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformSetOp(const substrait::Rel &sop
 
 	auto &inputs = set.inputs();
 	auto input_count = set.inputs_size();
-	if (input_count > 2) {
+	if (input_count < 2) {
 		throw NotImplementedException("The amount of inputs (%d) is not supported for this set operation", input_count);
 	}
-	auto lhs = TransformOp(inputs[0]);
-	auto rhs = TransformOp(inputs[1], names);
-
-	return make_shared_ptr<SetOpRelation>(std::move(lhs), std::move(rhs), type);
+	// Fold multiple inputs left-associatively: for UNION_ALL this matches the
+	// n-ary semantics exactly, for MINUS_PRIMARY it matches subtracting every
+	// secondary input from the primary input
+	auto result = TransformOp(inputs[0]);
+	for (int input_idx = 1; input_idx < input_count; input_idx++) {
+		auto rhs = TransformOp(inputs[input_idx], input_idx + 1 == input_count ? names : nullptr);
+		result = make_shared_ptr<SetOpRelation>(std::move(result), std::move(rhs), type);
+	}
+	return result;
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &sop) {

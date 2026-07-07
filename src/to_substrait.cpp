@@ -404,6 +404,9 @@ void DuckDBToSubstrait::TransformComparisonExpression(Expression &dexpr, substra
 	case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
 		fname = "is_not_distinct_from";
 		break;
+	case ExpressionType::COMPARE_DISTINCT_FROM:
+		fname = "is_distinct_from";
+		break;
 	default:
 		throw InternalException(ExpressionTypeToString(dexpr.type));
 	}
@@ -582,6 +585,7 @@ void DuckDBToSubstrait::TransformExpr(Expression &dexpr, substrait::Expression &
 	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
 	case ExpressionType::COMPARE_NOTEQUAL:
 	case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
+	case ExpressionType::COMPARE_DISTINCT_FROM:
 		TransformComparisonExpression(dexpr, sexpr);
 		break;
 	case ExpressionType::COMPARE_BETWEEN:
@@ -796,6 +800,9 @@ substrait::Expression *DuckDBToSubstrait::TransformConstantComparisonFilter(uint
 	case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
 		function_id = RegisterFunction("is_not_distinct_from", args_types);
 		break;
+	case ExpressionType::COMPARE_DISTINCT_FROM:
+		function_id = RegisterFunction("is_distinct_from", args_types);
+		break;
 	default:
 		throw InternalException(ExpressionTypeToString(constant_filter.comparison_type));
 	}
@@ -886,6 +893,9 @@ substrait::Expression *DuckDBToSubstrait::TransformJoinCond(const JoinCondition 
 		break;
 	case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
 		join_comparision = "is_not_distinct_from";
+		break;
+	case ExpressionType::COMPARE_DISTINCT_FROM:
+		join_comparision = "is_distinct_from";
 		break;
 	case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
 		join_comparision = "gte";
@@ -1211,6 +1221,9 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 					break;
 				case ExpressionType::COMPARE_NOT_DISTINCT_FROM:
 					join_comparision = "is_not_distinct_from";
+					break;
+				case ExpressionType::COMPARE_DISTINCT_FROM:
+					join_comparision = "is_distinct_from";
 					break;
 				case ExpressionType::COMPARE_GREATERTHANOREQUALTO:
 					// Swap: left >= right becomes right <= left
@@ -1894,6 +1907,18 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 	}
 }
 
+static unique_ptr<BaseStatistics> GetColumnStatistics(ClientContext &context, const TableFunction &function,
+                                                      const FunctionData *bind_data, idx_t col_idx) {
+	if (function.statistics_extended) {
+		TableFunctionGetStatisticsInput input(bind_data, ColumnIndex(col_idx));
+		return function.statistics_extended(context, input);
+	}
+	if (function.statistics) {
+		return function.statistics(context, bind_data, col_idx);
+	}
+	return nullptr;
+}
+
 set<idx_t> GetNotNullConstraintCol(const TableCatalogEntry &tbl) {
 	set<idx_t> not_null;
 	for (auto &constraint : tbl.GetConstraints()) {
@@ -1920,7 +1945,7 @@ void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrai
 		for (auto &name : depth_names) {
 			base_schema->add_names(name);
 		}
-		auto column_statistics = dget.function.statistics(context, &table_scan_bind_data, i);
+		auto column_statistics = GetColumnStatistics(context, dget.function, &table_scan_bind_data, i);
 		bool not_null = not_null_constraint.find(i) != not_null_constraint.end();
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, column_statistics.get(), not_null);
@@ -1951,7 +1976,7 @@ void DuckDBToSubstrait::TransformParquetScanToSubstrait(LogicalGet &dget, substr
 		for (auto &name : depth_names) {
 			base_schema->add_names(name);
 		}
-		auto column_statistics = dget.function.statistics(context, &bind_data, i);
+		auto column_statistics = GetColumnStatistics(context, dget.function, &bind_data, i);
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, column_statistics.get(), false);
 	}
@@ -2025,42 +2050,85 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		sget->set_allocated_filter(filter);
 	}
 
+	// Collect the scan's output columns in output order
+	auto &column_ids = dget.GetColumnIds();
+	vector<const ColumnIndex *> output_columns;
 	if (!dget.projection_ids.empty()) {
-		// Projection Pushdown
+		for (auto proj_idx : dget.projection_ids) {
+			output_columns.push_back(&column_ids[proj_idx]);
+		}
+	} else {
+		for (auto &column_id : column_ids) {
+			output_columns.push_back(&column_id);
+		}
+	}
+
+	bool has_pushdown_extract = false;
+	for (auto column : output_columns) {
+		if (column->IsPushdownExtract()) {
+			has_pushdown_extract = true;
+			break;
+		}
+	}
+
+	// For pushdown extract: base columns to read and each output column's position within them
+	vector<idx_t> read_columns;
+	vector<idx_t> output_positions;
+	if (has_pushdown_extract) {
+		// The scan extracts struct fields and emits them directly. Substrait reads
+		// cannot express that, so read the full columns and wrap the read in a
+		// projection that performs the extraction.
+		for (auto column : output_columns) {
+			if (column->IsRowIdColumn()) {
+				throw NotImplementedException("Row id columns combined with struct extract pushdown are not "
+				                              "supported in the to_substrait function");
+			}
+		}
+		// Read each referenced base column once, in order of first occurrence
+		auto read_position = [&](idx_t primary_idx) -> idx_t {
+			for (idx_t pos = 0; pos < read_columns.size(); pos++) {
+				if (read_columns[pos] == primary_idx) {
+					return pos;
+				}
+			}
+			read_columns.push_back(primary_idx);
+			return read_columns.size() - 1;
+		};
+		for (auto column : output_columns) {
+			output_positions.push_back(read_position(column->GetPrimaryIndex()));
+		}
+
+		auto projection = new substrait::Expression_MaskExpression();
+		projection->set_maintain_singular_struct(true);
+		auto select = new substrait::Expression_MaskExpression_StructSelect();
+		for (auto col_idx : read_columns) {
+			auto struct_item = select->add_struct_items();
+			struct_item->set_field(static_cast<int32_t>(col_idx));
+		}
+		projection->set_allocated_select(select);
+		sget->set_allocated_projection(projection);
+	} else if (!output_columns.empty()) {
 		auto projection = new substrait::Expression_MaskExpression();
 		// fixme: whatever this means
 		projection->set_maintain_singular_struct(true);
 		auto select = new substrait::Expression_MaskExpression_StructSelect();
-		auto &column_ids = dget.GetColumnIds();
-		for (auto col_idx : dget.projection_ids) {
-			auto struct_item = select->add_struct_items();
-			if (!column_ids[col_idx].IsRowIdColumn()) {
-				struct_item->set_field(static_cast<int32_t>(column_ids[col_idx].GetPrimaryIndex()));
+		for (auto column : output_columns) {
+			if (!dget.projection_ids.empty()) {
+				auto struct_item = select->add_struct_items();
+				if (!column->IsRowIdColumn()) {
+					struct_item->set_field(static_cast<int32_t>(column->GetPrimaryIndex()));
+				}
+			} else if (!column->IsRowIdColumn()) {
+				auto struct_item = select->add_struct_items();
+				struct_item->set_field(static_cast<int32_t>(column->GetPrimaryIndex()));
 			}
-			// FIXME do we need to set the child? if yes, to what?
 		}
 		if (select->struct_items_size() != 0) {
 			projection->set_allocated_select(select);
 			sget->set_allocated_projection(projection);
-		}
-	} else if (!dget.GetColumnIds().empty()) {
-		auto &column_ids = dget.GetColumnIds();
-		vector<int> column_indices;
-		for (auto &column_id : column_ids) {
-			if (!column_id.IsRowIdColumn()) {
-				column_indices.push_back(column_id.GetPrimaryIndex());
-			}
-		}
-		if (!column_indices.empty()) {
-			auto projection = new substrait::Expression_MaskExpression();
-			projection->set_maintain_singular_struct(true);
-			auto select = new substrait::Expression_MaskExpression_StructSelect();
-			for (auto col_idx : column_indices) {
-				auto struct_item = select->add_struct_items();
-				struct_item->set_field(static_cast<int32_t>(col_idx));
-			}
-			projection->set_allocated_select(select);
-			sget->set_allocated_projection(projection);
+		} else {
+			delete select;
+			delete projection;
 		}
 	}
 
@@ -2074,6 +2142,40 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		break;
 	default:
 		throw NotImplementedException("This Scan Type is not yet implement for the to_substrait function");
+	}
+
+	if (has_pushdown_extract) {
+		// Wrap the read in a projection performing the struct extraction the scan
+		// would have done, emitting only the extracted values.
+		auto proj_rel = new substrait::Rel();
+		auto sproj = proj_rel->mutable_project();
+		sproj->set_allocated_input(get_rel);
+		vector<int32_t> output_mapping;
+		auto read_column_count = static_cast<int32_t>(read_columns.size());
+		for (idx_t i = 0; i < output_columns.size(); i++) {
+			auto column = output_columns[i];
+			auto expr = sproj->add_expressions();
+			auto selection = new substrait::Expression_FieldReference();
+			selection->set_allocated_root_reference(new substrait::Expression_FieldReference_RootReference());
+			auto segment = selection->mutable_direct_reference()->mutable_struct_field();
+			segment->set_field(static_cast<int32_t>(output_positions[i]));
+			auto current = column;
+			while (current->HasChildren()) {
+				D_ASSERT(current->ChildIndexCount() == 1);
+				auto &child = current->GetChildIndex(0);
+				if (!child.HasPrimaryIndex()) {
+					throw NotImplementedException("Field-name based struct extract pushdown is not supported in "
+					                              "the to_substrait function");
+				}
+				segment = segment->mutable_child()->mutable_struct_field();
+				segment->set_field(static_cast<int32_t>(child.GetPrimaryIndex()));
+				current = &child;
+			}
+			expr->set_allocated_selection(selection);
+			output_mapping.push_back(read_column_count + static_cast<int32_t>(i));
+		}
+		sproj->set_allocated_common(CreateOutputMapping(output_mapping));
+		return proj_rel;
 	}
 
 	return get_rel;
@@ -2118,8 +2220,10 @@ substrait::Rel *DuckDBToSubstrait::TransformUnion(LogicalOperator &dop) {
 	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_UNION_ALL);
 	auto inputs = set_op->mutable_inputs();
 
-	inputs->AddAllocated(TransformOp(*dop.children[0]));
-	inputs->AddAllocated(TransformOp(*dop.children[1]));
+	// Set operations can have more than two children
+	for (auto &child : dop.children) {
+		inputs->AddAllocated(TransformOp(*child));
+	}
 	auto bindings = dunion.GetColumnBindings();
 	return rel;
 }
@@ -2187,8 +2291,11 @@ substrait::Rel *DuckDBToSubstrait::TransformExcept(LogicalOperator &dop) {
 	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_MINUS_PRIMARY);
 	auto &set_operation = dop.Cast<LogicalSetOperation>();
 	auto inputs = set_op->mutable_inputs();
-	inputs->AddAllocated(TransformOp(*set_operation.children[0]));
-	inputs->AddAllocated(TransformOp(*set_operation.children[1]));
+	// MINUS_PRIMARY subtracts all secondary inputs from the primary input,
+	// matching DuckDB's semantics for a multi-child EXCEPT
+	for (auto &child : set_operation.children) {
+		inputs->AddAllocated(TransformOp(*child));
+	}
 	auto bindings = dop.GetColumnBindings();
 	return rel;
 }
@@ -2198,6 +2305,12 @@ substrait::Rel *DuckDBToSubstrait::TransformIntersect(LogicalOperator &dop) {
 	auto set_op = rel->mutable_set();
 	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
 	auto &set_operation = dop.Cast<LogicalSetOperation>();
+	if (set_operation.children.size() != 2) {
+		// DuckDB's multi-child INTERSECT semantics (present in every child) do not
+		// match INTERSECTION_PRIMARY (present in any secondary input)
+		throw NotImplementedException("INTERSECT with more than two children is not yet supported in the "
+		                              "to_substrait function");
+	}
 	auto inputs = set_op->mutable_inputs();
 	inputs->AddAllocated(TransformOp(*set_operation.children[0]));
 	inputs->AddAllocated(TransformOp(*set_operation.children[1]));
