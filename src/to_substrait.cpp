@@ -2113,6 +2113,16 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		projection->set_maintain_singular_struct(true);
 		auto select = new substrait::Expression_MaskExpression_StructSelect();
 		for (auto column : output_columns) {
+			// The two branches below are intentionally asymmetric for row id columns.
+			// When the scan has a pushed-down projection (projection_ids) -- e.g. under
+			// late materialization, where a TopN/Limit scan reads the sort column plus a
+			// row id and re-fetches the rest by row id -- the mask must contain one struct
+			// item per projected column to stay positionally aligned with the projection.
+			// A row id is not a real base-schema column, so it gets a placeholder item
+			// with the default field (0); dropping it misaligns downstream references and
+			// breaks round-tripping (see test_substrait_topn / test_limit). Without a
+			// projection the mask is built only from the real columns, so row ids are
+			// skipped entirely.
 			if (!dget.projection_ids.empty()) {
 				auto struct_item = select->add_struct_items();
 				if (!column->IsRowIdColumn()) {
