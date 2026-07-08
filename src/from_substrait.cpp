@@ -1258,19 +1258,27 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformSetOp(const substrait::Rel &sop
 	auto &set = sop.set();
 	auto set_op_type = set.op();
 	auto type = TransformSetOperationType(set_op_type);
+	// UNION_ALL keeps duplicates; the other supported set ops are the DISTINCT variants.
+	// Without this, UNION_ALL would map to a plain UNION and incorrectly drop duplicates.
+	bool setop_all = set_op_type == substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_UNION_ALL;
 
 	auto &inputs = set.inputs();
 	auto input_count = set.inputs_size();
 	if (input_count < 2) {
 		throw NotImplementedException("The amount of inputs (%d) is not supported for this set operation", input_count);
 	}
-	// Fold multiple inputs left-associatively: for UNION_ALL this matches the
-	// n-ary semantics exactly, for MINUS_PRIMARY it matches subtracting every
-	// secondary input from the primary input
+	// INTERSECTION_PRIMARY keeps records present in *any* secondary input. Folding the
+	// inputs left-associatively would instead keep records present in *every* secondary
+	// input, so only the two-input case can be mapped to DuckDB's INTERSECT.
+	if (input_count > 2 && set_op_type == substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY) {
+		throw NotImplementedException("INTERSECTION_PRIMARY with more than two inputs is not supported");
+	}
+	// Fold left-associatively: UNION_ALL is associative, and chaining EXCEPT subtracts
+	// every secondary input from the primary input (MINUS_PRIMARY semantics).
 	auto result = TransformOp(inputs[0]);
 	for (int input_idx = 1; input_idx < input_count; input_idx++) {
 		auto rhs = TransformOp(inputs[input_idx], input_idx + 1 == input_count ? names : nullptr);
-		result = make_shared_ptr<SetOpRelation>(std::move(result), std::move(rhs), type);
+		result = make_shared_ptr<SetOpRelation>(std::move(result), std::move(rhs), type, setop_all);
 	}
 	return result;
 }

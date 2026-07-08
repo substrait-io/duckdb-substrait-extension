@@ -1,0 +1,20 @@
+# name: test/sql/test_union_all_duplicates.test
+# description: UNION ALL must preserve duplicates through the substrait round-trip
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE t(x INT);
+
+statement ok
+INSERT INTO t VALUES (1), (1), (2);
+
+# The round-trip verifier compares the substrait result against the direct query.
+# Without setop_all=true on the consumer side, SET_OP_UNION_ALL would map to a
+# DISTINCT union and drop duplicates (3 rows instead of 6), failing verification.
+statement ok
+CALL get_substrait('SELECT x FROM t UNION ALL SELECT x FROM t')
