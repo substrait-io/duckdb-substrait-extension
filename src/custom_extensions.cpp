@@ -56,7 +56,7 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 			types.push_back(type);
 		}
 		if (types.empty()) {
-			any_arg_functions[{name, types}] = {{name, types}, std::move(file_path)};
+			any_arg_functions[{name, types}] = {{name, types}, file_path};
 		} else {
 			bool many_arg = false;
 			string type = types[0];
@@ -67,9 +67,9 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 				}
 			}
 			if (many_arg) {
-				many_arg_functions[{name, types}] = {{name, types}, std::move(file_path)};
+				many_arg_functions[{name, types}] = {{name, types}, file_path};
 			} else {
-				custom_functions[{name, types}] = {{name, types}, std::move(file_path)};
+				custom_functions[{name, types}] = {{name, types}, file_path};
 			}
 		}
 
