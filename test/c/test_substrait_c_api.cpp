@@ -410,6 +410,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
+		        "sort" : {
+		          "input" : {
 		        "project" : {
 	              "common": {
 	                "emit": {
@@ -460,6 +462,17 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 		            }
 		          } ]
 		        }
+		          },
+		          "sorts" : [ {
+		            "expr" : {
+		              "selection" : {
+		                "directReference" : { "structField" : { } },
+		                "rootReference" : { }
+		              }
+		            },
+		            "direction" : "SORT_DIRECTION_ASC_NULLS_LAST"
+		          } ]
+		        }
 		      },
 		      "names" : [ "fruit", "count" ]
 		    }
@@ -473,8 +486,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait with Substrait 
 
 	auto result = FromSubstraitJSON(con,plan_json);
 
-	REQUIRE(CHECK_COLUMN(result, 0, {"cranberry", "apple", "banana"}));
-	REQUIRE(CHECK_COLUMN(result, 1, {3, 1, 2}));
+	REQUIRE(CHECK_COLUMN(result, 0, {"apple", "banana", "cranberry"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));
 }
 
 TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID with Substrait API", "[substrait-api][iceberg]") {
@@ -491,6 +504,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
+		        "sort" : {
+		          "input" : {
 		        "project" : {
 	              "common": {
 	                "emit": {
@@ -542,6 +557,17 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot ID wit
 		            }
 		          } ]
 		        }
+		          },
+		          "sorts" : [ {
+		            "expr" : {
+		              "selection" : {
+		                "directReference" : { "structField" : { } },
+		                "rootReference" : { }
+		              }
+		            },
+		            "direction" : "SORT_DIRECTION_ASC_NULLS_LAST"
+		          } ]
+		        }
 		      },
 		      "names" : [ "fruit", "count" ]
 		    }
@@ -573,6 +599,8 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		  "relations" : [ {
 		    "root" : {
 		      "input" : {
+		        "sort" : {
+		          "input" : {
 		        "project" : {
 	              "common": {
 	                "emit": {
@@ -622,6 +650,17 @@ TEST_CASE_METHOD(DataDirectoryFixture, "Test C Iceberg Substrait Snapshot Timest
 		              },
 		              "rootReference" : { }
 		            }
+		          } ]
+		        }
+		          },
+		          "sorts" : [ {
+		            "expr" : {
+		              "selection" : {
+		                "directReference" : { "structField" : { } },
+		                "rootReference" : { }
+		              }
+		            },
+		            "direction" : "SORT_DIRECTION_ASC_NULLS_LAST"
 		          } ]
 		        }
 		      },
