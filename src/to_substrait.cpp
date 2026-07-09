@@ -637,11 +637,12 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 			last_urn_id++;
 		}
 	}
-	if (functions_map.find(function.function.GetName()) == functions_map.end()) {
+	auto canonical = function.GetCanonicalName();
+	if (functions_map.find(canonical) == functions_map.end()) {
 		auto function_id = last_function_id++;
 		auto sfun = plan.add_extensions()->mutable_extension_function();
 		sfun->set_function_anchor(function_id);
-		sfun->set_name(function.function.GetName());
+		sfun->set_name(canonical);
 		if (!function.IsNative()) {
 			// We only define URN if not native
 			sfun->set_extension_urn_reference(extension_urn_map[function.GetExtensionURN()]);
@@ -652,7 +653,7 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 				// Produce warning message
 				std::ostringstream error;
 				// Casting Error Message
-				error << "Could not find function \"" << function.function.GetName() << "\" with argument types: (";
+				error << "Could not find function \"" << canonical << "\" with argument types: (";
 				auto types = SubstraitCustomFunctions::GetTypes(args_types);
 				for (idx_t i = 0; i < types.size(); i++) {
 					error << "\'" << types[i] << "\'";
@@ -664,9 +665,9 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 				errors += error.str();
 			}
 		}
-		functions_map[function.function.GetName()] = function_id;
+		functions_map[canonical] = function_id;
 	}
-	return functions_map[function.function.GetName()];
+	return functions_map[canonical];
 }
 
 void DuckDBToSubstrait::CreateFieldRef(substrait::Expression *expr, uint64_t col_idx) {

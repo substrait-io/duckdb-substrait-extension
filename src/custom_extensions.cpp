@@ -45,9 +45,31 @@ vector<string> GetAllTypes() {
 	        {"precision_timestamp_tz"}};
 }
 
+static string ComputeCanonicalName(const string &name, const vector<string> &original_types) {
+	if (original_types.empty()) {
+		return name;
+	}
+	string sig = name + ":";
+	for (auto &type : original_types) {
+		string short_name = type;
+		if (!short_name.empty() && short_name.back() == '?') {
+			short_name.pop_back();
+		}
+		if (short_name == "any1" || short_name == "any2" || short_name == "any" || short_name == "unknown") {
+			short_name = "any";
+		} else if (short_name == "boolean") {
+			short_name = "bool";
+		}
+		sig += short_name + "_";
+	}
+	sig.pop_back();
+	return sig;
+}
+
 // Recurse over the whole shebang
 void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &all_types, vector<idx_t> &indices,
-                                                  int depth, string &name, string &file_path) {
+                                                  int depth, string &name, string &file_path,
+                                                  const string &canonical_name) {
 	if (depth == indices.size()) {
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
@@ -55,21 +77,29 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 			type = StringUtil::Replace(type, "boolean", "bool");
 			types.push_back(type);
 		}
+		SubstraitCustomFunction key {name, types};
+		SubstraitFunctionExtensions value {{name, types}, file_path, canonical_name};
+		bool is_fallback = (file_path == "unknown");
 		if (types.empty()) {
-			any_arg_functions[{name, types}] = {{name, types}, file_path};
+			if (!is_fallback || any_arg_functions.find(key) == any_arg_functions.end()) {
+				any_arg_functions[key] = value;
+			}
 		} else {
 			bool many_arg = false;
 			string type = types[0];
 			for (auto &t : types) {
 				if (!t.empty() && t[t.size() - 1] == '?') {
-					// If all types are equal and they end with ? we have a many_argument function
 					many_arg = type == t;
 				}
 			}
 			if (many_arg) {
-				many_arg_functions[{name, types}] = {{name, types}, file_path};
+				if (!is_fallback || many_arg_functions.find(key) == many_arg_functions.end()) {
+					many_arg_functions[key] = value;
+				}
 			} else {
-				custom_functions[{name, types}] = {{name, types}, file_path};
+				if (!is_fallback || custom_functions.find(key) == custom_functions.end()) {
+					custom_functions[key] = value;
+				}
 			}
 		}
 
@@ -77,11 +107,13 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 	}
 	for (int i = 0; i < all_types[depth].size(); ++i) {
 		indices[depth] = i;
-		InsertAllFunctions(all_types, indices, depth + 1, name, file_path);
+		InsertAllFunctions(all_types, indices, depth + 1, name, file_path, canonical_name);
 	}
 }
 
 void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string> types_p, string file_path) {
+	string canonical = ComputeCanonicalName(name_p, types_p);
+
 	auto types = std::move(types_p);
 	vector<vector<string>> all_types;
 	for (auto &t : types) {
@@ -98,7 +130,7 @@ void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string
 	vector<idx_t> idx(num_arguments, 0);
 
 	// Call the helper function with initial depth 0
-	InsertAllFunctions(all_types, idx, 0, name_p, file_path);
+	InsertAllFunctions(all_types, idx, 0, name_p, file_path, canonical);
 }
 
 string SubstraitCustomFunction::GetName() {
@@ -149,14 +181,14 @@ SubstraitFunctionExtensions SubstraitCustomFunctions::Get(const string &name,
 			// We found it in our substrait custom map, return that
 			return it->second;
 		}
-		return {{name, {}}, "native"};
+		return {{name, {}}, "native", name};
 	}
 
 	for (auto &type : types) {
 		transformed_types.emplace_back(TransformTypes(type));
 		if (transformed_types.back().empty()) {
 			// If it is empty it means we did not find a yaml extension, we return the function name
-			return {{name, {}}, "native"};
+			return {{name, {}}, "native", name};
 		}
 	}
 	{

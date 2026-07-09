@@ -29,15 +29,21 @@ struct SubstraitCustomFunction {
 //! Here we define function extensions
 class SubstraitFunctionExtensions {
 public:
+	SubstraitFunctionExtensions(SubstraitCustomFunction function_p, string extension_path_p, string canonical_name_p)
+	    : function(std::move(function_p)), extension_path(std::move(extension_path_p)),
+	      canonical_name(std::move(canonical_name_p)) {};
 	SubstraitFunctionExtensions(SubstraitCustomFunction function_p, string extension_path_p)
-	    : function(std::move(function_p)), extension_path(std::move(extension_path_p)) {};
+	    : function(std::move(function_p)), extension_path(std::move(extension_path_p)),
+	      canonical_name(function.GetName()) {};
 	SubstraitFunctionExtensions() = default;
 
 	string GetExtensionURN() const;
 	bool IsNative() const;
+	const string &GetCanonicalName() const { return canonical_name; }
 
 	SubstraitCustomFunction function;
 	string extension_path;
+	string canonical_name;
 };
 
 struct HashSubstraitFunctions {
@@ -81,7 +87,7 @@ private:
 
 	void InsertCustomFunction(string name_p, vector<string> types_p, string file_path);
 	void InsertAllFunctions(const vector<vector<string>> &all_types, vector<idx_t> &indices, int depth, string &name_p,
-	                        string &file_path);
+	                        string &file_path, const string &canonical_name);
 };
 
 } // namespace duckdb
