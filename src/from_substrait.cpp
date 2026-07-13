@@ -906,7 +906,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			}
 		}
 		string name = "parquet_" + StringUtil::GenerateRandomName();
-		named_parameter_map_t named_parameters({{"binary_as_string", Value::BOOLEAN(false)}});
+		// A ReadRel baseSchema describes the complete output tuple. Do not let
+		// key=value path segments implicitly add hive partition columns to it.
+		named_parameter_map_t named_parameters(
+		    {{"binary_as_string", Value::BOOLEAN(false)}, {"hive_partitioning", Value::BOOLEAN(false)}});
 		vector<Value> parameters {Value::LIST(parquet_files)};
 		shared_ptr<TableFunctionRelation> scan_rel;
 		if (acquire_lock) {

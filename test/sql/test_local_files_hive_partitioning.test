@@ -1,0 +1,25 @@
+# name: test/sql/test_local_files_hive_partitioning.test
+# description: Test that local file paths do not add implicit hive partition columns
+# group: [sql]
+
+require substrait
+require parquet
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE hive_source(partition_key INTEGER, value VARCHAR)
+
+statement ok
+INSERT INTO hive_source VALUES (42, 'answer')
+
+# The partition key is encoded only in the key=value directory and is not part
+# of the Parquet file. It must not be appended to the ReadRel output tuple.
+statement ok
+COPY hive_source TO '__TEST_DIR__/local_files_hive' (FORMAT PARQUET, PARTITION_BY (partition_key))
+
+query T
+CALL from_substrait_json('{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["value"],"struct":{"types":[{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"localFiles":{"items":[{"uriFile":"__TEST_DIR__/local_files_hive/**/*.parquet","parquet":{}}]}}},"names":["value"]}}],"version":{"minorNumber":89,"producer":"test"}}')
+----
+answer
