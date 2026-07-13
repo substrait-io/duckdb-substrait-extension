@@ -1015,15 +1015,18 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		throw NotImplementedException("Unsupported type of read operator for substrait");
 	}
 
-	// When a named table's physical schema has more columns than the plan's
-	// baseSchema declares, add a projection to narrow down to only the declared
-	// columns. Without this, downstream emit mappings (which assume baseSchema
-	// column count) compute wrong expression indices.
-	if (sget.has_named_table() && sget.has_base_schema() && !sget.has_projection()) {
+	// Align the scan's physical columns to the plan's baseSchema by name.
+	// Named tables only need this when the physical schema is wider. Local file
+	// scans always need it because Parquet columns are otherwise bound in physical
+	// file order, while baseSchema defines the ReadRel tuple's order.
+	if ((sget.has_named_table() || sget.has_local_files()) && sget.has_base_schema() &&
+	    !sget.has_projection()) {
 		auto &base_schema = sget.base_schema();
 		auto physical_cols = scan->Columns().size();
 		auto declared_cols = (size_t)base_schema.names_size();
-		if (declared_cols > 0 && declared_cols < physical_cols) {
+		bool needs_projection = sget.has_local_files() ? declared_cols > 0
+		                                               : declared_cols > 0 && declared_cols < physical_cols;
+		if (needs_projection) {
 			// Match baseSchema column names to physical column positions
 			vector<unique_ptr<ParsedExpression>> proj_exprs;
 			vector<string> proj_aliases;

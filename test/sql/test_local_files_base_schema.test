@@ -1,0 +1,18 @@
+# name: test/sql/test_local_files_base_schema.test
+# description: Test that local file reads follow baseSchema column selection and order
+# group: [sql]
+
+require substrait
+require parquet
+
+statement ok
+PRAGMA enable_verification
+
+# The Parquet file starts with l_orderkey, while baseSchema both prunes the file
+# and requests l_discount before l_orderkey.
+query RI
+CALL from_substrait_json('{"relations":[{"root":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["l_discount","l_orderkey"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},{"i64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"localFiles":{"items":[{"uriFile":"data/parquet-testing/lineitem-top10000.gzip.parquet","parquet":{}}]}}},"offset":"0","count":"3"}},"names":["l_discount","l_orderkey"]}}],"version":{"minorNumber":89,"producer":"test"}}')
+----
+0.04	1
+0.09	1
+0.1	1
