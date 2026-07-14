@@ -1,0 +1,70 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended"
+    ],
+    "customManagers": [
+        {
+            "description": "substrait-protobuf version pinned in vcpkg.json overrides",
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/^vcpkg\\.json$/"
+            ],
+            "matchStrings": [
+                "\"name\":\\s*\"substrait-protobuf\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+            ],
+            "depNameTemplate": "substrait-protobuf",
+            "packageNameTemplate": "substrait-io/substrait-packaging",
+            "datasourceTemplate": "github-tags",
+            "extractVersionTemplate": "^cpp/substrait-protobuf/v(?<version>.+)$",
+            "versioningTemplate": "semver"
+        },
+        {
+            "description": "substrait-extensions tag used by the custom-functions codegen script",
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/^scripts/generate_custom_functions\\.py$/"
+            ],
+            "matchStrings": [
+                "SUBSTRAIT_EXTENSIONS_TAG\\s*=\\s*\"cpp/substrait-extensions/v(?<currentValue>[^\"]+)\""
+            ],
+            "depNameTemplate": "substrait-extensions",
+            "packageNameTemplate": "substrait-io/substrait-packaging",
+            "datasourceTemplate": "github-tags",
+            "extractVersionTemplate": "^cpp/substrait-extensions/v(?<version>.+)$",
+            "versioningTemplate": "semver"
+        },
+        {
+            "description": "substrait-packaging vcpkg-registry baseline commit in vcpkg-configuration.json",
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/^vcpkg-configuration\\.json$/"
+            ],
+            "matchStrings": [
+                "\"reference\":\\s*\"vcpkg-registry\",\\s*\"baseline\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
+            ],
+            "currentValueTemplate": "vcpkg-registry",
+            "depNameTemplate": "substrait-packaging-registry",
+            "packageNameTemplate": "https://github.com/substrait-io/substrait-packaging",
+            "datasourceTemplate": "git-refs"
+        }
+    ],
+    "packageRules": [
+        {
+            "description": "The registry baseline, the substrait-protobuf override, and the extensions tag are coupled (a substrait-protobuf version only resolves if the baseline commit's versions DB contains it), so land them in one PR. ignoreUnstable is left at its default so only stable substrait-packaging releases are proposed over the stable pin.",
+            "matchDepNames": [
+                "substrait-protobuf",
+                "substrait-extensions",
+                "substrait-packaging-registry"
+            ],
+            "groupName": "substrait-packaging"
+        },
+        {
+            "description": "Do not auto-bump the vcpkg builtin-baseline: it must stay pinned to the vcpkg commit baked into DuckDB's distribution Docker images (DuckDB's vcpkg_commit). Bumping it off that commit breaks the distribution build, since the image's vcpkg cannot resolve a newer baseline. It is bumped manually in lockstep with DuckDB upgrades.",
+            "matchManagers": [
+                "vcpkg"
+            ],
+            "enabled": false
+        }
+    ]
+}

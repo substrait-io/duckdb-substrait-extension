@@ -1160,22 +1160,6 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 	return res;
 }
 
-void PrintRelAsJson(substrait::Rel *rel) {
-	static int i;
-	std::string json_output;
-	google::protobuf::util::JsonPrintOptions options;
-	options.add_whitespace = false;               // Pretty-print with indentation
-	options.always_print_primitive_fields = true; // Print even if default values
-
-	auto status = google::protobuf::util::MessageToJsonString(*rel, &json_output, options);
-	if (!status.ok()) {
-		Printer::Print("pb MessageToJsonString failed");
-	}
-
-	Printer::Print(std::to_string(i) + "==>\n" + json_output);
-	++i;
-}
-
 substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto sjoin = res->mutable_join();

@@ -4,17 +4,21 @@
 
 namespace duckdb {
 
-// FIXME: This cannot be the best way of getting string names of the types
+// Returns the name of the Type's set "kind" oneof field (e.g. "i32", "decimal",
+// "bool"). We use reflection rather than parsing DebugString(): modern protobuf
+// deliberately redacts DebugString() output (e.g. inserting "goo.gle/debugonly"),
+// which would otherwise be mistaken for the type name.
 string TransformTypes(const substrait::Type &type) {
-	auto str = type.DebugString();
-	string str_type;
-	for (auto &c : str) {
-		if (c == ' ') {
-			return str_type;
-		}
-		str_type += c;
+	auto *reflection = type.GetReflection();
+	auto *kind = type.GetDescriptor()->FindOneofByName("kind");
+	if (!kind) {
+		return "";
 	}
-	return str_type;
+	auto *field = reflection->GetOneofFieldDescriptor(type, kind);
+	if (!field) {
+		return "";
+	}
+	return string(field->name());
 }
 
 vector<string> GetAllTypes() {
@@ -113,7 +117,9 @@ string SubstraitFunctionExtensions::GetExtensionURN() const {
 	if (IsNative()) {
 		return "";
 	}
-	return "extension:io.substrait:" + extension_path;
+	// extension_path holds the full Substrait URN (extension:<owner>:<id>) as
+	// declared by the extension YAML, so return it verbatim.
+	return extension_path;
 }
 
 bool SubstraitFunctionExtensions::IsNative() const {

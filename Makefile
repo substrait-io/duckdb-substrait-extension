@@ -8,6 +8,16 @@ EXT_CONFIG=${PROJ_DIR}extension_config.cmake
 
 CORE_EXTENSIONS='tpch;tpcds;json'
 
+# protobuf/abseil (pulled in via substrait-protobuf / substrait::proto) require
+# C++17, which propagates to the extension's translation units. Build DuckDB
+# core at the same standard so its `static constexpr` members (e.g.
+# LogicalType::VARCHAR, TableCatalogEntry::Name) are handled identically on both
+# sides: at C++11 they need an out-of-line definition (in libduckdb_static), at
+# C++17 they are implicitly inline (emitted per-TU). Mixing the two makes GNU ld
+# report multiple definitions when linking the loadable extension. This flag
+# feeds the top-level CMake configure and overrides DuckDB's default of 11.
+TOOLCHAIN_FLAGS:=${TOOLCHAIN_FLAGS} -DCMAKE_CXX_STANDARD=17
+
 # Set this flag during building to enable the benchmark runner
 ifeq (${BUILD_BENCHMARK}, 1)
 	TOOLCHAIN_FLAGS:=${TOOLCHAIN_FLAGS} -DBUILD_BENCHMARKS=1
