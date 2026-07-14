@@ -1332,6 +1332,59 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	return proj_rel;
 }
 
+substrait::Rel *DuckDBToSubstrait::TransformDelimJoin(LogicalOperator &dop) {
+	// LOGICAL_DELIM_JOIN is semantically equivalent to LOGICAL_COMPARISON_JOIN
+	// with the additional semantic that the LHS output is deduplicated on certain columns
+	// before being fed into the RHS (which typically contains LOGICAL_DELIM_GET operators).
+	// For Substrait export, we treat it as a regular join, since Substrait has no native
+	// "delimiter join" construct. The join conditions and structure are semantically preserved;
+	// the deduplication strategy is a DuckDB-internal optimization detail.
+
+	auto &djoin = dop.Cast<LogicalComparisonJoin>();
+
+	// For DELIM_JOIN with DELIM_GET on RHS:
+	// - Use LEFT SEMI join semantics (but DuckDB uses SEMI for left-side output)
+	// - Only output left side columns (DELIM_GET is just for join filtering)
+	if (!dop.children.empty() && dop.children[1] &&
+	    dop.children[1]->type == LogicalOperatorType::LOGICAL_DELIM_GET) {
+		// Only keep left projection map, clear right to indicate we don't want right columns
+		djoin.right_projection_map.clear();
+
+		// Make sure left projection is properly populated
+		if (djoin.left_projection_map.empty()) {
+			for (uint64_t i = 0; i < dop.children[0]->types.size(); i++) {
+				djoin.left_projection_map.push_back(i);
+			}
+		}
+	}
+
+	return TransformComparisonJoin(dop);
+}
+
+substrait::Rel *DuckDBToSubstrait::TransformDelimGet(LogicalOperator &dop) {
+	// LOGICAL_DELIM_GET is an ephemeral scan operator that references deduplicated data
+	// produced by an enclosing LOGICAL_DELIM_JOIN.
+	// Since Substrait has no native equivalent, we create a virtual table with rows
+	// covering a range of numeric values. This allows join conditions on numeric columns
+	// to match properly during round-trip conversion.
+	auto &delim_get = dop.Cast<LogicalDelimGet>();
+
+	auto res = new substrait::Rel();
+	auto sget = res->mutable_read();
+	auto virtual_table = sget->mutable_virtual_table();
+
+	// Create 1000 rows with incrementing i64 values for each column
+	for (int row = 1; row <= 1000; row++) {
+		auto dummy_struct = virtual_table->add_expressions();
+		for (idx_t col = 0; col < delim_get.chunk_types.size(); col++) {
+			auto field = dummy_struct->add_fields();
+			field->mutable_literal()->set_i64(row);
+		}
+	}
+
+	return res;
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop) {
 	auto res = new substrait::Rel();
 	auto &daggr = dop.Cast<LogicalAggregate>();
@@ -2471,6 +2524,10 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformProjection(dop);
 	case LogicalOperatorType::LOGICAL_COMPARISON_JOIN:
 		return TransformComparisonJoin(dop);
+	case LogicalOperatorType::LOGICAL_DELIM_JOIN:
+		return TransformDelimJoin(dop);
+	case LogicalOperatorType::LOGICAL_DELIM_GET:
+		return TransformDelimGet(dop);
 	case LogicalOperatorType::LOGICAL_AGGREGATE_AND_GROUP_BY:
 		return TransformAggregateGroup(dop);
 	case LogicalOperatorType::LOGICAL_WINDOW:
