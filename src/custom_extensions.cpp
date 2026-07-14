@@ -117,7 +117,9 @@ string SubstraitFunctionExtensions::GetExtensionURN() const {
 	if (IsNative()) {
 		return "";
 	}
-	return "extension:io.substrait:" + extension_path;
+	// extension_path holds the full Substrait URN (extension:<owner>:<id>) as
+	// declared by the extension YAML, so return it verbatim.
+	return extension_path;
 }
 
 bool SubstraitFunctionExtensions::IsNative() const {
