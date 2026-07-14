@@ -59,6 +59,13 @@
             ],
             "groupName": "substrait-packaging",
             "ignoreUnstable": false
+        },
+        {
+            "description": "Do not auto-bump the vcpkg builtin-baseline: it must stay pinned to the vcpkg commit baked into DuckDB's distribution Docker images (DuckDB's vcpkg_commit). Bumping it off that commit breaks the distribution build, since the image's vcpkg cannot resolve a newer baseline. It is bumped manually in lockstep with DuckDB upgrades.",
+            "matchManagers": [
+                "vcpkg"
+            ],
+            "enabled": false
         }
     ]
 }

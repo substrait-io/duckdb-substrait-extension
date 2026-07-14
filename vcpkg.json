@@ -3,7 +3,7 @@
         "protobuf",
         "substrait-protobuf"
     ],
-    "builtin-baseline": "97b19caab97ab0c8d36c93230046c8c45fcd41d0",
+    "builtin-baseline": "84bab45d415d22042bd0b9081aea57f362da3f35",
     "overrides": [
         {
             "name": "substrait-protobuf",
