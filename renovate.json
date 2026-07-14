@@ -51,14 +51,13 @@
     ],
     "packageRules": [
         {
-            "description": "The registry baseline, the substrait-protobuf override, and the extensions tag are coupled (a substrait-protobuf version only resolves if the baseline commit's versions DB contains it), so land them in one PR. ignoreUnstable is off because releases are -alpha prereleases.",
+            "description": "The registry baseline, the substrait-protobuf override, and the extensions tag are coupled (a substrait-protobuf version only resolves if the baseline commit's versions DB contains it), so land them in one PR. ignoreUnstable is left at its default so only stable substrait-packaging releases are proposed over the stable pin.",
             "matchDepNames": [
                 "substrait-protobuf",
                 "substrait-extensions",
                 "substrait-packaging-registry"
             ],
-            "groupName": "substrait-packaging",
-            "ignoreUnstable": false
+            "groupName": "substrait-packaging"
         },
         {
             "description": "Do not auto-bump the vcpkg builtin-baseline: it must stay pinned to the vcpkg commit baked into DuckDB's distribution Docker images (DuckDB's vcpkg_commit). Bumping it off that commit breaks the distribution build, since the image's vcpkg cannot resolve a newer baseline. It is bumped manually in lockstep with DuckDB upgrades.",
