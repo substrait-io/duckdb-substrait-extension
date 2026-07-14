@@ -1,4 +1,13 @@
 {
     "dependencies": [
+        "protobuf",
+        "substrait-protobuf"
+    ],
+    "builtin-baseline": "97b19caab97ab0c8d36c93230046c8c45fcd41d0",
+    "overrides": [
+        {
+            "name": "substrait-protobuf",
+            "version": "0.89.0-alpha.1"
+        }
     ]
 }

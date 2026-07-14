@@ -1,0 +1,15 @@
+{
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/substrait-io/substrait-packaging",
+            "reference": "vcpkg-registry",
+            "baseline": "1f62c4184425f15b690be7bda4851d61cca7af80",
+            "packages": [
+                "substrait-protobuf",
+                "substrait-extensions",
+                "substrait-antlr"
+            ]
+        }
+    ]
+}

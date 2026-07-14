@@ -90,7 +90,7 @@ SubstraitToDuckDB::SubstraitToDuckDB(shared_ptr<ClientContext> &context_p, const
 			throw std::runtime_error("Was not possible to convert binary into Substrait plan");
 		}
 	} else {
-		google::protobuf::util::Status status = google::protobuf::util::JsonStringToMessage(serialized, &plan);
+		auto status = google::protobuf::util::JsonStringToMessage(serialized, &plan);
 		if (!status.ok()) {
 			throw std::runtime_error("Was not possible to convert JSON into Substrait plan: " + status.ToString());
 		}
@@ -191,7 +191,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	default:
 		throw NotImplementedException(
 		    "literals of this type are not implemented: %s",
-		    substrait::Expression_Literal::GetDescriptor()->FindFieldByNumber(literal.literal_type_case())->name());
+		    string(substrait::Expression_Literal::GetDescriptor()->FindFieldByNumber(literal.literal_type_case())->name()));
 	}
 }
 
@@ -442,7 +442,7 @@ LogicalType SubstraitToDuckDB::SubstraitToDuckType(const substrait::Type &s_type
 			}
 		}
 		auto field_desc = substrait::Type::GetDescriptor()->FindFieldByNumber(s_type.kind_case());
-		string type_name = field_desc ? field_desc->name() : ("unknown (field " + to_string(s_type.kind_case()) + ")");
+		string type_name = field_desc ? string(field_desc->name()) : ("unknown (field " + to_string(s_type.kind_case()) + ")");
 		throw NotImplementedException("Substrait type not yet supported: %s", type_name);
 	}
 	}
@@ -533,7 +533,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::E
 	default:
 		throw NotImplementedException(
 		    "Unsupported expression type %s",
-		    substrait::Expression::GetDescriptor()->FindFieldByNumber(sexpr.rex_type_case())->name());
+		    string(substrait::Expression::GetDescriptor()->FindFieldByNumber(sexpr.rex_type_case())->name()));
 	}
 }
 
@@ -569,7 +569,7 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 	default:
 		throw NotImplementedException(
 		    "Unsupported ordering %s",
-		    substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name());
+		    string(substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name()));
 	}
 
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
@@ -606,7 +606,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 		break;
 	default:
 		throw NotImplementedException("Unsupported join type: %s",
-		                              substrait::JoinRel::GetDescriptor()->FindFieldByNumber(sjoin.type())->name());
+		                              string(substrait::JoinRel::GetDescriptor()->FindFieldByNumber(sjoin.type())->name()));
 	}
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
 	return make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
@@ -678,7 +678,7 @@ const substrait::RelCommon *GetCommon(const substrait::Rel &sop) {
 	case substrait::Rel::RelTypeCase::kDdl:
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-		                              substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
+		                              string(substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name()));
 	}
 }
 
@@ -1247,7 +1247,7 @@ static SetOperationType TransformSetOperationType(substrait::SetRel_SetOp setop)
 	}
 	default: {
 		throw NotImplementedException("SetOperationType transform not implemented for SetRel_SetOp type %s",
-		                              substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name());
+		                              string(substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name()));
 	}
 	}
 }
@@ -1324,7 +1324,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",
-		                              substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name());
+		                              string(substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name()));
 	}
 }
 
@@ -1366,7 +1366,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		return TransformReferenceOp(sop);
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-		                              substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name());
+		                              string(substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name()));
 	}
 }
 

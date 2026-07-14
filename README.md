@@ -160,6 +160,17 @@ the build directory is set to `../build/<build_mode>`.
 
 ### Updating the Substrait Version
 
-Use the script in `scripts/update_substrait.py` to update the Substrait version. It requires [protoc 3.19.4](https://github.com/protocolbuffers/protobuf/releases/tag/v3.19.4), GitHub, and Python.
-To update the Substrait code, simply change [the git commit tag in the script](https://github.com/duckdb/substrait/blob/main/scripts/update_substrait.py#L8) to the desired Substrait release version.
-Then, execute the script by running `python scripts/update_substrait.py`.
+The Substrait artifacts are consumed from the [substrait-packaging](https://github.com/substrait-io/substrait-packaging) project:
+
+- **Protobuf bindings** come from the `substrait-protobuf` package, consumed via substrait-packaging's vcpkg registry (see [`vcpkg-configuration.json`](vcpkg-configuration.json)). vcpkg builds it against this project's protobuf and exposes the imported `substrait::proto` target. The version is resolved from the registry `baseline` in `vcpkg-configuration.json` (plus the `substrait-protobuf` dependency in [`vcpkg.json`](vcpkg.json)).
+- **Extension definitions** used to generate `src/custom_extensions_generated.cpp` come from the `substrait-extensions` package. The version is `SUBSTRAIT_EXTENSIONS_TAG` in [`scripts/generate_custom_functions.py`](scripts/generate_custom_functions.py) (`cpp/substrait-extensions/vX.Y.Z`).
+
+To update to a new Substrait release:
+
+1. Bump the registry `baseline` in [`vcpkg-configuration.json`](vcpkg-configuration.json) to a substrait-packaging `vcpkg-registry` commit that publishes the desired version (add a `substrait-protobuf` entry to `vcpkg.json` `overrides` to pin an exact version if needed), and bump `SUBSTRAIT_EXTENSIONS_TAG` to the matching `cpp/substrait-extensions/vX.Y.Z`.
+2. Regenerate the custom function definitions and reformat them (requires Python with `pyyaml` and `regex`, and `clang-format`):
+   ```sh
+   python scripts/generate_custom_functions.py
+   make format
+   ```
+3. Rebuild (`make`).
