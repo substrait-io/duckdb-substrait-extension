@@ -1,0 +1,25 @@
+# name: test/sql/test_extension_urn.test
+# description: Verify get_substrait emits well-formed extension URNs (extension:<owner>:<id>) taken verbatim from the extension YAML's urn field
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE t (a DOUBLE);
+
+statement ok
+INSERT INTO t VALUES (1), (2), (3);
+
+# Aggregate function: count maps to the functions_aggregate_generic extension.
+# The emitted plan must carry the full Substrait URN exactly as declared by that
+# YAML's `urn` field (extension:io.substrait:functions_aggregate_generic).
+query I
+SELECT count(*) FROM get_substrait_json('SELECT count(*) FROM t') WHERE contains("Json", '"urn":"extension:io.substrait:functions_aggregate_generic"')
+----
+1
+
+# Scalar function: sin maps to the functions_arithmetic extension.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT sin(a) FROM t') WHERE contains("Json", '"urn":"extension:io.substrait:functions_arithmetic"')
+----
+1
