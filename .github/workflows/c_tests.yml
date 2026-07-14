@@ -22,6 +22,24 @@ jobs:
         fetch-depth: 0
         submodules: true
 
+    # The extension now consumes protobuf and substrait-protobuf from vcpkg
+    # (see vcpkg.json / vcpkg-configuration.json), so this build needs a vcpkg
+    # toolchain just like the distribution pipeline. Pin the tool to the same
+    # commit as vcpkg.json's builtin-baseline so the tool and the resolved port
+    # versions stay in lockstep.
+    - name: Setup vcpkg
+      run: |
+        mkdir local_vcpkg_installation
+        cd local_vcpkg_installation
+        git init
+        git remote add origin https://github.com/microsoft/vcpkg.git
+        git fetch origin 97b19caab97ab0c8d36c93230046c8c45fcd41d0
+        git checkout 97b19caab97ab0c8d36c93230046c8c45fcd41d0
+        ./bootstrap-vcpkg.sh
+        echo "VCPKG_ROOT=${{ github.workspace }}/local_vcpkg_installation" >> $GITHUB_ENV
+        echo "VCPKG_TOOLCHAIN_PATH=${{ github.workspace }}/local_vcpkg_installation/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/local_vcpkg_installation" >> $GITHUB_PATH
+
     - name: Build Substrait with C unit test
       run: make release_c_unit_test
 
