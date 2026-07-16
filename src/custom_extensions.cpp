@@ -101,13 +101,49 @@ void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string
 	InsertAllFunctions(all_types, idx, 0, name_p, file_path);
 }
 
+// Maps a Substrait type name (the protobuf `Type.kind` oneof field name, e.g.
+// "string", "decimal", "precision_timestamp") to the abbreviated "Type Short
+// Name" that compound function signatures must use, per
+// https://substrait.io/extensions/#function-signature-compound-names. Types
+// whose short name is identical to their name (i8/i16/i32/i64, fp32/fp64, bool,
+// date, uuid, struct/list/map, func, any) are absent from the table and pass
+// through unchanged.
+static string TypeShortName(const string &type) {
+	static const std::unordered_map<string, string> SHORT_NAMES = {
+	    {"string", "str"},
+	    {"binary", "vbin"},
+	    {"decimal", "dec"},
+	    {"varchar", "vchar"},
+	    {"fixed_char", "fchar"},
+	    {"fixed_binary", "fbin"},
+	    {"interval_year", "iyear"},
+	    {"interval_day", "iday"},
+	    {"interval_compound", "icompound"},
+	    {"precision_time", "pt"},
+	    {"precision_timestamp", "pts"},
+	    {"precision_timestamp_tz", "ptstz"},
+	    // Deprecated types (superseded by the precision_* variants and no longer
+	    // in the spec's short-name table) are still enumerated for the any-type
+	    // expansion, so keep their historical short names for consistency.
+	    {"timestamp", "ts"},
+	    {"timestamp_tz", "tstz"},
+	};
+	auto it = SHORT_NAMES.find(type);
+	return it == SHORT_NAMES.end() ? type : it->second;
+}
+
 string SubstraitCustomFunction::GetName() {
 	if (arg_types.empty()) {
 		return name;
 	}
 	string function_signature = name + ":";
 	for (auto &type : arg_types) {
-		function_signature += type + "_";
+		// A trailing '?' marks a nullable (variadic) argument in the declared
+		// signature. Substrait compound names encode only the short type name,
+		// not nullability, so strip it before the lookup (e.g. the variadic
+		// "and" is emitted as "and:bool", not "and:bool?").
+		auto base = (!type.empty() && type.back() == '?') ? type.substr(0, type.size() - 1) : type;
+		function_signature += TypeShortName(base) + "_";
 	}
 	function_signature.pop_back();
 	return function_signature;
