@@ -505,17 +505,17 @@ void SubstraitCustomFunctions::Initialize() {
 	InsertCustomFunction("divide", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
 	InsertCustomFunction("modulus", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
 	InsertCustomFunction("abs", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("bitwise_and", {"DECIMAL", "DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("bitwise_or", {"DECIMAL", "DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("bitwise_xor", {"DECIMAL", "DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("sqrt", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("factorial", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("power", {"DECIMAL", "DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("sum", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("avg", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("min", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("max", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
-	InsertCustomFunction("sum0", {"DECIMAL"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("bitwise_and", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("bitwise_or", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("bitwise_xor", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("sqrt", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("factorial", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("power", {"decimal", "decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("sum", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("avg", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("min", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("max", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
+	InsertCustomFunction("sum0", {"decimal"}, "extension:io.substrait:functions_arithmetic_decimal");
 	InsertCustomFunction("index_in", {"any1", "list"}, "extension:io.substrait:functions_set");
 }
 

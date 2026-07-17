@@ -805,3 +805,23 @@ TEST_CASE("Test cast to deprecated time type", "[substrait-api][deprecated-types
 	auto result = FromSubstrait(con, plan_blob);
 	REQUIRE(CHECK_COLUMN(result, 0, {Value::TIME(10, 30, 0, 0)}));
 }
+
+TEST_CASE("Test extension URN for non-boolean comparison functions", "[substrait-api][extension-urn]") {
+	// Regression test: comparison functions registered with "any1" type expansion
+	// must have correct extension URNs for ALL type combinations, not just the first.
+	// Previously, std::move(file_path) in InsertAllFunctions emptied the path after
+	// the first type combo (bool_bool), leaving all others with a broken empty URN.
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE t1 (a INTEGER, b INTEGER)"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO t1 VALUES (1, 1), (2, 3)"));
+
+	auto json_str = GetSubstraitJSON(con, "SELECT * FROM t1 WHERE a = b");
+	REQUIRE(json_str.find("extension:io.substrait:functions_comparison") != string::npos);
+	REQUIRE(json_str.find("\"extension:io.substrait:\"") == string::npos);
+
+	auto result = FromSubstraitJSON(con, json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {1}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1}));
+}

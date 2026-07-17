@@ -60,7 +60,11 @@ def get_custom_functions(custom_extension_folder):
 				types = []
 				for args in impls_args:
 					type_value = regex.sub(r'<[^>]*>', '', args["value"])
-					if type_value:
+					# Normalize to lowercase: the upstream YAML uses inconsistent
+					# casing (e.g. "DECIMAL<P,S>" for aggregates vs "decimal<P1,S1>"
+					# for scalars). Protobuf field names and our lookup are lowercase.
+					type_value = type_value.lower()
+					if (len(type_value) != 0):
 						type_set.add(type_value)
 						types.append(f"\"{type_value}\"")
 				type_str = "{" + ", ".join(types) + "}"
