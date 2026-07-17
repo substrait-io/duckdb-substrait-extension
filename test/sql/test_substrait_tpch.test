@@ -2,11 +2,10 @@
 # description: Test get_substrait with TPC-H queries
 # group: [sql]
 
-# test skipped since PR https://github.com/duckdb/duckdb/pull/9993
-# the PR re-introduces DelimJoins in TPC-H again for performance reasons
-# if there is a selection in the duplicate-eliminated side, we keep the DelimJoin
-# this is checked in Deliminator::HasSelection
-# if this function returns false, all DelimJoins are removed from TPC-H
+# Duplicate eliminated joins (DELIM_JOIN) survive the optimizer in several of
+# these queries since https://github.com/duckdb/duckdb/pull/9993 and are
+# converted to Substrait via the expansion in TransformDuplicateEliminatedGet.
+# Q21 and Q22 remain blocked on the ANTI/RIGHT_ANTI join type gap.
 
 require substrait
 
@@ -22,17 +21,17 @@ CALL dbgen(sf=0.01)
 statement ok
 CALL get_substrait('SELECT l_returnflag, l_linestatus, sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price, sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price, sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge, avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price, avg(l_discount) AS avg_disc, count(*) AS count_order FROM lineitem WHERE l_shipdate <= CAST(''1998-09-02'' AS date) GROUP BY l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;', strict = true)
 
-#Q 02 (DELIM_JOIN)
-#statement ok
-#CALL get_substrait('SELECT s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment FROM part, supplier, partsupp, nation, region WHERE p_partkey = ps_partkey AND s_suppkey = ps_suppkey AND p_size = 15 AND p_type LIKE ''%BRASS'' AND s_nationkey = n_nationkey AND n_regionkey = r_regionkey AND r_name = ''EUROPE'' AND ps_supplycost = ( SELECT min(ps_supplycost) FROM partsupp, supplier, nation, region WHERE p_partkey = ps_partkey AND s_suppkey = ps_suppkey AND s_nationkey = n_nationkey AND n_regionkey = r_regionkey AND r_name = ''EUROPE'') ORDER BY s_acctbal DESC, n_name, s_name, p_partkey LIMIT 100;', strict = true)
+#Q 02
+statement ok
+CALL get_substrait('SELECT s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment FROM part, supplier, partsupp, nation, region WHERE p_partkey = ps_partkey AND s_suppkey = ps_suppkey AND p_size = 15 AND p_type LIKE ''%BRASS'' AND s_nationkey = n_nationkey AND n_regionkey = r_regionkey AND r_name = ''EUROPE'' AND ps_supplycost = ( SELECT min(ps_supplycost) FROM partsupp, supplier, nation, region WHERE p_partkey = ps_partkey AND s_suppkey = ps_suppkey AND s_nationkey = n_nationkey AND n_regionkey = r_regionkey AND r_name = ''EUROPE'') ORDER BY s_acctbal DESC, n_name, s_name, p_partkey LIMIT 100;', strict = true)
 
 #Q 03
 statement ok
 CALL get_substrait('SELECT l_orderkey, sum(l_extendedprice * (1 - l_discount)) AS revenue, o_orderdate, o_shippriority FROM customer, orders, lineitem WHERE c_mktsegment = ''BUILDING'' AND c_custkey = o_custkey AND l_orderkey = o_orderkey AND o_orderdate < CAST(''1995-03-15'' AS date) AND l_shipdate > CAST(''1995-03-15'' AS date) GROUP BY l_orderkey, o_orderdate, o_shippriority ORDER BY revenue DESC, o_orderdate LIMIT 10;', strict = true)
 
-#Q 04  DELIM_JOIN
-#statement ok
-#CALL get_substrait('SELECT o_orderpriority, count(*) AS order_count FROM orders WHERE o_orderdate >= CAST(''1993-07-01'' AS date) AND o_orderdate < CAST(''1993-10-01'' AS date) AND EXISTS ( SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;', strict = true)
+#Q 04
+statement ok
+CALL get_substrait('SELECT o_orderpriority, count(*) AS order_count FROM orders WHERE o_orderdate >= CAST(''1993-07-01'' AS date) AND o_orderdate < CAST(''1993-10-01'' AS date) AND EXISTS ( SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;', strict = true)
 
 #Q 05
 statement ok
@@ -78,13 +77,13 @@ CALL get_substrait('SELECT 100.00 * sum( CASE WHEN p_type LIKE ''PROMO%'' THEN l
 statement ok
 CALL get_substrait('WITH revenue AS ( SELECT l_suppkey AS supplier_no, sum(l_extendedprice * (1 - l_discount)) AS total_revenue FROM lineitem WHERE l_shipdate >= CAST(''1996-01-01'' AS date) AND l_shipdate < CAST(''1996-04-01'' AS date) GROUP BY supplier_no) SELECT s_suppkey, s_name, s_address, s_phone, total_revenue FROM supplier, revenue WHERE s_suppkey = supplier_no AND total_revenue = ( SELECT max(total_revenue) FROM revenue) ORDER BY s_suppkey;', strict = true)
 
-#Q 16 (Missing Chunk Get)
-#statement ok
-#CALL get_substrait('SELECT p_brand, p_type, p_size, count(DISTINCT ps_suppkey) AS supplier_cnt FROM partsupp, part WHERE p_partkey = ps_partkey AND p_brand <> ''Brand#45'' AND p_type NOT LIKE ''MEDIUM POLISHED%'' AND p_size IN (49, 14, 23, 45, 19, 3, 36, 9) AND ps_suppkey NOT IN ( SELECT s_suppkey FROM supplier WHERE s_comment LIKE ''%Customer%Complaints%'') GROUP BY p_brand, p_type, p_size ORDER BY supplier_cnt DESC, p_brand, p_type, p_size;', strict = true)
+#Q 16
+statement ok
+CALL get_substrait('SELECT p_brand, p_type, p_size, count(DISTINCT ps_suppkey) AS supplier_cnt FROM partsupp, part WHERE p_partkey = ps_partkey AND p_brand <> ''Brand#45'' AND p_type NOT LIKE ''MEDIUM POLISHED%'' AND p_size IN (49, 14, 23, 45, 19, 3, 36, 9) AND ps_suppkey NOT IN ( SELECT s_suppkey FROM supplier WHERE s_comment LIKE ''%Customer%Complaints%'') GROUP BY p_brand, p_type, p_size ORDER BY supplier_cnt DESC, p_brand, p_type, p_size;', strict = true)
 
-#Q 17 (DELIM_JOIN)
-#statement ok
-#CALL get_substrait('SELECT sum(l_extendedprice) / 7.0 AS avg_yearly FROM lineitem, part WHERE p_partkey = l_partkey AND p_brand = ''Brand#23'' AND p_container = ''MED BOX'' AND l_quantity < ( SELECT 0.2 * avg(l_quantity) FROM lineitem WHERE l_partkey = p_partkey);', strict = true)
+#Q 17
+statement ok
+CALL get_substrait('SELECT sum(l_extendedprice) / 7.0 AS avg_yearly FROM lineitem, part WHERE p_partkey = l_partkey AND p_brand = ''Brand#23'' AND p_container = ''MED BOX'' AND l_quantity < ( SELECT 0.2 * avg(l_quantity) FROM lineitem WHERE l_partkey = p_partkey);', strict = true)
 
 #Q 18
 statement ok
@@ -94,17 +93,21 @@ CALL get_substrait('SELECT c_name, c_custkey, o_orderkey, o_orderdate, o_totalpr
 statement ok
 CALL get_substrait('SELECT sum(l_extendedprice * (1 - l_discount)) AS revenue FROM lineitem, part WHERE (p_partkey = l_partkey AND p_brand = ''Brand#12'' AND p_container IN (''SM CASE'', ''SM BOX'', ''SM PACK'', ''SM PKG'') AND l_quantity >= 1 AND l_quantity <= 1 + 10 AND p_size BETWEEN 1 AND 5 AND l_shipmode IN (''AIR'', ''AIR REG'') AND l_shipinstruct = ''DELIVER IN PERSON'') OR (p_partkey = l_partkey AND p_brand = ''Brand#23'' AND p_container IN (''MED BAG'', ''MED BOX'', ''MED PKG'', ''MED PACK'') AND l_quantity >= 10 AND l_quantity <= 10 + 10 AND p_size BETWEEN 1 AND 10 AND l_shipmode IN (''AIR'', ''AIR REG'') AND l_shipinstruct = ''DELIVER IN PERSON'') OR (p_partkey = l_partkey AND p_brand = ''Brand#34'' AND p_container IN (''LG CASE'', ''LG BOX'', ''LG PACK'', ''LG PKG'') AND l_quantity >= 20 AND l_quantity <= 20 + 10 AND p_size BETWEEN 1 AND 15 AND l_shipmode IN (''AIR'', ''AIR REG'') AND l_shipinstruct = ''DELIVER IN PERSON'');', strict = true)
 
-#Q 20 DELIM_JOIN
-#statement ok
-#CALL get_substrait('SELECT s_name, s_address FROM supplier, nation WHERE s_suppkey IN ( SELECT ps_suppkey FROM partsupp WHERE ps_partkey IN ( SELECT p_partkey FROM part WHERE p_name LIKE ''forest%'') AND ps_availqty > ( SELECT 0.5 * sum(l_quantity) FROM lineitem WHERE l_partkey = ps_partkey AND l_suppkey = ps_suppkey AND l_shipdate >= CAST(''1994-01-01'' AS date) AND l_shipdate < CAST(''1995-01-01'' AS date))) AND s_nationkey = n_nationkey AND n_name = ''CANADA'' ORDER BY s_name;', strict = true)
+#Q 20
+statement ok
+CALL get_substrait('SELECT s_name, s_address FROM supplier, nation WHERE s_suppkey IN ( SELECT ps_suppkey FROM partsupp WHERE ps_partkey IN ( SELECT p_partkey FROM part WHERE p_name LIKE ''forest%'') AND ps_availqty > ( SELECT 0.5 * sum(l_quantity) FROM lineitem WHERE l_partkey = ps_partkey AND l_suppkey = ps_suppkey AND l_shipdate >= CAST(''1994-01-01'' AS date) AND l_shipdate < CAST(''1995-01-01'' AS date))) AND s_nationkey = n_nationkey AND n_name = ''CANADA'' ORDER BY s_name;', strict = true)
 
-#Q 21 Delim Join
-#statement ok
-#CALL get_substrait('SELECT s_name, count(*) AS numwait FROM supplier, lineitem l1, orders, nation WHERE s_suppkey = l1.l_suppkey AND o_orderkey = l1.l_orderkey AND o_orderstatus = ''F'' AND l1.l_receiptdate > l1.l_commitdate AND EXISTS ( SELECT * FROM lineitem l2 WHERE l2.l_orderkey = l1.l_orderkey AND l2.l_suppkey <> l1.l_suppkey) AND NOT EXISTS ( SELECT * FROM lineitem l3 WHERE l3.l_orderkey = l1.l_orderkey AND l3.l_suppkey <> l1.l_suppkey AND l3.l_receiptdate > l3.l_commitdate) AND s_nationkey = n_nationkey AND n_name = ''SAUDI ARABIA'' GROUP BY s_name ORDER BY numwait DESC, s_name LIMIT 100;', strict = true)
+#Q 21 (ANTI)
+statement error
+CALL get_substrait('SELECT s_name, count(*) AS numwait FROM supplier, lineitem l1, orders, nation WHERE s_suppkey = l1.l_suppkey AND o_orderkey = l1.l_orderkey AND o_orderstatus = ''F'' AND l1.l_receiptdate > l1.l_commitdate AND EXISTS ( SELECT * FROM lineitem l2 WHERE l2.l_orderkey = l1.l_orderkey AND l2.l_suppkey <> l1.l_suppkey) AND NOT EXISTS ( SELECT * FROM lineitem l3 WHERE l3.l_orderkey = l1.l_orderkey AND l3.l_suppkey <> l1.l_suppkey AND l3.l_receiptdate > l3.l_commitdate) AND s_nationkey = n_nationkey AND n_name = ''SAUDI ARABIA'' GROUP BY s_name ORDER BY numwait DESC, s_name LIMIT 100;', strict = true)
+----
+Not implemented Error: Unsupported join type ANTI
 
-#Q 22 Mark Join + Chunk Get
-#statement ok
-#CALL get_substrait('SELECT cntrycode, count(*) AS numcust, sum(c_acctbal) AS totacctbal FROM ( SELECT substring(c_phone FROM 1 FOR 2) AS cntrycode, c_acctbal FROM customer WHERE substring(c_phone FROM 1 FOR 2) IN (''13'', ''31'', ''23'', ''29'', ''30'', ''18'', ''17'') AND c_acctbal > ( SELECT avg(c_acctbal) FROM customer WHERE c_acctbal > 0.00 AND substring(c_phone FROM 1 FOR 2) IN (''13'', ''31'', ''23'', ''29'', ''30'', ''18'', ''17'')) AND NOT EXISTS ( SELECT * FROM orders WHERE o_custkey = c_custkey)) AS custsale GROUP BY cntrycode ORDER BY cntrycode;', strict = true)
+#Q 22 (RIGHT_ANTI)
+statement error
+CALL get_substrait('SELECT cntrycode, count(*) AS numcust, sum(c_acctbal) AS totacctbal FROM ( SELECT substring(c_phone FROM 1 FOR 2) AS cntrycode, c_acctbal FROM customer WHERE substring(c_phone FROM 1 FOR 2) IN (''13'', ''31'', ''23'', ''29'', ''30'', ''18'', ''17'') AND c_acctbal > ( SELECT avg(c_acctbal) FROM customer WHERE c_acctbal > 0.00 AND substring(c_phone FROM 1 FOR 2) IN (''13'', ''31'', ''23'', ''29'', ''30'', ''18'', ''17'')) AND NOT EXISTS ( SELECT * FROM orders WHERE o_custkey = c_custkey)) AS custsale GROUP BY cntrycode ORDER BY cntrycode;', strict = true)
+----
+Not implemented Error: Unsupported join type RIGHT_ANTI
 
 # Test Get JSON
 statement ok
