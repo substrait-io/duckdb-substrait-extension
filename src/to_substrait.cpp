@@ -968,24 +968,24 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 
 	auto &dfilter = dop.Cast<LogicalFilter>();
 
-	auto res = TransformOp(*dop.children[0]);
+	unique_ptr<substrait::Rel> res(TransformOp(*dop.children[0]));
 
 	if (!dfilter.expressions.empty()) {
-		auto filter = new substrait::Rel();
-		filter->mutable_filter()->set_allocated_input(res);
+		auto filter = make_uniq<substrait::Rel>();
+		filter->mutable_filter()->set_allocated_input(res.release());
 		filter->mutable_filter()->set_allocated_condition(
 		    CreateConjunction(dfilter.expressions, [&](const unique_ptr<Expression> &in) {
 			    auto expr = new substrait::Expression();
 			    TransformExpr(*in, *expr);
 			    return expr;
 		    }));
-		res = filter;
+		res = std::move(filter);
 	}
 
 	if (!dfilter.projection_map.empty()) {
-		auto projection = new substrait::Rel();
+		auto projection = make_uniq<substrait::Rel>();
 		auto sproj = projection->mutable_project();
-		sproj->set_allocated_input(res);
+		sproj->set_allocated_input(res.release());
 		auto child_column_count = GetColumnCount(*dop.children[0]);
 		auto t_index = 0;
 		vector<int32_t> output_mapping;
@@ -996,9 +996,9 @@ substrait::Rel *DuckDBToSubstrait::TransformFilter(LogicalOperator &dop) {
 		}
 		auto rel_common = CreateOutputMapping(output_mapping);
 		sproj->set_allocated_common(rel_common);
-		res = projection;
+		res = std::move(projection);
 	}
-	return res;
+	return res.release();
 }
 
 substrait::RelCommon *DuckDBToSubstrait::CreateOutputMapping(vector<int32_t> vector) {
@@ -1036,7 +1036,7 @@ bool DuckDBToSubstrait::IsPassthroughProjection(LogicalProjection &dproj, idx_t 
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto &dproj = dop.Cast<LogicalProjection>();
 
 	auto child_column_count = GetColumnCount(*dop.children[0]);
@@ -1072,15 +1072,15 @@ substrait::Rel *DuckDBToSubstrait::TransformProjection(LogicalOperator &dop) {
 		auto rel_common = CreateOutputMapping(output_mapping);
 		sproj->set_allocated_common(rel_common);
 	}
-	return res;
+	return res.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformTopN(LogicalOperator &dop) {
 	auto &dtopn = dop.Cast<LogicalTopN>();
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto stopn = res->mutable_fetch();
 
-	auto sord_rel = new substrait::Rel();
+	auto sord_rel = make_uniq<substrait::Rel>();
 	auto sord = sord_rel->mutable_sort();
 	sord->set_allocated_input(TransformOp(*dop.children[0]));
 
@@ -1088,10 +1088,10 @@ substrait::Rel *DuckDBToSubstrait::TransformTopN(LogicalOperator &dop) {
 		TransformOrder(dordf, *sord->add_sorts());
 	}
 
-	stopn->set_allocated_input(sord_rel);
+	stopn->set_allocated_input(sord_rel.release());
 	stopn->set_offset(static_cast<int64_t>(dtopn.offset));
 	stopn->set_count(static_cast<int64_t>(dtopn.limit));
-	return res;
+	return res.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformLimit(LogicalOperator &dop) {
@@ -1120,17 +1120,17 @@ substrait::Rel *DuckDBToSubstrait::TransformLimit(LogicalOperator &dop) {
 		throw InternalException("Unsupported offset value type");
 	}
 
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto stopn = res->mutable_fetch();
 	stopn->set_allocated_input(TransformOp(*dop.children[0]));
 
 	stopn->set_offset(offset_val);
 	stopn->set_count(limit_val);
-	return res;
+	return res.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto &dord = dop.Cast<LogicalOrder>();
 	auto sord = res->mutable_sort();
 
@@ -1141,7 +1141,7 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 	}
 
 	if (!dord.projection_map.empty()) {
-		auto proj_rel = new substrait::Rel();
+		auto proj_rel = make_uniq<substrait::Rel>();
 		auto projection = proj_rel->mutable_project();
 		auto child_column_count = GetColumnCount(*dop.children[0]);
 		for (auto &col_idx : dord.projection_map) {
@@ -1153,15 +1153,15 @@ substrait::Rel *DuckDBToSubstrait::TransformOrderBy(LogicalOperator &dop) {
 		}
 		auto rel_common = CreateOutputMapping(output_mapping);
 		projection->set_allocated_common(rel_common);
-		projection->set_allocated_input(res);
-		return proj_rel;
+		projection->set_allocated_input(res.release());
+		return proj_rel.release();
 	}
 
-	return res;
+	return res.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop) {
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto sjoin = res->mutable_join();
 	auto &djoin = dop.Cast<LogicalComparisonJoin>();
 	
@@ -1289,7 +1289,7 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 		}
 	}
 	// TODO this projection seems redundant but from_substrait does not work without it
-	auto proj_rel = new substrait::Rel();
+	auto proj_rel = make_uniq<substrait::Rel>();
 	auto projection = proj_rel->mutable_project();
 	auto child_column_count = GetColumnCount(*dop.children[left_child_idx]);
 	
@@ -1312,12 +1312,12 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	}
 	auto rel_common = CreateOutputMapping(output_mapping);
 	projection->set_allocated_common(rel_common);
-	projection->set_allocated_input(res);
-	return proj_rel;
+	projection->set_allocated_input(res.release());
+	return proj_rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop) {
-	auto res = new substrait::Rel();
+	auto res = make_uniq<substrait::Rel>();
 	auto &daggr = dop.Cast<LogicalAggregate>();
 	auto saggr = res->mutable_aggregate();
 	saggr->set_allocated_input(TransformOp(*dop.children[0]));
@@ -1395,8 +1395,8 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		// GROUPING() returns BIGINT in DuckDB
 		*smeas->mutable_output_type() = DuckToSubstraitType(LogicalType::BIGINT);
 	}
-	
-	return res;
+
+	return res.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
@@ -1918,8 +1918,8 @@ void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrai
 	auto &table_scan_bind_data = dget.bind_data->Cast<TableScanBindData>();
 	auto &table = table_scan_bind_data.table;
 	sget->mutable_named_table()->add_names(table.name);
-	auto base_schema = new substrait::NamedStruct();
-	auto type_info = new substrait::Type_Struct();
+	auto base_schema = make_uniq<substrait::NamedStruct>();
+	auto type_info = make_uniq<substrait::Type_Struct>();
 	type_info->set_nullability(substrait::Type_Nullability_NULLABILITY_REQUIRED);
 	auto not_null_constraint = GetNotNullConstraintCol(table);
 	for (idx_t i = 0; i < dget.names.size(); i++) {
@@ -1934,8 +1934,8 @@ void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrai
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, column_statistics.get(), not_null);
 	}
-	base_schema->set_allocated_struct_(type_info);
-	sget->set_allocated_base_schema(base_schema);
+	base_schema->set_allocated_struct_(type_info.release());
+	sget->set_allocated_base_schema(base_schema.release());
 }
 
 void DuckDBToSubstrait::TransformParquetScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, BindInfo &bind_info,
@@ -1950,8 +1950,8 @@ void DuckDBToSubstrait::TransformParquetScanToSubstrait(LogicalGet &dget, substr
 		parquet_item->mutable_parquet();
 	}
 
-	auto base_schema = new substrait::NamedStruct();
-	auto type_info = new substrait::Type_Struct();
+	auto base_schema = make_uniq<substrait::NamedStruct>();
+	auto type_info = make_uniq<substrait::Type_Struct>();
 	type_info->set_nullability(substrait::Type_Nullability_NULLABILITY_REQUIRED);
 	for (idx_t i = 0; i < dget.names.size(); i++) {
 		auto cur_type = dget.returned_types[i];
@@ -1964,34 +1964,34 @@ void DuckDBToSubstrait::TransformParquetScanToSubstrait(LogicalGet &dget, substr
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, column_statistics.get(), false);
 	}
-	base_schema->set_allocated_struct_(type_info);
-	sget->set_allocated_base_schema(base_schema);
+	base_schema->set_allocated_struct_(type_info.release());
+	sget->set_allocated_base_schema(base_schema.release());
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformDummyScan() {
 	// I just have to turn the dummy scan to emit one garbage row, the projection will take care of the rest
-	auto get_rel = new substrait::Rel();
+	auto get_rel = make_uniq<substrait::Rel>();
 	auto sget = get_rel->mutable_read();
 	auto virtual_table = sget->mutable_virtual_table();
 
 	// Add a dummy value to emit one row
 	auto dummy_struct = virtual_table->add_values();
 	dummy_struct->add_fields()->set_i32(42);
-	return get_rel;
+	return get_rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformEmptyResult(LogicalOperator &dop) {
 	// Create an empty virtual table to represent an empty result
 	// An empty virtual table (no rows) naturally represents an empty result
-	auto get_rel = new substrait::Rel();
+	auto get_rel = make_uniq<substrait::Rel>();
 	auto sget = get_rel->mutable_read();
 	sget->mutable_virtual_table();
 	// Don't add any expressions - this creates an empty virtual table with no rows
-	
+
 	// Add base_schema to preserve the schema information
 	auto &empty_result = dop.Cast<LogicalEmptyResult>();
-	auto base_schema = new substrait::NamedStruct();
-	auto type_info = new substrait::Type_Struct();
+	auto base_schema = make_uniq<substrait::NamedStruct>();
+	auto type_info = make_uniq<substrait::Type_Struct>();
 	type_info->set_nullability(substrait::Type_Nullability_NULLABILITY_REQUIRED);
 	
 	for (idx_t i = 0; i < empty_result.return_types.size(); i++) {
@@ -2005,14 +2005,14 @@ substrait::Rel *DuckDBToSubstrait::TransformEmptyResult(LogicalOperator &dop) {
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, nullptr, false);
 	}
-	base_schema->set_allocated_struct_(type_info);
-	sget->set_allocated_base_schema(base_schema);
-	
-	return get_rel;
+	base_schema->set_allocated_struct_(type_info.release());
+	sget->set_allocated_base_schema(base_schema.release());
+
+	return get_rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
-	auto get_rel = new substrait::Rel();
+	auto get_rel = make_uniq<substrait::Rel>();
 	auto &dget = dop.Cast<LogicalGet>();
 
 	if (!dget.function.get_bind_info) {
@@ -2161,9 +2161,9 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 
 		// Wrap the read in a projection performing the struct extraction the scan
 		// would have done, emitting only the extracted values.
-		auto proj_rel = new substrait::Rel();
+		auto proj_rel = make_uniq<substrait::Rel>();
 		auto sproj = proj_rel->mutable_project();
-		sproj->set_allocated_input(get_rel);
+		sproj->set_allocated_input(get_rel.release());
 		vector<int32_t> output_mapping;
 		auto read_column_count = static_cast<int32_t>(read_columns.size());
 		for (idx_t i = 0; i < output_columns.size(); i++) {
@@ -2178,14 +2178,14 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 			output_mapping.push_back(read_column_count + static_cast<int32_t>(i));
 		}
 		sproj->set_allocated_common(CreateOutputMapping(output_mapping));
-		return proj_rel;
+		return proj_rel.release();
 	}
 
-	return get_rel;
+	return get_rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformExpressionGet(LogicalOperator &dop) {
-	auto get_rel = new substrait::Rel();
+	auto get_rel = make_uniq<substrait::Rel>();
 	auto &dget = dop.Cast<LogicalExpressionGet>();
 
 	auto sget = get_rel->mutable_read();
@@ -2194,27 +2194,24 @@ substrait::Rel *DuckDBToSubstrait::TransformExpressionGet(LogicalOperator &dop) 
 	for (auto &row : dget.expressions) {
 		auto row_item = virtual_table->add_expressions();
 		for (auto &expr : row) {
-			auto s_expr = new substrait::Expression();
-			TransformExpr(*expr, *s_expr);
-			*row_item->add_fields() = *s_expr;
-			delete s_expr;
+			TransformExpr(*expr, *row_item->add_fields());
 		}
 	}
-	return get_rel;
+	return get_rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformCrossProduct(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto sub_cross_prod = rel->mutable_cross();
 	auto &djoin = dop.Cast<LogicalCrossProduct>();
 	sub_cross_prod->set_allocated_left(TransformOp(*dop.children[0]));
 	sub_cross_prod->set_allocated_right(TransformOp(*dop.children[1]));
 	auto bindings = djoin.GetColumnBindings();
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformUnion(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 
 	auto set_op = rel->mutable_set();
 	auto &dunion = dop.Cast<LogicalSetOperation>();
@@ -2228,7 +2225,7 @@ substrait::Rel *DuckDBToSubstrait::TransformUnion(LogicalOperator &dop) {
 		inputs->AddAllocated(TransformOp(*child));
 	}
 	auto bindings = dunion.GetColumnBindings();
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::CreateSetOperation(LogicalOperator &child_op,
@@ -2289,7 +2286,7 @@ substrait::Rel *DuckDBToSubstrait::TransformDistinct(LogicalOperator &dop) {
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformExcept(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto set_op = rel->mutable_set();
 	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_MINUS_PRIMARY);
 	auto &set_operation = dop.Cast<LogicalSetOperation>();
@@ -2300,7 +2297,7 @@ substrait::Rel *DuckDBToSubstrait::TransformExcept(LogicalOperator &dop) {
 		inputs->AddAllocated(TransformOp(*child));
 	}
 	auto bindings = dop.GetColumnBindings();
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformIntersect(LogicalOperator &dop) {
@@ -2312,18 +2309,18 @@ substrait::Rel *DuckDBToSubstrait::TransformIntersect(LogicalOperator &dop) {
 		throw NotImplementedException("INTERSECT with more than two children is not yet supported in the "
 		                              "to_substrait function");
 	}
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto set_op = rel->mutable_set();
 	set_op->set_op(substrait::SetRel_SetOp::SetRel_SetOp_SET_OP_INTERSECTION_PRIMARY);
 	auto inputs = set_op->mutable_inputs();
 	inputs->AddAllocated(TransformOp(*set_operation.children[0]));
 	inputs->AddAllocated(TransformOp(*set_operation.children[1]));
 	auto bindings = dop.GetColumnBindings();
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformCreateTable(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto &create_table = dop.Cast<LogicalCreateTable>();
 	auto &create_info = create_table.info.get()->Base();
 	if (create_table.children.size() != 1) {
@@ -2333,8 +2330,8 @@ substrait::Rel *DuckDBToSubstrait::TransformCreateTable(LogicalOperator &dop) {
 		throw InternalException("Create table with more than one child is not supported");
 	}
 
-	auto schema = new substrait::NamedStruct();
-	auto type_info = new substrait::Type_Struct();
+	auto schema = make_uniq<substrait::NamedStruct>();
+	auto type_info = make_uniq<substrait::Type_Struct>();
 	for (auto &name : create_info.columns.GetColumnNames()) {
 		schema->add_names(name);
 	}
@@ -2342,32 +2339,32 @@ substrait::Rel *DuckDBToSubstrait::TransformCreateTable(LogicalOperator &dop) {
 		auto s_type = DuckToSubstraitType(col_type, nullptr, false);
 		*type_info->add_types() = s_type;
 	}
-	schema->set_allocated_struct_(type_info);
+	schema->set_allocated_struct_(type_info.release());
 
 	// This is CreateTableAsSelect
 	substrait::Rel *input = TransformOp(*create_table.children[0]);
 	auto write = rel->mutable_write();
-	write->set_allocated_table_schema(schema);
+	write->set_allocated_table_schema(schema.release());
 	write->set_allocated_input(input);
 	write->set_op(substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_CTAS);
 	auto named_table = write->mutable_named_table();
 	named_table->add_names(create_info.schema);
 	named_table->add_names(create_info.table);
 
-	return rel;
+	return rel.release();
 }
 
 void DuckDBToSubstrait::SetTableSchema(const TableCatalogEntry &table, substrait::NamedStruct *schema) {
 	for (auto &name : table.GetColumns().GetColumnNames()) {
 		schema->add_names(name);
 	}
-	auto type_info = new substrait::Type_Struct();
+	auto type_info = make_uniq<substrait::Type_Struct>();
 	type_info->set_nullability(substrait::Type_Nullability_NULLABILITY_REQUIRED);
 	for (auto &col_type : table.GetColumns().GetColumnTypes()) {
 		auto s_type = DuckToSubstraitType(col_type, nullptr, false);
 		*type_info->add_types() = s_type;
 	}
-	schema->set_allocated_struct_(type_info);
+	schema->set_allocated_struct_(type_info.release());
 }
 
 void DuckDBToSubstrait::SetNamedTable(const TableCatalogEntry &table, substrait::WriteRel *writeRel) {
@@ -2377,7 +2374,7 @@ void DuckDBToSubstrait::SetNamedTable(const TableCatalogEntry &table, substrait:
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformInsertTable(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto &insert_table = dop.Cast<LogicalInsert>();
 	if (insert_table.children.size() != 1) {
 		throw InternalException("insert table expected one child, found " + to_string(insert_table.children.size()));
@@ -2388,17 +2385,17 @@ substrait::Rel *DuckDBToSubstrait::TransformInsertTable(LogicalOperator &dop) {
 	writeRel->set_output(substrait::WriteRel::OUTPUT_MODE_NO_OUTPUT);
 
 	SetNamedTable(insert_table.table, writeRel);
-	auto schema = new substrait::NamedStruct();
-	SetTableSchema(insert_table.table, schema);
-	writeRel->set_allocated_table_schema(schema);
+	auto schema = make_uniq<substrait::NamedStruct>();
+	SetTableSchema(insert_table.table, schema.get());
+	writeRel->set_allocated_table_schema(schema.release());
 
 	substrait::Rel *input = TransformOp(*insert_table.children[0]);
 	writeRel->set_allocated_input(input);
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto &logical_delete = dop.Cast<LogicalDelete>();
 	auto &table = logical_delete.table;
 	if (logical_delete.children.size() != 1) {
@@ -2415,17 +2412,17 @@ substrait::Rel *DuckDBToSubstrait::TransformDeleteTable(LogicalOperator &dop) {
 	named_table->add_names(table.name);
 
 	SetNamedTable(logical_delete.table, writeRel);
-	auto schema = new substrait::NamedStruct();
-	SetTableSchema(logical_delete.table, schema);
-	writeRel->set_allocated_table_schema(schema);
+	auto schema = make_uniq<substrait::NamedStruct>();
+	SetTableSchema(logical_delete.table, schema.get());
+	writeRel->set_allocated_table_schema(schema.release());
 
 	substrait::Rel *input = TransformOp(*logical_delete.children[0]);
 	writeRel->set_allocated_input(input);
-	return rel;
+	return rel.release();
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformCTERef(LogicalOperator &dop) {
-	auto rel = new substrait::Rel();
+	auto rel = make_uniq<substrait::Rel>();
 	auto &cte_ref = dop.Cast<LogicalCTERef>();
 	auto it = find(cte_indices.begin(), cte_indices.end(), cte_ref.cte_index);
 	if (it == cte_indices.end()) {
@@ -2434,7 +2431,7 @@ substrait::Rel *DuckDBToSubstrait::TransformCTERef(LogicalOperator &dop) {
 	auto index = it - cte_indices.begin();
 	auto ref_rel = rel->mutable_reference();
 	ref_rel->set_subtree_ordinal(index);
-	return rel;
+	return rel.release();
 }
 
 vector<LogicalType>::size_type DuckDBToSubstrait::GetColumnCount(LogicalOperator &dop) {
@@ -2502,11 +2499,11 @@ static bool IsRowModificationOperator(const LogicalOperator &op) {
 }
 
 substrait::RelRoot *DuckDBToSubstrait::TransformRootOp(LogicalOperator &dop) {
-	auto root_rel = new substrait::RelRoot();
+	auto root_rel = make_uniq<substrait::RelRoot>();
 	root_rel->set_allocated_input(TransformOp(dop));
 
 	if (IsRowModificationOperator(dop)) {
-		return root_rel;
+		return root_rel.release();
 	}
 
 	if (dop.type == LogicalOperatorType::LOGICAL_CREATE_TABLE) {
@@ -2532,7 +2529,7 @@ substrait::RelRoot *DuckDBToSubstrait::TransformRootOp(LogicalOperator &dop) {
 		}
 	}
 
-	return root_rel;
+	return root_rel.release();
 }
 
 LogicalOperator *DuckDBToSubstrait::TransformCTE(LogicalMaterializedCTE &dop) {
