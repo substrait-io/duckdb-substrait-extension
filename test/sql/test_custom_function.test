@@ -45,7 +45,7 @@ CALL get_substrait_json('select trim(a, ''<'') from t_2')
 query I
 CALL get_substrait_json('select trim(a, ''<'') from t_2')
 ----
-<REGEX>:.*trim:string_string.*
+<REGEX>:.*trim:str_str.*
 
 # Test native functionality does not return extensions or arguments
 

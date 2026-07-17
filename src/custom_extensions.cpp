@@ -21,6 +21,12 @@ string TransformTypes(const substrait::Type &type) {
 	return string(field->name());
 }
 
+// Concrete types over which an `any`/`any1`/`unknown` argument is expanded when
+// pre-building the overload maps. Each token is a protobuf Type.kind field name
+// (what TransformTypes() derives from a concrete argument), so the expanded
+// overloads match at lookup -- these are proto kind names, not the abbreviated
+// signature short names GetName() emits. This is the curated set of kinds that
+// occur as arguments, not an exhaustive list of every proto kind.
 vector<string> GetAllTypes() {
 	return {{"bool"},
 	        {"i8"},
@@ -31,12 +37,9 @@ vector<string> GetAllTypes() {
 	        {"fp64"},
 	        {"string"},
 	        {"binary"},
-	        {"timestamp"},
 	        {"date"},
-	        {"time"},
 	        {"interval_year"},
 	        {"interval_day"},
-	        {"timestamp_tz"},
 	        {"uuid"},
 	        {"varchar"},
 	        {"fixed_binary"},
@@ -52,7 +55,12 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
 			auto type = all_types[i][indices[i]];
+			// Normalize the declared (YAML) type names to the protobuf Type.kind
+			// field names TransformTypes() produces at lookup, so overloads resolve
+			// regardless of the spelling difference (e.g. fixedchar -> fixed_char).
 			type = StringUtil::Replace(type, "boolean", "bool");
+			type = StringUtil::Replace(type, "fixedchar", "fixed_char");
+			type = StringUtil::Replace(type, "fixedbinary", "fixed_binary");
 			types.push_back(type);
 		}
 		if (types.empty()) {
@@ -101,13 +109,44 @@ void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string
 	InsertAllFunctions(all_types, idx, 0, name_p, file_path);
 }
 
+// Maps a Substrait type name (the protobuf `Type.kind` oneof field name, e.g.
+// "string", "decimal", "precision_timestamp") to the abbreviated "Type Short
+// Name" that compound function signatures must use, per
+// https://substrait.io/extensions/#function-signature-compound-names. Types
+// whose short name is identical to their name (i8/i16/i32/i64, fp32/fp64, bool,
+// date, uuid, struct/list/map, func, any) are absent from the table and pass
+// through unchanged.
+static string TypeShortName(const string &type) {
+	static const std::unordered_map<string, string> SHORT_NAMES = {
+	    {"string", "str"},
+	    {"binary", "vbin"},
+	    {"decimal", "dec"},
+	    {"varchar", "vchar"},
+	    {"fixed_char", "fchar"},
+	    {"fixed_binary", "fbin"},
+	    {"interval_year", "iyear"},
+	    {"interval_day", "iday"},
+	    {"interval_compound", "icompound"},
+	    {"precision_time", "pt"},
+	    {"precision_timestamp", "pts"},
+	    {"precision_timestamp_tz", "ptstz"},
+	};
+	auto it = SHORT_NAMES.find(type);
+	return it == SHORT_NAMES.end() ? type : it->second;
+}
+
 string SubstraitCustomFunction::GetName() {
 	if (arg_types.empty()) {
 		return name;
 	}
 	string function_signature = name + ":";
 	for (auto &type : arg_types) {
-		function_signature += type + "_";
+		// A trailing '?' marks a nullable (variadic) argument in the declared
+		// signature. Substrait compound names encode only the short type name,
+		// not nullability, so strip it before the lookup (e.g. the variadic
+		// "and" is emitted as "and:bool", not "and:bool?").
+		auto base = (!type.empty() && type.back() == '?') ? type.substr(0, type.size() - 1) : type;
+		function_signature += TypeShortName(base) + "_";
 	}
 	function_signature.pop_back();
 	return function_signature;

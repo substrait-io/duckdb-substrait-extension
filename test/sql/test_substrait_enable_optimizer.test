@@ -35,13 +35,13 @@ PRAGMA enable_optimizer
 query I
 CALL get_substrait('select * from tbl where v LIKE ''%y''');
 ----
-<REGEX>:.*ends_with:string_string.*
+<REGEX>:.*ends_with:str_str.*
 
 # If substitution is not desirable, an unoptimized plan can be used instead.
 query I
 CALL get_substrait('select * from tbl where v LIKE ''%y''', enable_optimizer=false);
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Alternatively, the optimizer can be disabled at the connection level, which will also disable optimizing Substrait plans.
 statement ok
@@ -50,13 +50,13 @@ PRAGMA disable_optimizer
 query I
 CALL get_substrait('select * from tbl where v LIKE ''duck%''');
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # But the `enable_optimizer` option takes precedence over the connection-level settings.
 query I
 CALL get_substrait('select * from tbl where v LIKE ''duck%''', enable_optimizer=true);
 ----
-<REGEX>:.*gte:string_string.*
+<REGEX>:.*gte:str_str.*
 
 # Finally, the user can disable specific optimizers when generating Substrait by changing the connection-level settings.
 statement ok
@@ -65,7 +65,7 @@ PRAGMA disabled_optimizers = 'expression_rewriter'
 query I
 CALL get_substrait('select * from tbl where v LIKE ''%y''', enable_optimizer=true);
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Same as above but with optimizer enabled by default (`expression_rewriter` is still disabled).
 statement ok
@@ -74,7 +74,7 @@ PRAGMA enable_optimizer
 query I
 CALL get_substrait('select * from tbl where v LIKE ''%y''');
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Reset for JSON tests.
 statement ok
@@ -84,7 +84,7 @@ PRAGMA disabled_optimizers = ''
 query I
 CALL get_substrait('select * from tbl where v LIKE ''%univ%''');
 ----
-<REGEX>:.*contains:string_string.*
+<REGEX>:.*contains:str_str.*
 
 # ---------------------------- Same tests with JSON ----------------------------
 
@@ -112,13 +112,13 @@ insert into tbl_json VALUES ('hi'), ('universe'), ('ducky');
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''%y''');
 ----
-<REGEX>:.*ends_with:string_string.*
+<REGEX>:.*ends_with:str_str.*
 
 # If substitution is not desirable, an unoptimized plan can be used instead.
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''%y''', enable_optimizer=false);
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Alternatively, the optimizer can be disabled at the connection level, which will also disable optimizing Substrait plans.
 statement ok
@@ -127,13 +127,13 @@ PRAGMA disable_optimizer
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''duck%''');
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # But the `enable_optimizer` option takes precedence over the connection-level settings.
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''duck%''', enable_optimizer=true);
 ----
-<REGEX>:.*gte:string_string.*
+<REGEX>:.*gte:str_str.*
 
 # Finally, the user can disable specific optimizers when generating Substrait by changing the connection-level settings.
 statement ok
@@ -142,7 +142,7 @@ PRAGMA disabled_optimizers = 'expression_rewriter'
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''%y''', enable_optimizer=true);
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Same as above but with optimizer enabled by default (`expression_rewriter` is still disabled).
 statement ok
@@ -151,7 +151,7 @@ PRAGMA enable_optimizer
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''%y''');
 ----
-<REGEX>:.*like:string_string.*
+<REGEX>:.*like:str_str.*
 
 # Reset
 statement ok
@@ -161,4 +161,4 @@ PRAGMA disabled_optimizers = ''
 query I
 CALL get_substrait_json('select * from tbl_json where v LIKE ''%univ%''');
 ----
-<REGEX>:.*contains:string_string.*
+<REGEX>:.*contains:str_str.*
