@@ -1169,12 +1169,52 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	bool is_right_semi = djoin.join_type == JoinType::RIGHT_SEMI;
 	idx_t left_child_idx = is_right_semi ? 1 : 0;
 	idx_t right_child_idx = is_right_semi ? 0 : 1;
-	
-	sjoin->set_allocated_left(TransformOp(*dop.children[left_child_idx]));
-	sjoin->set_allocated_right(TransformOp(*dop.children[right_child_idx]));
+
+	// A duplicate eliminated join (what DuckDB abbreviates as a delim join) is a comparison
+	// join that additionally feeds the distinct values of some of its data side's columns
+	// (the duplicate eliminated columns) into duplicate eliminated get scans
+	// (LOGICAL_DELIM_GET) within its other child. Substrait has no equivalent construct, so
+	// each of those scans is expanded into an aggregation over a copy of the data side (see
+	// TransformDuplicateEliminatedGet). The data side is registered here while the scan side
+	// is transformed, and marked as a saved computation so consumers can recognize that the
+	// copies (marked as loaded computations) do not need to be computed again.
+	bool is_duplicate_eliminated = dop.type == LogicalOperatorType::LOGICAL_DELIM_JOIN;
+	idx_t data_side_idx = djoin.delim_flipped ? 1 : 0;
+	int32_t computation_id = is_duplicate_eliminated ? ++last_computation_id : 0;
+	auto transform_child = [&](idx_t child_idx) -> substrait::Rel * {
+		if (!is_duplicate_eliminated) {
+			return TransformOp(*dop.children[child_idx]);
+		}
+		if (child_idx == data_side_idx) {
+			auto data_side = TransformOp(*dop.children[child_idx]);
+			auto common = GetRelCommon(*data_side);
+			if (common) {
+				auto saved = common->mutable_hint()->add_saved_computations();
+				saved->set_computation_id(computation_id);
+				saved->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN);
+			}
+			return data_side;
+		}
+		DuplicateEliminationSource source;
+		source.data_side = dop.children[data_side_idx].get();
+		for (auto &dexpr : djoin.duplicate_eliminated_columns) {
+			if (dexpr->GetExpressionType() != ExpressionType::BOUND_REF) {
+				throw NotImplementedException("Duplicate eliminated column must be a bound reference");
+			}
+			source.column_indices.push_back(dexpr->Cast<BoundReferenceExpression>().index);
+		}
+		source.computation_id = computation_id;
+		duplicate_elimination_sources.push_back(std::move(source));
+		auto scan_side = TransformOp(*dop.children[child_idx]);
+		duplicate_elimination_sources.pop_back();
+		return scan_side;
+	};
+	sjoin->set_allocated_left(transform_child(left_child_idx));
+	sjoin->set_allocated_right(transform_child(right_child_idx));
 
 	auto left_col_count = dop.children[left_child_idx]->types.size();
-	if (dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_COMPARISON_JOIN) {
+	if (dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_COMPARISON_JOIN ||
+	    dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_DELIM_JOIN) {
 		auto &child_join = dop.children[left_child_idx]->Cast<LogicalComparisonJoin>();
 		if (child_join.join_type != JoinType::SEMI && child_join.join_type != JoinType::ANTI && child_join.join_type != JoinType::RIGHT_SEMI) {
 			left_col_count = child_join.left_projection_map.size() + child_join.right_projection_map.size();
@@ -1314,6 +1354,47 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	projection->set_allocated_common(rel_common);
 	projection->set_allocated_input(res);
 	return proj_rel;
+}
+
+substrait::Rel *DuckDBToSubstrait::TransformDuplicateEliminatedGet(LogicalOperator &dop) {
+	auto &dget = dop.Cast<LogicalDelimGet>();
+	if (duplicate_elimination_sources.empty()) {
+		throw NotImplementedException("Found a duplicate eliminated get without an enclosing "
+		                              "duplicate eliminated join");
+	}
+	// A duplicate eliminated get scans the distinct values of the duplicate eliminated
+	// columns of its innermost enclosing duplicate eliminated join. Substrait has no
+	// equivalent construct, so emit a copy of the join's data side aggregated on those
+	// columns, which produces exactly the rows the get scans.
+	auto source = duplicate_elimination_sources.back();
+	if (source.column_indices.size() != dget.chunk_types.size()) {
+		throw InternalException("Duplicate eliminated get scans %llu columns but the enclosing "
+		                        "duplicate eliminated join eliminates duplicates over %llu columns",
+		                        dget.chunk_types.size(), source.column_indices.size());
+	}
+	// The data side may itself contain duplicate eliminated gets, but they belong to outer
+	// duplicate eliminated joins; hide this join's entry while the copy is emitted so they
+	// resolve against the correct join.
+	duplicate_elimination_sources.pop_back();
+	auto data_side = TransformOp(*source.data_side);
+	duplicate_elimination_sources.push_back(source);
+	// Mark the copy as a load of the computation saved on the join's data side.
+	auto common = GetRelCommon(*data_side);
+	if (common) {
+		auto loaded = common->mutable_hint()->add_loaded_computations();
+		loaded->set_computation_id_reference(source.computation_id);
+		loaded->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN);
+	}
+
+	auto res = new substrait::Rel();
+	auto aggregate = res->mutable_aggregate();
+	aggregate->set_allocated_input(data_side);
+	auto grouping = aggregate->add_groupings();
+	for (idx_t i = 0; i < source.column_indices.size(); i++) {
+		CreateFieldRef(aggregate->add_grouping_expressions(), source.column_indices[i]);
+		grouping->add_expression_references(i);
+	}
+	return res;
 }
 
 substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop) {
@@ -2441,6 +2522,33 @@ vector<LogicalType>::size_type DuckDBToSubstrait::GetColumnCount(LogicalOperator
 	return dop.types.size();
 }
 
+substrait::RelCommon *DuckDBToSubstrait::GetRelCommon(substrait::Rel &rel) {
+	switch (rel.rel_type_case()) {
+	case substrait::Rel::RelTypeCase::kRead:
+		return rel.mutable_read()->mutable_common();
+	case substrait::Rel::RelTypeCase::kFilter:
+		return rel.mutable_filter()->mutable_common();
+	case substrait::Rel::RelTypeCase::kFetch:
+		return rel.mutable_fetch()->mutable_common();
+	case substrait::Rel::RelTypeCase::kAggregate:
+		return rel.mutable_aggregate()->mutable_common();
+	case substrait::Rel::RelTypeCase::kSort:
+		return rel.mutable_sort()->mutable_common();
+	case substrait::Rel::RelTypeCase::kJoin:
+		return rel.mutable_join()->mutable_common();
+	case substrait::Rel::RelTypeCase::kProject:
+		return rel.mutable_project()->mutable_common();
+	case substrait::Rel::RelTypeCase::kSet:
+		return rel.mutable_set()->mutable_common();
+	case substrait::Rel::RelTypeCase::kCross:
+		return rel.mutable_cross()->mutable_common();
+	case substrait::Rel::RelTypeCase::kWindow:
+		return rel.mutable_window()->mutable_common();
+	default:
+		return nullptr;
+	}
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 	switch (dop.type) {
 	case LogicalOperatorType::LOGICAL_FILTER:
@@ -2455,6 +2563,12 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformProjection(dop);
 	case LogicalOperatorType::LOGICAL_COMPARISON_JOIN:
 		return TransformComparisonJoin(dop);
+	case LogicalOperatorType::LOGICAL_DELIM_JOIN:
+		// A duplicate eliminated join is a comparison join with extra bookkeeping for the
+		// duplicate eliminated get scans it feeds; TransformComparisonJoin handles both.
+		return TransformComparisonJoin(dop);
+	case LogicalOperatorType::LOGICAL_DELIM_GET:
+		return TransformDuplicateEliminatedGet(dop);
 	case LogicalOperatorType::LOGICAL_AGGREGATE_AND_GROUP_BY:
 		return TransformAggregateGroup(dop);
 	case LogicalOperatorType::LOGICAL_WINDOW:

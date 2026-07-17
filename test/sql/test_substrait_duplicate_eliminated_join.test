@@ -1,0 +1,53 @@
+# name: test/sql/test_substrait_duplicate_eliminated_join.test
+# description: Test round-tripping of duplicate eliminated joins (DELIM_JOIN/DELIM_GET)
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE sales (store_sk INTEGER, customer_sk INTEGER, category VARCHAR, amount DECIMAL(7,2));
+
+# Key values deliberately exceed 1000 to catch placeholder implementations that
+# only cover small key domains.
+statement ok
+INSERT INTO sales VALUES
+    (5001, 9001, 'apparel', 100.00),
+    (5001, 9002, 'apparel', 300.00),
+    (5001, 9003, 'shoes', 250.00),
+    (5002, 9001, 'shoes', 80.00),
+    (5002, 9004, 'apparel', 120.00),
+    (5003, 9005, 'garden', 500.00),
+    (5003, NULL, 'garden', 500.00);
+
+statement ok
+CREATE TABLE stores (store_sk INTEGER, state VARCHAR);
+
+statement ok
+INSERT INTO stores VALUES (5001, 'TN'), (5002, 'CA'), (5003, 'TN');
+
+# The expanded duplicate eliminated gets are tied to the join's data side with
+# saved/loaded computation hints. This runs before enable_verification because
+# selecting from get_substrait_json is unrelated to round-tripping.
+query I
+SELECT "Json" LIKE '%savedComputations%' AND "Json" LIKE '%loadedComputations%' FROM get_substrait_json('WITH totals AS (SELECT store_sk, customer_sk, Sum(amount) AS total FROM sales GROUP BY store_sk, customer_sk) SELECT t1.customer_sk FROM totals t1, stores WHERE t1.total > (SELECT Avg(total) * 1.2 FROM totals t2 WHERE t1.store_sk = t2.store_sk) AND stores.store_sk = t1.store_sk AND stores.state = ''TN'' ORDER BY t1.customer_sk');
+----
+true
+
+statement ok
+PRAGMA enable_verification
+
+# Correlated aggregate over a grouped common table expression referenced twice
+# (the pattern of TPC-DS Q1): the duplicate eliminated join survives the
+# optimizer, correlating on an integer key.
+statement ok
+CALL get_substrait('WITH totals AS (SELECT store_sk, customer_sk, Sum(amount) AS total FROM sales GROUP BY store_sk, customer_sk) SELECT t1.customer_sk FROM totals t1, stores WHERE t1.total > (SELECT Avg(total) * 1.2 FROM totals t2 WHERE t1.store_sk = t2.store_sk) AND stores.store_sk = t1.store_sk AND stores.state = ''TN'' ORDER BY t1.customer_sk');
+
+# The same pattern correlating on a VARCHAR key: the duplicate eliminated
+# columns are not integers.
+statement ok
+CALL get_substrait('WITH totals AS (SELECT category, store_sk, customer_sk, Sum(amount) AS total FROM sales GROUP BY category, store_sk, customer_sk) SELECT t1.customer_sk FROM totals t1, stores WHERE t1.total > (SELECT Avg(total) * 1.2 FROM totals t2 WHERE t1.category = t2.category) AND stores.store_sk = t1.store_sk AND stores.state = ''TN'' ORDER BY t1.customer_sk');
+
+# Correlated EXISTS combined with OR (the pattern of TPC-DS Q10), which keeps
+# duplicate eliminated mark joins.
+statement ok
+CALL get_substrait('SELECT category FROM sales s1 WHERE EXISTS (SELECT * FROM sales s2 WHERE s1.customer_sk = s2.customer_sk AND s2.amount > 90) AND (EXISTS (SELECT * FROM sales s3 WHERE s1.customer_sk = s3.customer_sk AND s3.category = ''shoes'') OR EXISTS (SELECT * FROM sales s4 WHERE s1.customer_sk = s4.customer_sk AND s4.category = ''garden'')) ORDER BY category');
