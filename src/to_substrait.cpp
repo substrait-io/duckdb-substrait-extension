@@ -353,11 +353,27 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		auto enum_arg = sfun->add_arguments();
 		*enum_arg->mutable_enum_() = subfield;
 	}
+	// Substrait only defines substring/substr over i32 offsets and lengths, but DuckDB binds
+	// those arguments as i64 (BIGINT). Emit them cast to i32 so the call resolves to the
+	// standard substring signature instead of an unknown native function.
+	// NOTE: this narrows i64 to i32 and so truncates offsets/lengths that exceed the i32
+	// range. Revisit and emit the wider arguments directly if an i64 substring signature is
+	// ever added to the Substrait function definitions.
+	bool is_substring = function_name == "substring" || function_name == "substr";
 	vector<substrait::Type> args_types;
-	for (auto &darg : dfun.children) {
+	for (idx_t arg_idx = 0; arg_idx < dfun.children.size(); arg_idx++) {
+		auto &darg = dfun.children[arg_idx];
 		auto sarg = sfun->add_arguments();
-		TransformExpr(*darg, *sarg->mutable_value(), col_offset);
-		args_types.emplace_back(DuckToSubstraitType(darg->return_type));
+		if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
+			auto narrowed = LogicalType::INTEGER;
+			auto scast = sarg->mutable_value()->mutable_cast();
+			TransformExpr(*darg, *scast->mutable_input(), col_offset);
+			*scast->mutable_type() = DuckToSubstraitType(narrowed);
+			args_types.emplace_back(DuckToSubstraitType(narrowed));
+		} else {
+			TransformExpr(*darg, *sarg->mutable_value(), col_offset);
+			args_types.emplace_back(DuckToSubstraitType(darg->return_type));
+		}
 	}
 	sfun->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
 
