@@ -21,6 +21,12 @@ string TransformTypes(const substrait::Type &type) {
 	return string(field->name());
 }
 
+// Concrete types over which an `any`/`any1`/`unknown` argument is expanded when
+// pre-building the overload maps. Each token is a protobuf Type.kind field name
+// (what TransformTypes() derives from a concrete argument), so the expanded
+// overloads match at lookup -- these are proto kind names, not the abbreviated
+// signature short names GetName() emits. This is the curated set of kinds that
+// occur as arguments, not an exhaustive list of every proto kind.
 vector<string> GetAllTypes() {
 	return {{"bool"},
 	        {"i8"},
@@ -31,12 +37,9 @@ vector<string> GetAllTypes() {
 	        {"fp64"},
 	        {"string"},
 	        {"binary"},
-	        {"timestamp"},
 	        {"date"},
-	        {"time"},
 	        {"interval_year"},
 	        {"interval_day"},
-	        {"timestamp_tz"},
 	        {"uuid"},
 	        {"varchar"},
 	        {"fixed_binary"},
@@ -52,7 +55,12 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
 			auto type = all_types[i][indices[i]];
+			// Normalize the declared (YAML) type names to the protobuf Type.kind
+			// field names TransformTypes() produces at lookup, so overloads resolve
+			// regardless of the spelling difference (e.g. fixedchar -> fixed_char).
 			type = StringUtil::Replace(type, "boolean", "bool");
+			type = StringUtil::Replace(type, "fixedchar", "fixed_char");
+			type = StringUtil::Replace(type, "fixedbinary", "fixed_binary");
 			types.push_back(type);
 		}
 		if (types.empty()) {
@@ -122,11 +130,6 @@ static string TypeShortName(const string &type) {
 	    {"precision_time", "pt"},
 	    {"precision_timestamp", "pts"},
 	    {"precision_timestamp_tz", "ptstz"},
-	    // Deprecated types (superseded by the precision_* variants and no longer
-	    // in the spec's short-name table) are still enumerated for the any-type
-	    // expansion, so keep their historical short names for consistency.
-	    {"timestamp", "ts"},
-	    {"timestamp_tz", "tstz"},
 	};
 	auto it = SHORT_NAMES.find(type);
 	return it == SHORT_NAMES.end() ? type : it->second;
