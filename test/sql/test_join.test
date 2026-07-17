@@ -18,3 +18,19 @@ CALL get_substrait('
     cte2 as (SELECT c_custkey as other_custkey, c_name from raw_data where c_custkey = 900)
     select * from cte1 full join cte2 on join_custkey = other_custkey;
   ');
+
+# Anti join types. Two tables of very different sizes make the optimizer choose a plain anti
+# join for one direction and a right anti join for the other, exercising both mappings.
+statement ok
+CREATE table anti_big as select range k, range::VARCHAR v from range(1000, 11000);
+
+statement ok
+CREATE table anti_small as select range k from range(2000, 2050);
+
+# Probing the large table against the small one keeps the small table on the build side (ANTI).
+statement ok
+CALL get_substrait('SELECT count(*) FROM anti_big b WHERE NOT EXISTS (SELECT 1 FROM anti_small s WHERE s.k = b.k);');
+
+# Probing the small table against the large one flips the children (RIGHT_ANTI).
+statement ok
+CALL get_substrait('SELECT count(*) FROM anti_small s WHERE NOT EXISTS (SELECT 1 FROM anti_big b WHERE b.k = s.k);');
