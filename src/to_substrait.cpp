@@ -1191,7 +1191,7 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 			if (common) {
 				auto saved = common->mutable_hint()->add_saved_computations();
 				saved->set_computation_id(computation_id);
-				saved->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN);
+				saved->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_HASHTABLE);
 			}
 			return data_side;
 		}
@@ -1383,7 +1383,7 @@ substrait::Rel *DuckDBToSubstrait::TransformDuplicateEliminatedGet(LogicalOperat
 	if (common) {
 		auto loaded = common->mutable_hint()->add_loaded_computations();
 		loaded->set_computation_id_reference(source.computation_id);
-		loaded->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_UNKNOWN);
+		loaded->set_type(substrait::RelCommon_Hint_ComputationType_COMPUTATION_TYPE_HASHTABLE);
 	}
 
 	auto res = new substrait::Rel();
