@@ -353,11 +353,27 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		auto enum_arg = sfun->add_arguments();
 		*enum_arg->mutable_enum_() = subfield;
 	}
+	// Substrait only defines substring/substr over i32 offsets and lengths, but DuckDB binds
+	// those arguments as i64 (BIGINT). Emit them cast to i32 so the call resolves to the
+	// standard substring signature instead of an unknown native function.
+	// NOTE: this narrows i64 to i32 and so truncates offsets/lengths that exceed the i32
+	// range. Revisit and emit the wider arguments directly if an i64 substring signature is
+	// ever added to the Substrait function definitions.
+	bool is_substring = function_name == "substring" || function_name == "substr";
 	vector<substrait::Type> args_types;
-	for (auto &darg : dfun.children) {
+	for (idx_t arg_idx = 0; arg_idx < dfun.children.size(); arg_idx++) {
+		auto &darg = dfun.children[arg_idx];
 		auto sarg = sfun->add_arguments();
-		TransformExpr(*darg, *sarg->mutable_value(), col_offset);
-		args_types.emplace_back(DuckToSubstraitType(darg->return_type));
+		if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
+			auto narrowed = LogicalType::INTEGER;
+			auto scast = sarg->mutable_value()->mutable_cast();
+			TransformExpr(*darg, *scast->mutable_input(), col_offset);
+			*scast->mutable_type() = DuckToSubstraitType(narrowed);
+			args_types.emplace_back(DuckToSubstraitType(narrowed));
+		} else {
+			TransformExpr(*darg, *sarg->mutable_value(), col_offset);
+			args_types.emplace_back(DuckToSubstraitType(darg->return_type));
+		}
 	}
 	sfun->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
 
@@ -1138,10 +1154,12 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	auto sjoin = res->mutable_join();
 	auto &djoin = dop.Cast<LogicalComparisonJoin>();
 	
-	// RIGHT_SEMI is equivalent to LEFT_SEMI with swapped children
+	// RIGHT_SEMI and RIGHT_ANTI are equivalent to their LEFT variants with swapped children.
 	bool is_right_semi = djoin.join_type == JoinType::RIGHT_SEMI;
-	idx_t left_child_idx = is_right_semi ? 1 : 0;
-	idx_t right_child_idx = is_right_semi ? 0 : 1;
+	bool is_right_anti = djoin.join_type == JoinType::RIGHT_ANTI;
+	bool swap_children = is_right_semi || is_right_anti;
+	idx_t left_child_idx = swap_children ? 1 : 0;
+	idx_t right_child_idx = swap_children ? 0 : 1;
 
 	// A duplicate eliminated join (what DuckDB abbreviates as a delim join) is a comparison
 	// join that additionally feeds the distinct values of some of its data side's columns
@@ -1189,17 +1207,21 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	if (dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_COMPARISON_JOIN ||
 	    dop.children[left_child_idx]->type == LogicalOperatorType::LOGICAL_DELIM_JOIN) {
 		auto &child_join = dop.children[left_child_idx]->Cast<LogicalComparisonJoin>();
-		if (child_join.join_type != JoinType::SEMI && child_join.join_type != JoinType::ANTI && child_join.join_type != JoinType::RIGHT_SEMI) {
-			left_col_count = child_join.left_projection_map.size() + child_join.right_projection_map.size();
-		} else {
+		if (child_join.join_type == JoinType::RIGHT_SEMI || child_join.join_type == JoinType::RIGHT_ANTI) {
+			// A right semi/anti join is emitted with its children swapped and projects only its
+			// right side, so its Substrait output has right_projection_map columns.
+			left_col_count = child_join.right_projection_map.size();
+		} else if (child_join.join_type == JoinType::SEMI || child_join.join_type == JoinType::ANTI) {
 			left_col_count = child_join.left_projection_map.size();
+		} else {
+			left_col_count = child_join.left_projection_map.size() + child_join.right_projection_map.size();
 		}
 	}
 	
 	// For RIGHT_SEMI, we need to swap the column references in join conditions
 	auto right_col_count = dop.children[right_child_idx]->types.size();
-	if (is_right_semi) {
-		// For RIGHT_SEMI, swap left and right expressions in conditions
+	if (swap_children) {
+		// For RIGHT_SEMI/RIGHT_ANTI, swap left and right expressions in conditions
 		sjoin->set_allocated_expression(CreateConjunction(
 		    djoin.conditions, [&](const JoinCondition &in) {
 				// Create expression with swapped left/right
@@ -1281,6 +1303,13 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 		// Convert RIGHT_SEMI to LEFT_SEMI since we swapped the children
 		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI);
 		break;
+	case JoinType::ANTI:
+		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI);
+		break;
+	case JoinType::RIGHT_ANTI:
+		// Convert RIGHT_ANTI to LEFT_ANTI since we swapped the children
+		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI);
+		break;
 	case JoinType::MARK:
 		sjoin->set_type(substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_MARK);
 		break;
@@ -1306,13 +1335,14 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 	auto projection = proj_rel->mutable_project();
 	auto child_column_count = GetColumnCount(*dop.children[left_child_idx]);
 	
-	// For RIGHT_SEMI (now converted to LEFT_SEMI with swapped children), use right_projection_map
-	// For SEMI, use left_projection_map
-	auto &projection_map = is_right_semi ? djoin.right_projection_map : djoin.left_projection_map;
+	// For RIGHT_SEMI/RIGHT_ANTI (now converted to their LEFT variants with swapped children),
+	// use right_projection_map. For SEMI/ANTI, use left_projection_map.
+	auto &projection_map = swap_children ? djoin.right_projection_map : djoin.left_projection_map;
 	for (auto idx : projection_map) {
 		CreateFieldRef(projection->add_expressions(), idx);
 	}
-	if (djoin.join_type != JoinType::SEMI && djoin.join_type != JoinType::RIGHT_SEMI) {
+	if (djoin.join_type != JoinType::SEMI && djoin.join_type != JoinType::RIGHT_SEMI &&
+	    djoin.join_type != JoinType::ANTI && djoin.join_type != JoinType::RIGHT_ANTI) {
 		child_column_count += GetColumnCount(*dop.children[right_child_idx]);
 		for (auto right_idx : djoin.right_projection_map) {
 			CreateFieldRef(projection->add_expressions(), right_idx + left_col_count);
