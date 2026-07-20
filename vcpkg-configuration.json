@@ -4,7 +4,7 @@
             "kind": "git",
             "repository": "https://github.com/substrait-io/substrait-packaging",
             "reference": "vcpkg-registry",
-            "baseline": "b3d1ef8553a0998d0a7c19f84575203070d668ff",
+            "baseline": "006db128862233f1e036cb7001ccf1d38da3d80c",
             "packages": [
                 "substrait-protobuf",
                 "substrait-extensions",
