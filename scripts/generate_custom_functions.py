@@ -16,6 +16,26 @@ SUBSTRAIT_PACKAGING_REPO = "https://github.com/substrait-io/substrait-packaging.
 SUBSTRAIT_EXTENSIONS_TAG = "cpp/substrait-extensions/v0.94.0"
 SUBSTRAIT_EXTENSIONS_SUBDIR = os.path.join("cpp", "substrait-extensions", "extensions")
 
+# Only ingest extension YAMLs that declare real Substrait functions. Every
+# legitimate function extension follows the `functions_*.yaml` naming
+# convention, so we allowlist by that prefix rather than walking every YAML in
+# the directory. This deliberately skips:
+#   * example/placeholder extensions -- notably `unknown.yaml`, which declares a
+#     custom `unknown` type and defines add/subtract/.../count over it under the
+#     placeholder URN `extension:io.substrait:unknown`. Ingesting it produced
+#     fabricated signatures and a bogus URN that could clobber real
+#     registrations (see issue #214).
+#   * type-only definitions (`extension_types.yaml`, `type_variations.yaml`),
+#     which declare no functions.
+# This mirrors substrait-java, which loads an explicit `functions_*.yaml`
+# allowlist. Type combinations not covered by a real extension then correctly
+# fall back to `native` instead of referencing a fake URN.
+FUNCTION_EXTENSION_PREFIX = "functions_"
+
+
+def is_function_extension(file_name):
+	return file_name.startswith(FUNCTION_EXTENSION_PREFIX) and file_name.endswith(".yaml")
+
 
 def parse_function_data(functions,yaml_data,function_type):
 	for function_data in yaml_data.get(function_type, []):
@@ -51,6 +71,9 @@ def get_custom_functions(custom_extension_folder):
 	type_set = set()
 	custom_function_paths = next(walk(custom_extension_folder), (None, None, []))[2]
 	for custom_function_path in custom_function_paths:
+		if not is_function_extension(custom_function_path):
+			print(f"Skipping non-function extension YAML: {custom_function_path}")
+			continue
 		# Each extension YAML declares its own Substrait URN
 		# (extension:<owner>:<id>); use it directly rather than reconstructing it
 		# from the file name.

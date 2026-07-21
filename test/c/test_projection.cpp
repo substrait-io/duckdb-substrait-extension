@@ -85,12 +85,12 @@ TEST_CASE("Test C ReadRel projection clause with two passthrough columns with Su
 	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
 }
 
-// NOTE: in some cases below (equal:i32_i32, avg:dec) a Substrait function
-// currently resolves without a valid extension URN, so its extensionUrns entry
-// carries only the anchor and no "urn". That is a pre-existing resolution gap
-// (e.g. the functions_arithmetic_decimal YAML declares the arg type as
-// "DECIMAL" while plans emit "decimal", so the lookup misses), tracked as a
-// follow-up -- the absent urn is not correct-by-design.
+// NOTE: equal:i32_i32 below still resolves without a valid extension URN, so
+// its extensionUrns entry carries only the anchor and no "urn". That is a
+// pre-existing resolution gap: the any1/any1 overload is expanded over the
+// concrete-type cross-product, and only the first expanded entry keeps the
+// URN, leaving the rest (e.g. i32/i32) empty. Tracked as a follow-up -- the
+// absent urn is not correct-by-design.
 TEST_CASE("Test C ReadRel projection clause with two passthrough columns and filter", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
@@ -142,7 +142,7 @@ TEST_CASE("Test C ReadRel projection clause 1 passthrough column and 1 aggregate
 	CreateEmployeeTable(con);
 
 	auto json_str = GetSubstraitJSON(con, "SELECT department_id, AVG(salary) AS avg_salary FROM employees GROUP BY department_id");
-	auto expected_json_str = R"({"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"avg:dec","extensionUrnReference":1}}],"relations":[{"root":{"input":{"aggregate":{"input":{"read":{"baseSchema":{"names":["employee_id","name","department_id","salary"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{"field":2},{"field":3}]},"maintainSingularStruct":true},"namedTable":{"names":["employees"]}}},"groupings":[{"expressionReferences":[0]}],"measures":[{"measure":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}],"groupingExpressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["department_id","avg_salary"]}}],"version":{"minorNumber":78,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1}]})";
+	auto expected_json_str = R"({"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"avg:dec","extensionUrnReference":1}}],"relations":[{"root":{"input":{"aggregate":{"input":{"read":{"baseSchema":{"names":["employee_id","name","department_id","salary"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{"field":2},{"field":3}]},"maintainSingularStruct":true},"namedTable":{"names":["employees"]}}},"groupings":[{"expressionReferences":[0]}],"measures":[{"measure":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}],"groupingExpressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["department_id","avg_salary"]}}],"version":{"minorNumber":78,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic_decimal"}]})";
 	REQUIRE(json_str == expected_json_str);
 	auto result = FromSubstraitJSON(con, json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3}));

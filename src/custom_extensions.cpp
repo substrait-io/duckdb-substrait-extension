@@ -21,7 +21,7 @@ string TransformTypes(const substrait::Type &type) {
 	return string(field->name());
 }
 
-// Concrete types over which an `any`/`any1`/`unknown` argument is expanded when
+// Concrete types over which an `any`/`any1` argument is expanded when
 // pre-building the overload maps. Each token is a protobuf Type.kind field name
 // (what TransformTypes() derives from a concrete argument), so the expanded
 // overloads match at lookup -- these are proto kind names, not the abbreviated
@@ -61,6 +61,12 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 			type = StringUtil::Replace(type, "boolean", "bool");
 			type = StringUtil::Replace(type, "fixedchar", "fixed_char");
 			type = StringUtil::Replace(type, "fixedbinary", "fixed_binary");
+			// functions_arithmetic_decimal spells the aggregate sum/avg argument
+			// `DECIMAL` (uppercase) while its scalar functions and every other
+			// extension use lowercase `decimal`; TransformTypes() only ever yields
+			// the lowercase proto kind name, so canonicalize the case here or the
+			// decimal sum/avg overloads never resolve.
+			type = StringUtil::Replace(type, "DECIMAL", "decimal");
 			types.push_back(type);
 		}
 		if (types.empty()) {
@@ -93,7 +99,7 @@ void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string
 	auto types = std::move(types_p);
 	vector<vector<string>> all_types;
 	for (auto &t : types) {
-		if (t == "any1" || t == "unknown" || t == "any") {
+		if (t == "any1" || t == "any") {
 			all_types.emplace_back(GetAllTypes());
 		} else {
 			all_types.push_back({t});
