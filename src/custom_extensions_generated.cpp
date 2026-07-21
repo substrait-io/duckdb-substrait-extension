@@ -169,16 +169,6 @@ void SubstraitCustomFunctions::Initialize() {
 	InsertCustomFunction("log1p", {"fp32"}, "extension:io.substrait:functions_logarithmic");
 	InsertCustomFunction("log1p", {"fp64"}, "extension:io.substrait:functions_logarithmic");
 	InsertCustomFunction("log1p", {"decimal"}, "extension:io.substrait:functions_logarithmic");
-	InsertCustomFunction("add", {"unknown", "unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("subtract", {"unknown", "unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("multiply", {"unknown", "unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("divide", {"unknown", "unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("modulus", {"unknown", "unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("sum", {"unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("avg", {"unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("min", {"unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("max", {"unknown"}, "extension:io.substrait:unknown");
-	InsertCustomFunction("count", {"unknown"}, "extension:io.substrait:unknown");
 	InsertCustomFunction("concat", {"varchar"}, "extension:io.substrait:functions_string");
 	InsertCustomFunction("concat", {"string"}, "extension:io.substrait:functions_string");
 	InsertCustomFunction("like", {"varchar", "varchar"}, "extension:io.substrait:functions_string");
