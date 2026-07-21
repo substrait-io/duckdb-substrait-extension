@@ -235,6 +235,12 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 {'f0': test, 'f1': [10, 20]}
 
+# valid 16-byte UUID (rendered as BLOB bytes)
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"uuid":"AAAAAAAAAAAAAAAAAAAAAA==", "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+
 # user defined
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"user_defined":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')

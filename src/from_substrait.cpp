@@ -129,6 +129,15 @@ static int64_t ScaleToMicros(int64_t value, int32_t precision) {
 	return value;
 }
 
+static int64_t DayToSecondMicros(int32_t seconds, int64_t subseconds, int32_t precision) {
+	int64_t seconds_in_micros = (int64_t)seconds * Interval::MICROS_PER_SEC;
+	return seconds_in_micros + ScaleToMicros(subseconds, precision);
+}
+
+static int32_t YearToMonthMonths(int32_t years, int32_t months) {
+	return years * 12 + months;
+}
+
 Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	if (literal.has_null()) {
 		return Value(LogicalType::SQLNULL);
@@ -189,7 +198,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kIntervalYearToMonth: {
 		interval_t interval {};
-		interval.months = (int32_t)literal.interval_year_to_month().years() * 12 + literal.interval_year_to_month().months();
+		interval.months = YearToMonthMonths(literal.interval_year_to_month().years(), literal.interval_year_to_month().months());
 		interval.days = 0;
 		interval.micros = 0;
 		return Value::INTERVAL(interval);
@@ -198,12 +207,9 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		interval_t interval {};
 		interval.months = 0;
 		interval.days = literal.interval_day_to_second().days();
-		// Convert seconds to microseconds and add subseconds (with precision adjustment)
-		int64_t seconds_in_micros = (int64_t)literal.interval_day_to_second().seconds() * Interval::MICROS_PER_SEC;
-		int64_t subseconds = literal.interval_day_to_second().subseconds();
-		int32_t precision = literal.interval_day_to_second().precision();
-		subseconds = ScaleToMicros(subseconds, precision);
-		interval.micros = seconds_in_micros + subseconds;
+		interval.micros = DayToSecondMicros(literal.interval_day_to_second().seconds(),
+		                                    literal.interval_day_to_second().subseconds(),
+		                                    literal.interval_day_to_second().precision());
 		return Value::INTERVAL(interval);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
@@ -237,12 +243,15 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		if (uuid_bytes.size() != 16) {
 			throw InvalidInputException("UUID value must be exactly 16 bytes, but has " + std::to_string(uuid_bytes.size()));
 		}
+		// Note: UUID literals are returned as BLOB values. When a typed schema declares a UUID
+		// column, the BLOB literal will need an implicit BLOB→UUID cast for round-tripping
+		// through a virtualTable read, which DuckDB does not provide. This is a known limitation.
 		return Value::BLOB(const_data_ptr_cast(uuid_bytes.data()), 16);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kStruct: {
-		// For struct literals, handle empty struct as NULL
 		const auto &struct_lit = literal.struct_();
 		if (struct_lit.fields_size() == 0) {
+			// DuckDB cannot represent a 0-field struct, so return NULL as a workaround
 			return Value(LogicalType::SQLNULL);
 		}
 		child_list_t<Value> field_values;
@@ -261,12 +270,23 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 			keys.push_back(TransformLiteralToValue(kv.key()));
 			values.push_back(TransformLiteralToValue(kv.value()));
 		}
-		// Infer key and value types from the first element, or use VARCHAR/VARCHAR for empty maps
+		// Infer key and value types from first non-null element, or default to VARCHAR
 		LogicalType key_type = LogicalType::VARCHAR;
 		LogicalType value_type = LogicalType::VARCHAR;
 		if (!keys.empty()) {
-			key_type = keys[0].type();
-			value_type = values[0].type();
+			// Skip leading NULL keys/values to find concrete types
+			for (idx_t i = 0; i < keys.size(); i++) {
+				if (keys[i].type() != LogicalType::SQLNULL) {
+					key_type = keys[i].type();
+					break;
+				}
+			}
+			for (idx_t i = 0; i < values.size(); i++) {
+				if (values[i].type() != LogicalType::SQLNULL) {
+					value_type = values[i].type();
+					break;
+				}
+			}
 		}
 		return Value::MAP(key_type, value_type, keys, values);
 	}
@@ -277,17 +297,24 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		for (const auto &elem : list_lit.values()) {
 			list_values.push_back(TransformLiteralToValue(elem));
 		}
-		// Infer element type from first element or use VARCHAR for empty lists
+		// Infer element type from first non-null element, or default to VARCHAR
 		LogicalType element_type = LogicalType::VARCHAR;
 		if (!list_values.empty()) {
-			element_type = list_values[0].type();
+			// Skip NULL values to find a concrete type
+			for (const auto &val : list_values) {
+				if (val.type() != LogicalType::SQLNULL) {
+					element_type = val.type();
+					break;
+				}
+			}
+			// If all elements are NULL, use VARCHAR as default
 		}
 		return Value::LIST(element_type, list_values);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kEmptyList: {
-		// Empty list - create a list with null type
+		// Empty list - use VARCHAR as default (consistent with empty kList)
 		vector<Value> empty_values;
-		return Value::LIST(LogicalType::SQLNULL, empty_values);
+		return Value::LIST(LogicalType::VARCHAR, empty_values);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kEmptyMap: {
 		// Empty map - create with default types
@@ -300,15 +327,14 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		interval_t interval {};
 		const auto &compound = literal.interval_compound();
 		if (compound.has_interval_year_to_month()) {
-			interval.months = compound.interval_year_to_month().years() * 12 + compound.interval_year_to_month().months();
+			interval.months = YearToMonthMonths(compound.interval_year_to_month().years(),
+			                                    compound.interval_year_to_month().months());
 		}
 		if (compound.has_interval_day_to_second()) {
 			interval.days = compound.interval_day_to_second().days();
-			int64_t seconds_in_micros = (int64_t)compound.interval_day_to_second().seconds() * Interval::MICROS_PER_SEC;
-			int64_t subseconds = compound.interval_day_to_second().subseconds();
-			int32_t precision = compound.interval_day_to_second().precision();
-			subseconds = ScaleToMicros(subseconds, precision);
-			interval.micros = seconds_in_micros + subseconds;
+			interval.micros = DayToSecondMicros(compound.interval_day_to_second().seconds(),
+			                                    compound.interval_day_to_second().subseconds(),
+			                                    compound.interval_day_to_second().precision());
 		}
 		return Value::INTERVAL(interval);
 	}
