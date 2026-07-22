@@ -207,7 +207,11 @@ static idx_t ExtractLiteralInteger(const substrait::Expression &expr, const char
 	if (val.IsNull()) {
 		throw NotImplementedException("NULL expressions in %s are not supported", context_desc);
 	}
-	return val.GetValue<int64_t>();
+	auto int_val = val.GetValue<int64_t>();
+	if (int_val < 0) {
+		throw InvalidInputException("Negative values in %s are not supported", context_desc);
+	}
+	return int_val;
 }
 
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const substrait::Expression &sexpr) {
@@ -948,28 +952,6 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 	} else if (sget.has_virtual_table()) {
 		// We need to handle a virtual table as a LogicalExpressionGet
 		if (!sget.virtual_table().expressions().empty()) {
-			auto literal_values = sget.virtual_table().expressions();
-			vector<vector<Value>> expression_rows;
-			for (auto &row : literal_values) {
-				auto values = row.fields();
-				vector<Value> expression_row;
-				for (const auto &value : values) {
-					if (value.has_literal()) {
-						expression_row.emplace_back(TransformLiteralToValue(value.literal()));
-					} else {
-						throw NotImplementedException("Non-literal expressions in virtual table values are not supported");
-					}
-				}
-				expression_rows.emplace_back(expression_row);
-			}
-			vector<string> column_names;
-			if (acquire_lock) {
-				scan = make_shared_ptr<ValueRelation>(context, expression_rows, column_names);
-
-			} else {
-				scan = make_shared_ptr<ValueRelation>(context_wrapper, expression_rows, column_names);
-			}
-		} else if (!sget.virtual_table().expressions().empty()) {
 			scan = GetValuesExpression(sget.virtual_table().expressions());
 		} else if (sget.has_base_schema() && sget.base_schema().names_size() > 0 && sget.base_schema().struct_().types_size() > 0) {
 			// Empty virtual table represents an empty result (EMPTY_RESULT operator)

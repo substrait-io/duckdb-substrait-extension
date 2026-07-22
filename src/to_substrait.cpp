@@ -1079,12 +1079,12 @@ substrait::Rel *DuckDBToSubstrait::TransformTopN(LogicalOperator &dop) {
 
 	stopn->set_allocated_input(sord_rel.release());
 
-	// Set offset expression
+	// Set offset expression (always set, default is 0)
 	auto offset_expr = make_uniq<substrait::Expression>();
 	offset_expr->mutable_literal()->set_i64(static_cast<int64_t>(dtopn.offset));
 	stopn->set_allocated_offset_expr(offset_expr.release());
 
-	// Set count expression
+	// Set count expression (TopN always has a limit)
 	auto count_expr = make_uniq<substrait::Expression>();
 	count_expr->mutable_literal()->set_i64(static_cast<int64_t>(dtopn.limit));
 	stopn->set_allocated_count_expr(count_expr.release());
@@ -1122,15 +1122,17 @@ substrait::Rel *DuckDBToSubstrait::TransformLimit(LogicalOperator &dop) {
 	auto stopn = res->mutable_fetch();
 	stopn->set_allocated_input(TransformOp(*dop.children[0]));
 
-	// Set offset expression
+	// Set offset expression (always set, default is 0)
 	auto offset_expr = make_uniq<substrait::Expression>();
 	offset_expr->mutable_literal()->set_i64(static_cast<int64_t>(offset_val));
 	stopn->set_allocated_offset_expr(offset_expr.release());
 
-	// Set count expression
-	auto count_expr = make_uniq<substrait::Expression>();
-	count_expr->mutable_literal()->set_i64(static_cast<int64_t>(limit_val));
-	stopn->set_allocated_count_expr(count_expr.release());
+	// Set count expression only if limit is set (not -1)
+	if (limit_val >= 0) {
+		auto count_expr = make_uniq<substrait::Expression>();
+		count_expr->mutable_literal()->set_i64(static_cast<int64_t>(limit_val));
+		stopn->set_allocated_count_expr(count_expr.release());
+	}
 
 	return res.release();
 }
