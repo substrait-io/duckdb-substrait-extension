@@ -171,7 +171,11 @@ CALL from_substrait_json('
                 ]
               }
             },
-            "count": 3
+            "countExpr": {
+              "literal": {
+                "i64": 3
+              }
+            }
           }
         },
         "names": [

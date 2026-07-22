@@ -15,7 +15,7 @@ INSERT INTO myschema.suppliers VALUES (1, 'Acme Corp'), (2, 'Widgets Ltd'), (3, 
 
 # 2-component: ["myschema", "suppliers"]
 query IT
-CALL from_substrait_json('{"relations":[{"root":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["supplier_id","supplier_name"],"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["myschema","suppliers"]}}},"offset":"0","count":"5"}},"names":["supplier_id","supplier_name"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+CALL from_substrait_json('{"relations":[{"root":{"input":{"fetch":{"input":{"read":{"baseSchema":{"names":["supplier_id","supplier_name"],"struct":{"types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"string":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["myschema","suppliers"]}}},"offsetExpr":{"literal":{"i64":"0"}},"countExpr":{"literal":{"i64":"5"}}}},"names":["supplier_id","supplier_name"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
 ----
 1	Acme Corp
 2	Widgets Ltd

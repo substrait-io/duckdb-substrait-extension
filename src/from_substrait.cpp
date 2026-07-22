@@ -199,6 +199,17 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformLiteralExpr(const subst
 	return make_uniq<ConstantExpression>(TransformLiteralToValue(sexpr.literal()));
 }
 
+static idx_t ExtractLiteralInteger(const substrait::Expression &expr, const char *context_desc) {
+	if (!expr.has_literal()) {
+		throw NotImplementedException("Non-literal expressions in %s are not supported", context_desc);
+	}
+	auto val = TransformLiteralToValue(expr.literal());
+	if (val.IsNull()) {
+		throw NotImplementedException("NULL expressions in %s are not supported", context_desc);
+	}
+	return val.GetValue<int64_t>();
+}
+
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const substrait::Expression &sexpr) {
 	if (!sexpr.selection().has_direct_reference() || !sexpr.selection().direct_reference().has_struct_field()) {
 		throw SyntaxException("Can only have direct struct references in selections");
@@ -630,8 +641,17 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformCrossProductOp(const substrait:
 shared_ptr<Relation> SubstraitToDuckDB::TransformFetchOp(const substrait::Rel &sop,
                                                          const google::protobuf::RepeatedPtrField<std::string> *names) {
 	auto &slimit = sop.fetch();
-	idx_t limit = slimit.count() == -1 ? NumericLimits<idx_t>::Maximum() : slimit.count();
-	idx_t offset = slimit.offset();
+
+	idx_t limit = NumericLimits<idx_t>::Maximum();
+	if (slimit.has_count_expr()) {
+		limit = ExtractLiteralInteger(slimit.count_expr(), "LIMIT count");
+	}
+
+	idx_t offset = 0;
+	if (slimit.has_offset_expr()) {
+		offset = ExtractLiteralInteger(slimit.offset_expr(), "LIMIT offset");
+	}
+
 	return make_shared_ptr<LimitRelation>(TransformOp(slimit.input(), names), limit, offset);
 }
 
@@ -711,7 +731,7 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 		auto &sget = sop.project().input().read();
 		if (sget.has_virtual_table()) {
 			auto virtual_table = sget.virtual_table();
-			if ((virtual_table.values().empty() && virtual_table.expressions().empty()) ||
+			if ((virtual_table.expressions().empty()) ||
 			    (virtual_table.expressions().size() > 0 && virtual_table.expressions(0).fields().empty())) {
 				hasZeroColumnVirtualTable = true;
 				input_rel = GetValueRelationWithSingleBoolColumn();
@@ -927,14 +947,18 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		scan = rel->Alias(name);
 	} else if (sget.has_virtual_table()) {
 		// We need to handle a virtual table as a LogicalExpressionGet
-		if (!sget.virtual_table().values().empty()) {
-			auto literal_values = sget.virtual_table().values();
+		if (!sget.virtual_table().expressions().empty()) {
+			auto literal_values = sget.virtual_table().expressions();
 			vector<vector<Value>> expression_rows;
 			for (auto &row : literal_values) {
 				auto values = row.fields();
 				vector<Value> expression_row;
 				for (const auto &value : values) {
-					expression_row.emplace_back(TransformLiteralToValue(value));
+					if (value.has_literal()) {
+						expression_row.emplace_back(TransformLiteralToValue(value.literal()));
+					} else {
+						throw NotImplementedException("Non-literal expressions in virtual table values are not supported");
+					}
 				}
 				expression_rows.emplace_back(expression_row);
 			}
