@@ -13,7 +13,7 @@ import regex
 # version, then re-run this script and commit the regenerated
 # src/custom_extensions_generated.cpp.
 SUBSTRAIT_PACKAGING_REPO = "https://github.com/substrait-io/substrait-packaging.git"
-SUBSTRAIT_EXTENSIONS_TAG = "cpp/substrait-extensions/v0.95.0"
+SUBSTRAIT_EXTENSIONS_TAG = "cpp/substrait-extensions/v0.96.0"
 SUBSTRAIT_EXTENSIONS_SUBDIR = os.path.join("cpp", "substrait-extensions", "extensions")
 
 # Only ingest extension YAMLs that declare real Substrait functions. Every
