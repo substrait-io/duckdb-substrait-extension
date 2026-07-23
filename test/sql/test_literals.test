@@ -241,6 +241,18 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
 
+# list with leading NULL followed by i32 values
+query I
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"list":{"values":[{"null":{}},{"i32":10},{"i32":20}]}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+[NULL, 10, 20]
+
+# out-of-range precision (precision > 9 should throw)
+statement error
+CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp":{"precision":10, "value":99999999}, "nullable":true}}]}}, "names":["?column?"]}}]}')
+----
+Invalid Input Error: Precision must be between 0 and 9, got 10
+
 # user defined
 statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"user_defined":{}, "nullable":true}}]}}, "names":["?column?"]}}]}')
