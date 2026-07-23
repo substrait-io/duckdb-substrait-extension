@@ -2351,7 +2351,11 @@ CALL from_substrait_json('
                 ]
               }
             },
-            "count": "5"
+            "countExpr": {
+              "literal": {
+                "i64": "5"
+              }
+            }
           }
         },
         "names": [

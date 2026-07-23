@@ -1,0 +1,82 @@
+# name: test/sql/test_fetch_non_literal_expressions.test
+# description: Test that non-literal expressions in FetchRel raise proper errors
+# group: [sql]
+
+require substrait
+
+# Test non-literal count expression (should fail)
+statement error
+CALL from_substrait_json('
+{
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "fetch": {
+            "input": {
+              "read": {
+                "baseSchema": {
+                  "names": ["a"],
+                  "struct": {
+                    "types": [{"i64": {"nullability": "NULLABILITY_NULLABLE"}}],
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {"names": ["t"]}
+              }
+            },
+            "countExpr": {
+              "scalarFunction": {
+                "functionReference": 0,
+                "arguments": []
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "version": {"minorNumber": 52, "producer": "test"}
+}
+')
+----
+Non-literal expressions in LIMIT count are not supported
+
+# Test non-literal offset expression (should fail)
+statement error
+CALL from_substrait_json('
+{
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "fetch": {
+            "input": {
+              "read": {
+                "baseSchema": {
+                  "names": ["a"],
+                  "struct": {
+                    "types": [{"i64": {"nullability": "NULLABILITY_NULLABLE"}}],
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": {"names": ["t"]}
+              }
+            },
+            "offsetExpr": {
+              "scalarFunction": {
+                "functionReference": 0,
+                "arguments": []
+              }
+            },
+            "countExpr": {"literal": {"i64": "10"}}
+          }
+        }
+      }
+    }
+  ],
+  "version": {"minorNumber": 52, "producer": "test"}
+}
+')
+----
+Non-literal expressions in LIMIT offset are not supported

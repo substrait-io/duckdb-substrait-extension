@@ -1078,8 +1078,17 @@ substrait::Rel *DuckDBToSubstrait::TransformTopN(LogicalOperator &dop) {
 	}
 
 	stopn->set_allocated_input(sord_rel.release());
-	stopn->set_offset(static_cast<int64_t>(dtopn.offset));
-	stopn->set_count(static_cast<int64_t>(dtopn.limit));
+
+	// Set offset expression (always set, default is 0)
+	auto offset_expr = make_uniq<substrait::Expression>();
+	offset_expr->mutable_literal()->set_i64(static_cast<int64_t>(dtopn.offset));
+	stopn->set_allocated_offset_expr(offset_expr.release());
+
+	// Set count expression (TopN always has a limit)
+	auto count_expr = make_uniq<substrait::Expression>();
+	count_expr->mutable_literal()->set_i64(static_cast<int64_t>(dtopn.limit));
+	stopn->set_allocated_count_expr(count_expr.release());
+
 	return res.release();
 }
 
@@ -1113,8 +1122,18 @@ substrait::Rel *DuckDBToSubstrait::TransformLimit(LogicalOperator &dop) {
 	auto stopn = res->mutable_fetch();
 	stopn->set_allocated_input(TransformOp(*dop.children[0]));
 
-	stopn->set_offset(offset_val);
-	stopn->set_count(limit_val);
+	// Set offset expression (always set, default is 0)
+	auto offset_expr = make_uniq<substrait::Expression>();
+	offset_expr->mutable_literal()->set_i64(static_cast<int64_t>(offset_val));
+	stopn->set_allocated_offset_expr(offset_expr.release());
+
+	// Set count expression only if limit is set (not -1)
+	if (limit_val >= 0) {
+		auto count_expr = make_uniq<substrait::Expression>();
+		count_expr->mutable_literal()->set_i64(static_cast<int64_t>(limit_val));
+		stopn->set_allocated_count_expr(count_expr.release());
+	}
+
 	return res.release();
 }
 
@@ -2029,8 +2048,9 @@ substrait::Rel *DuckDBToSubstrait::TransformDummyScan() {
 	auto virtual_table = sget->mutable_virtual_table();
 
 	// Add a dummy value to emit one row
-	auto dummy_struct = virtual_table->add_values();
-	dummy_struct->add_fields()->set_i32(42);
+	auto dummy_struct = virtual_table->add_expressions();
+	auto dummy_field = dummy_struct->add_fields();
+	dummy_field->mutable_literal()->set_i32(42);
 	return get_rel.release();
 }
 
