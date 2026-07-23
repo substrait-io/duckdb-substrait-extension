@@ -787,6 +787,39 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 	                                     djointype);
 }
 
+shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::Rel &sop) {
+	auto &slateral = sop.lateral_join();
+
+	JoinType djointype;
+	switch (slateral.type()) {
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_INNER:
+		djointype = JoinType::INNER;
+		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT:
+		djointype = JoinType::LEFT;
+		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE:
+		djointype = JoinType::SINGLE;
+		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
+		djointype = JoinType::SEMI;
+		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI:
+		djointype = JoinType::ANTI;
+		break;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_MARK:
+		djointype = JoinType::MARK;
+		break;
+	default:
+		throw NotImplementedException("Unsupported LateralJoinRel join type");
+	}
+
+	unique_ptr<ParsedExpression> join_condition = TransformExpr(slateral.expression());
+	return make_shared_ptr<JoinRelation>(TransformOp(slateral.left())->Alias("left"),
+	                                     TransformOp(slateral.right())->Alias("right"), std::move(join_condition),
+	                                     djointype);
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformCrossProductOp(const substrait::Rel &sop) {
 	auto &sub_cross = sop.cross();
 
@@ -1506,6 +1539,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 	switch (sop.rel_type_case()) {
 	case substrait::Rel::RelTypeCase::kJoin:
 		return TransformJoinOp(sop);
+	case substrait::Rel::RelTypeCase::kLateralJoin:
+		return TransformLateralJoinOp(sop);
 	case substrait::Rel::RelTypeCase::kCross:
 		return TransformCrossProductOp(sop);
 	case substrait::Rel::RelTypeCase::kFetch:

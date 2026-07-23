@@ -1,0 +1,51 @@
+# name: test/sql/test_lateral_join.test
+# description: Test round-tripping of LATERAL joins with correlated subqueries
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE t1 (id INTEGER, val INTEGER);
+
+statement ok
+INSERT INTO t1 VALUES (1, 10), (2, 20), (3, 30);
+
+statement ok
+CREATE TABLE t2 (t1_id INTEGER, amount INTEGER);
+
+statement ok
+INSERT INTO t2 VALUES (1, 100), (1, 200), (2, 300), (3, 400), (3, 500);
+
+statement ok
+PRAGMA enable_verification
+
+# Explicit LATERAL keyword join (INNER), correlated on an equality predicate.
+# Binds as is_lateral=true internally but flattens to LOGICAL_DELIM_JOIN before
+# reaching the Substrait converter.
+statement ok
+CALL get_substrait('SELECT t1.id, sub.amount FROM t1, LATERAL (SELECT amount FROM t2 WHERE t2.t1_id = t1.id) sub ORDER BY t1.id, sub.amount');
+
+# LEFT lateral join (the only other join type the LATERAL keyword itself allows).
+statement ok
+CALL get_substrait('SELECT t1.id, sub.amount FROM t1 LEFT JOIN LATERAL (SELECT amount FROM t2 WHERE t2.t1_id = t1.id) sub ON true ORDER BY t1.id, sub.amount');
+
+# LATERAL with an aggregate on the correlated side (exercises a Filter+Aggregate
+# right subtree above the delim get, not just a bare scan).
+statement ok
+CALL get_substrait('SELECT t1.id, sub.total FROM t1, LATERAL (SELECT sum(amount) AS total FROM t2 WHERE t2.t1_id = t1.id) sub ORDER BY t1.id');
+
+# Multiple correlated columns.
+statement ok
+CREATE TABLE t3 (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO t3 VALUES (1, 10), (2, 20);
+
+statement ok
+CREATE TABLE t4 (a INTEGER, b INTEGER, v INTEGER);
+
+statement ok
+INSERT INTO t4 VALUES (1, 10, 100), (2, 20, 200), (1, 99, 999);
+
+statement ok
+CALL get_substrait('SELECT t3.a, sub.v FROM t3, LATERAL (SELECT v FROM t4 WHERE t4.a = t3.a AND t4.b = t3.b) sub ORDER BY t3.a');

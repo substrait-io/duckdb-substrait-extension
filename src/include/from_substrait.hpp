@@ -66,6 +66,7 @@ private:
 	shared_ptr<Relation> TransformOp(const substrait::Rel &sop,
 	                                 const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformJoinOp(const substrait::Rel &sop);
+	shared_ptr<Relation> TransformLateralJoinOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformCrossProductOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformFetchOp(const substrait::Rel &sop,
 	                                      const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
