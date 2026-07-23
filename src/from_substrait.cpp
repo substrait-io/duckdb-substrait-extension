@@ -104,6 +104,40 @@ SubstraitToDuckDB::SubstraitToDuckDB(shared_ptr<ClientContext> &context_p, const
 	}
 }
 
+static const int64_t POWERS_OF_10[] = {
+	1LL,
+	10LL,
+	100LL,
+	1000LL,
+	10000LL,
+	100000LL,
+	1000000LL,
+	10000000LL,
+	100000000LL,
+	1000000000LL
+};
+
+static int64_t ScaleToMicros(int64_t value, int32_t precision) {
+	if (precision < 0 || precision > 9) {
+		throw InvalidInputException("Precision must be between 0 and 9, got %d", precision);
+	}
+	if (precision > 6) {
+		return value / POWERS_OF_10[precision - 6];
+	} else if (precision < 6) {
+		return value * POWERS_OF_10[6 - precision];
+	}
+	return value;
+}
+
+static int64_t DayToSecondMicros(int32_t seconds, int64_t subseconds, int32_t precision) {
+	int64_t seconds_in_micros = (int64_t)seconds * Interval::MICROS_PER_SEC;
+	return seconds_in_micros + ScaleToMicros(subseconds, precision);
+}
+
+static int32_t YearToMonthMonths(int32_t years, int32_t months) {
+	return years * 12 + months;
+}
+
 Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	if (literal.has_null()) {
 		return Value(LogicalType::SQLNULL);
@@ -148,6 +182,8 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kI8:
 		return Value::TINYINT(static_cast<int8_t>(literal.i8()));
+	case substrait::Expression_Literal::LiteralTypeCase::kI16:
+		return Value::SMALLINT(static_cast<int16_t>(literal.i16()));
 	case substrait::Expression_Literal::LiteralTypeCase::kI32:
 		return Value::INTEGER(literal.i32());
 	case substrait::Expression_Literal::LiteralTypeCase::kI64:
@@ -162,7 +198,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kIntervalYearToMonth: {
 		interval_t interval {};
-		interval.months = literal.interval_year_to_month().months();
+		interval.months = YearToMonthMonths(literal.interval_year_to_month().years(), literal.interval_year_to_month().months());
 		interval.days = 0;
 		interval.micros = 0;
 		return Value::INTERVAL(interval);
@@ -171,23 +207,139 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		interval_t interval {};
 		interval.months = 0;
 		interval.days = literal.interval_day_to_second().days();
-		// Convert seconds to microseconds and add subseconds (with precision adjustment)
-		int64_t seconds_in_micros = literal.interval_day_to_second().seconds() * Interval::MICROS_PER_SEC;
-		int64_t subseconds = literal.interval_day_to_second().subseconds();
-		int32_t precision = literal.interval_day_to_second().precision();
-		// Adjust subseconds based on precision (e.g., precision 9 = nanoseconds, need to convert to microseconds)
-		if (precision > 6) {
-			// Convert from higher precision (e.g., nanoseconds) to microseconds
-			subseconds = subseconds / (int64_t)pow(10, precision - 6);
-		} else if (precision < 6) {
-			// Convert from lower precision (e.g., milliseconds) to microseconds
-			subseconds = subseconds * (int64_t)pow(10, 6 - precision);
-		}
-		interval.micros = seconds_in_micros + subseconds;
+		interval.micros = DayToSecondMicros(literal.interval_day_to_second().seconds(),
+		                                    literal.interval_day_to_second().subseconds(),
+		                                    literal.interval_day_to_second().precision());
 		return Value::INTERVAL(interval);
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kVarChar:
 		return {literal.var_char().value()};
+	case substrait::Expression_Literal::LiteralTypeCase::kFixedChar:
+		return {literal.fixed_char()};
+	case substrait::Expression_Literal::LiteralTypeCase::kBinary: {
+		const auto &binary_data = literal.binary();
+		return Value::BLOB(const_data_ptr_cast(binary_data.data()), binary_data.size());
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kFixedBinary: {
+		const auto &binary_data = literal.fixed_binary();
+		return Value::BLOB(const_data_ptr_cast(binary_data.data()), binary_data.size());
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestamp: {
+		int64_t timestamp_value = literal.precision_timestamp().value();
+		int32_t precision = literal.precision_timestamp().precision();
+		int64_t micros = ScaleToMicros(timestamp_value, precision);
+		timestamp_t ts(micros);
+		return Value::TIMESTAMP(ts);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestampTz: {
+		int64_t timestamp_value = literal.precision_timestamp_tz().value();
+		int32_t precision = literal.precision_timestamp_tz().precision();
+		int64_t micros = ScaleToMicros(timestamp_value, precision);
+		timestamp_tz_t ts(micros);
+		return Value::TIMESTAMPTZ(ts);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kUuid: {
+		const auto &uuid_bytes = literal.uuid();
+		if (uuid_bytes.size() != 16) {
+			throw InvalidInputException("UUID value must be exactly 16 bytes, but has " + std::to_string(uuid_bytes.size()));
+		}
+		// Note: UUID literals are returned as BLOB values. When a typed schema declares a UUID
+		// column, the BLOB literal will need an implicit BLOB→UUID cast for round-tripping
+		// through a virtualTable read, which DuckDB does not provide. This is a known limitation.
+		return Value::BLOB(const_data_ptr_cast(uuid_bytes.data()), 16);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kStruct: {
+		const auto &struct_lit = literal.struct_();
+		if (struct_lit.fields_size() == 0) {
+			// DuckDB cannot represent a 0-field struct, so return NULL as a workaround
+			return Value(LogicalType::SQLNULL);
+		}
+		child_list_t<Value> field_values;
+		for (int i = 0; i < struct_lit.fields_size(); i++) {
+			auto field_name = "f" + std::to_string(i);
+			field_values.push_back(make_pair(field_name, TransformLiteralToValue(struct_lit.fields(i))));
+		}
+		return Value::STRUCT(field_values);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kMap: {
+		// For map literals, convert to a DuckDB map
+		vector<Value> keys;
+		vector<Value> values;
+		const auto &map_lit = literal.map();
+		for (const auto &kv : map_lit.key_values()) {
+			keys.push_back(TransformLiteralToValue(kv.key()));
+			values.push_back(TransformLiteralToValue(kv.value()));
+		}
+		// Infer key and value types from first non-null element, or default to VARCHAR
+		LogicalType key_type = LogicalType::VARCHAR;
+		LogicalType value_type = LogicalType::VARCHAR;
+		if (!keys.empty()) {
+			// Skip leading NULL keys/values to find concrete types
+			for (idx_t i = 0; i < keys.size(); i++) {
+				if (keys[i].type() != LogicalType::SQLNULL) {
+					key_type = keys[i].type();
+					break;
+				}
+			}
+			for (idx_t i = 0; i < values.size(); i++) {
+				if (values[i].type() != LogicalType::SQLNULL) {
+					value_type = values[i].type();
+					break;
+				}
+			}
+		}
+		return Value::MAP(key_type, value_type, keys, values);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kList: {
+		// For list literals, convert to a DuckDB list
+		vector<Value> list_values;
+		const auto &list_lit = literal.list();
+		for (const auto &elem : list_lit.values()) {
+			list_values.push_back(TransformLiteralToValue(elem));
+		}
+		// Infer element type from first non-null element, or default to VARCHAR
+		LogicalType element_type = LogicalType::VARCHAR;
+		if (!list_values.empty()) {
+			// Skip NULL values to find a concrete type
+			for (const auto &val : list_values) {
+				if (val.type() != LogicalType::SQLNULL) {
+					element_type = val.type();
+					break;
+				}
+			}
+			// If all elements are NULL, use VARCHAR as default
+		}
+		return Value::LIST(element_type, list_values);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kEmptyList: {
+		// Empty list - use VARCHAR as default (consistent with empty kList)
+		vector<Value> empty_values;
+		return Value::LIST(LogicalType::VARCHAR, empty_values);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kEmptyMap: {
+		// Empty map - create with default types
+		vector<Value> empty_keys;
+		vector<Value> empty_values;
+		return Value::MAP(LogicalType::VARCHAR, LogicalType::VARCHAR, empty_keys, empty_values);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kIntervalCompound: {
+		// Combine year-to-month and day-to-second intervals
+		interval_t interval {};
+		const auto &compound = literal.interval_compound();
+		if (compound.has_interval_year_to_month()) {
+			interval.months = YearToMonthMonths(compound.interval_year_to_month().years(),
+			                                    compound.interval_year_to_month().months());
+		}
+		if (compound.has_interval_day_to_second()) {
+			interval.days = compound.interval_day_to_second().days();
+			interval.micros = DayToSecondMicros(compound.interval_day_to_second().seconds(),
+			                                    compound.interval_day_to_second().subseconds(),
+			                                    compound.interval_day_to_second().precision());
+		}
+		return Value::INTERVAL(interval);
+	}
+	case substrait::Expression_Literal::LiteralTypeCase::kUserDefined:
+		throw NotImplementedException("User-defined literals are not supported");
 	default:
 		throw NotImplementedException(
 		    "literals of this type are not implemented: %s",
