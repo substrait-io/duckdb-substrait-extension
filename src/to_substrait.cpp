@@ -2521,6 +2521,12 @@ substrait::RelCommon *DuckDBToSubstrait::GetRelCommon(substrait::Rel &rel) {
 		return rel.mutable_sort()->mutable_common();
 	case substrait::Rel::RelTypeCase::kJoin:
 		return rel.mutable_join()->mutable_common();
+	case substrait::Rel::RelTypeCase::kLateralJoin:
+		// Defensive only: to_substrait.cpp never constructs a LateralJoinRel (see comment on
+		// TransformOp's switch below) — DuckDB always flattens/decorrelates dependent joins during
+		// planning, so LOGICAL_DEPENDENT_JOIN can never reach TransformOp. This case exists only
+		// for interface completeness.
+		return rel.mutable_lateral_join()->mutable_common();
 	case substrait::Rel::RelTypeCase::kProject:
 		return rel.mutable_project()->mutable_common();
 	case substrait::Rel::RelTypeCase::kSet:
@@ -2546,6 +2552,17 @@ substrait::Rel *DuckDBToSubstrait::TransformOp(LogicalOperator &dop) {
 		return TransformOrderBy(dop);
 	case LogicalOperatorType::LOGICAL_PROJECTION:
 		return TransformProjection(dop);
+	// Note: there is intentionally no case for LogicalOperatorType::LOGICAL_DEPENDENT_JOIN here.
+	// DuckDB's Planner::CreatePlan unconditionally runs FlattenDependentJoins::DecorrelateIndependent
+	// (duckdb/src/planner/planner.cpp:98) BEFORE this extension's TransformPlan/TransformOp ever sees
+	// the LogicalOperator tree (see substrait_extension.cpp's ExtractPlan, which only gates the
+	// separate Optimizer::Optimize step on enable_optimizer, not planning/flattening). DuckDB's own
+	// physical_plan_generator.cpp throws NotImplementedException if LOGICAL_DEPENDENT_JOIN ever
+	// reaches physical plan generation, confirming it never survives past planning. A dependent join
+	// arriving via TransformLateralJoinOp's consumer-side Relation construction goes through this
+	// exact same Planner when later executed/re-extracted, so it too becomes a LOGICAL_DELIM_JOIN
+	// (handled by TransformComparisonJoin below) by the time to_substrait ever runs. Consequently,
+	// a LateralJoinRel-emitting function on the producer side would be unreachable dead code.
 	case LogicalOperatorType::LOGICAL_COMPARISON_JOIN:
 		return TransformComparisonJoin(dop);
 	case LogicalOperatorType::LOGICAL_DELIM_JOIN:
