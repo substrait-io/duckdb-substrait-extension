@@ -1,0 +1,683 @@
+# name: test/sql/test_from_substrait_lateral_join.test
+# description: Test from_substrait for LateralJoinRel consumption (hand-authored JSON plans)
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE t1 (id INTEGER, val INTEGER);
+
+statement ok
+INSERT INTO t1 VALUES (1, 10), (2, 20);
+
+statement ok
+CREATE TABLE t2 (t1_id INTEGER, amount INTEGER);
+
+statement ok
+INSERT INTO t2 VALUES (1, 100), (2, 200);
+
+# Test case (a): Basic LateralJoinRel, rootReference-only condition (sanity — no correlation)
+query IIII
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_INNER"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1, 3
+----
+1	10	1	100
+2	20	2	200
+
+# Test case (b): Real correlation with rel_anchor and outerReference
+query IIII
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {"relAnchor": 1},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "filter": {
+              "input": {
+                "read": {
+                  "baseSchema": {
+                    "names": ["t1_id", "amount"],
+                    "struct": {
+                      "types": [
+                        {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                        {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                      ],
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  },
+                  "namedTable": {"names": ["t2"]}
+                }
+              },
+              "condition": {
+                "scalarFunction": {
+                  "functionReference": 1,
+                  "arguments": [
+                    {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                    {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "outerReference": {"relReference": 1}}}}
+                  ],
+                  "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+                }
+              }
+            }
+          },
+          "expression": {"literal": {"boolean": true, "nullable": false}},
+          "type": "JOIN_TYPE_INNER"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1, 3
+----
+1	10	1	100
+2	20	2	200
+
+# Test case (c): post_join_filter set
+query IIII
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "postJoinFilter": {
+            "scalarFunction": {
+              "functionReference": 2,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 3}}, "rootReference": {}}}},
+                {"value": {"literal": {"i32": 150, "nullable": false}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_INNER"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}},
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 2, "name": "gt"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1, 3
+----
+2	20	2	200
+
+# Test case (d1): stepsOut exceeding available nesting depth
+statement error
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {"relAnchor": 1},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "outerReference": {"stepsOut": 5}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_INNER"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}')
+----
+OuterReference.steps_out
+
+# Test case (d2): unset root_type (treated as rootReference for backward compatibility)
+query I
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "read": {
+          "baseSchema": {
+            "names": ["id"],
+            "struct": {
+              "types": [
+                {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+              ],
+              "nullability": "NULLABILITY_REQUIRED"
+            }
+          },
+          "namedTable": {"names": ["t1"]}
+        }
+      },
+      "names": ["id"]
+    }
+  }]
+}')
+----
+1
+2
+
+# Test case (e): LEFT join type (with non-correlated condition)
+query IIII
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_LEFT"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1, 3 NULLS LAST
+----
+1	10	1	100
+2	20	2	200
+
+# Test case (f): LEFT_SEMI join type (anti-join semantics: include left row if any right match)
+query II
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_LEFT_SEMI"
+        }
+      },
+      "names": ["id", "val"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1
+----
+1	10
+2	20
+
+# Test case (g): LEFT_ANTI join type (exclude left row if any right match)
+query II
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"literal": {"i32": 99, "nullable": false}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_LEFT_ANTI"
+        }
+      },
+      "names": ["id", "val"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1
+----
+1	10
+2	20
+
+# Test case (h): LEFT_SINGLE join type (assumes right side returns at most one row per left row)
+query IIII
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_LEFT_SINGLE"
+        }
+      },
+      "names": ["id", "val", "t1_id", "amount"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1, 3
+----
+1	10	1	100
+2	20	2	200
+
+# Test case (i): LEFT_MARK join type (adds a boolean column indicating match, non-correlated)
+query III
+SELECT * FROM from_substrait_json('{
+  "version": {
+    "minorNumber": 19,
+    "producer": "DuckDB"
+  },
+  "relations": [{
+    "root": {
+      "input": {
+        "lateralJoin": {
+          "common": {},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["id", "val"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t1"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["t1_id", "amount"],
+                "struct": {
+                  "types": [
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}},
+                    {"i32": {"nullability": "NULLABILITY_REQUIRED"}}
+                  ],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["t2"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_LEFT_MARK"
+        }
+      },
+      "names": ["id", "val", "mark"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 1
+----
+1	10	1
+2	20	1

@@ -12,9 +12,11 @@
 #include "duckdb/common/shared_ptr.hpp"
 #include "duckdb/common/types.hpp"
 #include "duckdb/common/enums/set_operation_type.hpp"
+#include "duckdb/common/enums/joinref_type.hpp"
 #include "duckdb/planner/operator/logical_cteref.hpp"
 
 #include "duckdb/parser/expression/comparison_expression.hpp"
+#include "duckdb/parser/parsed_expression_iterator.hpp"
 
 #include "duckdb/main/client_data.hpp"
 #include "google/protobuf/unknown_field_set.h"
@@ -366,21 +368,124 @@ static idx_t ExtractLiteralInteger(const substrait::Expression &expr, const char
 	return int_val;
 }
 
+unique_ptr<ParsedExpression> SubstraitToDuckDB::ResolveOuterReference(
+    const substrait::Expression_FieldReference_OuterReference &outer_ref, int32_t field_idx) {
+	if (lateral_scopes.empty()) {
+		throw NotImplementedException(
+		    "OuterReference found outside of any LateralJoinRel scope; correlated field "
+		    "references are only supported within the right input of a LateralJoinRel");
+	}
+	const LateralScope *scope = nullptr;
+	switch (outer_ref.outer_reference_type_case()) {
+	case substrait::Expression_FieldReference_OuterReference::OuterReferenceTypeCase::kRelReference: {
+		auto anchor = outer_ref.rel_reference();
+		for (auto it = lateral_scopes.rbegin(); it != lateral_scopes.rend(); ++it) {
+			if (it->rel_anchor == anchor) {
+				scope = &(*it);
+				break;
+			}
+		}
+		if (!scope) {
+			throw NotImplementedException(
+			    "OuterReference.rel_reference %d does not match any enclosing LateralJoinRel's "
+			    "RelCommon.rel_anchor; only outer references to the immediately enclosing "
+			    "LateralJoinRel chain are supported",
+			    anchor);
+		}
+		break;
+	}
+	case substrait::Expression_FieldReference_OuterReference::OuterReferenceTypeCase::kStepsOut: {
+		auto steps_out = outer_ref.steps_out();
+		// steps_out=0 means immediately enclosing scope (valid per Substrait spec)
+		// steps_out must be strictly less than lateral_scopes.size() to avoid underflow
+		if (steps_out >= lateral_scopes.size()) {
+			throw NotImplementedException(
+			    "OuterReference.steps_out %d exceeds the current LateralJoinRel nesting depth "
+			    "(%d); only outer references resolvable within tracked lateral scopes are supported",
+			    steps_out, (int)lateral_scopes.size());
+		}
+		scope = &lateral_scopes[lateral_scopes.size() - steps_out - 1];
+		break;
+	}
+	case substrait::Expression_FieldReference_OuterReference::OuterReferenceTypeCase::OUTER_REFERENCE_TYPE_NOT_SET:
+	default:
+		throw NotImplementedException(
+		    "Unsupported OuterReference type %s",
+		    string(substrait::Expression_FieldReference_OuterReference::GetDescriptor()
+		               ->FindFieldByNumber(outer_ref.outer_reference_type_case())
+		               ->name()));
+	}
+
+	// Validate scope was found (should never be null if switch handled all cases correctly)
+	if (!scope) {
+		throw NotImplementedException(
+		    "OuterReference type is unrecognized or not supported");
+	}
+
+	// Validate field_idx is non-negative before cast to prevent wraparound to large unsigned value
+	if (field_idx < 0) {
+		throw InvalidInputException(
+		    "OuterReference field index must be non-negative, got %d", field_idx);
+	}
+	if (static_cast<size_t>(field_idx) >= scope->left_column_names.size()) {
+		throw InvalidInputException(
+		    "OuterReference field index %d is out of range for the left side of the enclosing "
+		    "LateralJoinRel, which has %d columns",
+		    field_idx, (int)scope->left_column_names.size());
+	}
+	// Return a qualified ColumnRefExpression to avoid binding ambiguity when left side columns
+	// have the same names as expressions in the join output
+	return make_uniq<ColumnRefExpression>(scope->left_column_names[field_idx], "left");
+}
+
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const substrait::Expression &sexpr) {
-	if (!sexpr.selection().has_direct_reference() || !sexpr.selection().direct_reference().has_struct_field()) {
+	auto &selection = sexpr.selection();
+	if (!selection.has_direct_reference() || !selection.direct_reference().has_struct_field()) {
 		throw SyntaxException("Can only have direct struct references in selections");
 	}
-	auto *struct_field = &sexpr.selection().direct_reference().struct_field();
-	unique_ptr<ParsedExpression> expr = make_uniq<PositionalReferenceExpression>(struct_field->field() + 1);
+	auto *struct_field = &selection.direct_reference().struct_field();
+	int32_t field_idx = struct_field->field();
+	unique_ptr<ParsedExpression> expr;
+
+	switch (selection.root_type_case()) {
+	case substrait::Expression_FieldReference::RootTypeCase::kRootReference:
+	case substrait::Expression_FieldReference::RootTypeCase::ROOT_TYPE_NOT_SET:
+		// ROOT_TYPE_NOT_SET is treated as kRootReference for backward compatibility
+		// with Substrait plans that don't explicitly set the root_type oneof
+		if (field_idx > INT32_MAX - 1) {
+			throw InvalidInputException(
+			    "Field index %d is too large (max %d)", field_idx, INT32_MAX - 1);
+		}
+		expr = make_uniq<PositionalReferenceExpression>(field_idx + 1);
+		break;
+	case substrait::Expression_FieldReference::RootTypeCase::kOuterReference:
+		expr = ResolveOuterReference(selection.outer_reference(), field_idx);
+		break;
+	case substrait::Expression_FieldReference::RootTypeCase::kExpression:
+	case substrait::Expression_FieldReference::RootTypeCase::kLambdaParameterReference:
+	default:
+		throw NotImplementedException(
+		    "Unsupported FieldReference root type %s",
+		    string(substrait::Expression_FieldReference::GetDescriptor()
+		               ->FindFieldByNumber(selection.root_type_case())
+		               ->name()));
+	}
+
 	// Nested reference segments select fields within a struct column
 	while (struct_field->has_child()) {
 		if (!struct_field->child().has_struct_field()) {
 			throw SyntaxException("Only struct field children are supported in field references");
 		}
 		struct_field = &struct_field->child().struct_field();
+		int32_t nested_field_idx = struct_field->field();
+		// Protect against integer overflow when adding 1
+		if (nested_field_idx > INT32_MAX - 1) {
+			throw InvalidInputException(
+			    "Nested struct field index %d is too large (max %d)", nested_field_idx, INT32_MAX - 1);
+		}
 		vector<unique_ptr<ParsedExpression>> children;
 		children.push_back(std::move(expr));
-		children.push_back(make_uniq<ConstantExpression>(Value::BIGINT(struct_field->field() + 1)));
+		children.push_back(make_uniq<ConstantExpression>(Value::BIGINT(nested_field_idx + 1)));
 		expr = make_uniq<FunctionExpression>("struct_extract_at", std::move(children));
 	}
 	return expr;
@@ -742,45 +847,52 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
 }
 
+JoinType SubstraitToDuckDB::TransformJoinType(substrait::JoinRel::JoinType stype, bool lateral_only) {
+	switch (stype) {
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_INNER:
+		return JoinType::INNER;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT:
+		return JoinType::LEFT;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE:
+		return JoinType::SINGLE;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
+		return JoinType::SEMI;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI:
+		return JoinType::ANTI;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_MARK:
+		return JoinType::MARK;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT:
+		if (lateral_only) {
+			break; // fall through to the error below
+		}
+		return JoinType::RIGHT;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI:
+		if (lateral_only) {
+			break;
+		}
+		return JoinType::RIGHT_SEMI;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI:
+		if (lateral_only) {
+			break;
+		}
+		return JoinType::RIGHT_ANTI;
+	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_OUTER:
+		if (lateral_only) {
+			break;
+		}
+		return JoinType::OUTER;
+	default:
+		break;
+	}
+	throw NotImplementedException(
+	    "Unsupported %s join type: %s", lateral_only ? "LateralJoinRel" : "JoinRel",
+	    string(substrait::JoinRel::GetDescriptor()->FindFieldByNumber(stype)->name()));
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &sop) {
 	auto &sjoin = sop.join();
 
-	JoinType djointype;
-	switch (sjoin.type()) {
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_INNER:
-		djointype = JoinType::INNER;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT:
-		djointype = JoinType::LEFT;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT:
-		djointype = JoinType::RIGHT;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE:
-		djointype = JoinType::SINGLE;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
-		djointype = JoinType::SEMI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT_SEMI:
-		djointype = JoinType::RIGHT_SEMI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI:
-		djointype = JoinType::ANTI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_RIGHT_ANTI:
-		djointype = JoinType::RIGHT_ANTI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_MARK:
-		djointype = JoinType::MARK;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_OUTER:
-		djointype = JoinType::OUTER;
-		break;
-	default:
-		throw NotImplementedException("Unsupported join type: %s",
-		                              string(substrait::JoinRel::GetDescriptor()->FindFieldByNumber(sjoin.type())->name()));
-	}
+	JoinType djointype = TransformJoinType(sjoin.type(), false);
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
 	return make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
 	                                     TransformOp(sjoin.right())->Alias("right"), std::move(join_condition),
@@ -790,34 +902,166 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::Rel &sop) {
 	auto &slateral = sop.lateral_join();
 
-	JoinType djointype;
-	switch (slateral.type()) {
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_INNER:
-		djointype = JoinType::INNER;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT:
-		djointype = JoinType::LEFT;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SINGLE:
-		djointype = JoinType::SINGLE;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_SEMI:
-		djointype = JoinType::SEMI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_ANTI:
-		djointype = JoinType::ANTI;
-		break;
-	case substrait::JoinRel::JoinType::JoinRel_JoinType_JOIN_TYPE_LEFT_MARK:
-		djointype = JoinType::MARK;
-		break;
-	default:
-		throw NotImplementedException("Unsupported LateralJoinRel join type");
+	JoinType djointype = TransformJoinType(slateral.type(), true);
+
+	// Exception-safe scope management with RAII wrapper
+	class ScopeGuard {
+	public:
+		ScopeGuard(vector<LateralScope> &scopes, bool should_pop) : scopes_(scopes), should_pop_(should_pop) {
+		}
+		~ScopeGuard() {
+			if (should_pop_ && !scopes_.empty()) {
+				scopes_.pop_back();
+			}
+		}
+		void enable() { should_pop_ = true; }
+		void disarm() { should_pop_ = false; }
+
+	private:
+		vector<LateralScope> &scopes_;
+		bool should_pop_;
+	};
+
+	// Push a LateralScope IFF this LateralJoinRel declares a rel_anchor (required by spec
+	// whenever the right side needs to reference it, but Substrait doesn't strictly forbid
+	// omitting it if the right side happens not to use OuterReference at all).
+	bool pushed_scope = false;
+
+	// Apply RAII guard BEFORE any operations that might throw (for exception safety)
+	ScopeGuard scope_guard(lateral_scopes, false); // Will enable if we push scope
+
+	// Transform the left side first; its Columns() gives us the name list needed to resolve
+	// any OuterReference in the right subtree/expression/post_join_filter.
+	shared_ptr<Relation> left_rel = TransformOp(slateral.left())->Alias("left");
+
+	if (slateral.common().has_rel_anchor()) {
+		vector<string> left_column_names;
+		for (auto &col : left_rel->Columns()) {
+			left_column_names.push_back(col.Name());
+		}
+		lateral_scopes.push_back(
+		    LateralScope{slateral.common().rel_anchor(), std::move(left_column_names)});
+		pushed_scope = true;
+		scope_guard.enable(); // Scope is now pushed; guard will pop it on exception
 	}
 
+	// If the right side is a FilterRel, extract any correlated condition from it so we can
+	// include it in the join condition (filters with OuterReferences must be part of the join,
+	// not applied separately to the right table, because the correlated columns are only
+	// visible during the join binding phase with LateralBinder).
+	const substrait::Rel *right_to_transform = &slateral.right();
+	unique_ptr<ParsedExpression> correlated_filter_condition;
+	size_t left_column_count = 0;
+	if (slateral.right().has_filter()) {
+		// We'll extract the filter and handle it specially.
+		// Count left columns from the already-transformed left_rel to adjust field indices
+		// in the extracted filter (field 0 from right becomes field left_column_count in the join output).
+		left_column_count = left_rel->Columns().size();
+
+		auto &filter_rel = slateral.right().filter();
+		auto &filter_condition = filter_rel.condition();
+		// Transform the filter condition; field indices will be relative to the right side
+		correlated_filter_condition = TransformExpr(filter_condition);
+
+		// Adjust field indices in the extracted condition to account for left side columns
+		// Capture left_column_count by value to avoid use-after-free if callback is stored
+		std::function<void(unique_ptr<ParsedExpression> &)> adjust_field_indices =
+		    [left_column_count](unique_ptr<ParsedExpression> &expr) {
+			if (!expr) return;
+			if (expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
+				auto &pos_ref = expr->Cast<PositionalReferenceExpression>();
+				// Shift the field index by left_column_count with overflow protection
+				if (pos_ref.index > NumericLimits<idx_t>::Maximum() - left_column_count) {
+					throw InvalidInputException(
+					    "Field index adjustment overflow: index %llu + left_column_count %llu exceeds maximum",
+					    (unsigned long long)pos_ref.index, (unsigned long long)left_column_count);
+				}
+				pos_ref.index += left_column_count;
+			} else {
+				// Recursively adjust in children
+				ParsedExpressionIterator::EnumerateChildren(*expr, [left_column_count](unique_ptr<ParsedExpression> &child) {
+					if (child && child->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
+						auto &pos_ref = child->Cast<PositionalReferenceExpression>();
+						if (pos_ref.index > NumericLimits<idx_t>::Maximum() - left_column_count) {
+							throw InvalidInputException(
+							    "Field index adjustment overflow: index %llu + left_column_count %llu exceeds maximum",
+							    (unsigned long long)pos_ref.index, (unsigned long long)left_column_count);
+						}
+						pos_ref.index += left_column_count;
+					}
+				});
+			}
+		};
+		adjust_field_indices(correlated_filter_condition);
+		right_to_transform = &filter_rel.input();
+	}
+
+	// Transform the right side, join expression, and post_join_filter while the scope (if any)
+	// is visible — this is where OuterReference resolution happens.
+	shared_ptr<Relation> right_rel = TransformOp(*right_to_transform)->Alias("right");
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(slateral.expression());
-	return make_shared_ptr<JoinRelation>(TransformOp(slateral.left())->Alias("left"),
-	                                     TransformOp(slateral.right())->Alias("right"), std::move(join_condition),
-	                                     djointype);
+
+	// If we extracted a correlated filter, AND it with the join condition
+	if (correlated_filter_condition) {
+		vector<unique_ptr<ParsedExpression>> and_children;
+		and_children.push_back(std::move(join_condition));
+		and_children.push_back(std::move(correlated_filter_condition));
+		join_condition = make_uniq<ConjunctionExpression>(ExpressionType::CONJUNCTION_AND, std::move(and_children));
+	}
+
+	shared_ptr<Relation> result = make_shared_ptr<JoinRelation>(
+	    std::move(left_rel), std::move(right_rel), std::move(join_condition), djointype,
+	    JoinRefType::DEPENDENT);
+
+	if (slateral.has_post_join_filter()) {
+		// Post-join filters must not contain OuterReferences, as they are applied after the join
+		// and should only reference columns from the join output (left + right).
+		// OuterReferences are only valid in the right input of the LateralJoinRel.
+		bool has_outer_refs = false;
+		std::function<void(const substrait::Expression &)> check_outer_refs =
+		    [&](const substrait::Expression &expr) {
+			    if (has_outer_refs) return; // Early exit if already found
+			    if (expr.has_selection() && expr.selection().has_outer_reference()) {
+				    has_outer_refs = true;
+				    return;
+			    }
+			    // Recursively check all expression types systematically
+			    if (expr.has_scalar_function()) {
+				    for (const auto &arg : expr.scalar_function().arguments()) {
+					    if (arg.has_value()) {
+						    check_outer_refs(arg.value());
+					    }
+				    }
+			    }
+			    if (expr.has_if_then()) {
+				    for (const auto &ifthen : expr.if_then().ifs()) {
+					    check_outer_refs(ifthen.if_());
+					    check_outer_refs(ifthen.then());
+				    }
+				    if (expr.if_then().has_else_()) {
+					    check_outer_refs(expr.if_then().else_());
+				    }
+			    }
+			    if (expr.has_cast()) {
+				    check_outer_refs(expr.cast().input());
+			    }
+			    // Note: additional nested expression types should be added as needed
+		    };
+		check_outer_refs(slateral.post_join_filter());
+		if (has_outer_refs) {
+			throw NotImplementedException(
+			    "OuterReferences are not supported in LateralJoinRel.post_join_filter; "
+			    "they are only valid in the right input of the LateralJoinRel");
+		}
+		// Temporarily remove scope from stack so post_join_filter transforms without lateral_scopes active
+		if (pushed_scope) {
+			lateral_scopes.pop_back();
+			pushed_scope = false; // Prevent double-pop in destructor
+		}
+		unique_ptr<ParsedExpression> post_filter = TransformExpr(slateral.post_join_filter());
+		result = make_shared_ptr<FilterRelation>(std::move(result), std::move(post_filter));
+	}
+	return result;
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformCrossProductOp(const substrait::Rel &sop) {
@@ -850,7 +1094,6 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformFilterOp(const substrait::Rel &
 }
 
 const substrait::RelCommon *GetCommon(const substrait::Rel &sop) {
-	const substrait::RelCommon *common;
 	switch (sop.rel_type_case()) {
 	case substrait::Rel::RelTypeCase::kRead:
 		return &sop.read().common();
@@ -864,6 +1107,8 @@ const substrait::RelCommon *GetCommon(const substrait::Rel &sop) {
 		return &sop.sort().common();
 	case substrait::Rel::RelTypeCase::kJoin:
 		return &sop.join().common();
+	case substrait::Rel::RelTypeCase::kLateralJoin:
+		return &sop.lateral_join().common();
 	case substrait::Rel::RelTypeCase::kProject:
 		return &sop.project().common();
 	case substrait::Rel::RelTypeCase::kSet:

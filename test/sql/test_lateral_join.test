@@ -1,6 +1,12 @@
 # name: test/sql/test_lateral_join.test
 # description: Test round-tripping of LATERAL joins with correlated subqueries
 # group: [sql]
+#
+# NOTE: This test exercises the LATERAL join SQL syntax, which DuckDB's planner always
+# flattens to LOGICAL_DELIM_JOIN before reaching the Substrait converter. For direct
+# testing of TransformLateralJoinOp and the consumer-side LateralJoinRel support, see
+# test_from_substrait_lateral_join.test, which hand-authors LateralJoinRel plans via
+# from_substrait_json().
 
 require substrait
 
