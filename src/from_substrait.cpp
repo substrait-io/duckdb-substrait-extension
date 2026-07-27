@@ -396,15 +396,15 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::ResolveOuterReference(
 	}
 	case substrait::Expression_FieldReference_OuterReference::OuterReferenceTypeCase::kStepsOut: {
 		auto steps_out = outer_ref.steps_out();
-		// steps_out=0 means immediately enclosing scope (valid per Substrait spec)
-		// steps_out must be strictly less than lateral_scopes.size() to avoid underflow
-		if (steps_out >= lateral_scopes.size()) {
+		// steps_out is 1-based per Substrait spec: steps_out >= 1
+		// steps_out=1 means immediately enclosing scope, steps_out=2 means grandparent, etc.
+		if (steps_out < 1 || steps_out > lateral_scopes.size()) {
 			throw NotImplementedException(
-			    "OuterReference.steps_out %d exceeds the current LateralJoinRel nesting depth "
-			    "(%d); only outer references resolvable within tracked lateral scopes are supported",
+			    "OuterReference.steps_out %d is out of range (1 to %d); only outer references "
+			    "resolvable within tracked lateral scopes are supported",
 			    steps_out, (int)lateral_scopes.size());
 		}
-		scope = &lateral_scopes[lateral_scopes.size() - steps_out - 1];
+		scope = &lateral_scopes[lateral_scopes.size() - steps_out];
 		break;
 	}
 	case substrait::Expression_FieldReference_OuterReference::OuterReferenceTypeCase::OUTER_REFERENCE_TYPE_NOT_SET:
@@ -966,7 +966,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::
 		// Adjust field indices in the extracted condition to account for left side columns
 		// Capture left_column_count by value to avoid use-after-free if callback is stored
 		std::function<void(unique_ptr<ParsedExpression> &)> adjust_field_indices =
-		    [left_column_count](unique_ptr<ParsedExpression> &expr) {
+		    [&](unique_ptr<ParsedExpression> &expr) {
 			if (!expr) return;
 			if (expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
 				auto &pos_ref = expr->Cast<PositionalReferenceExpression>();
@@ -978,17 +978,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::
 				}
 				pos_ref.index += left_column_count;
 			} else {
-				// Recursively adjust in children
-				ParsedExpressionIterator::EnumerateChildren(*expr, [left_column_count](unique_ptr<ParsedExpression> &child) {
-					if (child && child->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
-						auto &pos_ref = child->Cast<PositionalReferenceExpression>();
-						if (pos_ref.index > NumericLimits<idx_t>::Maximum() - left_column_count) {
-							throw InvalidInputException(
-							    "Field index adjustment overflow: index %llu + left_column_count %llu exceeds maximum",
-							    (unsigned long long)pos_ref.index, (unsigned long long)left_column_count);
-						}
-						pos_ref.index += left_column_count;
-					}
+				// Recursively adjust in all nested children
+				ParsedExpressionIterator::EnumerateChildren(*expr, [&](unique_ptr<ParsedExpression> &child) {
+					adjust_field_indices(child);
 				});
 			}
 		};
