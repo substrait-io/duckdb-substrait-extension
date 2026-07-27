@@ -66,6 +66,7 @@ private:
 	shared_ptr<Relation> TransformOp(const substrait::Rel &sop,
 	                                 const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
 	shared_ptr<Relation> TransformJoinOp(const substrait::Rel &sop);
+	shared_ptr<Relation> TransformLateralJoinOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformCrossProductOp(const substrait::Rel &sop);
 	shared_ptr<Relation> TransformFetchOp(const substrait::Rel &sop,
 	                                      const google::protobuf::RepeatedPtrField<std::string> *names = nullptr);
@@ -89,7 +90,10 @@ private:
 	unique_ptr<ParsedExpression> TransformExpr(const substrait::Expression &sexpr,
 	                                           RootNameIterator *iterator = nullptr);
 	static unique_ptr<ParsedExpression> TransformLiteralExpr(const substrait::Expression &sexpr);
-	static unique_ptr<ParsedExpression> TransformSelectionExpr(const substrait::Expression &sexpr);
+	unique_ptr<ParsedExpression> TransformSelectionExpr(const substrait::Expression &sexpr);
+	unique_ptr<ParsedExpression> ResolveOuterReference(
+	    const substrait::Expression_FieldReference_OuterReference &outer_ref, int32_t field_idx);
+	static JoinType TransformJoinType(substrait::JoinRel::JoinType stype, bool lateral_only);
 	unique_ptr<ParsedExpression> TransformScalarFunctionExpr(const substrait::Expression &sexpr);
 	unique_ptr<ParsedExpression> TransformIfThenExpr(const substrait::Expression &sexpr);
 	unique_ptr<ParsedExpression> TransformCastExpr(const substrait::Expression &sexpr);
@@ -114,6 +118,14 @@ private:
 	substrait::Plan plan;
 	//! Variable used to register functions
 	unordered_map<uint64_t, string> functions_map;
+	//! Tracks the left side's column names for each currently-enclosing LateralJoinRel,
+	//! keyed by that LateralJoinRel's RelCommon.rel_anchor. Used to resolve OuterReference
+	//! field references into a name-based ColumnRefExpression against the "left" alias.
+	struct LateralScope {
+		uint32_t rel_anchor;
+		vector<string> left_column_names;
+	};
+	vector<LateralScope> lateral_scopes;
 	//! Remapped functions with differing names to the correct DuckDB functions
 	//! names
 	static const unordered_map<std::string, std::string> function_names_remap;
