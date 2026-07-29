@@ -23,3 +23,20 @@ query I
 SELECT count(*) FROM get_substrait_json('SELECT sin(a) FROM t') WHERE contains("Json", '"urn":"extension:io.substrait:functions_arithmetic"')
 ----
 1
+
+# `count` and `sin` above are both registered with concrete argument types, so a single overload is
+# stored and any URN bug affecting later overloads cannot show up. `equal` is declared `any1, any1`
+# and is therefore expanded over every concrete type kind, producing many overloads from one
+# registration -- the case that regressed in #205. Every expanded overload must carry the URN, not
+# just the first one generated.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT a = a FROM t') WHERE contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
+----
+1
+
+# Guard the specific shape the #205 regression produced: an extensionUrns entry carrying an anchor
+# but no `urn` field, which is how an empty URN is serialized.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT a = a FROM t') WHERE contains("Json", '{"extensionUrnAnchor":1}')
+----
+0
