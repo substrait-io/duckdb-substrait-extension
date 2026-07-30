@@ -1,0 +1,1998 @@
+---
+name: "DuckDB Substrait Dialect"
+
+# ============================================================================
+# SUPPORTED DATA TYPES
+# ============================================================================
+supported_types:
+  - type: "BOOL"
+    system_metadata:
+      name: "BOOLEAN"
+      supported_as_column: true
+
+  - type: "I8"
+    system_metadata:
+      name: "TINYINT"
+      supported_as_column: true
+
+  - type: "I16"
+    system_metadata:
+      name: "SMALLINT"
+      supported_as_column: true
+
+  - type: "I32"
+    system_metadata:
+      name: "INTEGER"
+      supported_as_column: true
+
+  - type: "I64"
+    system_metadata:
+      name: "BIGINT"
+      supported_as_column: true
+
+  - type: "FP32"
+    system_metadata:
+      name: "FLOAT"
+      supported_as_column: true
+
+  - type: "FP64"
+    system_metadata:
+      name: "DOUBLE"
+      supported_as_column: true
+
+  - type: "DECIMAL"
+    system_metadata:
+      name: "DECIMAL"
+      supported_as_column: true
+    max_precision: 38
+    max_scale: 38
+
+  - type: "STRING"
+    system_metadata:
+      name: "VARCHAR"
+      supported_as_column: true
+
+  - type: "VARCHAR"
+    system_metadata:
+      name: "VARCHAR"
+      supported_as_column: true
+
+  - type: "FIXED_CHAR"
+    system_metadata:
+      name: "CHAR"
+      supported_as_column: true
+
+  - type: "BINARY"
+    system_metadata:
+      name: "BLOB"
+      supported_as_column: true
+
+  - type: "DATE"
+    system_metadata:
+      name: "DATE"
+      supported_as_column: true
+
+  - type: "PRECISION_TIME"
+    system_metadata:
+      name: "TIME"
+      supported_as_column: true
+    max_precision: 6
+
+  - type: "PRECISION_TIMESTAMP"
+    system_metadata:
+      name: "TIMESTAMP"
+      supported_as_column: true
+    max_precision: 9
+
+  - type: "PRECISION_TIMESTAMP_TZ"
+    system_metadata:
+      name: "TIMESTAMP_TZ"
+      supported_as_column: true
+    max_precision: 6
+
+  - type: "STRUCT"
+    system_metadata:
+      name: "STRUCT"
+      supported_as_column: true
+
+  - type: "LIST"
+    system_metadata:
+      name: "LIST"
+      supported_as_column: true
+
+  - type: "MAP"
+    system_metadata:
+      name: "MAP"
+      supported_as_column: true
+
+  - type: "UUID"
+    system_metadata:
+      name: "UUID"
+      supported_as_column: true
+
+# ============================================================================
+# SUPPORTED EXPRESSIONS
+# ============================================================================
+supported_expressions:
+  - "LITERAL"
+  - "SELECTION"
+  - "SCALAR_FUNCTION"
+  - "WINDOW_FUNCTION"
+  - "CAST"
+  - "IF_THEN"
+  - "SWITCH"
+  - expression: "SUBQUERY"
+    subquery_types:
+      - "SCALAR"
+      - "IN_PREDICATE"
+
+# ============================================================================
+# SUPPORTED RELATIONS
+# ============================================================================
+supported_relations:
+  - relation: "READ"
+    read_types:
+      - "NAMED_TABLE"
+  - "FILTER"
+  - "PROJECT"
+  - "AGGREGATE"
+  - "SORT"
+  - "FETCH"
+  - relation: "JOIN"
+    join_types:
+      - "INNER"
+      - "LEFT"
+      - "RIGHT"
+      - "OUTER"
+      - "LEFT_SEMI"
+      - "RIGHT_SEMI"
+      - "LEFT_ANTI"
+      - "RIGHT_ANTI"
+      - "LEFT_MARK"
+  - "CROSS"
+  - "LATERAL_JOIN"
+  - relation: "SET"
+    operations:
+      - "UNION_ALL"
+      - "UNION_DISTINCT"
+      - "INTERSECTION_PRIMARY"
+      - "MINUS_PRIMARY"
+  - "WRITE"
+  - "REFERENCE"
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+dependencies:
+  arithmetic: "extension:io.substrait:functions_arithmetic"
+  arithmetic_decimal: "extension:io.substrait:functions_arithmetic_decimal"
+  comparison: "extension:io.substrait:functions_comparison"
+  datetime: "extension:io.substrait:functions_datetime"
+  geometry: "extension:io.substrait:functions_geometry"
+  string: "extension:io.substrait:functions_string"
+  aggregate_generic: "extension:io.substrait:functions_aggregate_generic"
+  aggregate_approx: "extension:io.substrait:functions_aggregate_approx"
+  rounding: "extension:io.substrait:functions_rounding"
+  rounding_decimal: "extension:io.substrait:functions_rounding_decimal"
+  boolean: "extension:io.substrait:functions_boolean"
+  list: "extension:io.substrait:functions_list"
+  logarithmic: "extension:io.substrait:functions_logarithmic"
+  set: "extension:io.substrait:functions_set"
+
+# ============================================================================
+# SCALAR FUNCTIONS
+# ============================================================================
+supported_scalar_functions:
+  # Arithmetic Functions - Basic Operations
+  - source: "arithmetic"
+    name: "add"
+    system_metadata:
+      name: "+"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "subtract"
+    system_metadata:
+      name: "-"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "multiply"
+    system_metadata:
+      name: "*"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "divide"
+    system_metadata:
+      name: "/"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "modulus"
+    system_metadata:
+      name: "%"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+
+  - source: "arithmetic"
+    name: "negate"
+    system_metadata:
+      name: "-"
+      notation: "PREFIX"
+    supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  # Arithmetic Functions - Exponentiation & Power
+  - source: "arithmetic"
+    name: "sqrt"
+    system_metadata:
+      name: "sqrt"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "exp"
+    system_metadata:
+      name: "exp"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "power"
+    system_metadata:
+      name: "power"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "factorial"
+    system_metadata:
+      name: "factorial"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+
+  # Arithmetic Functions - Sign & Absolute Value
+  - source: "arithmetic"
+    name: "abs"
+    system_metadata:
+      name: "abs"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "sign"
+    system_metadata:
+      name: "sign"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  # Trigonometric Functions
+  - source: "arithmetic"
+    name: "sin"
+    system_metadata:
+      name: "sin"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "cos"
+    system_metadata:
+      name: "cos"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "tan"
+    system_metadata:
+      name: "tan"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "asin"
+    system_metadata:
+      name: "asin"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "acos"
+    system_metadata:
+      name: "acos"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "atan"
+    system_metadata:
+      name: "atan"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "atan2"
+    system_metadata:
+      name: "atan2"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "degrees"
+    system_metadata:
+      name: "degrees"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "radians"
+    system_metadata:
+      name: "radians"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  # Hyperbolic Functions
+  - source: "arithmetic"
+    name: "sinh"
+    system_metadata:
+      name: "sinh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "cosh"
+    system_metadata:
+      name: "cosh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "tanh"
+    system_metadata:
+      name: "tanh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "asinh"
+    system_metadata:
+      name: "asinh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "acosh"
+    system_metadata:
+      name: "acosh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "atanh"
+    system_metadata:
+      name: "atanh"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  # Bitwise Operations
+  - source: "arithmetic"
+    name: "bitwise_and"
+    system_metadata:
+      name: "&"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+
+  - source: "arithmetic"
+    name: "bitwise_or"
+    system_metadata:
+      name: "|"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+
+  - source: "arithmetic"
+    name: "bitwise_xor"
+    system_metadata:
+      name: "^"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i8"
+      - "i16_i16"
+      - "i32_i32"
+      - "i64_i64"
+
+  - source: "arithmetic"
+    name: "bitwise_not"
+    system_metadata:
+      name: "~"
+      notation: "PREFIX"
+    supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
+      - "i64"
+
+  - source: "arithmetic"
+    name: "shift_left"
+    system_metadata:
+      name: "<<"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i32"
+      - "i16_i32"
+      - "i32_i32"
+      - "i64_i32"
+
+  - source: "arithmetic"
+    name: "shift_right"
+    system_metadata:
+      name: ">>"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i32"
+      - "i16_i32"
+      - "i32_i32"
+      - "i64_i32"
+
+  - source: "arithmetic"
+    name: "shift_right_unsigned"
+    system_metadata:
+      name: ">>>"
+      notation: "INFIX"
+    supported_impls:
+      - "i8_i32"
+      - "i16_i32"
+      - "i32_i32"
+      - "i64_i32"
+
+  # Rounding Functions
+  - source: "rounding"
+    name: "ceil"
+    system_metadata:
+      name: "ceil"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "rounding"
+    name: "floor"
+    system_metadata:
+      name: "floor"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "rounding"
+    name: "round"
+    system_metadata:
+      name: "round"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp32_i32"
+      - "fp64"
+      - "fp64_i32"
+
+  # Comparison Functions
+  - source: "comparison"
+    name: "equal"
+    system_metadata:
+      name: "="
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "not_equal"
+    system_metadata:
+      name: "!="
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "lt"
+    system_metadata:
+      name: "<"
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "lte"
+    system_metadata:
+      name: "<="
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "gt"
+    system_metadata:
+      name: ">"
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "gte"
+    system_metadata:
+      name: ">="
+      notation: "INFIX"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "is_null"
+    system_metadata:
+      name: "IS NULL"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  - source: "comparison"
+    name: "is_not_null"
+    system_metadata:
+      name: "IS NOT NULL"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  - source: "comparison"
+    name: "is_distinct_from"
+    system_metadata:
+      name: "IS DISTINCT FROM"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "is_not_distinct_from"
+    system_metadata:
+      name: "IS NOT DISTINCT FROM"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "is_nan"
+    system_metadata:
+      name: "is_nan"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "comparison"
+    name: "is_finite"
+    system_metadata:
+      name: "is_finite"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "comparison"
+    name: "is_infinite"
+    system_metadata:
+      name: "is_infinite"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "comparison"
+    name: "is_true"
+    system_metadata:
+      name: "is_true"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  - source: "comparison"
+    name: "is_not_true"
+    system_metadata:
+      name: "is_not_true"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  - source: "comparison"
+    name: "is_false"
+    system_metadata:
+      name: "is_false"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  - source: "comparison"
+    name: "is_not_false"
+    system_metadata:
+      name: "is_not_false"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  - source: "comparison"
+    name: "between"
+    system_metadata:
+      name: "BETWEEN"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any_any"
+
+  - source: "comparison"
+    name: "coalesce"
+    system_metadata:
+      name: "coalesce"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+    variadic:
+      min: 1
+
+  - source: "comparison"
+    name: "nullif"
+    system_metadata:
+      name: "nullif"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+
+  - source: "comparison"
+    name: "least"
+    system_metadata:
+      name: "least"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+    variadic:
+      min: 2
+
+  - source: "comparison"
+    name: "least_skip_null"
+    system_metadata:
+      name: "least_skip_null"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+    variadic:
+      min: 2
+
+  - source: "comparison"
+    name: "greatest"
+    system_metadata:
+      name: "greatest"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+    variadic:
+      min: 2
+
+  - source: "comparison"
+    name: "greatest_skip_null"
+    system_metadata:
+      name: "greatest_skip_null"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_any"
+    variadic:
+      min: 2
+
+  # Boolean Functions
+  - source: "boolean"
+    name: "and"
+    system_metadata:
+      name: "AND"
+      notation: "INFIX"
+    supported_impls:
+      - "bool_bool"
+    variadic:
+      min: 2
+
+  - source: "boolean"
+    name: "or"
+    system_metadata:
+      name: "OR"
+      notation: "INFIX"
+    supported_impls:
+      - "bool_bool"
+    variadic:
+      min: 2
+
+  - source: "boolean"
+    name: "not"
+    system_metadata:
+      name: "NOT"
+      notation: "PREFIX"
+    supported_impls:
+      - "bool"
+
+  - source: "boolean"
+    name: "xor"
+    system_metadata:
+      name: "XOR"
+      notation: "INFIX"
+    supported_impls:
+      - "bool_bool"
+
+  - source: "boolean"
+    name: "and_not"
+    system_metadata:
+      name: "and_not"
+      notation: "INFIX"
+    supported_impls:
+      - "bool_bool"
+
+  # String Functions - Case Conversion
+  - source: "string"
+    name: "upper"
+    system_metadata:
+      name: "upper"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+      - "fixedchar"
+
+  - source: "string"
+    name: "lower"
+    system_metadata:
+      name: "lower"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+      - "fixedchar"
+
+  - source: "string"
+    name: "capitalize"
+    system_metadata:
+      name: "capitalize"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "title"
+    system_metadata:
+      name: "title"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "initcap"
+    system_metadata:
+      name: "initcap"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "swapcase"
+    system_metadata:
+      name: "swapcase"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  # String Functions - Length
+  - source: "string"
+    name: "char_length"
+    system_metadata:
+      name: "char_length"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "bit_length"
+    system_metadata:
+      name: "bit_length"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "octet_length"
+    system_metadata:
+      name: "octet_length"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  # String Functions - Searching & Matching
+  - source: "string"
+    name: "like"
+    system_metadata:
+      name: "like"
+      notation: "INFIX"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "contains"
+    system_metadata:
+      name: "contains"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "starts_with"
+    system_metadata:
+      name: "starts_with"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "ends_with"
+    system_metadata:
+      name: "ends_with"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "strpos"
+    system_metadata:
+      name: "strpos"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "substring"
+    system_metadata:
+      name: "substring"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "string_i32_i32"
+      - "varchar_i32"
+      - "varchar_i32_i32"
+
+  - source: "string"
+    name: "left"
+    system_metadata:
+      name: "left"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "varchar_i32"
+
+  - source: "string"
+    name: "right"
+    system_metadata:
+      name: "right"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "varchar_i32"
+
+  # String Functions - Regular Expressions
+  - source: "string"
+    name: "regexp_match_substring"
+    system_metadata:
+      name: "regexp_match_substring"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "regexp_match_substring_all"
+    system_metadata:
+      name: "regexp_match_substring_all"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "regexp_strpos"
+    system_metadata:
+      name: "regexp_strpos"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "regexp_count_substring"
+    system_metadata:
+      name: "regexp_count_substring"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  - source: "string"
+    name: "regexp_replace"
+    system_metadata:
+      name: "regexp_replace"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string_string"
+      - "varchar_varchar_varchar"
+
+  - source: "string"
+    name: "regexp_string_split"
+    system_metadata:
+      name: "regexp_string_split"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  # String Functions - Manipulation
+  - source: "string"
+    name: "concat"
+    system_metadata:
+      name: "concat"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+    variadic:
+      min: 2
+
+  - source: "string"
+    name: "concat_ws"
+    system_metadata:
+      name: "concat_ws"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+    variadic:
+      min: 2
+
+  - source: "string"
+    name: "replace"
+    system_metadata:
+      name: "replace"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string_string"
+      - "varchar_varchar_varchar"
+
+  - source: "string"
+    name: "repeat"
+    system_metadata:
+      name: "repeat"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "varchar_i32"
+
+  - source: "string"
+    name: "reverse"
+    system_metadata:
+      name: "reverse"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "replace_slice"
+    system_metadata:
+      name: "replace_slice"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32_i32_string"
+      - "varchar_i32_i32_varchar"
+
+  - source: "string"
+    name: "string_split"
+    system_metadata:
+      name: "string_split"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+      - "varchar_varchar"
+
+  # String Functions - Trimming
+  - source: "string"
+    name: "trim"
+    system_metadata:
+      name: "trim"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "ltrim"
+    system_metadata:
+      name: "ltrim"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "rtrim"
+    system_metadata:
+      name: "rtrim"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  - source: "string"
+    name: "lpad"
+    system_metadata:
+      name: "lpad"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "string_i32_string"
+      - "varchar_i32"
+      - "varchar_i32_varchar"
+
+  - source: "string"
+    name: "rpad"
+    system_metadata:
+      name: "rpad"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "string_i32_string"
+      - "varchar_i32"
+      - "varchar_i32_varchar"
+
+  - source: "string"
+    name: "center"
+    system_metadata:
+      name: "center"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_i32"
+      - "string_i32_string"
+      - "varchar_i32"
+      - "varchar_i32_varchar"
+
+  # Logarithmic Functions
+  - source: "logarithmic"
+    name: "ln"
+    system_metadata:
+      name: "ln"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "logarithmic"
+    name: "log2"
+    system_metadata:
+      name: "log2"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "logarithmic"
+    name: "log10"
+    system_metadata:
+      name: "log10"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  - source: "logarithmic"
+    name: "logb"
+    system_metadata:
+      name: "logb"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64_i64"
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "logarithmic"
+    name: "log1p"
+    system_metadata:
+      name: "log1p"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp32"
+      - "fp64"
+
+  # DateTime Functions - Extract
+  - source: "datetime"
+    name: "extract"
+    system_metadata:
+      name: "extract"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date"
+      - "precision_time"
+      - "precision_timestamp"
+      - "precision_timestamp_tz"
+
+  - source: "datetime"
+    name: "extract_boolean"
+    system_metadata:
+      name: "extract_boolean"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date"
+      - "precision_timestamp"
+
+  # DateTime Functions - Arithmetic
+  - source: "datetime"
+    name: "add"
+    system_metadata:
+      name: "add"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date_interval_day"
+      - "precision_timestamp_interval_day"
+      - "precision_timestamp_tz_interval_day"
+      - "interval_day_date"
+      - "interval_day_precision_timestamp"
+      - "interval_day_precision_timestamp_tz"
+
+  - source: "datetime"
+    name: "subtract"
+    system_metadata:
+      name: "subtract"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date_date"
+      - "precision_timestamp_precision_timestamp"
+      - "precision_timestamp_tz_precision_timestamp_tz"
+      - "date_interval_day"
+      - "precision_timestamp_interval_day"
+      - "precision_timestamp_tz_interval_day"
+
+  - source: "datetime"
+    name: "multiply"
+    system_metadata:
+      name: "multiply"
+      notation: "FUNCTION"
+    supported_impls:
+      - "interval_day_i64"
+      - "i64_interval_day"
+
+  # DateTime Functions - Comparison
+  - source: "datetime"
+    name: "lt"
+    system_metadata:
+      name: "<"
+      notation: "INFIX"
+    supported_impls:
+      - "date_date"
+      - "precision_time_precision_time"
+      - "precision_timestamp_precision_timestamp"
+      - "precision_timestamp_tz_precision_timestamp_tz"
+
+  - source: "datetime"
+    name: "lte"
+    system_metadata:
+      name: "<="
+      notation: "INFIX"
+    supported_impls:
+      - "date_date"
+      - "precision_time_precision_time"
+      - "precision_timestamp_precision_timestamp"
+      - "precision_timestamp_tz_precision_timestamp_tz"
+
+  - source: "datetime"
+    name: "gt"
+    system_metadata:
+      name: ">"
+      notation: "INFIX"
+    supported_impls:
+      - "date_date"
+      - "precision_time_precision_time"
+      - "precision_timestamp_precision_timestamp"
+      - "precision_timestamp_tz_precision_timestamp_tz"
+
+  - source: "datetime"
+    name: "gte"
+    system_metadata:
+      name: ">="
+      notation: "INFIX"
+    supported_impls:
+      - "date_date"
+      - "precision_time_precision_time"
+      - "precision_timestamp_precision_timestamp"
+      - "precision_timestamp_tz_precision_timestamp_tz"
+
+  # DateTime Functions - Formatting & Parsing
+  - source: "datetime"
+    name: "strftime"
+    system_metadata:
+      name: "strftime"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date_string"
+      - "precision_time_string"
+      - "precision_timestamp_string"
+      - "precision_timestamp_tz_string"
+
+  - source: "datetime"
+    name: "strptime_date"
+    system_metadata:
+      name: "strptime_date"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+
+  - source: "datetime"
+    name: "strptime_time"
+    system_metadata:
+      name: "strptime_time"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+
+  - source: "datetime"
+    name: "strptime_timestamp"
+    system_metadata:
+      name: "strptime_timestamp"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string_string"
+
+  # DateTime Functions - Timezone
+  - source: "datetime"
+    name: "assume_timezone"
+    system_metadata:
+      name: "assume_timezone"
+      notation: "FUNCTION"
+    supported_impls:
+      - "precision_timestamp_string"
+
+  - source: "datetime"
+    name: "local_timestamp"
+    system_metadata:
+      name: "local_timestamp"
+      notation: "FUNCTION"
+    supported_impls:
+      - "precision_timestamp"
+
+  # DateTime Functions - Rounding
+  - source: "datetime"
+    name: "round_temporal"
+    system_metadata:
+      name: "round_temporal"
+      notation: "FUNCTION"
+    supported_impls:
+      - "precision_timestamp_i32"
+
+  - source: "datetime"
+    name: "round_calendar"
+    system_metadata:
+      name: "round_calendar"
+      notation: "FUNCTION"
+    supported_impls:
+      - "date_string"
+      - "precision_timestamp_string"
+
+  # Geometry Functions - Point & Line Operations
+  - source: "geometry"
+    name: "point"
+    system_metadata:
+      name: "point"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp64_fp64"
+
+  - source: "geometry"
+    name: "make_line"
+    system_metadata:
+      name: "make_line"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry_geometry"
+
+  - source: "geometry"
+    name: "x_coordinate"
+    system_metadata:
+      name: "x_coordinate"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "y_coordinate"
+    system_metadata:
+      name: "y_coordinate"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  # Geometry Functions - Properties
+  - source: "geometry"
+    name: "num_points"
+    system_metadata:
+      name: "num_points"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "is_empty"
+    system_metadata:
+      name: "is_empty"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "is_closed"
+    system_metadata:
+      name: "is_closed"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "is_simple"
+    system_metadata:
+      name: "is_simple"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "is_ring"
+    system_metadata:
+      name: "is_ring"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "is_valid"
+    system_metadata:
+      name: "is_valid"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "geometry_type"
+    system_metadata:
+      name: "geometry_type"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "dimension"
+    system_metadata:
+      name: "dimension"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  # Geometry Functions - Operations
+  - source: "geometry"
+    name: "envelope"
+    system_metadata:
+      name: "envelope"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "centroid"
+    system_metadata:
+      name: "centroid"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "buffer"
+    system_metadata:
+      name: "buffer"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry_fp64"
+
+  - source: "geometry"
+    name: "flip_coordinates"
+    system_metadata:
+      name: "flip_coordinates"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "remove_repeated_points"
+    system_metadata:
+      name: "remove_repeated_points"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "minimum_bounding_circle"
+    system_metadata:
+      name: "minimum_bounding_circle"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry"
+
+  - source: "geometry"
+    name: "collection_extract"
+    system_metadata:
+      name: "collection_extract"
+      notation: "FUNCTION"
+    supported_impls:
+      - "geometry_i32"
+
+  # Decimal Arithmetic Functions
+  - source: "arithmetic_decimal"
+    name: "add"
+    system_metadata:
+      name: "+"
+      notation: "INFIX"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "subtract"
+    system_metadata:
+      name: "-"
+      notation: "INFIX"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "multiply"
+    system_metadata:
+      name: "*"
+      notation: "INFIX"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "divide"
+    system_metadata:
+      name: "/"
+      notation: "INFIX"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "modulus"
+    system_metadata:
+      name: "%"
+      notation: "INFIX"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "abs"
+    system_metadata:
+      name: "abs"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "arithmetic_decimal"
+    name: "power"
+    system_metadata:
+      name: "power"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal_decimal"
+
+  - source: "arithmetic_decimal"
+    name: "sqrt"
+    system_metadata:
+      name: "sqrt"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "arithmetic_decimal"
+    name: "factorial"
+    system_metadata:
+      name: "factorial"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  # Decimal Rounding Functions
+  - source: "rounding_decimal"
+    name: "ceil"
+    system_metadata:
+      name: "ceil"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "rounding_decimal"
+    name: "floor"
+    system_metadata:
+      name: "floor"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "rounding_decimal"
+    name: "round"
+    system_metadata:
+      name: "round"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+      - "decimal_i32"
+
+  # Set Functions
+  - source: "set"
+    name: "index_in"
+    system_metadata:
+      name: "index_in"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_list"
+
+  # List Functions
+  - source: "list"
+    name: "cardinality"
+    system_metadata:
+      name: "cardinality"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+  - source: "list"
+    name: "sort"
+    system_metadata:
+      name: "sort"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+  - source: "list"
+    name: "transform"
+    system_metadata:
+      name: "transform"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+  - source: "list"
+    name: "filter"
+    system_metadata:
+      name: "filter"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+  - source: "list"
+    name: "any_match"
+    system_metadata:
+      name: "any_match"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+  - source: "list"
+    name: "all_match"
+    system_metadata:
+      name: "all_match"
+      notation: "FUNCTION"
+    supported_impls:
+      - "list"
+
+# ============================================================================
+# AGGREGATE FUNCTIONS
+# ============================================================================
+supported_aggregate_functions:
+  # Generic Aggregates
+  - source: "aggregate_generic"
+    name: "count"
+    system_metadata:
+      name: "count"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "any"
+
+  - source: "aggregate_generic"
+    name: "any_value"
+    system_metadata:
+      name: "any_value"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  # Arithmetic Aggregates
+  - source: "arithmetic"
+    name: "sum"
+    system_metadata:
+      name: "sum"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "sum0"
+    system_metadata:
+      name: "sum0"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "avg"
+    system_metadata:
+      name: "avg"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "min"
+    system_metadata:
+      name: "min"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "max"
+    system_metadata:
+      name: "max"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "product"
+    system_metadata:
+      name: "product"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "std_dev"
+    system_metadata:
+      name: "std_dev"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "variance"
+    system_metadata:
+      name: "variance"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "corr"
+    system_metadata:
+      name: "corr"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32_fp32"
+      - "fp64_fp64"
+
+  - source: "arithmetic"
+    name: "median"
+    system_metadata:
+      name: "median"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "mode"
+    system_metadata:
+      name: "mode"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  - source: "arithmetic"
+    name: "quantile"
+    system_metadata:
+      name: "quantile"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp32"
+      - "fp64"
+
+  # Boolean Aggregates
+  - source: "boolean"
+    name: "bool_and"
+    system_metadata:
+      name: "bool_and"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  - source: "boolean"
+    name: "bool_or"
+    system_metadata:
+      name: "bool_or"
+      notation: "FUNCTION"
+    supported_impls:
+      - "bool"
+
+  # String Aggregates
+  - source: "string"
+    name: "string_agg"
+    system_metadata:
+      name: "string_agg"
+      notation: "FUNCTION"
+    supported_impls:
+      - "string"
+      - "varchar"
+
+  # Approximate Aggregates
+  - source: "aggregate_approx"
+    name: "approx_count_distinct"
+    system_metadata:
+      name: "approx_count_distinct"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  # Decimal Aggregates
+  - source: "arithmetic_decimal"
+    name: "sum"
+    system_metadata:
+      name: "sum"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "arithmetic_decimal"
+    name: "avg"
+    system_metadata:
+      name: "avg"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "arithmetic_decimal"
+    name: "min"
+    system_metadata:
+      name: "min"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+  - source: "arithmetic_decimal"
+    name: "max"
+    system_metadata:
+      name: "max"
+      notation: "FUNCTION"
+    supported_impls:
+      - "decimal"
+
+# ============================================================================
+# WINDOW FUNCTIONS
+# ============================================================================
+supported_window_functions:
+  - source: "arithmetic"
+    name: "row_number"
+    system_metadata:
+      name: "row_number"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+
+  - source: "arithmetic"
+    name: "rank"
+    system_metadata:
+      name: "rank"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+
+  - source: "arithmetic"
+    name: "dense_rank"
+    system_metadata:
+      name: "dense_rank"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i64"
+
+  - source: "arithmetic"
+    name: "percent_rank"
+    system_metadata:
+      name: "percent_rank"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "cume_dist"
+    system_metadata:
+      name: "cume_dist"
+      notation: "FUNCTION"
+    supported_impls:
+      - "fp64"
+
+  - source: "arithmetic"
+    name: "ntile"
+    system_metadata:
+      name: "ntile"
+      notation: "FUNCTION"
+    supported_impls:
+      - "i32"
+
+  - source: "arithmetic"
+    name: "first_value"
+    system_metadata:
+      name: "first_value"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  - source: "arithmetic"
+    name: "last_value"
+    system_metadata:
+      name: "last_value"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+
+  - source: "arithmetic"
+    name: "nth_value"
+    system_metadata:
+      name: "nth_value"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any_i32"
+
+  - source: "arithmetic"
+    name: "lead"
+    system_metadata:
+      name: "lead"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+      - "any_i32"
+      - "any_i32_any"
+
+  - source: "arithmetic"
+    name: "lag"
+    system_metadata:
+      name: "lag"
+      notation: "FUNCTION"
+    supported_impls:
+      - "any"
+      - "any_i32"
+      - "any_i32_any"

@@ -1,7 +1,10 @@
 {
     "dependencies": [
         "protobuf",
-        "substrait-protobuf"
+        "substrait-protobuf",
+        "nlohmann-json",
+        "json-schema-validator",
+        "yaml-cpp"
     ],
     "builtin-baseline": "84bab45d415d22042bd0b9081aea57f362da3f35",
     "overrides": [
