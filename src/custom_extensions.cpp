@@ -49,8 +49,10 @@ vector<string> GetAllTypes() {
 }
 
 // Recurse over the whole shebang
+// `name` and `file_path` are deliberately const references: every leaf of this recursion needs
+// the same values, so moving out of them would empty the string for all subsequent leaves (see #205).
 void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &all_types, vector<idx_t> &indices,
-                                                  int depth, string &name, string &file_path) {
+                                                  int depth, const string &name, const string &file_path) {
 	if (depth == indices.size()) {
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
@@ -95,7 +97,8 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 	}
 }
 
-void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string> types_p, string file_path) {
+void SubstraitCustomFunctions::InsertCustomFunction(const string &name, vector<string> types_p,
+                                                    const string &file_path) {
 	auto types = std::move(types_p);
 	vector<vector<string>> all_types;
 	for (auto &t : types) {
@@ -112,7 +115,7 @@ void SubstraitCustomFunctions::InsertCustomFunction(string name_p, vector<string
 	vector<idx_t> idx(num_arguments, 0);
 
 	// Call the helper function with initial depth 0
-	InsertAllFunctions(all_types, idx, 0, name_p, file_path);
+	InsertAllFunctions(all_types, idx, 0, name, file_path);
 }
 
 // Maps a Substrait type name (the protobuf `Type.kind` oneof field name, e.g.
@@ -189,8 +192,7 @@ SubstraitFunctionExtensions SubstraitCustomFunctions::Get(const string &name,
 	vector<string> transformed_types;
 	if (types.empty()) {
 		SubstraitCustomFunction custom_function {name, {}};
-		auto it = any_arg_functions.find(custom_function);
-		if (it != custom_functions.end()) {
+		if (auto it = any_arg_functions.find(custom_function); it != any_arg_functions.end()) {
 			// We found it in our substrait custom map, return that
 			return it->second;
 		}

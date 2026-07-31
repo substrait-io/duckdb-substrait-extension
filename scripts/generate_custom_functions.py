@@ -58,8 +58,11 @@ def parse_function_data(functions,yaml_data,function_type):
 def parse_yaml(file_path):
 	with open(file_path, 'r') as file:
 		yaml_data = yaml.safe_load(file)
-	# `urn` is a required field in the Substrait simple-extensions schema.
+	# `urn` is a required field in the Substrait simple-extensions schema. Fail loudly rather than
+	# emitting an empty URN, which the producer cannot turn into a resolvable plan.
 	urn = yaml_data['urn']
+	if not isinstance(urn, str) or not urn.strip():
+		raise ValueError(f"{file_path}: 'urn' must be a non-empty string, got {urn!r}")
 	functions = []
 	functions = parse_function_data(functions,yaml_data,'scalar_functions')
 	functions = parse_function_data(functions,yaml_data,'aggregate_functions')

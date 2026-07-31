@@ -626,6 +626,14 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 	auto substrait_extensions = plan.mutable_extension_urns();
 	if (!function.IsNative()) {
 		auto extensionURN = function.GetExtensionURN();
+		if (extensionURN.empty()) {
+			// A non-native function must carry the URN declared by its extension YAML. An empty URN
+			// would be serialized as an extensionUrns entry with no `urn` field, and because
+			// extension_urn_map is keyed on the URN string, every such extension would collapse onto
+			// a single shared anchor -- silently producing an unresolvable plan (see #205, #212).
+			throw InternalException("Function \"%s\" resolved to an extension with an empty URN",
+			                        function.function.GetName());
+		}
 		auto it = extension_urn_map.find(extensionURN);
 		if (it == extension_urn_map.end()) {
 			// We have to add this extension

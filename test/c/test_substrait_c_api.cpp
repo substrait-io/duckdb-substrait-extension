@@ -808,11 +808,12 @@ TEST_CASE("Test cast to deprecated time type", "[substrait-api][deprecated-types
 	REQUIRE(CHECK_COLUMN(result, 0, {Value::TIME(10, 30, 0, 0)}));
 }
 
-TEST_CASE("Test extension URN for non-boolean comparison functions", "[substrait-api][extension-urn]") {
-	// Regression test: comparison functions registered with "any1" type expansion
-	// must have correct extension URNs for ALL type combinations, not just the first.
-	// Previously, std::move(file_path) in InsertAllFunctions emptied the path after
-	// the first type combo (bool_bool), leaving all others with a broken empty URN.
+TEST_CASE("Test extension URN for every any1-expanded overload", "[substrait-api][extension-urn]") {
+	// Regression test: a function declared `any1` is expanded over every concrete type kind, so one
+	// registration produces many overloads. All of them must carry the extension URN, not just the
+	// first one generated. Previously std::move(file_path) in InsertAllFunctions emptied the path
+	// after the first combination (bool_bool, bool being first in GetAllTypes()), so every later
+	// combination -- including i32_i32 below -- was left with an empty URN.
 	DuckDB db(nullptr);
 	Connection con(db);
 
@@ -821,7 +822,8 @@ TEST_CASE("Test extension URN for non-boolean comparison functions", "[substrait
 
 	auto json_str = GetSubstraitJSON(con, "SELECT * FROM t1 WHERE a = b");
 	REQUIRE(json_str.find("extension:io.substrait:functions_comparison") != string::npos);
-	REQUIRE(json_str.find("\"extension:io.substrait:\"") == string::npos);
+	// An empty URN is serialized as an anchor with no `urn` field, so that is the shape to exclude.
+	REQUIRE(json_str.find("{\"extensionUrnAnchor\":1}") == string::npos);
 
 	auto result = FromSubstraitJSON(con, json_str);
 	REQUIRE(CHECK_COLUMN(result, 0, {1}));
