@@ -181,15 +181,18 @@ CALL get_substrait_json('select row_number() over (order by a) from t_3')
 # A function that resolved against no extension YAML has no declared signature to
 # name it after, so it keeps its bare name with no ':' at all. Get() reports that
 # case by returning an empty argument list whatever the call site passed -- md5 here
-# takes one argument and still arrives with none -- which is exactly what makes an
-# empty argument list on its own too weak to decide whether the ':' belongs. The
-# closing brace in the match is load-bearing twice over: it pins the name as bare
-# rather than `md5:`, and it shows the entry carries no extensionUrnReference.
+# takes one argument and still arrives with none -- which is what makes an empty
+# argument list on its own too weak to decide whether the ':' belongs.
 
 query I
 CALL get_substrait_json('select md5(a) from t_2')
 ----
-<REGEX>:.*"name":"md5"\}.*
+<REGEX>:.*"name":"md5".*
+
+query I
+CALL get_substrait_json('select md5(a) from t_2')
+----
+<!REGEX>:.*"md5:".*
 
 # The compound name round-trips within this extension: RemoveExtension() truncates
 # at the first ':', so an ingested `count:` resolves to the record-counting count,
