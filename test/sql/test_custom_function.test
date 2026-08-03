@@ -76,4 +76,63 @@ CALL get_substrait_json('select sin(t.a), trim(t_2.a, ''<'') from t,t_2')
 ----
 <REGEX>:.*extension:io.substrait:functions_string.*
 
+# A function whose extension declares `any`/`any1` arguments is named after that
+# declared signature, not after the concrete argument types of the call site.
+
+query I
+CALL get_substrait_json('select a = 1.0 from t')
+----
+<REGEX>:.*"equal:any_any".*
+
+query I
+CALL get_substrait_json('select a = 1.0 from t')
+----
+<REGEX>:.*extension:io.substrait:functions_comparison.*
+
+# The same declared signature is emitted for a different argument type
+
+query I
+CALL get_substrait_json('select a > ''m'' from t_2')
+----
+<REGEX>:.*"gt:any_any".*
+
+# A column that actually holds NULLs, so the optimizer neither folds `is null`
+# into a constant nor rewrites count(a) into count(*)
+
+statement ok
+create table t_3 (a integer)
+
+statement ok
+insert into t_3 values (1), (NULL)
+
+query I
+CALL get_substrait_json('select a is null from t_3')
+----
+<REGEX>:.*"is_null:any".*
+
+query I
+CALL get_substrait_json('select count(a) from t_3')
+----
+<REGEX>:.*"count:any".*
+
+# functions_datetime declares lt(date, date) while functions_comparison declares
+# lt(any1, any1). The concrete declaration is more specific, so it wins the
+# overload and supplies both the name and the extension.
+
+statement ok
+create table t_4 (a date, b date)
+
+statement ok
+insert into t_4 values ('2020-01-01', '2021-01-01'), ('2022-01-01', '2019-01-01')
+
+query I
+CALL get_substrait_json('select a < b from t_4')
+----
+<REGEX>:.*"lt:date_date".*
+
+query I
+CALL get_substrait_json('select a < b from t_4')
+----
+<REGEX>:.*extension:io.substrait:functions_datetime.*
+
 
