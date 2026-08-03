@@ -809,11 +809,13 @@ TEST_CASE("Test cast to deprecated time type", "[substrait-api][deprecated-types
 }
 
 TEST_CASE("Test extension URN for every any1-expanded overload", "[substrait-api][extension-urn]") {
-	// Regression test: a function declared `any1` is expanded over every concrete type kind, so one
-	// registration produces many overloads. All of them must carry the extension URN, not just the
-	// first one generated. Previously std::move(file_path) in InsertAllFunctions emptied the path
-	// after the first combination (bool_bool, bool being first in GetAllTypes()), so every later
-	// combination -- including i32_i32 below -- was left with an empty URN.
+	// functions_comparison declares equal(any1, any1). The overload maps expand that placeholder over
+	// every concrete type kind, so one declaration owns many slots, each keyed on a concrete argument
+	// tuple, and every slot carries the declaring extension's URN. The query below binds the i32/i32
+	// slot, which the expansion reaches well after the first one (bool/bool, bool leading GetAllTypes()).
+	//
+	// i32/i32 is only that slot's map key. The name is built from the declared signature, so the JSON
+	// below says `equal:any_any`.
 	DuckDB db(nullptr);
 	Connection con(db);
 
