@@ -623,6 +623,9 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 		throw InternalException("Missing function name");
 	}
 	auto function = custom_functions.Get(name, args_types);
+	// The name the function is declared under: its impl's compound name, or the bare name
+	// when it resolved against no extension YAML. Every use below wants the same string.
+	const auto declared_name = function.GetName();
 	auto substrait_extensions = plan.mutable_extension_urns();
 	if (!function.IsNative()) {
 		auto extensionURN = function.GetExtensionURN();
@@ -631,8 +634,7 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 			// would be serialized as an extensionUrns entry with no `urn` field, and because
 			// extension_urn_map is keyed on the URN string, every such extension would collapse onto
 			// a single shared anchor -- silently producing an unresolvable plan (see #205, #212).
-			throw InternalException("Function \"%s\" resolved to an extension with an empty URN",
-			                        function.GetName());
+			throw InternalException("Function \"%s\" resolved to an extension with an empty URN", declared_name);
 		}
 		auto it = extension_urn_map.find(extensionURN);
 		if (it == extension_urn_map.end()) {
@@ -644,11 +646,12 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 			last_urn_id++;
 		}
 	}
-	if (functions_map.find(function.GetName()) == functions_map.end()) {
+	auto function_entry = functions_map.find(declared_name);
+	if (function_entry == functions_map.end()) {
 		auto function_id = last_function_id++;
 		auto sfun = plan.add_extensions()->mutable_extension_function();
 		sfun->set_function_anchor(function_id);
-		sfun->set_name(function.GetName());
+		sfun->set_name(declared_name);
 		if (!function.IsNative()) {
 			// We only define URN if not native
 			sfun->set_extension_urn_reference(extension_urn_map[function.GetExtensionURN()]);
@@ -659,7 +662,7 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 				// Produce warning message
 				std::ostringstream error;
 				// Casting Error Message
-				error << "Could not find function \"" << function.GetName() << "\" with argument types: (";
+				error << "Could not find function \"" << declared_name << "\" with argument types: (";
 				auto types = SubstraitCustomFunctions::GetTypes(args_types);
 				for (idx_t i = 0; i < types.size(); i++) {
 					error << "\'" << types[i] << "\'";
@@ -671,9 +674,10 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 				errors += error.str();
 			}
 		}
-		functions_map[function.GetName()] = function_id;
+		functions_map[declared_name] = function_id;
+		return function_id;
 	}
-	return functions_map[function.GetName()];
+	return function_entry->second;
 }
 
 void DuckDBToSubstrait::CreateFieldRef(substrait::Expression *expr, uint64_t col_idx) {
