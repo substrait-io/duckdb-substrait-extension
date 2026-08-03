@@ -23,9 +23,7 @@ struct SubstraitCustomFunction {
 		return name == other.name && arg_types == other.arg_types;
 	}
 	//! The compound name of this declared impl (name + ':' + declared arg short names).
-	//! Callers holding a SubstraitFunctionExtensions should prefer its GetName(), which
-	//! also handles functions that resolved against no extension.
-	string GetName() const;
+	string GetCompoundName() const;
 	string name;
 	vector<string> arg_types;
 };

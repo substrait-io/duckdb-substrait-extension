@@ -25,7 +25,7 @@ string TransformTypes(const substrait::Type &type) {
 // pre-building the overload maps. Each token is a protobuf Type.kind field name
 // (what TransformTypes() derives from a concrete argument), so the expanded
 // overloads match at lookup -- these are proto kind names, not the abbreviated
-// signature short names GetName() emits. This is the curated set of kinds that
+// signature short names GetCompoundName() emits. This is the curated set of kinds that
 // occur as arguments, not an exhaustive list of every proto kind.
 vector<string> GetAllTypes() {
 	return {{"bool"},
@@ -211,16 +211,10 @@ static string TypeShortName(const string &type) {
 // `count:`, not `count`. The signature grammar cannot actually express that case
 // (`argument-signature` requires at least one short-arg-type, filed upstream as
 // substrait-io/substrait#1162), so `name:` is a de-facto convention rather than a
-// normative one. It is however what all three reference producers emit
-// (substrait-java's SimpleExtension.constructKey, substrait-go's expr/functions.go,
-// substrait-python's function_entry.py all append ':' unconditionally and then
-// join an empty argument list to the empty string) and what the spec's own dialect
-// tests assume, spelling zero-argument `rank` as `supported_impls: [""]`.
-//
-// It also matters for interop: substrait-java keys plan-side function lookup on
-// the emitted name verbatim while keying the registry side on constructKey(), so a
-// plan carrying a bare `count` matches nothing there and fails outright (see #258).
-string SubstraitCustomFunction::GetName() const {
+// normative one. It is however what the reference producers emit and what plan-side
+// function lookup expects of them, so a bare `count` fails to resolve. #258 has the
+// inventory and the reasoning.
+string SubstraitCustomFunction::GetCompoundName() const {
 	string function_signature = name + ":";
 	for (auto &type : arg_types) {
 		// A trailing '?' marks a nullable (variadic) argument in the declared
@@ -251,7 +245,7 @@ string SubstraitFunctionExtensions::GetName() const {
 	if (IsNative()) {
 		return function.name;
 	}
-	return function.GetName();
+	return function.GetCompoundName();
 }
 
 string SubstraitFunctionExtensions::GetExtensionURN() const {
