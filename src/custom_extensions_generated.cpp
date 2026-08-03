@@ -138,9 +138,6 @@ void SubstraitCustomFunctions::Initialize() {
 	InsertCustomFunction("centroid", {"u!geometry"}, "extension:io.substrait:functions_geometry");
 	InsertCustomFunction("minimum_bounding_circle", {"u!geometry"}, "extension:io.substrait:functions_geometry");
 	InsertCustomFunction("approx_count_distinct", {"any"}, "extension:io.substrait:functions_aggregate_approx");
-	InsertCustomFunction("count", {"any"}, "extension:io.substrait:functions_aggregate_decimal_output");
-	InsertCustomFunction("count", {}, "extension:io.substrait:functions_aggregate_decimal_output");
-	InsertCustomFunction("approx_count_distinct", {"any"}, "extension:io.substrait:functions_aggregate_decimal_output");
 	InsertCustomFunction("ceil", {"decimal"}, "extension:io.substrait:functions_rounding_decimal");
 	InsertCustomFunction("floor", {"decimal"}, "extension:io.substrait:functions_rounding_decimal");
 	InsertCustomFunction("round", {"decimal", "i32"}, "extension:io.substrait:functions_rounding_decimal");

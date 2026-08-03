@@ -32,9 +32,31 @@ SUBSTRAIT_EXTENSIONS_SUBDIR = os.path.join("cpp", "substrait-extensions", "exten
 # fall back to `native` instead of referencing a fake URN.
 FUNCTION_EXTENSION_PREFIX = "functions_"
 
+# Function extensions this producer deliberately does not ingest, even though they match
+# the allowlist above.
+#
+# functions_aggregate_decimal_output declares `count` and `approx_count_distinct` returning
+# decimal<38,0>, differing from the standard aggregates only in return type. DuckDB's own
+# `count` and `approx_count_distinct` return BIGINT, so it has no overload that these
+# declarations could describe.
+#
+# Ingesting them is worse than redundant: they share (name, arg_types) with the i64
+# declarations in functions_aggregate_generic and functions_aggregate_approx, and the
+# overload maps in SubstraitCustomFunctions are keyed without an extension component, so
+# only one declaration per key can be held. Excluding this file keeps each of those names
+# bound to the extension whose return type DuckDB actually implements.
+#
+# Upstream discussion of whether this extension should exist at all:
+# https://github.com/substrait-io/substrait/issues/1121
+EXCLUDED_FUNCTION_EXTENSIONS = frozenset({"functions_aggregate_decimal_output.yaml"})
+
 
 def is_function_extension(file_name):
 	return file_name.startswith(FUNCTION_EXTENSION_PREFIX) and file_name.endswith(".yaml")
+
+
+def is_excluded_function_extension(file_name):
+	return file_name in EXCLUDED_FUNCTION_EXTENSIONS
 
 
 def parse_function_data(functions,yaml_data,function_type):
@@ -76,6 +98,9 @@ def get_custom_functions(custom_extension_folder):
 	for custom_function_path in custom_function_paths:
 		if not is_function_extension(custom_function_path):
 			print(f"Skipping non-function extension YAML: {custom_function_path}")
+			continue
+		if is_excluded_function_extension(custom_function_path):
+			print(f"Skipping unsupported extension YAML: {custom_function_path}")
 			continue
 		# Each extension YAML declares its own Substrait URN
 		# (extension:<owner>:<id>); use it directly rather than reconstructing it
