@@ -135,4 +135,116 @@ CALL get_substrait_json('select a < b from t_4')
 ----
 <REGEX>:.*extension:io.substrait:functions_datetime.*
 
+# An impl declared with no arguments still gets the ':', with an empty signature
+# after it -- `count:`, not `count`. See #258: this is what the reference producers
+# emit, and substrait-java resolves a plan-side function by the emitted name
+# verbatim, so a bare `count` matches nothing there.
 
+query I
+CALL get_substrait_json('select count(*) from t_3')
+----
+<REGEX>:.*"count:".*
+
+# The five zero-argument window functions of functions_arithmetic are named the
+# same way
+
+query I
+CALL get_substrait_json('select row_number() over (order by a) from t_3')
+----
+<REGEX>:.*"row_number:".*
+
+query I
+CALL get_substrait_json('select rank() over (order by a) from t_3')
+----
+<REGEX>:.*"rank:".*
+
+query I
+CALL get_substrait_json('select dense_rank() over (order by a) from t_3')
+----
+<REGEX>:.*"dense_rank:".*
+
+query I
+CALL get_substrait_json('select percent_rank() over (order by a) from t_3')
+----
+<REGEX>:.*"percent_rank:".*
+
+query I
+CALL get_substrait_json('select cume_dist() over (order by a) from t_3')
+----
+<REGEX>:.*"cume_dist:".*
+
+query I
+CALL get_substrait_json('select row_number() over (order by a) from t_3')
+----
+<REGEX>:.*extension:io.substrait:functions_arithmetic.*
+
+# A function that resolved against no extension YAML has no declared signature to
+# name it after, so it keeps its bare name with no ':' at all. Get() reports that
+# case by returning an empty argument list whatever the call site passed -- md5 here
+# takes one argument and still arrives with none -- which is exactly what makes an
+# empty argument list on its own too weak to decide whether the ':' belongs. The
+# closing brace in the match is load-bearing twice over: it pins the name as bare
+# rather than `md5:`, and it shows the entry carries no extensionUrnReference.
+
+query I
+CALL get_substrait_json('select md5(a) from t_2')
+----
+<REGEX>:.*"name":"md5"\}.*
+
+# The compound name round-trips within this extension: RemoveExtension() truncates
+# at the first ':', so an ingested `count:` resolves to the record-counting count,
+# exactly as the bare `count` of test_substrait.test does.
+
+query I
+SELECT * FROM from_substrait_json('{
+  "extensions": [
+    {
+      "extensionFunction": {
+        "functionAnchor": 1,
+        "name": "count:",
+        "extensionUrnReference": 1
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "aggregate": {
+            "input": {
+              "read": {
+                "baseSchema": {
+                  "names": [ "a" ],
+                  "struct": {
+                    "types": [ { "i32": { "nullability": "NULLABILITY_NULLABLE" } } ],
+                    "nullability": "NULLABILITY_REQUIRED"
+                  }
+                },
+                "namedTable": { "names": [ "t_3" ] }
+              }
+            },
+            "groupings": [ {} ],
+            "measures": [
+              {
+                "measure": {
+                  "functionReference": 1,
+                  "outputType": { "i64": { "nullability": "NULLABILITY_NULLABLE" } }
+                }
+              }
+            ]
+          }
+        },
+        "names": [ "c" ]
+      }
+    }
+  ],
+  "version": { "minorNumber": 78, "producer": "DuckDB" },
+  "extensionUrns": [
+    {
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_aggregate_generic"
+    }
+  ]
+}')
+----
+2
