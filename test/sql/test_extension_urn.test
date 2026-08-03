@@ -40,3 +40,20 @@ query I
 SELECT count(*) FROM get_substrait_json('SELECT a = a FROM t') WHERE contains("Json", '{"extensionUrnAnchor":1}')
 ----
 0
+
+# `approx_count_distinct` is declared by two extensions -- returning i64 in
+# functions_aggregate_approx and decimal<38,0> in functions_aggregate_decimal_output -- and the
+# overload maps are keyed on (name, arg_types) with no extension component, so only one of them can
+# be held per key. DuckDB's approx_count_distinct returns BIGINT, so functions_aggregate_approx is
+# the correct attribution.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT approx_count_distinct(a) FROM t') WHERE contains("Json", '"urn":"extension:io.substrait:functions_aggregate_approx"')
+----
+1
+
+# The decimal-output extension is not ingested, so its URN must never appear in an emitted plan.
+# `count` is declared by it as well, and must stay bound to functions_aggregate_generic.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT approx_count_distinct(a), count(a) FROM t') WHERE contains("Json", 'functions_aggregate_decimal_output')
+----
+0
