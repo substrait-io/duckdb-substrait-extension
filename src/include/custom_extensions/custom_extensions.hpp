@@ -79,9 +79,9 @@ private:
 	// When we have an argument ending with ? it means this argument can repeat many times
 	std::unordered_map<SubstraitCustomFunction, SubstraitFunctionExtensions, HashSubstraitFunctions> many_arg_functions;
 
-	void InsertCustomFunction(const string &name, vector<string> types_p, const string &file_path);
-	void InsertAllFunctions(const vector<vector<string>> &all_types, vector<idx_t> &indices, int depth,
-	                        const string &name, const string &file_path);
+	void InsertCustomFunction(const string &name, const vector<string> &types, const string &file_path);
+	void InsertAllFunctions(const vector<vector<string>> &all_types, const vector<string> &declared_types,
+	                        vector<idx_t> &indices, int depth, const string &name, const string &file_path);
 };
 
 } // namespace duckdb

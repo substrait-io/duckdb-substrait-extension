@@ -48,31 +48,82 @@ vector<string> GetAllTypes() {
 	        {"precision_timestamp_tz"}};
 }
 
+// True for the parameterized type placeholders `any`, `any1`, `any2`, ...
+static bool IsAnyType(const string &type) {
+	if (!StringUtil::StartsWith(type, "any")) {
+		return false;
+	}
+	for (idx_t i = 3; i < type.size(); i++) {
+		if (!StringUtil::CharacterIsDigit(type[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// Rewrites a type as declared by an extension YAML into the canonical Substrait
+// type name, which is what the protobuf Type.kind field names use (e.g.
+// fixedchar -> fixed_char).
+static string CanonicalizeDeclaredType(const string &declared_type) {
+	auto type = StringUtil::Replace(declared_type, "boolean", "bool");
+	type = StringUtil::Replace(type, "fixedchar", "fixed_char");
+	type = StringUtil::Replace(type, "fixedbinary", "fixed_binary");
+	// functions_arithmetic_decimal spells the aggregate sum/avg argument
+	// `DECIMAL` (uppercase) while its scalar functions and every other extension
+	// use lowercase `decimal`, so canonicalize the case too.
+	return StringUtil::Replace(type, "DECIMAL", "decimal");
+}
+
+// How many arguments of a declared signature are placeholders. Fewer placeholders
+// means a more specific declaration.
+static idx_t CountAnyTypes(const vector<string> &types) {
+	idx_t count = 0;
+	for (auto &type : types) {
+		if (IsAnyType(type)) {
+			count++;
+		}
+	}
+	return count;
+}
+
+// Claims an overload for a declared signature, unless a more specific declaration
+// already holds it.
+//
+// Two extensions can declare an impl that covers the same concrete arguments: for
+// example functions_datetime declares lt(date, date) while functions_comparison
+// declares lt(any1, any1). Both want the date/date slot, so resolve by
+// specificity rather than by ingestion order, and let the concrete declaration
+// win. Equally specific declarations keep last-one-wins.
+template <class MAP>
+static void InsertOverload(MAP &overloads, const SubstraitCustomFunction &key,
+                           const SubstraitCustomFunction &declared_function, const string &file_path) {
+	auto it = overloads.find(key);
+	if (it != overloads.end() &&
+	    CountAnyTypes(it->second.function.arg_types) < CountAnyTypes(declared_function.arg_types)) {
+		return;
+	}
+	overloads[key] = {declared_function, file_path};
+}
+
 // Recurse over the whole shebang
-// `name` and `file_path` are deliberately const references: every leaf of this recursion needs
-// the same values, so moving out of them would empty the string for all subsequent leaves (see #205).
-void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &all_types, vector<idx_t> &indices,
+// `name`, `declared_types` and `file_path` are deliberately const references: every leaf of this
+// recursion needs the same values, so moving out of them would empty the string for all subsequent
+// leaves (see #205).
+void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &all_types,
+                                                  const vector<string> &declared_types, vector<idx_t> &indices,
                                                   int depth, const string &name, const string &file_path) {
 	if (depth == indices.size()) {
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
-			auto type = all_types[i][indices[i]];
-			// Normalize the declared (YAML) type names to the protobuf Type.kind
-			// field names TransformTypes() produces at lookup, so overloads resolve
-			// regardless of the spelling difference (e.g. fixedchar -> fixed_char).
-			type = StringUtil::Replace(type, "boolean", "bool");
-			type = StringUtil::Replace(type, "fixedchar", "fixed_char");
-			type = StringUtil::Replace(type, "fixedbinary", "fixed_binary");
-			// functions_arithmetic_decimal spells the aggregate sum/avg argument
-			// `DECIMAL` (uppercase) while its scalar functions and every other
-			// extension use lowercase `decimal`; TransformTypes() only ever yields
-			// the lowercase proto kind name, so canonicalize the case here or the
-			// decimal sum/avg overloads never resolve.
-			type = StringUtil::Replace(type, "DECIMAL", "decimal");
-			types.push_back(type);
+			types.push_back(all_types[i][indices[i]]);
 		}
+		// The map key holds the concrete argument types, because lookup happens with
+		// the types TransformTypes() derives from a call site. The mapped function
+		// instead keeps the declared argument types, because a compound function name
+		// encodes the signature of the impl the extension declares -- so a call to
+		// equal(i64, i64) is keyed on i64/i64 but named equal:any_any.
 		if (types.empty()) {
-			any_arg_functions[{name, types}] = {{name, types}, file_path};
+			InsertOverload(any_arg_functions, {name, types}, {name, declared_types}, file_path);
 		} else {
 			bool many_arg = false;
 			string type = types[0];
@@ -83,9 +134,9 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 				}
 			}
 			if (many_arg) {
-				many_arg_functions[{name, types}] = {{name, types}, file_path};
+				InsertOverload(many_arg_functions, {name, types}, {name, declared_types}, file_path);
 			} else {
-				custom_functions[{name, types}] = {{name, types}, file_path};
+				InsertOverload(custom_functions, {name, types}, {name, declared_types}, file_path);
 			}
 		}
 
@@ -93,20 +144,24 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 	}
 	for (int i = 0; i < all_types[depth].size(); ++i) {
 		indices[depth] = i;
-		InsertAllFunctions(all_types, indices, depth + 1, name, file_path);
+		InsertAllFunctions(all_types, declared_types, indices, depth + 1, name, file_path);
 	}
 }
 
-void SubstraitCustomFunctions::InsertCustomFunction(const string &name, vector<string> types_p,
+void SubstraitCustomFunctions::InsertCustomFunction(const string &name, const vector<string> &types,
                                                     const string &file_path) {
-	auto types = std::move(types_p);
+	vector<string> declared_types;
 	vector<vector<string>> all_types;
 	for (auto &t : types) {
-		if (t == "any1" || t == "any") {
+		auto type = CanonicalizeDeclaredType(t);
+		if (IsAnyType(type)) {
+			// A placeholder accepts every type, so key the overload on each concrete
+			// type it can bind to.
 			all_types.emplace_back(GetAllTypes());
 		} else {
-			all_types.push_back({t});
+			all_types.push_back({type});
 		}
+		declared_types.push_back(std::move(type));
 	}
 	// Get the number of dimensions
 	idx_t num_arguments = all_types.size();
@@ -115,17 +170,22 @@ void SubstraitCustomFunctions::InsertCustomFunction(const string &name, vector<s
 	vector<idx_t> idx(num_arguments, 0);
 
 	// Call the helper function with initial depth 0
-	InsertAllFunctions(all_types, idx, 0, name, file_path);
+	InsertAllFunctions(all_types, declared_types, idx, 0, name, file_path);
 }
 
-// Maps a Substrait type name (the protobuf `Type.kind` oneof field name, e.g.
-// "string", "decimal", "precision_timestamp") to the abbreviated "Type Short
-// Name" that compound function signatures must use, per
+// Maps a canonical Substrait type name (the protobuf `Type.kind` oneof field
+// name, e.g. "string", "decimal", "precision_timestamp") to the abbreviated
+// "Type Short Name" that compound function signatures must use, per
 // https://substrait.io/extensions/#function-signature-compound-names. Types
 // whose short name is identical to their name (i8/i16/i32/i64, fp32/fp64, bool,
-// date, uuid, struct/list/map, func, any) are absent from the table and pass
-// through unchanged.
+// date, uuid, struct/list/map, func) are absent from the table and pass through
+// unchanged.
 static string TypeShortName(const string &type) {
+	// The short name of every parameterized placeholder is `any`, so the digit that
+	// distinguishes one placeholder from another is dropped (any1 -> any).
+	if (IsAnyType(type)) {
+		return "any";
+	}
 	static const std::unordered_map<string, string> SHORT_NAMES = {
 	    {"string", "str"},
 	    {"binary", "vbin"},
