@@ -149,3 +149,79 @@ CALL get_substrait('WITH grouped AS (SELECT part1, part2, sum(val2) AS total_val
 
 statement ok
 CALL get_substrait('WITH sales AS (SELECT part1 AS category, part2 AS subcategory, sum(val) AS sales_amt FROM window_test_data GROUP BY part1, part2) SELECT category, subcategory, sales_amt, sales_amt * 100.0 / sum(sales_amt) OVER (PARTITION BY category) AS pct_in_category, row_number() OVER (PARTITION BY category ORDER BY sales_amt DESC, subcategory) AS sales_pos FROM sales')
+
+# Round-trip Tests
+#
+# Everything above is producer-only, so nothing here exercised the consumer side of
+# the five zero-argument window functions. Those reach DuckDB through
+# RemapFunctionName(), which truncates the emitted name at the first ':' before
+# matching it against WINDOW_ROW_NUMBER and friends -- so the `name:` form these are
+# emitted under since #258 depends on that truncation. Asserting the result values
+# rather than just the names locks in the semantics each name resolves to.
+#
+# from_substrait_json() rejects both an inline subquery and scalar use of
+# get_substrait_json(), hence the SET VARIABLE indirection.
+
+statement ok
+CREATE TABLE window_ties (a INTEGER)
+
+statement ok
+INSERT INTO window_ties VALUES (1), (2), (2), (5)
+
+statement ok
+SET VARIABLE plan_row_number = (SELECT json FROM get_substrait_json('SELECT a, row_number() OVER (ORDER BY a) AS r FROM window_ties'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_row_number'))
+----
+1	1
+2	2
+2	3
+5	4
+
+# rank leaves a gap after a tie (1,2,2,4) where dense_rank does not (1,2,2,3), so the
+# two would be indistinguishable without the tie in the fixture
+
+statement ok
+SET VARIABLE plan_rank = (SELECT json FROM get_substrait_json('SELECT a, rank() OVER (ORDER BY a) AS r FROM window_ties'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_rank'))
+----
+1	1
+2	2
+2	2
+5	4
+
+statement ok
+SET VARIABLE plan_dense_rank = (SELECT json FROM get_substrait_json('SELECT a, dense_rank() OVER (ORDER BY a) AS r FROM window_ties'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_dense_rank'))
+----
+1	1
+2	2
+2	2
+5	3
+
+statement ok
+SET VARIABLE plan_percent_rank = (SELECT json FROM get_substrait_json('SELECT a, round(percent_rank() OVER (ORDER BY a), 3) AS r FROM window_ties'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_percent_rank'))
+----
+1	0.0
+2	0.333
+2	0.333
+5	1.0
+
+statement ok
+SET VARIABLE plan_cume_dist = (SELECT json FROM get_substrait_json('SELECT a, round(cume_dist() OVER (ORDER BY a), 3) AS r FROM window_ties'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_cume_dist'))
+----
+1	0.25
+2	0.75
+2	0.75
+5	1.0
