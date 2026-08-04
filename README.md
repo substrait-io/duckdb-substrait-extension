@@ -5,6 +5,28 @@ With this extension, DuckDB can produce Substrait plans from DuckDB queries as w
 
 ## Building
 
+### Prerequisites
+
+The extension consumes protobuf and the Substrait protobuf bindings from [vcpkg](https://vcpkg.io) (see [Updating the Substrait Version](#updating-the-substrait-version)), so the build needs a bootstrapped vcpkg checkout:
+
+```sh
+git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+~/vcpkg/bootstrap-vcpkg.sh
+```
+
+Clone in full rather than with `--depth=1`: vcpkg resolves the `builtin-baseline` from [`vcpkg.json`](vcpkg.json) against its own git history, and a shallow clone does not contain that commit. A package that ships only the `vcpkg` tool (such as Homebrew's `vcpkg`) is not enough either, as it provides no toolchain file.
+
+Then point `VCPKG_TOOLCHAIN_PATH` at that toolchain file, from a shell startup file so that new shells inherit it:
+
+```sh
+export VCPKG_ROOT=~/vcpkg
+export VCPKG_TOOLCHAIN_PATH=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+```
+
+The build system passes `-DCMAKE_TOOLCHAIN_FILE` only when this variable is set. Without it, vcpkg never installs the dependencies and the configure step fails at `find_package(Protobuf CONFIG REQUIRED)` in [`CMakeLists.txt`](CMakeLists.txt).
+
+### Building the extension
+
 To build the extension, first clone this repository and initialize git submodules by running:
 
 ```sh
@@ -16,6 +38,8 @@ Then run:
 ```sh
 make
 ```
+
+If a configure already failed because `VCPKG_TOOLCHAIN_PATH` was unset, delete the `build` directory before retrying: CMake does not adopt a toolchain file into an existing cache.
 
 To use the newly-built extension, run the bundled `duckdb` shell:
 
