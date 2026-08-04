@@ -4,6 +4,14 @@
 
 require substrait
 
+# Every get_substrait call below round-trips its plan back through the consumer on a fresh
+# connection and compares the result set against direct execution, because verification is on
+# (see VerifySubstraitRoundtrip in src/substrait_extension.cpp). So each assertion pins the
+# emitted name and URN, and the pragma independently pins that the plan still means what the
+# query meant. That second half is what catches a resolution that is well-formed but wrong.
+statement ok
+PRAGMA enable_verification
+
 # `variadic` in an extension YAML marks an impl's final argument as repeatable. It is a
 # separate key from the `?` that marks an argument nullable, and neither can be derived
 # from the other: most variadic impls declare no nullable argument, and `not` declares a
@@ -23,7 +31,7 @@ statement ok
 CREATE TABLE t AS SELECT * FROM (VALUES ('a', 'b', 1, 2, true, false), ('c', 'd', 3, 4, false, true)) v(p, q, i, j, x, y);
 
 statement ok
-CREATE TABLE n AS SELECT * FROM (VALUES (NULL::INTEGER, 2), (3, NULL::INTEGER)) v(i, j);
+CREATE TABLE n AS SELECT * FROM (VALUES (NULL::INTEGER, 2), (3, NULL::INTEGER), (5, 1)) v(i, j);
 
 # A variadic argument is included once in the argument signature, per
 # https://substrait.io/extensions/#function-signature-compound-names -- so `concat` is
@@ -58,19 +66,9 @@ SELECT count(*) FROM get_substrait_json('SELECT concat_ws(p, q) FROM t') WHERE c
 ----
 1
 
-# least/greatest/coalesce are declared `any1` and expanded over every concrete type kind, so
-# these also cover the variadic path through placeholder expansion. The declared placeholder
-# is what names them, hence `:any`.
-
-query I
-SELECT count(*) FROM get_substrait_json('SELECT least(i, j) FROM t') WHERE contains("Json", '"name":"least:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
-----
-1
-
-query I
-SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j) FROM t') WHERE contains("Json", '"name":"greatest:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
-----
-1
+# coalesce is declared `any1` and expanded over every concrete type kind, so this also covers
+# the variadic path through placeholder expansion. The declared placeholder is what names it,
+# hence `:any`.
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT coalesce(i, j) FROM n') WHERE contains("Json", '"name":"coalesce:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
@@ -85,46 +83,102 @@ SELECT count(*) FROM get_substrait_json('SELECT coalesce(i, j, i) FROM n') WHERE
 ----
 1
 
+# functions_comparison declares least and greatest twice over, differing only in what a null
+# argument does: the plain names return null if ANY argument is null, the `_skip_null` pair
+# only if ALL of them are. DuckDB skips nulls, so the producer remaps to the latter -- the
+# plain names would name a function that computes something else.
+
 query I
-SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j, i) FROM t') WHERE contains("Json", '"name":"greatest:any"')
+SELECT count(*) FROM get_substrait_json('SELECT least(i, j) FROM n') WHERE contains("Json", '"name":"least_skip_null:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
 ----
 1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j) FROM n') WHERE contains("Json", '"name":"greatest_skip_null:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j, i) FROM n') WHERE contains("Json", '"name":"greatest_skip_null:any"')
+----
+1
+
+# The null-propagating declarations must not be what we emit, at any arity.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT least(i, j) FROM n') WHERE contains("Json", '"name":"least:any"')
+----
+0
+
+# And the semantics the remap is for: a null argument is skipped, not propagated. The pragma
+# above already compares every round trip against direct execution, but this states the values
+# outright, because they are the whole reason the emitted name is the skip-null one.
+
+query I rowsort
+SELECT least(i, j) FROM n
+----
+1
+2
+3
+
+statement ok
+SET VARIABLE plan_least_nulls = (SELECT json FROM get_substrait_json('SELECT least(i, j) AS r FROM n'))
+
+query I rowsort
+SELECT * FROM from_substrait_json(getvariable('plan_least_nulls'))
+----
+1
+2
+3
 
 # A missed lookup is otherwise silent -- the plan still builds, just under a bare name with no
 # URN. Strict mode turns that into an error, so these assert that no argument list here falls
 # through to `native`.
 
 statement ok
-CALL get_substrait('SELECT concat(p, q), concat_ws(p, q, p), least(i, j), greatest(i, j) FROM t', strict = true)
+CALL get_substrait('SELECT concat(p, q), concat_ws(p, q, p) FROM t', strict = true)
 
 statement ok
-CALL get_substrait('SELECT coalesce(i, j) FROM n', strict = true)
+CALL get_substrait('SELECT coalesce(i, j), least(i, j), greatest(i, j) FROM n', strict = true)
 
 # An arity below the declared minimum is not an impl the extension offers. functions_comparison
 # declares least with `variadic: {min: 2}`, so the one-argument call DuckDB accepts has no
-# declaration to name it after and stays native. Asserted as a pair because `least:any`
-# contains `least`: the positive match pins the name, the negative one pins the absence of a
-# signature.
+# declaration to name it after and stays native, under the remapped name. Asserted as a pair
+# because `least_skip_null:any` contains `least_skip_null`: the positive match pins the name,
+# the negative one pins the absence of a signature.
 
 query I
-CALL get_substrait_json('SELECT least(i) FROM t')
+CALL get_substrait_json('SELECT least(i) FROM n')
 ----
-<REGEX>:.*"name":"least".*
+<REGEX>:.*"name":"least_skip_null".*
 
 query I
-CALL get_substrait_json('SELECT least(i) FROM t')
+CALL get_substrait_json('SELECT least(i) FROM n')
 ----
-<!REGEX>:.*"least:".*
+<!REGEX>:.*"least_skip_null:".*
 
 query I
-SELECT count(*) FROM get_substrait_json('SELECT least(i) FROM t') WHERE contains("Json", 'functions_comparison')
+SELECT count(*) FROM get_substrait_json('SELECT least(i) FROM n') WHERE contains("Json", 'functions_comparison')
 ----
 0
 
 statement error
-CALL get_substrait('SELECT least(i) FROM t', strict = true)
+CALL get_substrait('SELECT least(i) FROM n', strict = true)
 ----
-Could not find function "least" with argument types: ('i32')
+Could not find function "least_skip_null" with argument types: ('i32')
+
+# Falling back to native must still round-trip: the emitted name is Substrait's, not DuckDB's,
+# so the consumer has to map it back.
+
+statement ok
+SET VARIABLE plan_least_one_arg = (SELECT json FROM get_substrait_json('SELECT least(i) AS r FROM n'))
+
+query I rowsort
+SELECT * FROM from_substrait_json(getvariable('plan_least_one_arg'))
+----
+3
+5
+NULL
 
 # `and`/`or` are the only impls carrying both a nullable argument and a variadic flag, so they
 # are where the two concepts coincide and a test cannot tell which one resolved them. Their
@@ -158,12 +212,13 @@ SELECT count(*) FROM get_substrait_json('SELECT NOT x FROM t') WHERE contains("J
 ----
 1
 
-# Nullability is not part of an overload's identity, so the `?` is stripped at ingestion --
-# before it reaches either a map key or a compound name. Dropping that strip breaks this two
-# ways over: the emitted name becomes `and:bool?`, and the lookup misses its own key.
+# Nullability is normalized away at ingestion, so a declared `boolean?` reaches neither a map
+# key nor a compound name. The `and:bool` assertion above is what pins the key side -- a
+# retained `?` makes the entry unfindable and `and` comes back native. This pins the name side,
+# for the case where the two stop agreeing.
 
 query I
-SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", '?')
+SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", 'bool?')
 ----
 0
 
