@@ -5,11 +5,14 @@
 require substrait
 
 # `variadic` in an extension YAML marks an impl's final argument as repeatable. It is a
-# separate key from the `?` that marks an argument nullable, and the two used to be
-# conflated: the producer inferred "repeatable" from the `?` and ignored the real flag,
-# so a variadic impl declaring no nullable argument was not recognised as variadic at
-# all. Those impls were stored keyed on a single concrete type, which made the
-# one-argument call resolve and every wider call miss and degrade to `native` (#253).
+# separate key from the `?` that marks an argument nullable, and neither can be derived
+# from the other: most variadic impls declare no nullable argument, and `not` declares a
+# nullable argument without being variadic (see #253).
+#
+# Arity is where the risk lives. A variadic declaration has to be found at every call-site
+# arity from its declared minimum upwards, off a single stored entry, so every variadic
+# function below is asserted at two arities and pinned to both its compound name and its
+# URN -- a name without a URN is the shape a missed lookup produces.
 #
 # Statistics propagation folds several of these expressions away when a column's values
 # are known -- a single-argument COALESCE always, and a wider one whenever a column is
@@ -31,8 +34,8 @@ SELECT count(*) FROM get_substrait_json('SELECT concat(p, q) FROM t') WHERE cont
 ----
 1
 
-# The single-argument call resolved before this fix, via the fixed-arity map. It has to keep
-# resolving now that the declaration lives in the variadic map instead.
+# `concat` declares one argument with `min: 1`, so a single-argument call sits exactly at its
+# minimum and has to resolve to the same entry as the wider one.
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT concat(p) FROM t') WHERE contains("Json", '"name":"concat:str"')
@@ -44,6 +47,14 @@ SELECT count(*) FROM get_substrait_json('SELECT concat(p) FROM t') WHERE contain
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT concat_ws(p, q, p) FROM t') WHERE contains("Json", '"name":"concat_ws:str_str"') AND contains("Json", '"urn":"extension:io.substrait:functions_string"')
+----
+1
+
+# Its `min: 1` counts occurrences of the repeatable argument, not total arguments, so the
+# separator plus one repetition puts its minimum at two.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT concat_ws(p, q) FROM t') WHERE contains("Json", '"name":"concat_ws:str_str"')
 ----
 1
 
@@ -74,8 +85,14 @@ SELECT count(*) FROM get_substrait_json('SELECT coalesce(i, j, i) FROM n') WHERE
 ----
 1
 
-# Strict mode reports anything that fell through to `native`. Each of these threw before the
-# fix.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j, i) FROM t') WHERE contains("Json", '"name":"greatest:any"')
+----
+1
+
+# A missed lookup is otherwise silent -- the plan still builds, just under a bare name with no
+# URN. Strict mode turns that into an error, so these assert that no argument list here falls
+# through to `native`.
 
 statement ok
 CALL get_substrait('SELECT concat(p, q), concat_ws(p, q, p), least(i, j), greatest(i, j) FROM t', strict = true)
@@ -109,9 +126,9 @@ CALL get_substrait('SELECT least(i) FROM t', strict = true)
 ----
 Could not find function "least" with argument types: ('i32')
 
-# `and`/`or` are the impls that carry both a `?` argument and a real variadic flag, so they
-# resolved before the fix as well -- by accident of the heuristic rather than by declaration.
-# They must survive the switch to the real flag, at two arguments and beyond.
+# `and`/`or` are the only impls carrying both a nullable argument and a variadic flag, so they
+# are where the two concepts coincide and a test cannot tell which one resolved them. Their
+# `min` is 0, so every arity DuckDB can produce is in range.
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", '"name":"and:bool"') AND contains("Json", '"urn":"extension:io.substrait:functions_boolean"')
@@ -128,18 +145,22 @@ SELECT count(*) FROM get_substrait_json('SELECT x OR y FROM t') WHERE contains("
 ----
 1
 
-# `not` declares one `boolean?` argument and no variadic key, so the heuristic used to file it
-# as repeatable. It resolved anyway, because a one-argument declaration's key is the same shape
-# either way. It now sits in the fixed-arity map, and must still resolve.
+query I
+SELECT count(*) FROM get_substrait_json('SELECT x OR y OR (i > 1) FROM t') WHERE contains("Json", '"name":"or:bool"')
+----
+1
+
+# `not` declares one `boolean?` argument and no variadic key, which makes it the case that
+# separates the two concepts: nullable, and not repeatable. It has to resolve as fixed-arity.
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT NOT x FROM t') WHERE contains("Json", '"name":"not:bool"') AND contains("Json", '"urn":"extension:io.substrait:functions_boolean"')
 ----
 1
 
-# Nullability is not part of an overload's identity, so the `?` is stripped at ingestion rather
-# than on the way out. Removing that strip breaks this either way: the emitted name becomes
-# `and:bool?`, or the lookup misses its own key and `and` comes back native.
+# Nullability is not part of an overload's identity, so the `?` is stripped at ingestion --
+# before it reaches either a map key or a compound name. Dropping that strip breaks this two
+# ways over: the emitted name becomes `and:bool?`, and the lookup misses its own key.
 
 query I
 SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", '?')

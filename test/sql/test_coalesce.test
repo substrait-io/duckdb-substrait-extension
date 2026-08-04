@@ -10,8 +10,8 @@ PRAGMA enable_verification
 # The tables below are built from constants, which lets statistics propagation decide most of
 # these COALESCEs before the producer runs: a single-argument one always folds to its argument,
 # and a wider one folds as soon as a preceding column is known non-null. So the `strict = true`
-# assertions here confirm the roundtrip, not that COALESCE resolves against
-# functions_comparison -- that is what made #253 look latent. Resolution coverage, on values
+# assertions here cover the roundtrip, not the resolution of COALESCE against
+# functions_comparison -- an unresolved COALESCE would pass them. That coverage, on values
 # statistics cannot fold, is in test/sql/test_variadic_functions.test.
 
 # Create test tables with various data types

@@ -94,7 +94,7 @@ private:
 	// repeat. Keyed on that one repeatable type rather than on an expanded argument list,
 	// because a call site can pass any number of it -- which is also how the Substrait
 	// signature grammar names them: the variadic argument appears once, so the variadic `and`
-	// is `and:bool` however many arguments it was called with.
+	// is `and:bool` however many arguments the call site passes.
 	std::unordered_map<SubstraitCustomFunction, SubstraitVariadicFunction, HashSubstraitFunctions> variadic_functions;
 
 	void InsertCustomFunction(const string &name, const vector<string> &types, const string &file_path);

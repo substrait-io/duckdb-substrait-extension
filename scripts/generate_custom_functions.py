@@ -73,8 +73,9 @@ def parse_function_data(functions,yaml_data,function_type):
 				args.append(arg_info)
 
 			# `variadic` marks the impl's final argument as repeatable; a trailing `?` on an
-			# argument's value marks it nullable and says nothing about arity. Carry the flag
-			# through so the C++ side does not have to infer one concept from the other (#253).
+			# argument's value marks it nullable and says nothing about arity. Nothing in the
+			# argument list implies the one from the other, so the flag has to be carried
+			# rather than reconstructed downstream (#253).
 			#
 			# Keyed on the key's presence, not on its value: `variadic: {}` declares an impl
 			# variadic while bounding nothing, and the schema makes every field of the block
