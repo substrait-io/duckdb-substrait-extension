@@ -45,12 +45,28 @@
 #include "duckdb/main/relation/setop_relation.hpp"
 
 namespace duckdb {
+// `least_skip_null`/`greatest_skip_null` are here because that is what the producer emits for
+// DuckDB's least/greatest, whose nulls are skipped rather than propagated. Substrait's
+// null-propagating `least`/`greatest` are deliberately absent: DuckDB has no function with
+// those semantics, so mapping them would consume them as something they are not.
 const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_names_remap = {
-    {"modulus", "mod"},      {"std_dev", "stddev"},     {"starts_with", "prefix"},
-    {"ends_with", "suffix"}, {"substring", "substr"},   {"char_length", "length"},
-    {"is_nan", "isnan"},     {"is_finite", "isfinite"}, {"is_infinite", "isinf"},
-    {"like", "~~"},          {"extract", "date_part"},  {"bitwise_and", "&"},
-    {"bitwise_or", "|"},     {"bitwise_xor", "xor"},    {"octet_length", "strlen"}};
+    {"modulus", "mod"},
+    {"std_dev", "stddev"},
+    {"starts_with", "prefix"},
+    {"ends_with", "suffix"},
+    {"substring", "substr"},
+    {"char_length", "length"},
+    {"is_nan", "isnan"},
+    {"is_finite", "isfinite"},
+    {"is_infinite", "isinf"},
+    {"like", "~~"},
+    {"extract", "date_part"},
+    {"bitwise_and", "&"},
+    {"bitwise_or", "|"},
+    {"bitwise_xor", "xor"},
+    {"octet_length", "strlen"},
+    {"least_skip_null", "least"},
+    {"greatest_skip_null", "greatest"}};
 
 const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",

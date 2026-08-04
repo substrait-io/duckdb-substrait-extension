@@ -59,11 +59,73 @@ def is_excluded_function_extension(file_name):
 	return file_name in EXCLUDED_FUNCTION_EXTENSIONS
 
 
+def declared_type(arg):
+	"""The argument's type as the C++ side receives it, or '' if it carries none.
+
+	The `<...>` parameter block is dropped because the overload maps key on unparameterized
+	type names -- `varchar<L1>` and `varchar<L2>` are one key. An enumeration or type argument
+	declares `options`/`type` instead of `value` and so yields '', which the emitter skips.
+	"""
+	return regex.sub(r'<[^>]*>', '', arg.get('value', ''))
+
+
+# `variadic` keys the C++ side understands. Anything else in the block bounds or qualifies the
+# repetition in a way the producer would silently ignore, which is how a plan ends up naming a
+# call after a signature that does not cover it -- `max` would let an over-long call resolve,
+# and `parameterConsistency: INCONSISTENT` would widen what the repeated argument accepts
+# beyond the single type the lookup keys on.
+SUPPORTED_VARIADIC_KEYS = frozenset({"min"})
+
+
+def validate_variadic_impl(urn, function_name, implementation, args):
+	"""Refuse to generate a variadic registration the C++ side cannot honour faithfully.
+
+	Each of these holds for every variadic impl in the pinned extensions, so this raises only
+	when a future Substrait version introduces a shape that needs real work in
+	SubstraitCustomFunctions. Failing regeneration is the point: the alternative is a
+	registration that resolves calls it should not, which nothing downstream can detect.
+
+	Located by URN rather than by file: when the script clones the pinned tag itself the
+	extensions live under a temp dir that is deleted on the way out, so a path here would name
+	somewhere the reader cannot go. The URN is the extension's identity everywhere else too,
+	and the file it came from follows from the naming convention this script allowlists on.
+	"""
+	where = f"{function_name} in {urn}"
+
+	unsupported = sorted(set(implementation['variadic'] or {}) - SUPPORTED_VARIADIC_KEYS)
+	if unsupported:
+		raise ValueError(
+			f"{where}: variadic declares {unsupported}, which the producer does not implement. "
+			f"Only {sorted(SUPPORTED_VARIADIC_KEYS)} is honoured; teach "
+			f"SubstraitCustomFunctions about the rest before regenerating.")
+
+	# InsertVariadicCustomFunction derives the minimum call-site arity from the number of types
+	# it is handed, so an argument that contributes no type would make that minimum too low.
+	if any(not declared_type(arg) for arg in args):
+		raise ValueError(
+			f"{where}: variadic impl has an argument with no `value` (an enumeration or type "
+			f"argument). Those are dropped from the emitted type list, so the minimum arity "
+			f"computed from it would be short by that many arguments.")
+
+	# A variadic entry is keyed on its repeatable type alone, so the declared arguments have to
+	# be indistinguishable at lookup: a call whose arguments are all of the repeatable type
+	# would otherwise match an impl it does not fit and be named after that impl's signature.
+	# Nullability is normalized away downstream, so it does not count as a difference here.
+	key_types = {declared_type(arg).rstrip('?') for arg in args}
+	if len(key_types) > 1:
+		raise ValueError(
+			f"{where}: variadic impl mixes argument types {sorted(key_types)}. The overload map "
+			f"keys a variadic entry on its final type alone, which cannot distinguish this impl "
+			f"from one taking only the repeatable type.")
+
+
 def parse_function_data(functions,yaml_data,function_type):
+	# parse_yaml has already established that this is a non-empty string.
+	urn = yaml_data['urn']
 	for function_data in yaml_data.get(function_type, []):
 		function = {
 			'name': function_data['name'],
-			'impls_args': []
+			'impls': []
 		}
 
 		for implementation in function_data.get('impls', []):
@@ -72,7 +134,25 @@ def parse_function_data(functions,yaml_data,function_type):
 				arg_info = {'name': arg.get('name', ''), 'value': arg.get('value', '')}
 				args.append(arg_info)
 
-			function['impls_args'].append(args)
+			# `variadic` marks the impl's final argument as repeatable; a trailing `?` on an
+			# argument's value marks it nullable and says nothing about arity. Nothing in the
+			# argument list implies the one from the other, so the flag has to be carried
+			# rather than reconstructed downstream (#253).
+			#
+			# Keyed on the key's presence, not on its value: `variadic: {}` declares an impl
+			# variadic while bounding nothing, and the schema makes every field of the block
+			# optional. `min` counts occurrences of the repeatable argument; absent, it bounds
+			# nothing either, so 0.
+			is_variadic = 'variadic' in implementation
+			variadic = implementation.get('variadic') or {}
+			if is_variadic:
+				validate_variadic_impl(urn, function_data['name'], implementation, args)
+
+			function['impls'].append({
+				'args': args,
+				'is_variadic': is_variadic,
+				'variadic_min': variadic.get('min', 0),
+			})
 
 		functions.append(function)
 	return functions
@@ -107,16 +187,25 @@ def get_custom_functions(custom_extension_folder):
 		# from the file name.
 		urn, functions = parse_yaml(os.path.join(custom_extension_folder,custom_function_path))
 		for function in functions:
-			for impls_args in function["impls_args"]:
+			for impl in function["impls"]:
 				types = []
-				for args in impls_args:
-					type_value = regex.sub(r'<[^>]*>', '', args["value"])
+				for args in impl["args"]:
+					type_value = declared_type(args)
 					if type_value:
 						type_set.add(type_value)
 						types.append(f"\"{type_value}\"")
 				type_str = "{" + ", ".join(types) + "}"
 				function_name = function["name"]
-				inner_code += f"\tInsertCustomFunction(\"{function_name}\", {type_str}, \"{urn}\");\n"
+				if impl["is_variadic"]:
+					# `min` goes out verbatim, counting occurrences of the final (repeatable)
+					# argument rather than total arguments -- so concat_ws, declared with two
+					# arguments and `min: 1`, accepts two at the fewest. Converting that to a
+					# minimum call-site arity is left to the C++ side, which already has the
+					# declared arity in hand.
+					variadic_min = impl["variadic_min"]
+					inner_code += f"\tInsertVariadicCustomFunction(\"{function_name}\", {type_str}, \"{urn}\", {variadic_min});\n"
+				else:
+					inner_code += f"\tInsertCustomFunction(\"{function_name}\", {type_str}, \"{urn}\");\n"
 	print(type_set)
 	return inner_code
 
