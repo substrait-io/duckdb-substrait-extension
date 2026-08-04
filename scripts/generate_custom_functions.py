@@ -63,7 +63,7 @@ def parse_function_data(functions,yaml_data,function_type):
 	for function_data in yaml_data.get(function_type, []):
 		function = {
 			'name': function_data['name'],
-			'impls_args': []
+			'impls': []
 		}
 
 		for implementation in function_data.get('impls', []):
@@ -72,7 +72,22 @@ def parse_function_data(functions,yaml_data,function_type):
 				arg_info = {'name': arg.get('name', ''), 'value': arg.get('value', '')}
 				args.append(arg_info)
 
-			function['impls_args'].append(args)
+			# `variadic` marks the impl's final argument as repeatable; a trailing `?` on an
+			# argument's value marks it nullable and says nothing about arity. Carry the flag
+			# through so the C++ side does not have to infer one concept from the other (#253).
+			#
+			# Keyed on the key's presence, not on its value: `variadic: {}` declares an impl
+			# variadic while bounding nothing, and the schema makes every field of the block
+			# optional. `min` counts occurrences of the repeatable argument; absent, it bounds
+			# nothing either, so 0.
+			is_variadic = 'variadic' in implementation
+			variadic = implementation.get('variadic') or {}
+
+			function['impls'].append({
+				'args': args,
+				'is_variadic': is_variadic,
+				'variadic_min': variadic.get('min', 0),
+			})
 
 		functions.append(function)
 	return functions
@@ -107,16 +122,25 @@ def get_custom_functions(custom_extension_folder):
 		# from the file name.
 		urn, functions = parse_yaml(os.path.join(custom_extension_folder,custom_function_path))
 		for function in functions:
-			for impls_args in function["impls_args"]:
+			for impl in function["impls"]:
 				types = []
-				for args in impls_args:
+				for args in impl["args"]:
 					type_value = regex.sub(r'<[^>]*>', '', args["value"])
 					if type_value:
 						type_set.add(type_value)
 						types.append(f"\"{type_value}\"")
 				type_str = "{" + ", ".join(types) + "}"
 				function_name = function["name"]
-				inner_code += f"\tInsertCustomFunction(\"{function_name}\", {type_str}, \"{urn}\");\n"
+				if impl["is_variadic"]:
+					# `min` goes out verbatim, counting occurrences of the final (repeatable)
+					# argument rather than total arguments -- so concat_ws, declared with two
+					# arguments and `min: 1`, accepts two at the fewest. Converting that to a
+					# minimum call-site arity is left to the C++ side, which already has the
+					# declared arity in hand.
+					variadic_min = impl["variadic_min"]
+					inner_code += f"\tInsertVariadicCustomFunction(\"{function_name}\", {type_str}, \"{urn}\", {variadic_min});\n"
+				else:
+					inner_code += f"\tInsertCustomFunction(\"{function_name}\", {type_str}, \"{urn}\");\n"
 	print(type_set)
 	return inner_code
 

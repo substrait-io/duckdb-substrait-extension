@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "duckdb/common/optional_idx.hpp"
 #include "duckdb/common/types/hash.hpp"
 #include <substrait/type.pb.h>
 #include <unordered_map>
@@ -42,6 +43,16 @@ public:
 
 	SubstraitCustomFunction function;
 	string extension_path;
+};
+
+//! A variadic overload: the extension that declares it, plus the fewest arguments a call
+//! site may pass. Shares its leading `function` member with SubstraitFunctionExtensions so
+//! that InsertOverload can resolve declaration specificity for either map.
+struct SubstraitVariadicFunction {
+	SubstraitCustomFunction function;
+	string extension_path;
+	//! Minimum call-site arity, derived from the declared arity and the YAML's `variadic.min`.
+	idx_t min_arguments;
 };
 
 struct HashSubstraitFunctions {
@@ -79,13 +90,25 @@ private:
 	// For * Functions
 	std::unordered_map<SubstraitCustomFunction, SubstraitFunctionExtensions, HashSubstraitFunctionsName>
 	    any_arg_functions;
-	// For ? Functions
-	// When we have an argument ending with ? it means this argument can repeat many times
-	std::unordered_map<SubstraitCustomFunction, SubstraitFunctionExtensions, HashSubstraitFunctions> many_arg_functions;
+	// For functions the extension YAML declares `variadic`, meaning their final argument may
+	// repeat. Keyed on that one repeatable type rather than on an expanded argument list,
+	// because a call site can pass any number of it -- which is also how the Substrait
+	// signature grammar names them: the variadic argument appears once, so the variadic `and`
+	// is `and:bool` however many arguments it was called with.
+	std::unordered_map<SubstraitCustomFunction, SubstraitVariadicFunction, HashSubstraitFunctions> variadic_functions;
 
 	void InsertCustomFunction(const string &name, const vector<string> &types, const string &file_path);
+	//! Registers an impl whose final declared argument may repeat. `variadic_min` counts
+	//! occurrences of that argument, verbatim from the YAML's `variadic.min`.
+	void InsertVariadicCustomFunction(const string &name, const vector<string> &types, const string &file_path,
+	                                  idx_t variadic_min);
+	//! `variadic_min_arguments` is the minimum call-site arity for a variadic impl, or invalid
+	//! for a fixed-arity one.
+	void InsertFunction(const string &name, const vector<string> &types, const string &file_path,
+	                    optional_idx variadic_min_arguments);
 	void InsertAllFunctions(const vector<vector<string>> &all_types, const vector<string> &declared_types,
-	                        vector<idx_t> &indices, int depth, const string &name, const string &file_path);
+	                        vector<idx_t> &indices, int depth, const string &name, const string &file_path,
+	                        optional_idx variadic_min_arguments);
 };
 
 } // namespace duckdb

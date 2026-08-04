@@ -63,7 +63,7 @@ static bool IsAnyType(const string &type) {
 
 // Rewrites a type as declared by an extension YAML into the canonical Substrait
 // type name, which is what the protobuf Type.kind field names use (e.g.
-// fixedchar -> fixed_char).
+// fixedchar -> fixed_char), and drops the nullability marker.
 static string CanonicalizeDeclaredType(const string &declared_type) {
 	auto type = StringUtil::Replace(declared_type, "boolean", "bool");
 	type = StringUtil::Replace(type, "fixedchar", "fixed_char");
@@ -71,7 +71,15 @@ static string CanonicalizeDeclaredType(const string &declared_type) {
 	// functions_arithmetic_decimal spells the aggregate sum/avg argument
 	// `DECIMAL` (uppercase) while its scalar functions and every other extension
 	// use lowercase `decimal`, so canonicalize the case too.
-	return StringUtil::Replace(type, "DECIMAL", "decimal");
+	type = StringUtil::Replace(type, "DECIMAL", "decimal");
+	// A trailing `?` declares the argument nullable. Nullability is not part of an
+	// overload's identity -- TransformTypes() derives a bare kind name from a call
+	// site, and a compound name encodes only the short type name -- so strip it
+	// here and keep it out of both the map keys and the declared signature.
+	if (!type.empty() && type.back() == '?') {
+		type.pop_back();
+	}
+	return type;
 }
 
 // How many arguments of a declared signature are placeholders. Fewer placeholders
@@ -94,15 +102,18 @@ static idx_t CountAnyTypes(const vector<string> &types) {
 // declares lt(any1, any1). Both want the date/date slot, so resolve by
 // specificity rather than by ingestion order, and let the concrete declaration
 // win. Equally specific declarations keep last-one-wins.
-template <class MAP>
-static void InsertOverload(MAP &overloads, const SubstraitCustomFunction &key,
-                           const SubstraitCustomFunction &declared_function, const string &file_path) {
+//
+// The mapped value is passed in rather than built here, so that this serves both the
+// fixed-arity and the variadic map. Both value types lead with the same `function` member,
+// which is all the specificity comparison needs.
+template <class MAP, class VALUE>
+static void InsertOverload(MAP &overloads, const SubstraitCustomFunction &key, VALUE value) {
 	auto it = overloads.find(key);
 	if (it != overloads.end() &&
-	    CountAnyTypes(it->second.function.arg_types) < CountAnyTypes(declared_function.arg_types)) {
+	    CountAnyTypes(it->second.function.arg_types) < CountAnyTypes(value.function.arg_types)) {
 		return;
 	}
-	overloads[key] = {declared_function, file_path};
+	overloads[key] = std::move(value);
 }
 
 // Recurse over the whole shebang
@@ -111,7 +122,8 @@ static void InsertOverload(MAP &overloads, const SubstraitCustomFunction &key,
 // leaves (see #205).
 void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &all_types,
                                                   const vector<string> &declared_types, vector<idx_t> &indices,
-                                                  int depth, const string &name, const string &file_path) {
+                                                  int depth, const string &name, const string &file_path,
+                                                  optional_idx variadic_min_arguments) {
 	if (depth == indices.size()) {
 		vector<string> types;
 		for (idx_t i = 0; i < indices.size(); i++) {
@@ -123,33 +135,47 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 		// encodes the signature of the impl the extension declares -- so a call to
 		// equal(i64, i64) is keyed on i64/i64 but named equal:any_any.
 		if (types.empty()) {
-			InsertOverload(any_arg_functions, {name, types}, {name, declared_types}, file_path);
+			InsertOverload(any_arg_functions, {name, types},
+			               SubstraitFunctionExtensions {{name, declared_types}, file_path});
+		} else if (variadic_min_arguments.IsValid()) {
+			// Only the final declared argument repeats, so that one type is the whole key: a
+			// call site passing it n times has to find the same entry for every n. Expanding a
+			// placeholder therefore collapses several leaves of this recursion onto one key,
+			// which is harmless because declared_types -- the only part of the value that
+			// varies with the leaf -- does not vary at all.
+			InsertOverload(
+			    variadic_functions, {name, {types.back()}},
+			    SubstraitVariadicFunction {{name, declared_types}, file_path, variadic_min_arguments.GetIndex()});
 		} else {
-			bool many_arg = false;
-			string type = types[0];
-			for (auto &t : types) {
-				if (!t.empty() && t[t.size() - 1] == '?') {
-					// If all types are equal and they end with ? we have a many_argument function
-					many_arg = type == t;
-				}
-			}
-			if (many_arg) {
-				InsertOverload(many_arg_functions, {name, types}, {name, declared_types}, file_path);
-			} else {
-				InsertOverload(custom_functions, {name, types}, {name, declared_types}, file_path);
-			}
+			InsertOverload(custom_functions, {name, types},
+			               SubstraitFunctionExtensions {{name, declared_types}, file_path});
 		}
 
 		return;
 	}
 	for (int i = 0; i < all_types[depth].size(); ++i) {
 		indices[depth] = i;
-		InsertAllFunctions(all_types, declared_types, indices, depth + 1, name, file_path);
+		InsertAllFunctions(all_types, declared_types, indices, depth + 1, name, file_path, variadic_min_arguments);
 	}
 }
 
 void SubstraitCustomFunctions::InsertCustomFunction(const string &name, const vector<string> &types,
                                                     const string &file_path) {
+	InsertFunction(name, types, file_path, optional_idx::Invalid());
+}
+
+void SubstraitCustomFunctions::InsertVariadicCustomFunction(const string &name, const vector<string> &types,
+                                                            const string &file_path, idx_t variadic_min) {
+	// `variadic_min` counts occurrences of the final declared argument -- the repeatable one --
+	// not total arguments. concat_ws declares (string, string) with min 1, so its separator
+	// plus one repetition means two arguments at the fewest, not one. The empty case only
+	// keeps the subtraction from wrapping: a declaration with no arguments has none to repeat,
+	// and InsertAllFunctions files it as a no-argument overload regardless.
+	InsertFunction(name, types, file_path, types.empty() ? variadic_min : types.size() - 1 + variadic_min);
+}
+
+void SubstraitCustomFunctions::InsertFunction(const string &name, const vector<string> &types, const string &file_path,
+                                              optional_idx variadic_min_arguments) {
 	vector<string> declared_types;
 	vector<vector<string>> all_types;
 	for (auto &t : types) {
@@ -170,7 +196,7 @@ void SubstraitCustomFunctions::InsertCustomFunction(const string &name, const ve
 	vector<idx_t> idx(num_arguments, 0);
 
 	// Call the helper function with initial depth 0
-	InsertAllFunctions(all_types, declared_types, idx, 0, name, file_path);
+	InsertAllFunctions(all_types, declared_types, idx, 0, name, file_path, variadic_min_arguments);
 }
 
 // Maps a canonical Substrait type name (the protobuf `Type.kind` oneof field
@@ -217,12 +243,7 @@ static string TypeShortName(const string &type) {
 string SubstraitCustomFunction::GetCompoundName() const {
 	string function_signature = name + ":";
 	for (auto &type : arg_types) {
-		// A trailing '?' marks a nullable (variadic) argument in the declared
-		// signature. Substrait compound names encode only the short type name,
-		// not nullability, so strip it before the lookup (e.g. the variadic
-		// "and" is emitted as "and:bool", not "and:bool?").
-		auto base = (!type.empty() && type.back() == '?') ? type.substr(0, type.size() - 1) : type;
-		function_signature += TypeShortName(base) + "_";
+		function_signature += TypeShortName(type) + "_";
 	}
 	if (!arg_types.empty()) {
 		// Drop the separator the last argument appended. Guarded, because a
@@ -302,18 +323,28 @@ SubstraitFunctionExtensions SubstraitCustomFunctions::Get(const string &name,
 		}
 	}
 
-	// check if it's a many argument fit
-	bool possibly_many_arg = true;
-	string type = transformed_types[0];
+	// Check whether a variadic declaration covers the call. A variadic entry is keyed on its
+	// one repeatable type, so this can only be asked when every argument shares a type.
+	//
+	// That makes the check narrower than the declarations allow: an impl whose leading fixed
+	// argument has a different type from its repeatable one is unreachable here, and would
+	// fall through to `native` rather than resolve wrongly. No extension declares that shape
+	// today -- concat_ws, the only impl with a leading fixed argument, declares it with the
+	// same type as the argument that repeats.
+	bool possibly_variadic = true;
+	const string &type = transformed_types[0];
 	for (auto &t : transformed_types) {
-		possibly_many_arg = possibly_many_arg && type == t;
+		possibly_variadic = possibly_variadic && type == t;
 	}
-	if (possibly_many_arg) {
-		type += '?';
-		SubstraitCustomFunction custom_many_function {name, {{type}}};
-		auto many_it = many_arg_functions.find(custom_many_function);
-		if (many_it != many_arg_functions.end()) {
-			return many_it->second;
+	if (possibly_variadic) {
+		SubstraitCustomFunction custom_variadic_function {name, {type}};
+		auto variadic_it = variadic_functions.find(custom_variadic_function);
+		// An arity below the declared minimum is not an impl the extension offers, so leave it
+		// to `native` rather than name it after a signature that does not cover it. DuckDB's
+		// least(x) is the reachable case: functions_comparison declares least variadic with a
+		// minimum of two.
+		if (variadic_it != variadic_functions.end() && transformed_types.size() >= variadic_it->second.min_arguments) {
+			return {variadic_it->second.function, variadic_it->second.extension_path};
 		}
 	}
 	// TODO: check if this should also print the arg types or not
