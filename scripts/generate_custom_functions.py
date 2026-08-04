@@ -59,7 +59,62 @@ def is_excluded_function_extension(file_name):
 	return file_name in EXCLUDED_FUNCTION_EXTENSIONS
 
 
-def parse_function_data(functions,yaml_data,function_type):
+def declared_type(arg):
+	"""The argument's type as the C++ side receives it, or '' if it carries none.
+
+	The `<...>` parameter block is dropped because the overload maps key on unparameterized
+	type names -- `varchar<L1>` and `varchar<L2>` are one key. An enumeration or type argument
+	declares `options`/`type` instead of `value` and so yields '', which the emitter skips.
+	"""
+	return regex.sub(r'<[^>]*>', '', arg.get('value', ''))
+
+
+# `variadic` keys the C++ side understands. Anything else in the block bounds or qualifies the
+# repetition in a way the producer would silently ignore, which is how a plan ends up naming a
+# call after a signature that does not cover it -- `max` would let an over-long call resolve,
+# and `parameterConsistency: INCONSISTENT` would widen what the repeated argument accepts
+# beyond the single type the lookup keys on.
+SUPPORTED_VARIADIC_KEYS = frozenset({"min"})
+
+
+def validate_variadic_impl(file_path, function_name, implementation, args):
+	"""Refuse to generate a variadic registration the C++ side cannot honour faithfully.
+
+	Each of these holds for every variadic impl in the pinned extensions, so this raises only
+	when a future Substrait version introduces a shape that needs real work in
+	SubstraitCustomFunctions. Failing regeneration is the point: the alternative is a
+	registration that resolves calls it should not, which nothing downstream can detect.
+	"""
+	where = f"{file_path}: {function_name}"
+
+	unsupported = sorted(set(implementation['variadic'] or {}) - SUPPORTED_VARIADIC_KEYS)
+	if unsupported:
+		raise ValueError(
+			f"{where}: variadic declares {unsupported}, which the producer does not implement. "
+			f"Only {sorted(SUPPORTED_VARIADIC_KEYS)} is honoured; teach "
+			f"SubstraitCustomFunctions about the rest before regenerating.")
+
+	# InsertVariadicCustomFunction derives the minimum call-site arity from the number of types
+	# it is handed, so an argument that contributes no type would make that minimum too low.
+	if any(not declared_type(arg) for arg in args):
+		raise ValueError(
+			f"{where}: variadic impl has an argument with no `value` (an enumeration or type "
+			f"argument). Those are dropped from the emitted type list, so the minimum arity "
+			f"computed from it would be short by that many arguments.")
+
+	# A variadic entry is keyed on its repeatable type alone, so the declared arguments have to
+	# be indistinguishable at lookup: a call whose arguments are all of the repeatable type
+	# would otherwise match an impl it does not fit and be named after that impl's signature.
+	# Nullability is normalized away downstream, so it does not count as a difference here.
+	key_types = {declared_type(arg).rstrip('?') for arg in args}
+	if len(key_types) > 1:
+		raise ValueError(
+			f"{where}: variadic impl mixes argument types {sorted(key_types)}. The overload map "
+			f"keys a variadic entry on its final type alone, which cannot distinguish this impl "
+			f"from one taking only the repeatable type.")
+
+
+def parse_function_data(file_path,functions,yaml_data,function_type):
 	for function_data in yaml_data.get(function_type, []):
 		function = {
 			'name': function_data['name'],
@@ -83,6 +138,8 @@ def parse_function_data(functions,yaml_data,function_type):
 			# nothing either, so 0.
 			is_variadic = 'variadic' in implementation
 			variadic = implementation.get('variadic') or {}
+			if is_variadic:
+				validate_variadic_impl(file_path, function_data['name'], implementation, args)
 
 			function['impls'].append({
 				'args': args,
@@ -102,9 +159,9 @@ def parse_yaml(file_path):
 	if not isinstance(urn, str) or not urn.strip():
 		raise ValueError(f"{file_path}: 'urn' must be a non-empty string, got {urn!r}")
 	functions = []
-	functions = parse_function_data(functions,yaml_data,'scalar_functions')
-	functions = parse_function_data(functions,yaml_data,'aggregate_functions')
-	functions = parse_function_data(functions,yaml_data,'window_functions')
+	functions = parse_function_data(file_path,functions,yaml_data,'scalar_functions')
+	functions = parse_function_data(file_path,functions,yaml_data,'aggregate_functions')
+	functions = parse_function_data(file_path,functions,yaml_data,'window_functions')
 	return urn, functions
 
 def get_custom_functions(custom_extension_folder):
@@ -126,7 +183,7 @@ def get_custom_functions(custom_extension_folder):
 			for impl in function["impls"]:
 				types = []
 				for args in impl["args"]:
-					type_value = regex.sub(r'<[^>]*>', '', args["value"])
+					type_value = declared_type(args)
 					if type_value:
 						type_set.add(type_value)
 						types.append(f"\"{type_value}\"")

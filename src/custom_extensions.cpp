@@ -139,10 +139,15 @@ void SubstraitCustomFunctions::InsertAllFunctions(const vector<vector<string>> &
 			               SubstraitFunctionExtensions {{name, declared_types}, file_path});
 		} else if (variadic_min_arguments.IsValid()) {
 			// Only the final declared argument repeats, so that one type is the whole key: a
-			// call site passing it n times has to find the same entry for every n. Expanding a
-			// placeholder therefore collapses several leaves of this recursion onto one key,
-			// which is harmless because declared_types -- the only part of the value that
-			// varies with the leaf -- does not vary at all.
+			// call site passing it n times has to find the same entry for every n.
+			//
+			// Dropping the rest of the declared arguments from the key is only sound because
+			// every declared argument of a variadic impl has the same type. The generator
+			// enforces that (validate_variadic_impl), because a key that cannot tell
+			// f(i32, string...) from f(string...) would answer for calls the impl does not
+			// cover. Should a placeholder ever expand a non-final argument, several leaves of
+			// this recursion collapse onto one key -- harmless, since declared_types is the
+			// only part of the value that varies with the leaf, and it does not vary at all.
 			InsertOverload(
 			    variadic_functions, {name, {types.back()}},
 			    SubstraitVariadicFunction {{name, declared_types}, file_path, variadic_min_arguments.GetIndex()});
@@ -324,13 +329,11 @@ SubstraitFunctionExtensions SubstraitCustomFunctions::Get(const string &name,
 	}
 
 	// Check whether a variadic declaration covers the call. A variadic entry is keyed on its
-	// one repeatable type, so this can only be asked when every argument shares a type.
-	//
-	// That makes the check narrower than the declarations allow: an impl whose leading fixed
-	// argument has a different type from its repeatable one is unreachable here, and would
-	// fall through to `native` rather than resolve wrongly. No extension declares that shape
-	// today -- concat_ws, the only impl with a leading fixed argument, declares it with the
-	// same type as the argument that repeats.
+	// one repeatable type, so it can only answer for a call whose arguments all share a type --
+	// which is exactly the calls a variadic impl covers, given that all of its declared
+	// arguments have that one type too (enforced by the generator, see
+	// validate_variadic_impl). A call of mixed types is therefore not a near miss to be
+	// widened later; no variadic declaration accepts one.
 	bool possibly_variadic = true;
 	const string &type = transformed_types[0];
 	for (auto &t : transformed_types) {
@@ -342,7 +345,9 @@ SubstraitFunctionExtensions SubstraitCustomFunctions::Get(const string &name,
 		// An arity below the declared minimum is not an impl the extension offers, so leave it
 		// to `native` rather than name it after a signature that does not cover it. DuckDB's
 		// least(x) is the reachable case: functions_comparison declares least variadic with a
-		// minimum of two.
+		// minimum of two. A minimum of 0 (`and`, `or`) can never reject anything -- the
+		// zero-argument call it would admit is answered by any_arg_functions above, before this
+		// branch is reached.
 		if (variadic_it != variadic_functions.end() && transformed_types.size() >= variadic_it->second.min_arguments) {
 			return {variadic_it->second.function, variadic_it->second.extension_path};
 		}

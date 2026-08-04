@@ -52,7 +52,9 @@ struct SubstraitVariadicFunction {
 	SubstraitCustomFunction function;
 	string extension_path;
 	//! Minimum call-site arity, derived from the declared arity and the YAML's `variadic.min`.
-	idx_t min_arguments;
+	//! Initialized so that the bound is stated rather than inherited from how the map happens
+	//! to construct a fresh value; 0 admits every arity, which is the harmless direction.
+	idx_t min_arguments = 0;
 };
 
 struct HashSubstraitFunctions {
