@@ -77,15 +77,20 @@ def declared_type(arg):
 SUPPORTED_VARIADIC_KEYS = frozenset({"min"})
 
 
-def validate_variadic_impl(file_path, function_name, implementation, args):
+def validate_variadic_impl(urn, function_name, implementation, args):
 	"""Refuse to generate a variadic registration the C++ side cannot honour faithfully.
 
 	Each of these holds for every variadic impl in the pinned extensions, so this raises only
 	when a future Substrait version introduces a shape that needs real work in
 	SubstraitCustomFunctions. Failing regeneration is the point: the alternative is a
 	registration that resolves calls it should not, which nothing downstream can detect.
+
+	Located by URN rather than by file: when the script clones the pinned tag itself the
+	extensions live under a temp dir that is deleted on the way out, so a path here would name
+	somewhere the reader cannot go. The URN is the extension's identity everywhere else too,
+	and the file it came from follows from the naming convention this script allowlists on.
 	"""
-	where = f"{file_path}: {function_name}"
+	where = f"{function_name} in {urn}"
 
 	unsupported = sorted(set(implementation['variadic'] or {}) - SUPPORTED_VARIADIC_KEYS)
 	if unsupported:
@@ -114,7 +119,9 @@ def validate_variadic_impl(file_path, function_name, implementation, args):
 			f"from one taking only the repeatable type.")
 
 
-def parse_function_data(file_path,functions,yaml_data,function_type):
+def parse_function_data(functions,yaml_data,function_type):
+	# parse_yaml has already established that this is a non-empty string.
+	urn = yaml_data['urn']
 	for function_data in yaml_data.get(function_type, []):
 		function = {
 			'name': function_data['name'],
@@ -139,7 +146,7 @@ def parse_function_data(file_path,functions,yaml_data,function_type):
 			is_variadic = 'variadic' in implementation
 			variadic = implementation.get('variadic') or {}
 			if is_variadic:
-				validate_variadic_impl(file_path, function_data['name'], implementation, args)
+				validate_variadic_impl(urn, function_data['name'], implementation, args)
 
 			function['impls'].append({
 				'args': args,
@@ -159,9 +166,9 @@ def parse_yaml(file_path):
 	if not isinstance(urn, str) or not urn.strip():
 		raise ValueError(f"{file_path}: 'urn' must be a non-empty string, got {urn!r}")
 	functions = []
-	functions = parse_function_data(file_path,functions,yaml_data,'scalar_functions')
-	functions = parse_function_data(file_path,functions,yaml_data,'aggregate_functions')
-	functions = parse_function_data(file_path,functions,yaml_data,'window_functions')
+	functions = parse_function_data(functions,yaml_data,'scalar_functions')
+	functions = parse_function_data(functions,yaml_data,'aggregate_functions')
+	functions = parse_function_data(functions,yaml_data,'window_functions')
 	return urn, functions
 
 def get_custom_functions(custom_extension_folder):
