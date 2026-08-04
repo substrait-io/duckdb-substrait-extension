@@ -1,0 +1,153 @@
+# name: test/sql/test_variadic_functions.test
+# description: Verify functions the extension YAML declares `variadic` resolve at every arity their declaration covers
+# group: [sql]
+
+require substrait
+
+# `variadic` in an extension YAML marks an impl's final argument as repeatable. It is a
+# separate key from the `?` that marks an argument nullable, and the two used to be
+# conflated: the producer inferred "repeatable" from the `?` and ignored the real flag,
+# so a variadic impl declaring no nullable argument was not recognised as variadic at
+# all. Those impls were stored keyed on a single concrete type, which made the
+# one-argument call resolve and every wider call miss and degrade to `native` (#253).
+#
+# Statistics propagation folds several of these expressions away when a column's values
+# are known -- a single-argument COALESCE always, and a wider one whenever a column is
+# known non-null -- so every table here carries values that keep the expression in the
+# plan and reach the producer.
+
+statement ok
+CREATE TABLE t AS SELECT * FROM (VALUES ('a', 'b', 1, 2, true, false), ('c', 'd', 3, 4, false, true)) v(p, q, i, j, x, y);
+
+statement ok
+CREATE TABLE n AS SELECT * FROM (VALUES (NULL::INTEGER, 2), (3, NULL::INTEGER)) v(i, j);
+
+# A variadic argument is included once in the argument signature, per
+# https://substrait.io/extensions/#function-signature-compound-names -- so `concat` is
+# `concat:str` whatever the call-site arity, not `concat:str_str`.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT concat(p, q) FROM t') WHERE contains("Json", '"name":"concat:str"') AND contains("Json", '"urn":"extension:io.substrait:functions_string"')
+----
+1
+
+# The single-argument call resolved before this fix, via the fixed-arity map. It has to keep
+# resolving now that the declaration lives in the variadic map instead.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT concat(p) FROM t') WHERE contains("Json", '"name":"concat:str"')
+----
+1
+
+# concat_ws is the only impl declaring a leading fixed argument -- (string, string), the
+# separator plus the repeatable one -- so both appear in the signature.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT concat_ws(p, q, p) FROM t') WHERE contains("Json", '"name":"concat_ws:str_str"') AND contains("Json", '"urn":"extension:io.substrait:functions_string"')
+----
+1
+
+# least/greatest/coalesce are declared `any1` and expanded over every concrete type kind, so
+# these also cover the variadic path through placeholder expansion. The declared placeholder
+# is what names them, hence `:any`.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT least(i, j) FROM t') WHERE contains("Json", '"name":"least:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT greatest(i, j) FROM t') WHERE contains("Json", '"name":"greatest:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT coalesce(i, j) FROM n') WHERE contains("Json", '"name":"coalesce:any"') AND contains("Json", '"urn":"extension:io.substrait:functions_comparison"')
+----
+1
+
+# Arity beyond the declared two, to show the entry is reached by repetition rather than by an
+# arity-specific key.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT coalesce(i, j, i) FROM n') WHERE contains("Json", '"name":"coalesce:any"')
+----
+1
+
+# Strict mode reports anything that fell through to `native`. Each of these threw before the
+# fix.
+
+statement ok
+CALL get_substrait('SELECT concat(p, q), concat_ws(p, q, p), least(i, j), greatest(i, j) FROM t', strict = true)
+
+statement ok
+CALL get_substrait('SELECT coalesce(i, j) FROM n', strict = true)
+
+# An arity below the declared minimum is not an impl the extension offers. functions_comparison
+# declares least with `variadic: {min: 2}`, so the one-argument call DuckDB accepts has no
+# declaration to name it after and stays native. Asserted as a pair because `least:any`
+# contains `least`: the positive match pins the name, the negative one pins the absence of a
+# signature.
+
+query I
+CALL get_substrait_json('SELECT least(i) FROM t')
+----
+<REGEX>:.*"name":"least".*
+
+query I
+CALL get_substrait_json('SELECT least(i) FROM t')
+----
+<!REGEX>:.*"least:".*
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT least(i) FROM t') WHERE contains("Json", 'functions_comparison')
+----
+0
+
+statement error
+CALL get_substrait('SELECT least(i) FROM t', strict = true)
+----
+Could not find function "least" with argument types: ('i32')
+
+# `and`/`or` are the impls that carry both a `?` argument and a real variadic flag, so they
+# resolved before the fix as well -- by accident of the heuristic rather than by declaration.
+# They must survive the switch to the real flag, at two arguments and beyond.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", '"name":"and:bool"') AND contains("Json", '"urn":"extension:io.substrait:functions_boolean"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT x AND y AND (i > 1) FROM t') WHERE contains("Json", '"name":"and:bool"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT x OR y FROM t') WHERE contains("Json", '"name":"or:bool"')
+----
+1
+
+# `not` declares one `boolean?` argument and no variadic key, so the heuristic used to file it
+# as repeatable. It resolved anyway, because a one-argument declaration's key is the same shape
+# either way. It now sits in the fixed-arity map, and must still resolve.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT NOT x FROM t') WHERE contains("Json", '"name":"not:bool"') AND contains("Json", '"urn":"extension:io.substrait:functions_boolean"')
+----
+1
+
+# Nullability is not part of an overload's identity, so the `?` is stripped at ingestion rather
+# than on the way out. Removing that strip breaks this either way: the emitted name becomes
+# `and:bool?`, or the lookup misses its own key and `and` comes back native.
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT x AND y FROM t') WHERE contains("Json", '?')
+----
+0
+
+statement ok
+DROP TABLE t
+
+statement ok
+DROP TABLE n
