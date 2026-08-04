@@ -46,7 +46,14 @@ const std::unordered_map<std::string, std::string> DuckDBToSubstrait::function_n
     {"&", "bitwise_and"},
     {"|", "bitwise_or"},
     {"xor", "bitwise_xor"},
-    {"strlen", "octet_length"}};
+    {"strlen", "octet_length"},
+    // functions_comparison declares each of these twice, differing only in what a null
+    // argument does: `least`/`greatest` return null if ANY argument is null, while the
+    // `_skip_null` pair return null only if ALL of them are. DuckDB's least(NULL, 1) is 1, so
+    // the skip-null declarations are the ones that describe it -- the shorter names would
+    // encode a plan that a conforming consumer evaluates to NULL instead.
+    {"least", "least_skip_null"},
+    {"greatest", "greatest_skip_null"}};
 
 const case_insensitive_set_t DuckDBToSubstrait::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
