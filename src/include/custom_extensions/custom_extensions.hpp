@@ -22,7 +22,8 @@ struct SubstraitCustomFunction {
 	bool operator==(const SubstraitCustomFunction &other) const {
 		return name == other.name && arg_types == other.arg_types;
 	}
-	string GetName();
+	//! The compound name of this declared impl (name + ':' + declared arg short names).
+	string GetCompoundName() const;
 	string name;
 	vector<string> arg_types;
 };
@@ -33,6 +34,9 @@ public:
 	    : function(std::move(function_p)), extension_path(std::move(extension_path_p)) {};
 	SubstraitFunctionExtensions() = default;
 
+	//! The name to declare this function under: the impl's compound name, or the bare
+	//! function name when it resolved against no extension YAML.
+	string GetName() const;
 	string GetExtensionURN() const;
 	bool IsNative() const;
 

@@ -25,7 +25,7 @@ string TransformTypes(const substrait::Type &type) {
 // pre-building the overload maps. Each token is a protobuf Type.kind field name
 // (what TransformTypes() derives from a concrete argument), so the expanded
 // overloads match at lookup -- these are proto kind names, not the abbreviated
-// signature short names GetName() emits. This is the curated set of kinds that
+// signature short names GetCompoundName() emits. This is the curated set of kinds that
 // occur as arguments, not an exhaustive list of every proto kind.
 vector<string> GetAllTypes() {
 	return {{"bool"},
@@ -204,10 +204,17 @@ static string TypeShortName(const string &type) {
 	return it == SHORT_NAMES.end() ? type : it->second;
 }
 
-string SubstraitCustomFunction::GetName() {
-	if (arg_types.empty()) {
-		return name;
-	}
+// Builds the compound name of a declared impl: the function name, a ':', and the
+// short names of the declared argument types joined by '_'.
+//
+// An impl declared with no arguments keeps the ':' with nothing after it --
+// `count:`, not `count`. The signature grammar cannot actually express that case
+// (`argument-signature` requires at least one short-arg-type, filed upstream as
+// substrait-io/substrait#1162), so `name:` is a de-facto convention rather than a
+// normative one. It is however what the reference producers emit and what plan-side
+// function lookup expects of them, so a bare `count` fails to resolve. #258 has the
+// inventory and the reasoning.
+string SubstraitCustomFunction::GetCompoundName() const {
 	string function_signature = name + ":";
 	for (auto &type : arg_types) {
 		// A trailing '?' marks a nullable (variadic) argument in the declared
@@ -217,8 +224,28 @@ string SubstraitCustomFunction::GetName() {
 		auto base = (!type.empty() && type.back() == '?') ? type.substr(0, type.size() - 1) : type;
 		function_signature += TypeShortName(base) + "_";
 	}
-	function_signature.pop_back();
+	if (!arg_types.empty()) {
+		// Drop the separator the last argument appended. Guarded, because a
+		// zero-argument impl never ran the loop and popping would eat the ':'.
+		function_signature.pop_back();
+	}
 	return function_signature;
+}
+
+// The name this function is declared under in the plan's extension list.
+//
+// A function that resolved against no extension YAML is emitted under its bare
+// DuckDB name, with no signature part at all: there is no declared impl to name it
+// after. That case is not distinguishable from the arg_types of the function alone,
+// because Get() reports it by returning empty arg_types no matter how many
+// arguments the call site had -- so the check has to happen here, where the
+// extension path is in scope. Hence the zero-argument native `random()` stays
+// `random` while the zero-argument declared `row_number()` becomes `row_number:`.
+string SubstraitFunctionExtensions::GetName() const {
+	if (IsNative()) {
+		return function.name;
+	}
+	return function.GetCompoundName();
 }
 
 string SubstraitFunctionExtensions::GetExtensionURN() const {
