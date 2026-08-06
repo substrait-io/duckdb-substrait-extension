@@ -2,7 +2,7 @@
 
 The DuckDB Substrait Extension is a [DuckDB Community Extension](https://duckdb.org/community_extensions/) that provides [Substrait](https://substrait.io) support to [DuckDB](https://www.duckdb.org).
 With this extension, DuckDB can produce Substrait plans from DuckDB queries as well as consume Substrait plans and execute them with DuckDB.
-The most commonly used logical relations and functions are supported, including those generated from all of the TPC-H and TPC-DS queries. The supported features are formally specified in the Substrait dialect file [duckdb_dialect.yaml](duckdb_dialect.yaml).
+The most commonly used logical relations and functions are supported: Substrait plans can be produced for all of the TPC-H and TPC-DS queries. The supported features are formally specified in the Substrait dialect file [duckdb_dialect.yaml](duckdb_dialect.yaml).
 
 ## Building
 

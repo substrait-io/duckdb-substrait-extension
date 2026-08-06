@@ -1,31 +1,26 @@
 #include "catch.hpp"
-#include <fstream>
 #include <string>
 #include <nlohmann/json-schema.hpp>
 #include <tojson.hpp>
 
 using nlohmann::json;
 using nlohmann::json_schema::json_validator;
-using namespace tojson;
 
-TEST_CASE("Dialect YAML file exists", "[dialect-validation]") {
-	const std::string dialectPath = "duckdb_dialect.yaml";
-	std::ifstream file(dialectPath);
-	REQUIRE(file.good());
-}
-
-TEST_CASE("Dialect schema file exists", "[dialect-validation]") {
-	const std::string schemaPath = std::string(DIALECT_SCHEMA_DIR) + "/dialect_schema.yaml";
-	std::ifstream file(schemaPath);
-	REQUIRE(file.good());
-}
+// Both paths are baked in at configure time (see test/c/CMakeLists.txt): the
+// dialect lives in the source tree and the schema in the installed
+// substrait-extensions data dir, so neither depends on the working directory.
+static const std::string DIALECT_PATH = DIALECT_YAML;
+static const std::string SCHEMA_PATH = std::string(SUBSTRAIT_DATA_DIR) + "/text/dialect_schema.yaml";
 
 TEST_CASE("Dialect YAML conforms to schema", "[dialect-validation]") {
-	json dialect = loadyaml("duckdb_dialect.yaml");
-	json schema = loadyaml(std::string(DIALECT_SCHEMA_DIR) + "/dialect_schema.yaml");
+	json dialect = tojson::loadyaml(DIALECT_PATH);
+	json schema = tojson::loadyaml(SCHEMA_PATH);
 
-    json_validator validator;
-	REQUIRE_NOTHROW(validator.set_root_schema(schema));
-	REQUIRE_NOTHROW(validator.validate(dialect));
+	json_validator validator;
+	validator.set_root_schema(schema);
+	try {
+		validator.validate(dialect);
+	} catch (const std::exception &e) {
+		FAIL(DIALECT_PATH << " does not conform to " << SCHEMA_PATH << ": " << e.what());
+	}
 }
-

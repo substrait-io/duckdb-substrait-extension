@@ -53,6 +53,8 @@ supported_types:
       supported_as_column: true
 
   - type: "VARCHAR"
+    metadata:
+      direction: "CONSUME_ONLY"  # producer always emits STRING for DuckDB VARCHAR
     system_metadata:
       name: "VARCHAR"
       supported_as_column: true
@@ -60,7 +62,24 @@ supported_types:
   - type: "FIXED_CHAR"
     system_metadata:
       name: "CHAR"
+      supported_as_column: false
+
+  - type: "INTERVAL_DAY"
+    system_metadata:
+      name: "INTERVAL"
       supported_as_column: true
+    max_precision: 6
+
+  - type: "INTERVAL_YEAR"
+    system_metadata:
+      name: "INTERVAL"
+      supported_as_column: false
+
+  - type: "INTERVAL_COMPOUND"
+    system_metadata:
+      name: "INTERVAL"
+      supported_as_column: false
+    max_precision: 6
 
   - type: "BINARY"
     system_metadata:
@@ -117,14 +136,14 @@ supported_expressions:
   - "LITERAL"
   - "SELECTION"
   - "SCALAR_FUNCTION"
-  - "WINDOW_FUNCTION"
   - "CAST"
   - "IF_THEN"
-  - "SWITCH"
-  - expression: "SUBQUERY"
-    subquery_types:
-      - "SCALAR"
-      - "IN_PREDICATE"
+  - "SINGULAR_OR_LIST"
+  - expression: "NESTED"
+    nested_types:
+      - "STRUCT"
+      - "LIST"
+      - "MAP"
 
 # ============================================================================
 # SUPPORTED RELATIONS
@@ -133,6 +152,8 @@ supported_relations:
   - relation: "READ"
     read_types:
       - "NAMED_TABLE"
+      - "VIRTUAL_TABLE"
+      - "LOCAL_FILES"
   - "FILTER"
   - "PROJECT"
   - "AGGREGATE"
@@ -148,13 +169,14 @@ supported_relations:
       - "RIGHT_SEMI"
       - "LEFT_ANTI"
       - "RIGHT_ANTI"
+      - "LEFT_SINGLE"
       - "LEFT_MARK"
   - "CROSS"
   - "LATERAL_JOIN"
+  - "CONSISTENT_PARTITION_WINDOW"
   - relation: "SET"
     operations:
       - "UNION_ALL"
-      - "UNION_DISTINCT"
       - "INTERSECTION_PRIMARY"
       - "MINUS_PRIMARY"
   - "WRITE"
@@ -168,7 +190,6 @@ dependencies:
   arithmetic_decimal: "extension:io.substrait:functions_arithmetic_decimal"
   comparison: "extension:io.substrait:functions_comparison"
   datetime: "extension:io.substrait:functions_datetime"
-  geometry: "extension:io.substrait:functions_geometry"
   string: "extension:io.substrait:functions_string"
   aggregate_generic: "extension:io.substrait:functions_aggregate_generic"
   aggregate_approx: "extension:io.substrait:functions_aggregate_approx"
@@ -514,8 +535,6 @@ supported_scalar_functions:
       name: "<<"
       notation: "INFIX"
     supported_impls:
-      - "i8_i32"
-      - "i16_i32"
       - "i32_i32"
       - "i64_i32"
 
@@ -525,19 +544,6 @@ supported_scalar_functions:
       name: ">>"
       notation: "INFIX"
     supported_impls:
-      - "i8_i32"
-      - "i16_i32"
-      - "i32_i32"
-      - "i64_i32"
-
-  - source: "arithmetic"
-    name: "shift_right_unsigned"
-    system_metadata:
-      name: ">>>"
-      notation: "INFIX"
-    supported_impls:
-      - "i8_i32"
-      - "i16_i32"
       - "i32_i32"
       - "i64_i32"
 
@@ -566,9 +572,7 @@ supported_scalar_functions:
       name: "round"
       notation: "FUNCTION"
     supported_impls:
-      - "fp32"
       - "fp32_i32"
-      - "fp64"
       - "fp64_i32"
 
   # Comparison Functions
@@ -624,7 +628,7 @@ supported_scalar_functions:
     name: "is_null"
     system_metadata:
       name: "IS NULL"
-      notation: "FUNCTION"
+      notation: "POSTFIX"
     supported_impls:
       - "any"
 
@@ -632,7 +636,7 @@ supported_scalar_functions:
     name: "is_not_null"
     system_metadata:
       name: "IS NOT NULL"
-      notation: "FUNCTION"
+      notation: "POSTFIX"
     supported_impls:
       - "any"
 
@@ -640,7 +644,7 @@ supported_scalar_functions:
     name: "is_distinct_from"
     system_metadata:
       name: "IS DISTINCT FROM"
-      notation: "FUNCTION"
+      notation: "INFIX"
     supported_impls:
       - "any_any"
 
@@ -648,14 +652,14 @@ supported_scalar_functions:
     name: "is_not_distinct_from"
     system_metadata:
       name: "IS NOT DISTINCT FROM"
-      notation: "FUNCTION"
+      notation: "INFIX"
     supported_impls:
       - "any_any"
 
   - source: "comparison"
     name: "is_nan"
     system_metadata:
-      name: "is_nan"
+      name: "isnan"
       notation: "FUNCTION"
     supported_impls:
       - "fp32"
@@ -664,7 +668,7 @@ supported_scalar_functions:
   - source: "comparison"
     name: "is_finite"
     system_metadata:
-      name: "is_finite"
+      name: "isfinite"
       notation: "FUNCTION"
     supported_impls:
       - "fp32"
@@ -673,7 +677,7 @@ supported_scalar_functions:
   - source: "comparison"
     name: "is_infinite"
     system_metadata:
-      name: "is_infinite"
+      name: "isinf"
       notation: "FUNCTION"
     supported_impls:
       - "fp32"
@@ -682,32 +686,32 @@ supported_scalar_functions:
   - source: "comparison"
     name: "is_true"
     system_metadata:
-      name: "is_true"
-      notation: "FUNCTION"
+      name: "IS TRUE"
+      notation: "POSTFIX"
     supported_impls:
       - "bool"
 
   - source: "comparison"
     name: "is_not_true"
     system_metadata:
-      name: "is_not_true"
-      notation: "FUNCTION"
+      name: "IS NOT TRUE"
+      notation: "POSTFIX"
     supported_impls:
       - "bool"
 
   - source: "comparison"
     name: "is_false"
     system_metadata:
-      name: "is_false"
-      notation: "FUNCTION"
+      name: "IS FALSE"
+      notation: "POSTFIX"
     supported_impls:
       - "bool"
 
   - source: "comparison"
     name: "is_not_false"
     system_metadata:
-      name: "is_not_false"
-      notation: "FUNCTION"
+      name: "IS NOT FALSE"
+      notation: "POSTFIX"
     supported_impls:
       - "bool"
 
@@ -727,7 +731,7 @@ supported_scalar_functions:
     supported_impls:
       - "any"
     variadic:
-      min: 1
+      min: 2
 
   - source: "comparison"
     name: "nullif"
@@ -738,42 +742,22 @@ supported_scalar_functions:
       - "any_any"
 
   - source: "comparison"
-    name: "least"
+    name: "least_skip_null"
     system_metadata:
       name: "least"
       notation: "FUNCTION"
     supported_impls:
-      - "any_any"
-    variadic:
-      min: 2
-
-  - source: "comparison"
-    name: "least_skip_null"
-    system_metadata:
-      name: "least_skip_null"
-      notation: "FUNCTION"
-    supported_impls:
-      - "any_any"
-    variadic:
-      min: 2
-
-  - source: "comparison"
-    name: "greatest"
-    system_metadata:
-      name: "greatest"
-      notation: "FUNCTION"
-    supported_impls:
-      - "any_any"
+      - "any"
     variadic:
       min: 2
 
   - source: "comparison"
     name: "greatest_skip_null"
     system_metadata:
-      name: "greatest_skip_null"
+      name: "greatest"
       notation: "FUNCTION"
     supported_impls:
-      - "any_any"
+      - "any"
     variadic:
       min: 2
 
@@ -784,7 +768,7 @@ supported_scalar_functions:
       name: "AND"
       notation: "INFIX"
     supported_impls:
-      - "bool_bool"
+      - "bool"
     variadic:
       min: 2
 
@@ -794,7 +778,7 @@ supported_scalar_functions:
       name: "OR"
       notation: "INFIX"
     supported_impls:
-      - "bool_bool"
+      - "bool"
     variadic:
       min: 2
 
@@ -829,9 +813,9 @@ supported_scalar_functions:
       name: "upper"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
-      - "fixedchar"
+      - "str"
+      - "vchar"
+      - "fchar"
 
   - source: "string"
     name: "lower"
@@ -839,45 +823,9 @@ supported_scalar_functions:
       name: "lower"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
-      - "fixedchar"
-
-  - source: "string"
-    name: "capitalize"
-    system_metadata:
-      name: "capitalize"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string"
-      - "varchar"
-
-  - source: "string"
-    name: "title"
-    system_metadata:
-      name: "title"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string"
-      - "varchar"
-
-  - source: "string"
-    name: "initcap"
-    system_metadata:
-      name: "initcap"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string"
-      - "varchar"
-
-  - source: "string"
-    name: "swapcase"
-    system_metadata:
-      name: "swapcase"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string"
-      - "varchar"
+      - "str"
+      - "vchar"
+      - "fchar"
 
   # String Functions - Length
   - source: "string"
@@ -886,8 +834,8 @@ supported_scalar_functions:
       name: "char_length"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str"
+      - "vchar"
 
   - source: "string"
     name: "bit_length"
@@ -895,8 +843,8 @@ supported_scalar_functions:
       name: "bit_length"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str"
+      - "vchar"
 
   - source: "string"
     name: "octet_length"
@@ -904,8 +852,8 @@ supported_scalar_functions:
       name: "octet_length"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str"
+      - "vchar"
 
   # String Functions - Searching & Matching
   - source: "string"
@@ -914,8 +862,8 @@ supported_scalar_functions:
       name: "like"
       notation: "INFIX"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "contains"
@@ -923,8 +871,8 @@ supported_scalar_functions:
       name: "contains"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "starts_with"
@@ -932,8 +880,8 @@ supported_scalar_functions:
       name: "starts_with"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "ends_with"
@@ -941,8 +889,8 @@ supported_scalar_functions:
       name: "ends_with"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "strpos"
@@ -950,8 +898,8 @@ supported_scalar_functions:
       name: "strpos"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "substring"
@@ -959,10 +907,10 @@ supported_scalar_functions:
       name: "substring"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "string_i32_i32"
-      - "varchar_i32"
-      - "varchar_i32_i32"
+      - "str_i32"
+      - "str_i32_i32"
+      - "vchar_i32"
+      - "vchar_i32_i32"
 
   - source: "string"
     name: "left"
@@ -970,8 +918,8 @@ supported_scalar_functions:
       name: "left"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "varchar_i32"
+      - "str_i32"
+      - "vchar_i32"
 
   - source: "string"
     name: "right"
@@ -979,45 +927,26 @@ supported_scalar_functions:
       name: "right"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "varchar_i32"
+      - "str_i32"
+      - "vchar_i32"
 
   # String Functions - Regular Expressions
   - source: "string"
     name: "regexp_match_substring"
     system_metadata:
-      name: "regexp_match_substring"
+      name: "regexp_extract"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
 
   - source: "string"
     name: "regexp_match_substring_all"
     system_metadata:
-      name: "regexp_match_substring_all"
+      name: "regexp_extract_all"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
-
-  - source: "string"
-    name: "regexp_strpos"
-    system_metadata:
-      name: "regexp_strpos"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string_string"
-      - "varchar_varchar"
-
-  - source: "string"
-    name: "regexp_count_substring"
-    system_metadata:
-      name: "regexp_count_substring"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str_i64_i64"
+      - "vchar_vchar_i64_i64"
 
   - source: "string"
     name: "regexp_replace"
@@ -1025,17 +954,16 @@ supported_scalar_functions:
       name: "regexp_replace"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string_string"
-      - "varchar_varchar_varchar"
+      - "str_str_str"
 
   - source: "string"
     name: "regexp_string_split"
     system_metadata:
-      name: "regexp_string_split"
+      name: "regexp_split_to_array"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   # String Functions - Manipulation
   - source: "string"
@@ -1044,8 +972,8 @@ supported_scalar_functions:
       name: "concat"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str"
+      - "vchar"
     variadic:
       min: 2
 
@@ -1055,8 +983,8 @@ supported_scalar_functions:
       name: "concat_ws"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
     variadic:
       min: 2
 
@@ -1066,8 +994,8 @@ supported_scalar_functions:
       name: "replace"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string_string"
-      - "varchar_varchar_varchar"
+      - "str_str_str"
+      - "vchar_vchar_vchar"
 
   - source: "string"
     name: "repeat"
@@ -1075,8 +1003,8 @@ supported_scalar_functions:
       name: "repeat"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "varchar_i32"
+      - "str_i64"
+      - "vchar_i64"
 
   - source: "string"
     name: "reverse"
@@ -1084,17 +1012,8 @@ supported_scalar_functions:
       name: "reverse"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
-
-  - source: "string"
-    name: "replace_slice"
-    system_metadata:
-      name: "replace_slice"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string_i32_i32_string"
-      - "varchar_i32_i32_varchar"
+      - "str"
+      - "vchar"
 
   - source: "string"
     name: "string_split"
@@ -1102,8 +1021,8 @@ supported_scalar_functions:
       name: "string_split"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
-      - "varchar_varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   # String Functions - Trimming
   - source: "string"
@@ -1112,8 +1031,8 @@ supported_scalar_functions:
       name: "trim"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "ltrim"
@@ -1121,8 +1040,8 @@ supported_scalar_functions:
       name: "ltrim"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "rtrim"
@@ -1130,8 +1049,8 @@ supported_scalar_functions:
       name: "rtrim"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str_str"
+      - "vchar_vchar"
 
   - source: "string"
     name: "lpad"
@@ -1139,10 +1058,8 @@ supported_scalar_functions:
       name: "lpad"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "string_i32_string"
-      - "varchar_i32"
-      - "varchar_i32_varchar"
+      - "str_i32_str"
+      - "vchar_i32_vchar"
 
   - source: "string"
     name: "rpad"
@@ -1150,21 +1067,8 @@ supported_scalar_functions:
       name: "rpad"
       notation: "FUNCTION"
     supported_impls:
-      - "string_i32"
-      - "string_i32_string"
-      - "varchar_i32"
-      - "varchar_i32_varchar"
-
-  - source: "string"
-    name: "center"
-    system_metadata:
-      name: "center"
-      notation: "FUNCTION"
-    supported_impls:
-      - "string_i32"
-      - "string_i32_string"
-      - "varchar_i32"
-      - "varchar_i32_varchar"
+      - "str_i32_str"
+      - "vchar_i32_vchar"
 
   # Logarithmic Functions
   - source: "logarithmic"
@@ -1200,43 +1104,24 @@ supported_scalar_functions:
   - source: "logarithmic"
     name: "logb"
     system_metadata:
-      name: "logb"
+      name: "log"
       notation: "FUNCTION"
     supported_impls:
       - "i64_i64"
       - "fp32_fp32"
       - "fp64_fp64"
 
-  - source: "logarithmic"
-    name: "log1p"
-    system_metadata:
-      name: "log1p"
-      notation: "FUNCTION"
-    supported_impls:
-      - "i64"
-      - "fp32"
-      - "fp64"
-
   # DateTime Functions - Extract
   - source: "datetime"
     name: "extract"
     system_metadata:
-      name: "extract"
+      name: "date_part"
       notation: "FUNCTION"
     supported_impls:
-      - "date"
-      - "precision_time"
-      - "precision_timestamp"
-      - "precision_timestamp_tz"
-
-  - source: "datetime"
-    name: "extract_boolean"
-    system_metadata:
-      name: "extract_boolean"
-      notation: "FUNCTION"
-    supported_impls:
-      - "date"
-      - "precision_timestamp"
+      - "req_date"
+      - "req_pt"
+      - "req_pts"
+      - "req_ptstz_str"
 
   # DateTime Functions - Arithmetic
   - source: "datetime"
@@ -1245,12 +1130,12 @@ supported_scalar_functions:
       name: "add"
       notation: "FUNCTION"
     supported_impls:
-      - "date_interval_day"
-      - "precision_timestamp_interval_day"
-      - "precision_timestamp_tz_interval_day"
-      - "interval_day_date"
-      - "interval_day_precision_timestamp"
-      - "interval_day_precision_timestamp_tz"
+      - "date_iday"
+      - "date_iyear"
+      - "pts_iday"
+      - "pts_iyear"
+      - "ptstz_iday"
+      - "ptstz_iyear_str"
 
   - source: "datetime"
     name: "subtract"
@@ -1258,12 +1143,12 @@ supported_scalar_functions:
       name: "subtract"
       notation: "FUNCTION"
     supported_impls:
-      - "date_date"
-      - "precision_timestamp_precision_timestamp"
-      - "precision_timestamp_tz_precision_timestamp_tz"
-      - "date_interval_day"
-      - "precision_timestamp_interval_day"
-      - "precision_timestamp_tz_interval_day"
+      - "date_iday"
+      - "date_iyear"
+      - "pts_iday"
+      - "pts_iyear"
+      - "ptstz_iday"
+      - "ptstz_iyear"
 
   - source: "datetime"
     name: "multiply"
@@ -1271,8 +1156,7 @@ supported_scalar_functions:
       name: "multiply"
       notation: "FUNCTION"
     supported_impls:
-      - "interval_day_i64"
-      - "i64_interval_day"
+      - "i64_iday"
 
   # DateTime Functions - Comparison
   - source: "datetime"
@@ -1282,9 +1166,10 @@ supported_scalar_functions:
       notation: "INFIX"
     supported_impls:
       - "date_date"
-      - "precision_time_precision_time"
-      - "precision_timestamp_precision_timestamp"
-      - "precision_timestamp_tz_precision_timestamp_tz"
+      - "pts_pts"
+      - "ptstz_ptstz"
+      - "iday_iday"
+      - "iyear_iyear"
 
   - source: "datetime"
     name: "lte"
@@ -1293,9 +1178,10 @@ supported_scalar_functions:
       notation: "INFIX"
     supported_impls:
       - "date_date"
-      - "precision_time_precision_time"
-      - "precision_timestamp_precision_timestamp"
-      - "precision_timestamp_tz_precision_timestamp_tz"
+      - "pts_pts"
+      - "ptstz_ptstz"
+      - "iday_iday"
+      - "iyear_iyear"
 
   - source: "datetime"
     name: "gt"
@@ -1304,9 +1190,10 @@ supported_scalar_functions:
       notation: "INFIX"
     supported_impls:
       - "date_date"
-      - "precision_time_precision_time"
-      - "precision_timestamp_precision_timestamp"
-      - "precision_timestamp_tz_precision_timestamp_tz"
+      - "pts_pts"
+      - "ptstz_ptstz"
+      - "iday_iday"
+      - "iyear_iyear"
 
   - source: "datetime"
     name: "gte"
@@ -1315,9 +1202,10 @@ supported_scalar_functions:
       notation: "INFIX"
     supported_impls:
       - "date_date"
-      - "precision_time_precision_time"
-      - "precision_timestamp_precision_timestamp"
-      - "precision_timestamp_tz_precision_timestamp_tz"
+      - "pts_pts"
+      - "ptstz_ptstz"
+      - "iday_iday"
+      - "iyear_iyear"
 
   # DateTime Functions - Formatting & Parsing
   - source: "datetime"
@@ -1326,224 +1214,52 @@ supported_scalar_functions:
       name: "strftime"
       notation: "FUNCTION"
     supported_impls:
-      - "date_string"
-      - "precision_time_string"
-      - "precision_timestamp_string"
-      - "precision_timestamp_tz_string"
+      - "date_str"
+      - "pt_str"
+      - "pts_str"
+      - "ptstz_str_str"
 
   - source: "datetime"
     name: "strptime_date"
     system_metadata:
-      name: "strptime_date"
+      name: "strptime"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
+      - "str_str"
 
   - source: "datetime"
     name: "strptime_time"
     system_metadata:
-      name: "strptime_time"
+      name: "strptime"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
+      - "str_str_i8"
 
   - source: "datetime"
     name: "strptime_timestamp"
     system_metadata:
-      name: "strptime_timestamp"
+      name: "strptime"
       notation: "FUNCTION"
     supported_impls:
-      - "string_string"
+      - "str_str_i8"
+      - "str_str_str_i8"
 
   # DateTime Functions - Timezone
   - source: "datetime"
     name: "assume_timezone"
     system_metadata:
-      name: "assume_timezone"
+      name: "timezone"
       notation: "FUNCTION"
     supported_impls:
-      - "precision_timestamp_string"
+      - "pts_str"
 
   - source: "datetime"
     name: "local_timestamp"
     system_metadata:
-      name: "local_timestamp"
+      name: "timezone"
       notation: "FUNCTION"
     supported_impls:
-      - "precision_timestamp"
-
-  # DateTime Functions - Rounding
-  - source: "datetime"
-    name: "round_temporal"
-    system_metadata:
-      name: "round_temporal"
-      notation: "FUNCTION"
-    supported_impls:
-      - "precision_timestamp_i32"
-
-  - source: "datetime"
-    name: "round_calendar"
-    system_metadata:
-      name: "round_calendar"
-      notation: "FUNCTION"
-    supported_impls:
-      - "date_string"
-      - "precision_timestamp_string"
-
-  # Geometry Functions - Point & Line Operations
-  - source: "geometry"
-    name: "point"
-    system_metadata:
-      name: "point"
-      notation: "FUNCTION"
-    supported_impls:
-      - "fp64_fp64"
-
-  - source: "geometry"
-    name: "make_line"
-    system_metadata:
-      name: "make_line"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry_geometry"
-
-  - source: "geometry"
-    name: "x_coordinate"
-    system_metadata:
-      name: "x_coordinate"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "y_coordinate"
-    system_metadata:
-      name: "y_coordinate"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  # Geometry Functions - Properties
-  - source: "geometry"
-    name: "num_points"
-    system_metadata:
-      name: "num_points"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "is_empty"
-    system_metadata:
-      name: "is_empty"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "is_closed"
-    system_metadata:
-      name: "is_closed"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "is_simple"
-    system_metadata:
-      name: "is_simple"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "is_ring"
-    system_metadata:
-      name: "is_ring"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "is_valid"
-    system_metadata:
-      name: "is_valid"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "geometry_type"
-    system_metadata:
-      name: "geometry_type"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "dimension"
-    system_metadata:
-      name: "dimension"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  # Geometry Functions - Operations
-  - source: "geometry"
-    name: "envelope"
-    system_metadata:
-      name: "envelope"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "centroid"
-    system_metadata:
-      name: "centroid"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "buffer"
-    system_metadata:
-      name: "buffer"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry_fp64"
-
-  - source: "geometry"
-    name: "flip_coordinates"
-    system_metadata:
-      name: "flip_coordinates"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "remove_repeated_points"
-    system_metadata:
-      name: "remove_repeated_points"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "minimum_bounding_circle"
-    system_metadata:
-      name: "minimum_bounding_circle"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry"
-
-  - source: "geometry"
-    name: "collection_extract"
-    system_metadata:
-      name: "collection_extract"
-      notation: "FUNCTION"
-    supported_impls:
-      - "geometry_i32"
+      - "ptstz_str"
 
   # Decimal Arithmetic Functions
   - source: "arithmetic_decimal"
@@ -1552,7 +1268,7 @@ supported_scalar_functions:
       name: "+"
       notation: "INFIX"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "subtract"
@@ -1560,7 +1276,7 @@ supported_scalar_functions:
       name: "-"
       notation: "INFIX"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "multiply"
@@ -1568,7 +1284,7 @@ supported_scalar_functions:
       name: "*"
       notation: "INFIX"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "divide"
@@ -1576,7 +1292,7 @@ supported_scalar_functions:
       name: "/"
       notation: "INFIX"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "modulus"
@@ -1584,7 +1300,7 @@ supported_scalar_functions:
       name: "%"
       notation: "INFIX"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "abs"
@@ -1592,7 +1308,7 @@ supported_scalar_functions:
       name: "abs"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "arithmetic_decimal"
     name: "power"
@@ -1600,7 +1316,7 @@ supported_scalar_functions:
       name: "power"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal_decimal"
+      - "dec_dec"
 
   - source: "arithmetic_decimal"
     name: "sqrt"
@@ -1608,7 +1324,7 @@ supported_scalar_functions:
       name: "sqrt"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "arithmetic_decimal"
     name: "factorial"
@@ -1616,7 +1332,7 @@ supported_scalar_functions:
       name: "factorial"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   # Decimal Rounding Functions
   - source: "rounding_decimal"
@@ -1625,7 +1341,7 @@ supported_scalar_functions:
       name: "ceil"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "rounding_decimal"
     name: "floor"
@@ -1633,7 +1349,7 @@ supported_scalar_functions:
       name: "floor"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "rounding_decimal"
     name: "round"
@@ -1641,14 +1357,13 @@ supported_scalar_functions:
       name: "round"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
-      - "decimal_i32"
+      - "dec_i32"
 
   # Set Functions
   - source: "set"
     name: "index_in"
     system_metadata:
-      name: "index_in"
+      name: "list_position"
       notation: "FUNCTION"
     supported_impls:
       - "any_list"
@@ -1665,7 +1380,7 @@ supported_scalar_functions:
   - source: "list"
     name: "sort"
     system_metadata:
-      name: "sort"
+      name: "list_sort"
       notation: "FUNCTION"
     supported_impls:
       - "list"
@@ -1673,10 +1388,10 @@ supported_scalar_functions:
   - source: "list"
     name: "transform"
     system_metadata:
-      name: "transform"
+      name: "list_transform"
       notation: "FUNCTION"
     supported_impls:
-      - "list"
+      - "list_func"
 
   - source: "list"
     name: "filter"
@@ -1684,23 +1399,7 @@ supported_scalar_functions:
       name: "filter"
       notation: "FUNCTION"
     supported_impls:
-      - "list"
-
-  - source: "list"
-    name: "any_match"
-    system_metadata:
-      name: "any_match"
-      notation: "FUNCTION"
-    supported_impls:
-      - "list"
-
-  - source: "list"
-    name: "all_match"
-    system_metadata:
-      name: "all_match"
-      notation: "FUNCTION"
-    supported_impls:
-      - "list"
+      - "list_func"
 
 # ============================================================================
 # AGGREGATE FUNCTIONS
@@ -1713,7 +1412,7 @@ supported_aggregate_functions:
       name: "count"
       notation: "FUNCTION"
     supported_impls:
-      - "i64"
+      - ""
       - "any"
 
   - source: "aggregate_generic"
@@ -1729,15 +1428,6 @@ supported_aggregate_functions:
     name: "sum"
     system_metadata:
       name: "sum"
-      notation: "FUNCTION"
-    supported_impls:
-      - "i64"
-      - "fp64"
-
-  - source: "arithmetic"
-    name: "sum0"
-    system_metadata:
-      name: "sum0"
       notation: "FUNCTION"
     supported_impls:
       - "i64"
@@ -1782,7 +1472,7 @@ supported_aggregate_functions:
   - source: "arithmetic"
     name: "std_dev"
     system_metadata:
-      name: "std_dev"
+      name: "stddev"
       notation: "FUNCTION"
     supported_impls:
       - "fp32"
@@ -1812,8 +1502,8 @@ supported_aggregate_functions:
       name: "median"
       notation: "FUNCTION"
     supported_impls:
-      - "i64"
-      - "fp64"
+      - "req_i64"
+      - "req_fp64"
 
   - source: "arithmetic"
     name: "mode"
@@ -1821,15 +1511,7 @@ supported_aggregate_functions:
       name: "mode"
       notation: "FUNCTION"
     supported_impls:
-      - "any"
-
-  - source: "arithmetic"
-    name: "quantile"
-    system_metadata:
-      name: "quantile"
-      notation: "FUNCTION"
-    supported_impls:
-      - "fp32"
+      - "i64"
       - "fp64"
 
   # Boolean Aggregates
@@ -1856,8 +1538,7 @@ supported_aggregate_functions:
       name: "string_agg"
       notation: "FUNCTION"
     supported_impls:
-      - "string"
-      - "varchar"
+      - "str_str"
 
   # Approximate Aggregates
   - source: "aggregate_approx"
@@ -1875,7 +1556,7 @@ supported_aggregate_functions:
       name: "sum"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "arithmetic_decimal"
     name: "avg"
@@ -1883,7 +1564,7 @@ supported_aggregate_functions:
       name: "avg"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "arithmetic_decimal"
     name: "min"
@@ -1891,7 +1572,7 @@ supported_aggregate_functions:
       name: "min"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
   - source: "arithmetic_decimal"
     name: "max"
@@ -1899,7 +1580,7 @@ supported_aggregate_functions:
       name: "max"
       notation: "FUNCTION"
     supported_impls:
-      - "decimal"
+      - "dec"
 
 # ============================================================================
 # WINDOW FUNCTIONS
@@ -1911,7 +1592,7 @@ supported_window_functions:
       name: "row_number"
       notation: "FUNCTION"
     supported_impls:
-      - "i64"
+      - ""
 
   - source: "arithmetic"
     name: "rank"
@@ -1919,7 +1600,7 @@ supported_window_functions:
       name: "rank"
       notation: "FUNCTION"
     supported_impls:
-      - "i64"
+      - ""
 
   - source: "arithmetic"
     name: "dense_rank"
@@ -1927,7 +1608,7 @@ supported_window_functions:
       name: "dense_rank"
       notation: "FUNCTION"
     supported_impls:
-      - "i64"
+      - ""
 
   - source: "arithmetic"
     name: "percent_rank"
@@ -1935,7 +1616,7 @@ supported_window_functions:
       name: "percent_rank"
       notation: "FUNCTION"
     supported_impls:
-      - "fp64"
+      - ""
 
   - source: "arithmetic"
     name: "cume_dist"
@@ -1943,7 +1624,7 @@ supported_window_functions:
       name: "cume_dist"
       notation: "FUNCTION"
     supported_impls:
-      - "fp64"
+      - ""
 
   - source: "arithmetic"
     name: "ntile"

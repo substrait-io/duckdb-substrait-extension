@@ -10,8 +10,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <nlohmann/json.hpp>
-#include <fstream>
-#include <stdexcept>
+#include <cstdint>
 
 #if __has_cpp_attribute(nodiscard)
 #define TOJSON_NODISCARD [[nodiscard]]
@@ -23,19 +22,19 @@ namespace tojson {
 namespace detail {
 
 inline nlohmann::json parse_scalar(const YAML::Node &node) {
-	int i;
+	int64_t i;
 	double d;
 	bool b;
 	std::string s;
 
 	// string tag will be !
 	if (node.Tag() != "!") {
-		if (YAML::convert<int>::decode(node, i)) return i;
+		if (YAML::convert<int64_t>::decode(node, i)) return i;
 		if (YAML::convert<double>::decode(node, d)) return d;
 		if (YAML::convert<bool>::decode(node, b)) return b;
 	}
 	if (YAML::convert<std::string>::decode(node, s)) return s;
-	
+
 	return nullptr;
 }
 
@@ -59,14 +58,6 @@ inline nlohmann::json yaml2json(const YAML::Node &root) {
 	default: break;
 	}
 	return j;
-}
-
-inline std::string repr(const nlohmann::json &j) {
-	if (j.is_number()) return std::to_string(j.get<int>());
-	if (j.is_boolean()) return j.get<bool>() ? "true" : "false";
-	if (j.is_number_float()) return std::to_string(j.get<double>());
-	if (j.is_string()) return j.get<std::string>();
-	throw std::runtime_error("invalid type");
 }
 
 }  // namespace detail
