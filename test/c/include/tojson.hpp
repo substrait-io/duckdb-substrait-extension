@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Mirco
+// SPDX-License-Identifier: MIT
 // This file is copied from the https://github.com/mircodz/tojson repository.
 // Source: https://github.com/mircodz/tojson/blob/main/include/tojson.hpp
 // It is not packaged as a library, so this single header is included directly.
