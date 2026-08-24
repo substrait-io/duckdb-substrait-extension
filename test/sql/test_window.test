@@ -225,3 +225,105 @@ SELECT * FROM from_substrait_json(getvariable('plan_cume_dist'))
 2	0.75
 2	0.75
 5	1.0
+
+statement ok
+SET VARIABLE plan_bounded = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS total FROM window_test_data'))
+
+query TTT
+SELECT contains(getvariable('plan_bounded'), '"minorNumber":102')::VARCHAR, contains(getvariable('plan_bounded'), '"offset":"2"')::VARCHAR, contains(getvariable('plan_bounded'), '"offsetExpr"')::VARCHAR
+----
+true	true	true
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_bounded')) ORDER BY 1
+----
+1	10
+2	30
+3	30
+4	60
+5	15
+6	15
+7	50
+8	80
+9	50
+10	110
+
+statement ok
+SET VARIABLE legacy_bounded_plan = (SELECT replace(getvariable('plan_bounded'), ',"offsetExpr":{"literal":{"i64":"2"}}', ''))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('legacy_bounded_plan')) ORDER BY 1
+----
+1	10
+2	30
+3	30
+4	60
+5	15
+6	15
+7	50
+8	80
+9	50
+10	110
+
+statement ok
+SET VARIABLE missing_offset_plan = (SELECT replace(getvariable('plan_bounded'), '"preceding":{"offset":"2","offsetExpr":{"literal":{"i64":"2"}}}', '"preceding":{}'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('missing_offset_plan'))
+----
+Invalid Input Error: Window bound must specify a positive offset or offset expression
+
+statement ok
+SET VARIABLE invalid_bounded_plan = (SELECT replace(getvariable('plan_bounded'), 'BOUNDS_TYPE_ROWS', 'BOUNDS_TYPE_UNSPECIFIED'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('invalid_bounded_plan'))
+----
+Invalid Input Error: Window bounds type must be specified for current-row or offset bounds
+
+statement ok
+SET VARIABLE unbounded_plan = (SELECT replace(json, 'BOUNDS_TYPE_ROWS', 'BOUNDS_TYPE_UNSPECIFIED') FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS total FROM window_test_data'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('unbounded_plan')) ORDER BY 1
+----
+1	70
+2	70
+3	70
+4	70
+5	95
+6	95
+7	95
+8	95
+9	110
+10	110
+
+statement ok
+SET VARIABLE centered_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS total FROM window_test_data'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('centered_plan')) ORDER BY 1
+----
+1	30
+2	30
+3	60
+4	40
+5	15
+6	50
+7	80
+8	80
+9	110
+10	110
+
+statement ok
+SET VARIABLE zero_offset_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 0 PRECEDING AND CURRENT ROW) AS total FROM window_test_data'))
+
+query TT
+SELECT contains(getvariable('zero_offset_plan'), '"currentRow"')::VARCHAR, contains(getvariable('zero_offset_plan'), '"i64":"0"')::VARCHAR
+----
+true	false
+
+statement error
+SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN -1 PRECEDING AND CURRENT ROW) AS total FROM window_test_data')
+----
+Not implemented Error: Negative window bound offsets are not supported

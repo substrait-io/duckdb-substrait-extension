@@ -1635,8 +1635,33 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		
 		// Handle window bounds
 		if (window_func.has_lower_bound() || window_func.has_upper_bound()) {
-			// Determine bounds type (ROWS or RANGE)
-			bool is_rows = window_func.bounds_type() == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			auto bounds_type = window_func.bounds_type();
+			auto requires_bounds_type = [](const substrait::Expression_WindowFunction_Bound &bound) {
+				return bound.has_current_row() || bound.has_preceding() || bound.has_following();
+			};
+			bool bounds_type_required =
+			    (window_func.has_lower_bound() && requires_bounds_type(window_func.lower_bound())) ||
+			    (window_func.has_upper_bound() && requires_bounds_type(window_func.upper_bound()));
+			if (bounds_type_required &&
+			    bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_UNSPECIFIED) {
+				throw InvalidInputException("Window bounds type must be specified for current-row or offset bounds");
+			}
+			if (bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_UNSPECIFIED &&
+			    bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS &&
+			    bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_RANGE) {
+				throw InvalidInputException("Unsupported window bounds type");
+			}
+			bool is_rows = bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			auto transform_offset = [this](const auto &bound) -> unique_ptr<ParsedExpression> {
+				if (bound.has_offset_expr()) {
+					return TransformExpr(bound.offset_expr());
+				}
+				auto offset = bound.offset();
+				if (offset <= 0) {
+					throw InvalidInputException("Window bound must specify a positive offset or offset expression");
+				}
+				return make_uniq<ConstantExpression>(Value::BIGINT(offset));
+			};
 			
 			// Transform lower bound
 			if (window_func.has_lower_bound()) {
@@ -1646,10 +1671,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				} else if (lower.has_current_row()) {
 					window_expr->start = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
 				} else if (lower.has_preceding()) {
-					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.preceding().offset()));
+					window_expr->start_expr = transform_offset(lower.preceding());
 					window_expr->start = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
 				} else if (lower.has_following()) {
-					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.following().offset()));
+					window_expr->start_expr = transform_offset(lower.following());
 					window_expr->start = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
 				}
 			}
@@ -1662,10 +1687,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				} else if (upper.has_current_row()) {
 					window_expr->end = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
 				} else if (upper.has_preceding()) {
-					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.preceding().offset()));
+					window_expr->end_expr = transform_offset(upper.preceding());
 					window_expr->end = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
 				} else if (upper.has_following()) {
-					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.following().offset()));
+					window_expr->end_expr = transform_offset(upper.following());
 					window_expr->end = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
 				}
 			}
