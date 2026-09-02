@@ -606,6 +606,14 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 	} else if (function_name == "extract") {
 		D_ASSERT(enum_expressions.size() == 1);
 		auto &subfield = enum_expressions[0];
+		// Substrait's UNIX_TIME specifier (epoch seconds, return type i64) has no
+		// DuckDB date_part equivalent of that name. Map it to date_part('epoch'),
+		// which yields DOUBLE, and cast back to BIGINT to honor the standard's i64.
+		if (subfield == "UNIX_TIME") {
+			children.insert(children.begin(), make_uniq<ConstantExpression>(Value("epoch")));
+			auto call = make_uniq<FunctionExpression>("date_part", std::move(children));
+			return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(call));
+		}
 		VerifyCorrectExtractSubfield(subfield);
 		auto constant_expression = make_uniq<ConstantExpression>(Value(subfield));
 		children.insert(children.begin(), std::move(constant_expression));
