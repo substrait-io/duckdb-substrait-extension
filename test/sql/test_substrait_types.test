@@ -148,6 +148,15 @@ INSERT INTO timestz VALUES ('2021-11-26 10:15:13.123456+00');
 statement ok
 CALL get_substrait('SELECT s FROM timestz WHERE s > ''2001-11-26 05:02:23.123456+00'' ');
 
+# With rows straddling the constant the filter is selective and cannot be
+# folded away, so the TIMESTAMPTZ literal survives into the plan and the
+# producer must emit it as a precision_timestamp_tz literal.
+statement ok
+INSERT INTO timestz VALUES ('1999-01-01 00:00:00+00');
+
+statement ok
+CALL get_substrait('SELECT s FROM timestz WHERE s > ''2001-11-26 05:02:23.123456+00'' ');
+
 # not supported because TIMETZ comparisons generate a UBIGINT
 mode skip
 

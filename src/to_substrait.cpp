@@ -196,6 +196,13 @@ void DuckDBToSubstrait::TransformTimestamp(const Value &dval, substrait::Express
 	sval.set_string(dval.ToString());
 }
 
+void DuckDBToSubstrait::TransformTimestampTz(const Value &dval, substrait::Expression &sexpr) {
+	auto &sval = *sexpr.mutable_literal();
+	auto precision_timestamp_tz = sval.mutable_precision_timestamp_tz();
+	precision_timestamp_tz->set_precision(6); // microseconds
+	precision_timestamp_tz->set_value(dval.GetValueUnsafe<timestamp_tz_t>().value);
+}
+
 void DuckDBToSubstrait::TransformInterval(const Value &dval, substrait::Expression &sexpr) {
 	// Substrait supports two types of INTERVAL (interval_year and interval_day)
 	// whereas DuckDB INTERVAL combines both in one type. Therefore intervals
@@ -275,6 +282,9 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 	case LogicalTypeId::TIMESTAMP_NS:
 	case LogicalTypeId::TIMESTAMP:
 		TransformTimestamp(dval, sexpr);
+		break;
+	case LogicalTypeId::TIMESTAMP_TZ:
+		TransformTimestampTz(dval, sexpr);
 		break;
 	case LogicalTypeId::INTERVAL:
 		TransformInterval(dval, sexpr);
