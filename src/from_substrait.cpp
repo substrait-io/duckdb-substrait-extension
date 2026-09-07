@@ -1768,19 +1768,22 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
-		switch (input->type) {
-		case RelationType::PROJECTION_RELATION: {
-			auto project = std::move(input.get()->Cast<ProjectionRelation>());
-			auto filter = std::move(project.child->Cast<FilterRelation>());
-                        return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+		// Read projection and emit can add several projections above the row predicate.
+		auto delete_input = input.get();
+		while (delete_input->type == RelationType::PROJECTION_RELATION) {
+			delete_input = delete_input->Cast<ProjectionRelation>().child.get();
 		}
-		case RelationType::FILTER_RELATION: {
-			auto filter = std::move(input.get()->Cast<FilterRelation>());
-			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
-		}
-		default:
+		if (delete_input->type != RelationType::FILTER_RELATION) {
 			throw NotImplementedException("Unsupported relation type for delete operation");
 		}
+		auto &filter = delete_input->Cast<FilterRelation>();
+		// DeleteRelation binds the predicate directly against the target table. A predicate
+		// over projected or filtered input cannot be reused without translating its meaning.
+		if (filter.child->type != RelationType::TABLE_RELATION && filter.child->type != RelationType::VIEW_RELATION) {
+			throw NotImplementedException("Unsupported relation type for delete operation");
+		}
+		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,
+		                                      table_name);
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",

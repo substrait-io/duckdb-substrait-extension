@@ -104,6 +104,61 @@ TEST_CASE("RelCommon emit reorders, omits and duplicates relation outputs", "[su
 	}
 }
 
+TEST_CASE("Delete preserves its predicate through emitted projections", "[substrait-api][emit][emit-delete]") {
+	for (const string kind : {"read", "filter", "project"}) {
+		DYNAMIC_SECTION(kind) {
+			DuckDB db(nullptr);
+			Connection con(db);
+			CreateEmployeeTable(con);
+			auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+			auto &input = plan["relations"][0]["root"]["input"]["write"]["input"];
+			if (kind == "filter") {
+				auto condition = input["read"]["filter"];
+				input["read"].erase("filter");
+				input["read"].erase("projection");
+				input = {{"filter", {{"input", input}, {"condition", condition}}}};
+			} else {
+				input["read"]["common"]["emit"]["outputMapping"] = {0};
+				if (kind == "project") {
+					input = {{"project", {{"input", input}, {"expressions", {EmitField(0)}}}}};
+				}
+			}
+			input[kind]["common"]["emit"]["outputMapping"] = {0, 0};
+			auto deleted = FromSubstraitJSON(con, plan.dump());
+			REQUIRE_NO_FAIL(*deleted);
+			auto remaining = con.Query("SELECT employee_id FROM employees ORDER BY employee_id");
+			REQUIRE_NO_FAIL(*remaining);
+			REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 4}));
+		}
+	}
+}
+
+TEST_CASE("Delete rejects emitted inputs without a usable table predicate", "[substrait-api][emit][emit-delete]") {
+	for (const string kind : {"no filter", "filter above emit"}) {
+		DYNAMIC_SECTION(kind) {
+			DuckDB db(nullptr);
+			Connection con(db);
+			CreateEmployeeTable(con);
+			auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+			auto &input = plan["relations"][0]["root"]["input"]["write"]["input"];
+			auto condition = input["read"]["filter"];
+			input["read"].erase("filter");
+			input["read"].erase("projection");
+			input["read"]["common"]["emit"]["outputMapping"] = {3, 0};
+			if (kind == "filter above emit") {
+				// The predicate now addresses salary at emitted position 0, not table position 3.
+				condition["scalarFunction"]["arguments"][0]["value"] = EmitField(0);
+				input = {{"filter", {{"input", input}, {"condition", condition}}}};
+			}
+			CHECK_THROWS_WITH(FromSubstraitJSON(con, plan.dump()),
+			                  Catch::Matchers::Contains("Unsupported relation type for delete operation"));
+			auto remaining = con.Query("SELECT employee_id FROM employees ORDER BY employee_id");
+			REQUIRE_NO_FAIL(*remaining);
+			REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
+		}
+	}
+}
+
 TEST_CASE("RelCommon emit preserves direct and omitted mappings", "[substrait-api][emit]") {
 	DuckDB db(nullptr);
 	Connection con(db);
