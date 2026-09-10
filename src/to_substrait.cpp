@@ -1773,8 +1773,19 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 					// TODO: Support expression-based offsets
 					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
 						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
-						auto preceding = bound->mutable_preceding();
-						preceding->set_offset(const_expr.value.GetValue<int64_t>());
+						auto offset = const_expr.value.GetValue<int64_t>();
+						if (offset < 0) {
+							throw NotImplementedException("Negative window bound offsets are not supported");
+						}
+						if (offset == 0) {
+							bound->mutable_current_row();
+						} else {
+							auto preceding = bound->mutable_preceding();
+							auto offset_expr = make_uniq<substrait::Expression>();
+							offset_expr->mutable_literal()->set_i64(offset);
+							preceding->set_allocated_offset_expr(offset_expr.release());
+							preceding->set_offset(offset);
+						}
 					} else {
 						throw NotImplementedException("Only constant offsets are supported for window bounds");
 					}
@@ -1789,8 +1800,19 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 					// For now, we only support constant integer offsets
 					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
 						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
-						auto following = bound->mutable_following();
-						following->set_offset(const_expr.value.GetValue<int64_t>());
+						auto offset = const_expr.value.GetValue<int64_t>();
+						if (offset < 0) {
+							throw NotImplementedException("Negative window bound offsets are not supported");
+						}
+						if (offset == 0) {
+							bound->mutable_current_row();
+						} else {
+							auto following = bound->mutable_following();
+							auto offset_expr = make_uniq<substrait::Expression>();
+							offset_expr->mutable_literal()->set_i64(offset);
+							following->set_allocated_offset_expr(offset_expr.release());
+							following->set_offset(offset);
+						}
 					} else {
 						throw NotImplementedException("Only constant offsets are supported for window bounds");
 					}
@@ -2714,7 +2736,7 @@ void DuckDBToSubstrait::TransformPlan(LogicalOperator &dop) {
 	}
 	auto version = plan.mutable_version();
 	version->set_major_number(0);
-	version->set_minor_number(78);
+	version->set_minor_number(102);
 	version->set_patch_number(0);
 	version->set_producer("DuckDB");
 }

@@ -11,11 +11,11 @@
     "overrides": [
         {
             "name": "substrait-protobuf",
-            "version": "0.98.0"
+            "version": "0.102.0"
         },
         {
             "name": "substrait-extensions",
-            "version": "0.98.0"
+            "version": "0.102.0"
         }
     ]
 }
