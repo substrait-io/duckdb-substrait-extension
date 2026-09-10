@@ -197,10 +197,16 @@ void DuckDBToSubstrait::TransformTimestamp(const Value &dval, substrait::Express
 }
 
 void DuckDBToSubstrait::TransformTimestampTz(const Value &dval, substrait::Expression &sexpr) {
+	auto tz_value = dval.GetValue<timestamp_tz_t>();
+	if (!Value::IsFinite(tz_value)) {
+		// DuckDB encodes +/-infinity as INT64_MAX/MIN micros. Emitting that raw would look
+		// like a real instant near year 294241 to any other consumer, so fail loudly instead.
+		throw NotImplementedException("Substrait has no representation for infinite TIMESTAMPTZ values");
+	}
 	auto &sval = *sexpr.mutable_literal();
 	auto precision_timestamp_tz = sval.mutable_precision_timestamp_tz();
 	precision_timestamp_tz->set_precision(6); // microseconds
-	precision_timestamp_tz->set_value(dval.GetValueUnsafe<timestamp_tz_t>().value);
+	precision_timestamp_tz->set_value(tz_value.value);
 }
 
 void DuckDBToSubstrait::TransformInterval(const Value &dval, substrait::Expression &sexpr) {
