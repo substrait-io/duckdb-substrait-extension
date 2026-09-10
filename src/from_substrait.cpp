@@ -607,12 +607,24 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		D_ASSERT(enum_expressions.size() == 1);
 		auto &subfield = enum_expressions[0];
 		// Substrait's UNIX_TIME specifier (epoch seconds, return type i64) has no
-		// DuckDB date_part equivalent of that name. Map it to date_part('epoch'),
-		// which yields DOUBLE, and cast back to BIGINT to honor the standard's i64.
-		if (subfield == "UNIX_TIME") {
+		// DuckDB date_part equivalent of that name. Map it to date_part('epoch') and
+		// floor before casting, to honor the standard's "elapsed whole seconds".
+		if (StringUtil::CIEquals(subfield, "UNIX_TIME")) {
+			// The precision_timestamp_tz impl carries a trailing timezone argument.
+			// UNIX_TIME is timezone-independent, so drop it instead of emitting an
+			// unbindable three-argument date_part.
+			if (children.size() > 1) {
+				children.resize(1);
+			}
 			children.insert(children.begin(), make_uniq<ConstantExpression>(Value("epoch")));
-			auto call = make_uniq<FunctionExpression>("date_part", std::move(children));
-			return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(call));
+			auto call = make_uniq<FunctionExpression>(RemapFunctionName(function_name), std::move(children));
+			// date_part('epoch') returns DOUBLE and DuckDB's DOUBLE->BIGINT cast rounds
+			// half-to-even, which would report one second too many for any sub-second
+			// timestamp. UNIX_TIME is elapsed whole seconds, so floor explicitly.
+			vector<unique_ptr<ParsedExpression>> floor_args;
+			floor_args.push_back(std::move(call));
+			auto floored = make_uniq<FunctionExpression>("floor", std::move(floor_args));
+			return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(floored));
 		}
 		VerifyCorrectExtractSubfield(subfield);
 		auto constant_expression = make_uniq<ConstantExpression>(Value(subfield));
