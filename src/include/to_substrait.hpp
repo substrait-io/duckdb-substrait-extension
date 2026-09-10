@@ -108,6 +108,7 @@ private:
 	static void TransformTime(const Value &dval, substrait::Expression &sexpr);
 	static void TransformInterval(const Value &dval, substrait::Expression &sexpr);
 	static void TransformTimestamp(const Value &dval, substrait::Expression &sexpr);
+	static void TransformTimestampTz(const Value &dval, substrait::Expression &sexpr);
 	static void TransformEnum(const Value &dval, substrait::Expression &sexpr);
 
 	//! Methods to transform a DuckDB Expression to a Substrait Expression
