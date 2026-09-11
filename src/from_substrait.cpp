@@ -995,6 +995,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::
 		left_column_count = left_rel->Columns().size();
 
 		auto &filter_rel = slateral.right().filter();
+		if (filter_rel.common().has_emit()) {
+			throw NotImplementedException("emit on the right-side FilterRel of a LateralJoinRel is not supported");
+		}
 		auto &filter_condition = filter_rel.condition();
 		// Transform the filter condition; field indices will be relative to the right side
 		correlated_filter_condition = TransformExpr(filter_condition);
@@ -1176,7 +1179,11 @@ const google::protobuf::RepeatedField<int32_t> &GetOutputMapping(const substrait
 		static google::protobuf::RepeatedField<int32_t> empty_mapping;
 		return empty_mapping;
 	}
-	return common->emit().output_mapping();
+	const auto &mapping = common->emit().output_mapping();
+	if (mapping.empty()) {
+		throw NotImplementedException("An empty emit mapping (zero output columns) is not supported");
+	}
+	return mapping;
 }
 
 shared_ptr<Relation>
@@ -1191,7 +1198,7 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	size_t num_input_columns = 0;
 	if (sop.project().input().rel_type_case() == substrait::Rel::RelTypeCase::kRead) {
 		auto &sget = sop.project().input().read();
-		if (sget.has_virtual_table()) {
+		if (sget.has_virtual_table() && !sget.common().has_emit()) {
 			auto virtual_table = sget.virtual_table();
 			if ((virtual_table.expressions().empty()) ||
 			    (virtual_table.expressions().size() > 0 && virtual_table.expressions(0).fields().empty())) {
@@ -1217,6 +1224,9 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	} else {
 		expressions.resize(mapping.size());
 		for (size_t i = 0; i < mapping.size(); i++) {
+			if (mapping[i] < 0) {
+				throw InvalidInputException("Project emit mapping index must be non-negative, got %d", mapping[i]);
+			}
 			if (mapping[i] < num_input_columns) {
 				expressions[i] = make_uniq<PositionalReferenceExpression>(mapping[i] + 1);
 			} else {
@@ -1778,19 +1788,22 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_INSERT:
 		return input->InsertRel(schema_name, table_name);
 	case substrait::WriteRel::WriteOp::WriteRel_WriteOp_WRITE_OP_DELETE: {
-		switch (input->type) {
-		case RelationType::PROJECTION_RELATION: {
-			auto project = std::move(input.get()->Cast<ProjectionRelation>());
-			auto filter = std::move(project.child->Cast<FilterRelation>());
-                        return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
+		// Read projection and emit can add several projections above the row predicate.
+		auto delete_input = input.get();
+		while (delete_input->type == RelationType::PROJECTION_RELATION) {
+			delete_input = delete_input->Cast<ProjectionRelation>().child.get();
 		}
-		case RelationType::FILTER_RELATION: {
-			auto filter = std::move(input.get()->Cast<FilterRelation>());
-			return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name, table_name);
-		}
-		default:
+		if (delete_input->type != RelationType::FILTER_RELATION) {
 			throw NotImplementedException("Unsupported relation type for delete operation");
 		}
+		auto &filter = delete_input->Cast<FilterRelation>();
+		// DeleteRelation binds the predicate directly against the target table. A predicate
+		// over projected or filtered input cannot be reused without translating its meaning.
+		if (filter.child->type != RelationType::TABLE_RELATION && filter.child->type != RelationType::VIEW_RELATION) {
+			throw NotImplementedException("Unsupported relation type for delete operation");
+		}
+		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,
+		                                      table_name);
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",
@@ -1809,29 +1822,41 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReferenceOp(const substrait::Re
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
                                                     const google::protobuf::RepeatedPtrField<std::string> *names) {
+	shared_ptr<Relation> result;
 	switch (sop.rel_type_case()) {
 	case substrait::Rel::RelTypeCase::kJoin:
-		return TransformJoinOp(sop);
+		result = TransformJoinOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kLateralJoin:
-		return TransformLateralJoinOp(sop);
+		result = TransformLateralJoinOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kCross:
-		return TransformCrossProductOp(sop);
+		result = TransformCrossProductOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kFetch:
-		return TransformFetchOp(sop, names);
+		result = TransformFetchOp(sop, names);
+		break;
 	case substrait::Rel::RelTypeCase::kFilter:
-		return TransformFilterOp(sop);
+		result = TransformFilterOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kProject:
+		// Project applies emit while selecting its input columns and expressions.
 		return TransformProjectOp(sop, names);
 	case substrait::Rel::RelTypeCase::kAggregate:
-		return TransformAggregateOp(sop);
+		result = TransformAggregateOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kRead:
-		return TransformReadOp(sop);
+		result = TransformReadOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kSort:
-		return TransformSortOp(sop, names);
+		result = TransformSortOp(sop, names);
+		break;
 	case substrait::Rel::RelTypeCase::kWindow:
-		return TransformWindowOp(sop);
+		result = TransformWindowOp(sop);
+		break;
 	case substrait::Rel::RelTypeCase::kSet:
-		return TransformSetOp(sop, names);
+		result = TransformSetOp(sop, names);
+		break;
 	case substrait::Rel::RelTypeCase::kWrite:
 		return TransformWriteOp(sop);
 	case substrait::Rel::RelTypeCase::kReference:
@@ -1840,6 +1865,23 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		throw NotImplementedException("Unsupported relation type %s",
 		                              string(substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name()));
 	}
+
+	const auto &mapping = GetOutputMapping(sop);
+	if (mapping.empty()) {
+		return result;
+	}
+	const auto column_count = result->Columns().size();
+	vector<unique_ptr<ParsedExpression>> expressions;
+	vector<string> aliases;
+	for (auto index : mapping) {
+		if (index < 0 || static_cast<idx_t>(index) >= column_count) {
+			throw InvalidInputException("Relation emit mapping index %d is out of range for %llu output columns", index,
+			                            static_cast<unsigned long long>(column_count));
+		}
+		expressions.push_back(make_uniq<PositionalReferenceExpression>(static_cast<idx_t>(index) + 1));
+		aliases.push_back("expr_" + to_string(aliases.size()));
+	}
+	return make_shared_ptr<ProjectionRelation>(std::move(result), std::move(expressions), std::move(aliases));
 }
 
 void SkipColumnNamesRecurse(int32_t &columns_to_skip, const LogicalType &type) {
