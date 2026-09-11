@@ -245,9 +245,18 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestamp: {
 		int64_t timestamp_value = literal.precision_timestamp().value();
 		int32_t precision = literal.precision_timestamp().precision();
-		int64_t micros = ScaleToMicros(timestamp_value, precision);
-		timestamp_t ts(micros);
-		return Value::TIMESTAMP(ts);
+		switch (precision) {
+		case 0:
+			return Value::TIMESTAMPSEC(timestamp_sec_t(timestamp_value));
+		case 3:
+			return Value::TIMESTAMPMS(timestamp_ms_t(timestamp_value));
+		case 6:
+			return Value::TIMESTAMP(timestamp_t(timestamp_value));
+		case 9:
+			return Value::TIMESTAMPNS(timestamp_ns_t(timestamp_value));
+		default:
+			throw NotImplementedException("Unsupported timestamp precision: %d", precision);
+		}
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestampTz: {
 		int64_t timestamp_value = literal.precision_timestamp_tz().value();
