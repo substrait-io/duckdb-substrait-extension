@@ -154,6 +154,11 @@ void DuckDBToSubstrait::TransformDecimal(const Value &dval, substrait::Expressio
 	allocated_decimal->set_value(raw_value);
 }
 
+void DuckDBToSubstrait::TransformTinyInt(const Value &dval, substrait::Expression &sexpr) {
+	auto &sval = *sexpr.mutable_literal();
+	sval.set_i8(dval.GetValue<int8_t>());
+}
+
 void DuckDBToSubstrait::TransformInteger(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
 	sval.set_i32(dval.GetValue<int32_t>());
@@ -243,7 +248,9 @@ void DuckDBToSubstrait::TransformBoolean(const Value &dval, substrait::Expressio
 void DuckDBToSubstrait::TransformHugeInt(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
 	auto *allocated_decimal = sval.mutable_decimal();
-	auto hugeint = dval.GetValueUnsafe<hugeint_t>();
+	// Checked cast so this also handles UBIGINT (stored as uint64, not hugeint),
+	// which DuckToSubstraitType maps to the same decimal(38, 0) representation.
+	auto hugeint = dval.GetValue<hugeint_t>();
 	auto raw_value = GetRawValue(hugeint);
 	allocated_decimal->set_scale(0);
 	allocated_decimal->set_precision(38);
@@ -265,6 +272,9 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 	case LogicalTypeId::DECIMAL:
 		TransformDecimal(dval, sexpr);
 		break;
+	case LogicalTypeId::TINYINT:
+		TransformTinyInt(dval, sexpr);
+		break;
 	case LogicalTypeId::INTEGER:
 		TransformInteger(dval, sexpr);
 		break;
@@ -275,6 +285,20 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 		TransformBigInt(dval, sexpr);
 		break;
 	case LogicalTypeId::HUGEINT:
+		TransformHugeInt(dval, sexpr);
+		break;
+		// Substrait has no unsigned integer types, so these are upcast to the
+		// next-wider signed literal, mirroring DuckToSubstraitType's type mapping.
+	case LogicalTypeId::UTINYINT:
+		TransformSmallInt(dval, sexpr);
+		break;
+	case LogicalTypeId::USMALLINT:
+		TransformInteger(dval, sexpr);
+		break;
+	case LogicalTypeId::UINTEGER:
+		TransformBigInt(dval, sexpr);
+		break;
+	case LogicalTypeId::UBIGINT:
 		TransformHugeInt(dval, sexpr);
 		break;
 	case LogicalTypeId::DATE:

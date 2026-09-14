@@ -1,0 +1,63 @@
+# name: test/sql/test_substrait_integer_literals.test
+# description: Producer must emit integer literals for all DuckDB integer widths,
+#              including TINYINT and the unsigned types (upcast per DuckToSubstraitType).
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+PRAGMA enable_verification
+
+# Each filter is selective (rows straddle the constant) so the literal cannot be
+# folded away by the optimizer and must be emitted by the producer. Under
+# enable_verification every get_substrait round-trips and compares results.
+
+statement ok
+CREATE TABLE tinys (t TINYINT);
+
+statement ok
+INSERT INTO tinys VALUES (-2), (3);
+
+statement ok
+CALL get_substrait('SELECT t FROM tinys WHERE t > -1');
+
+statement ok
+CALL get_substrait('SELECT t FROM tinys WHERE t > 1');
+
+statement ok
+CREATE TABLE utinys (t UTINYINT);
+
+statement ok
+INSERT INTO utinys VALUES (1), (200);
+
+statement ok
+CALL get_substrait('SELECT t FROM utinys WHERE t > 100');
+
+statement ok
+CREATE TABLE usmalls (s USMALLINT);
+
+statement ok
+INSERT INTO usmalls VALUES (1), (40000);
+
+statement ok
+CALL get_substrait('SELECT s FROM usmalls WHERE s > 100');
+
+statement ok
+CREATE TABLE uints (i UINTEGER);
+
+statement ok
+INSERT INTO uints VALUES (1), (4000000000);
+
+statement ok
+CALL get_substrait('SELECT i FROM uints WHERE i > 100');
+
+statement ok
+CREATE TABLE ubigs (b UBIGINT);
+
+statement ok
+INSERT INTO ubigs VALUES (1), (18446744073709551615);
+
+statement ok
+CALL get_substrait('SELECT b FROM ubigs WHERE b > 100');
