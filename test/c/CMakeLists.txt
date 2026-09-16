@@ -19,7 +19,7 @@ find_package(yaml-cpp REQUIRED)
 # definitions the generated function registry was built from.
 find_package(SubstraitExtensions CONFIG REQUIRED)
 
-set(ALL_SOURCES test_substrait_c_api.cpp test_substrait_c_utils.cpp test_projection.cpp test_base_schema_projection.cpp test_root_names.cpp test_dialect_validation.cpp)
+set(ALL_SOURCES test_substrait_c_api.cpp test_substrait_c_utils.cpp test_projection.cpp test_base_schema_projection.cpp test_root_names.cpp test_dialect_validation.cpp test_rel_common_emit.cpp)
 
 
 add_library_unity(test_substrait OBJECT ${ALL_SOURCES})
