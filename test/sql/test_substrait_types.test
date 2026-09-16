@@ -157,7 +157,11 @@ INSERT INTO timestz VALUES ('1999-01-01 00:00:00+00');
 statement ok
 CALL get_substrait('SELECT s FROM timestz WHERE s > ''2001-11-26 05:02:23.123456+00'' ');
 
-# not supported because TIMETZ comparisons generate a UBIGINT
+# TIMETZ does not round-trip faithfully: DuckToSubstraitType maps TIME_TZ to
+# precision_timestamp (same as TIME), dropping the timezone offset. The literal
+# now emits (as a UBIGINT), so this passes for zero-offset fixtures, but the
+# lossy type mapping makes it unsafe in general. Keep skipped until TIME_TZ has
+# a faithful Substrait representation.
 mode skip
 
 statement ok
