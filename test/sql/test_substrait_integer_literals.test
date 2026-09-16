@@ -33,7 +33,7 @@ statement ok
 INSERT INTO utinys VALUES (1), (200);
 
 statement ok
-CALL get_substrait('SELECT t FROM utinys WHERE t > 100');
+CALL get_substrait('SELECT t FROM utinys WHERE t > 150');
 
 statement ok
 CREATE TABLE usmalls (s USMALLINT);
@@ -42,7 +42,7 @@ statement ok
 INSERT INTO usmalls VALUES (1), (40000);
 
 statement ok
-CALL get_substrait('SELECT s FROM usmalls WHERE s > 100');
+CALL get_substrait('SELECT s FROM usmalls WHERE s > 33000');
 
 statement ok
 CREATE TABLE uints (i UINTEGER);
@@ -51,7 +51,7 @@ statement ok
 INSERT INTO uints VALUES (1), (4000000000);
 
 statement ok
-CALL get_substrait('SELECT i FROM uints WHERE i > 100');
+CALL get_substrait('SELECT i FROM uints WHERE i > 3000000000');
 
 statement ok
 CREATE TABLE ubigs (b UBIGINT);
@@ -60,4 +60,4 @@ statement ok
 INSERT INTO ubigs VALUES (1), (18446744073709551615);
 
 statement ok
-CALL get_substrait('SELECT b FROM ubigs WHERE b > 100');
+CALL get_substrait('SELECT b FROM ubigs WHERE b > 10000000000000000000');
