@@ -95,6 +95,7 @@ private:
 
 	//! Methods to transform DuckDBConstants to Substrait Expressions
 	static void TransformConstant(const Value &dval, substrait::Expression &sexpr);
+	static void TransformTinyInt(const Value &dval, substrait::Expression &sexpr);
 	static void TransformInteger(const Value &dval, substrait::Expression &sexpr);
 	static void TransformDouble(const Value &dval, substrait::Expression &sexpr);
 	static void TransformBigInt(const Value &dval, substrait::Expression &sexpr);
