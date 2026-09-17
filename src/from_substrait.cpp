@@ -547,25 +547,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		                                       std::move(children[1]));
 	} else if (function_name == "not_equal") {
 		D_ASSERT(children.size() == 2);
-		// FIXME: We do a not_like if we are doing a string comparison
-		// This is due to substrait not supporting !~~
-		bool is_it_string = false;
-		for (idx_t child_idx = 0; child_idx < 2; child_idx++) {
-			if (children[child_idx]->GetExpressionClass() == ExpressionClass::CONSTANT) {
-				auto &constant = children[child_idx]->Cast<ConstantExpression>();
-				if (constant.value.type() == LogicalType::VARCHAR) {
-					is_it_string = true;
-				}
-			}
-		}
-		if (is_it_string) {
-			string not_equal = "!~~";
-			return make_uniq<FunctionExpression>(not_equal, std::move(children));
-		} else {
-			return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_NOTEQUAL, std::move(children[0]),
-			                                       std::move(children[1]));
-		}
-
+		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_NOTEQUAL, std::move(children[0]),
+		                                       std::move(children[1]));
 	} else if (function_name == "lte") {
 		D_ASSERT(children.size() == 2);
 		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_LESSTHANOREQUALTO, std::move(children[0]),
