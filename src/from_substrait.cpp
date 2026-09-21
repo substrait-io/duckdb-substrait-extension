@@ -835,6 +835,23 @@ ExpressionType SubstraitToDuckDB::TransformSetComparisonOp(
 
 //! Wraps a Substrait Rel as a DuckDB scalar subquery's SELECT statement.
 unique_ptr<SelectStatement> SubstraitToDuckDB::SubqueryStatement(const substrait::Rel &rel) {
+	// A subquery is its own correlation boundary. Any enclosing LateralJoinRel scope must be
+	// hidden while transforming it, otherwise an OuterReference inside the subquery would
+	// resolve against that lateral join's left columns instead of being rejected.
+	class ScopeBarrier {
+	public:
+		explicit ScopeBarrier(vector<LateralScope> &scopes) : scopes_(scopes), saved_(std::move(scopes)) {
+			scopes_.clear();
+		}
+		~ScopeBarrier() {
+			scopes_ = std::move(saved_);
+		}
+
+	private:
+		vector<LateralScope> &scopes_;
+		vector<LateralScope> saved_;
+	} barrier(lateral_scopes);
+
 	auto select = make_uniq<SelectStatement>();
 	select->node = TransformOp(rel)->GetQueryNode();
 	return select;

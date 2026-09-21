@@ -145,6 +145,17 @@ supported_expressions:
       - "LIST"
       - "MAP"
   - expression: "SUBQUERY"
+    metadata:
+      # The producer never emits Expression.Subquery: DuckDB decorrelates subqueries into
+      # joins before the plan reaches it, so this expression type is consume-only.
+      direction: "CONSUME_ONLY"
+      # Variants the subquery_types enum cannot exclude on its own. Each is rejected with a
+      # NotImplementedException rather than silently mistranslated.
+      unsupported:
+        - "correlated subqueries: an OuterReference is only resolvable inside a LateralJoinRel"
+        - "IN_PREDICATE over more than one needle"
+        - "SET_PREDICATE with predicate_op UNIQUE (EXISTS only)"
+        - "SET_COMPARISON with reduction_op ALL (ANY only)"
     subquery_types:
       - "SCALAR"
       - "IN_PREDICATE"
