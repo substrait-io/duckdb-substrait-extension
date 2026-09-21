@@ -144,6 +144,12 @@ supported_expressions:
       - "STRUCT"
       - "LIST"
       - "MAP"
+  - expression: "SUBQUERY"
+    subquery_types:
+      - "SCALAR"
+      - "IN_PREDICATE"
+      - "SET_PREDICATE"
+      - "SET_COMPARISON"
 
 # ============================================================================
 # SUPPORTED RELATIONS
