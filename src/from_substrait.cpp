@@ -74,6 +74,12 @@ const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
 
+//! Proto3 enums are open, so _Name() returns an empty string for a value a newer producer
+//! added, leaving a blank where the offending value should be. Fall back to the number.
+static string SubstraitEnumName(const string &name, int value) {
+	return name.empty() ? ("unknown (" + to_string(value) + ")") : name;
+}
+
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
 	string name;
@@ -829,7 +835,7 @@ ExpressionType SubstraitToDuckDB::TransformSetComparisonOp(
 		return ExpressionType::COMPARE_GREATERTHANOREQUALTO;
 	default:
 		throw NotImplementedException("Unsupported Substrait set comparison operator %s",
-		                              substrait::Expression_Subquery_SetComparison_ComparisonOp_Name(op));
+		                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ComparisonOp_Name(op), op));
 	}
 }
 
@@ -869,8 +875,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSubqueryExpr(const subs
 		auto &predicate = subquery.set_predicate();
 		if (predicate.predicate_op() != substrait::Expression_Subquery_SetPredicate::PREDICATE_OP_EXISTS) {
 			throw NotImplementedException("Substrait set predicate %s is not supported yet",
-			                              substrait::Expression_Subquery_SetPredicate_PredicateOp_Name(
-			                                  predicate.predicate_op()));
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetPredicate_PredicateOp_Name(
+			                                  predicate.predicate_op()), predicate.predicate_op()));
 		}
 		result->subquery_type = SubqueryType::EXISTS;
 		result->subquery = SubqueryStatement(predicate.tuples());
@@ -897,8 +903,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSubqueryExpr(const subs
 		// emitted as NOT ANY with the negated operator, which changes null handling.
 		if (comparison.reduction_op() != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ANY) {
 			throw NotImplementedException("Substrait set comparison %s is not supported yet",
-			                              substrait::Expression_Subquery_SetComparison_ReductionOp_Name(
-			                                  comparison.reduction_op()));
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ReductionOp_Name(
+			                                  comparison.reduction_op()), comparison.reduction_op()));
 		}
 		result->subquery_type = SubqueryType::ANY;
 		result->comparison_type = TransformSetComparisonOp(comparison.comparison_op());
