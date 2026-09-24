@@ -259,11 +259,12 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 		}
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestampTz: {
-		int64_t timestamp_value = literal.precision_timestamp_tz().value();
+		// DuckDB's TIMESTAMP_TZ is always microsecond precision (6)
 		int32_t precision = literal.precision_timestamp_tz().precision();
-		int64_t micros = ScaleToMicros(timestamp_value, precision);
-		timestamp_tz_t ts(micros);
-		return Value::TIMESTAMPTZ(ts);
+		if (precision != 6) {
+			throw NotImplementedException("DuckDB TIMESTAMP_TZ only supports microsecond precision (6), got: %d", precision);
+		}
+		return Value::TIMESTAMPTZ(timestamp_tz_t(literal.precision_timestamp_tz().value()));
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kUuid: {
 		const auto &uuid_bytes = literal.uuid();

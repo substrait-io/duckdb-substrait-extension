@@ -8,8 +8,8 @@ using namespace duckdb;
 namespace {
 using TimestampJSON = nlohmann::json;
 
-TimestampJSON TimestampLiteral(int precision, int64_t value) {
-	return {{"literal", {{"precisionTimestamp", {{"precision", precision}, {"value", std::to_string(value)}}}}}};
+TimestampJSON TimestampLiteral(int precision, int64_t value, const char *kind = "precisionTimestamp") {
+	return {{"literal", {{kind, {{"precision", precision}, {"value", std::to_string(value)}}}}}};
 }
 
 TimestampJSON TimestampRead(int precision, const duckdb::vector<int64_t> &values) {
@@ -141,5 +141,23 @@ TEST_CASE("Unsupported timestamp literal precisions match schema errors", "[subs
 	REQUIRE_THROWS_WITH(
 	    FromSubstraitJSON(con, TimestampPlan(TimestampProject(TimestampLiteral(precision, 1234567891))).dump()),
 	    Catch::Matchers::Contains(message));
+	REQUIRE_NO_FAIL(con.Query("SELECT 42"));
+}
+
+TEST_CASE("Timestamp tz literals accept only microseconds", "[substrait-api][timestamp-literal]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	const auto value = GENERATE(int64_t(-1234567891), int64_t(-1), int64_t(0), int64_t(1), int64_t(1234567891));
+	CheckTimestampResult(con, TimestampProject(TimestampLiteral(6, value, "precisionTimestampTz")),
+	                     LogicalType::TIMESTAMP_TZ, {value});
+	for (auto precision : {3, 9}) {
+		CAPTURE(precision);
+		const auto message =
+		    "DuckDB TIMESTAMP_TZ only supports microsecond precision (6), got: " + std::to_string(precision);
+		REQUIRE_THROWS_WITH(
+		    FromSubstraitJSON(
+		        con, TimestampPlan(TimestampProject(TimestampLiteral(precision, value, "precisionTimestampTz"))).dump()),
+		    Catch::Matchers::Contains(message));
+	}
 	REQUIRE_NO_FAIL(con.Query("SELECT 42"));
 }

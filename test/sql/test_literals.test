@@ -139,11 +139,11 @@ CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go
 ----
 1970-01-01 00:00:09.999
 
-# precision timestamp tz
-query I
+# precision timestamp tz other than microseconds
+statement error
 CALL from_substrait_json('{"version":{"minorNumber":29, "producer":"substrait-go"}, "relations":[{"root":{"input":{"project":{"common":{"direct":{}}, "input":{"read":{"common":{"direct":{}}, "baseSchema":{"struct":{"nullability":"NULLABILITY_REQUIRED"}}, "virtualTable":{"expressions":[{}]}}}, "expressions":[{"literal":{"precision_timestamp_tz":{"value":9999,"precision":3}, "nullable":true}}]}}, "names":["?column?"]}}]}')
 ----
-1970-01-01 00:00:09.999+00
+Not implemented Error: DuckDB TIMESTAMP_TZ only supports microsecond precision (6), got: 3
 
 # struct
 query I
