@@ -1561,11 +1561,12 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	// With more than one grouping set, the spec appends an i32 column holding
 	// the grouping set index. DuckDB's output has no such column, so leave it out.
 	if (saggr->groupings_size() > 1) {
-		auto output_mapping = saggr->mutable_common()->mutable_emit()->mutable_output_mapping();
+		vector<int32_t> output_mapping;
 		int32_t output_count = saggr->grouping_expressions_size() + saggr->measures_size();
 		for (int32_t i = 0; i < output_count; i++) {
-			output_mapping->Add(i);
+			output_mapping.push_back(i);
 		}
+		saggr->set_allocated_common(CreateOutputMapping(output_mapping));
 	}
 
 	return res.release();

@@ -84,3 +84,32 @@ TEST_CASE("Test grouping set index column is not emitted", "[substrait-api]") {
 	json_str = GetSubstraitJSON(con, "SELECT c0, count(*) AS n FROM t GROUP BY c0");
 	REQUIRE(json_str.find("\"emit\"") == string::npos);
 }
+
+TEST_CASE("Test single explicit grouping set is not remapped", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE t (c0 BIGINT NOT NULL)"));
+
+	// One grouping set has no index column, even when it is spelled out.
+	auto json_str = GetSubstraitJSON(con, "SELECT c0, count(*) AS n FROM t GROUP BY GROUPING SETS ((c0))");
+	REQUIRE(json_str.find("\"emit\"") == string::npos);
+}
+
+TEST_CASE("Test GROUPING() stays in the grouping set mapping", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE t (c0 BIGINT NOT NULL)"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO t VALUES (1), (1), (2)"));
+
+	// GROUPING() is a measure, so the mapping keeps it and drops only the index.
+	auto json_str = GetSubstraitJSON(
+	    con, "SELECT c0, count(*) AS n, GROUPING(c0) AS g FROM t GROUP BY ROLLUP(c0) ORDER BY c0 NULLS FIRST");
+	REQUIRE(json_str.find("\"common\":{\"emit\":{\"outputMapping\":[0,1,2]}}") != string::npos);
+
+	auto result = FromSubstraitJSON(con, json_str);
+	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2}));
+	REQUIRE(CHECK_COLUMN(result, 1, {3, 2, 1}));
+	REQUIRE(CHECK_COLUMN(result, 2, {1, 0, 0}));
+}
