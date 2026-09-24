@@ -105,7 +105,7 @@ supported_types:
 
   - type: "PRECISION_TIMESTAMP_TZ"
     system_metadata:
-      name: "TIMESTAMP_TZ"
+      name: "TIMESTAMPTZ"
       supported_as_column: true
     max_precision: 6
 
@@ -510,8 +510,8 @@ supported_scalar_functions:
   - source: "arithmetic"
     name: "bitwise_xor"
     system_metadata:
-      name: "^"
-      notation: "INFIX"
+      name: "xor"
+      notation: "FUNCTION"
     supported_impls:
       - "i8_i8"
       - "i16_i16"
