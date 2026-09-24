@@ -13,9 +13,10 @@ statement ok
 CREATE TABLE t (s VARCHAR);
 
 # 'a%c' is both a literal value in the table and a LIKE pattern that matches 'abc'.
-# That is what makes the two operators distinguishable.
+# That is what makes the two operators distinguishable. The NULL row is dropped by every
+# predicate below, which pins three-valued logic surviving the not(like(..)) round trip.
 statement ok
-INSERT INTO t VALUES ('a%c'), ('abc'), ('aXbYc'), ('zzz');
+INSERT INTO t VALUES ('a%c'), ('abc'), ('aXbYc'), ('zzz'), (NULL);
 
 # --- not_equal must remain inequality -------------------------------------------------
 # The producer used to emit NOT LIKE as not_equal, and the consumer compensated by
