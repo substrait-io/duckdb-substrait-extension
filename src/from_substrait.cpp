@@ -89,12 +89,17 @@ static string RemapEnumAggregate(const string &function_name, const vector<strin
 	// against the bare name, as RemapFunctionName does.
 	auto bare = function_name.substr(0, function_name.find(':'));
 	if (bare == "std_dev" || bare == "variance") {
-		auto stem = bare == "std_dev" ? "stddev" : "var";
+		// SAMPLE is DuckDB's default, so it maps to the plain name rather than to
+		// stddev_samp/var_samp. Those aliases compute the same thing but the producer has no
+		// mapping for them (to_substrait's remap only knows "stddev"/"variance"), so emitting
+		// them would re-serialize as an unresolvable native function.
+		string sample = bare == "std_dev" ? "stddev" : "variance";
+		string population = bare == "std_dev" ? "stddev_pop" : "var_pop";
 		if (StringUtil::CIEquals(option, "SAMPLE")) {
-			return stem + string("_samp");
+			return sample;
 		}
 		if (StringUtil::CIEquals(option, "POPULATION")) {
-			return stem + string("_pop");
+			return population;
 		}
 	} else if (bare == "median" && StringUtil::CIEquals(option, "EXACT")) {
 		// DuckDB's median is the exact one; APPROXIMATE would need approx_quantile, which
@@ -1349,8 +1354,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 					children.push_back(TransformExpr(sarg.value()));
 				} else if (sarg.has_type()) {
 					throw NotImplementedException("Type arguments in Substrait aggregates are not supported yet!");
-				} else {
+				} else if (sarg.has_enum_()) {
 					enum_args.push_back(sarg.enum_());
+				} else {
+					throw InvalidInputException("Substrait aggregate argument has no value, type or enum set");
 				}
 			}
 			function_name = RemapEnumAggregate(function_name, enum_args);
@@ -1651,6 +1658,25 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 	for (auto &window_func : sop.window().window_functions()) {
 		// Get the function name
 		auto function_name = FindFunction(window_func.function_reference());
+
+		// Scan the arguments before resolving the name: an aggregate used as a window function
+		// carries the same leading enumeration argument (std_dev SAMPLE/POPULATION), and that
+		// selector has to be folded into the name before it is remapped. Calling value() on an
+		// enum argument yields an unset Expression with no case to dispatch on.
+		vector<unique_ptr<ParsedExpression>> window_args;
+		vector<string> window_enum_args;
+		for (auto &arg : window_func.arguments()) {
+			if (arg.has_value()) {
+				window_args.push_back(TransformExpr(arg.value()));
+			} else if (arg.has_type()) {
+				throw NotImplementedException("Type arguments in Substrait window functions are not supported yet!");
+			} else if (arg.has_enum_()) {
+				window_enum_args.push_back(arg.enum_());
+			} else {
+				throw InvalidInputException("Substrait window function argument has no value, type or enum set");
+			}
+		}
+		function_name = RemapEnumAggregate(function_name, window_enum_args);
 		auto remapped_name = RemapFunctionName(function_name);
 		
 		// Determine the expression type based on the function name
@@ -1685,9 +1711,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		// Create window expression
 		auto window_expr = make_uniq<WindowExpression>(expr_type, "", "", remapped_name);
 		
-		// Add function arguments
-		for (auto &arg : window_func.arguments()) {
-			window_expr->children.push_back(TransformExpr(arg.value()));
+		// Add function arguments (already transformed above)
+		for (auto &arg_expr : window_args) {
+			window_expr->children.push_back(std::move(arg_expr));
 		}
 		
 		// Add partition expressions
