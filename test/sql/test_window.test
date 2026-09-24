@@ -299,6 +299,29 @@ SELECT * FROM from_substrait_json(getvariable('unbounded_plan')) ORDER BY 1
 10	110
 
 statement ok
+CREATE TABLE window_timestamp_data (ts TIMESTAMP, val INTEGER)
+
+statement ok
+INSERT INTO window_timestamp_data VALUES ('2024-01-01 00:00:00', 1), ('2024-01-02 00:00:00', 2)
+
+statement ok
+SET VARIABLE interval_range_plan = (SELECT replace(json, '"lowerBound":{"unbounded":{}}', '"lowerBound":{"preceding":{"offsetExpr":{"literal":{"interval_day_to_second":{"days":1,"precision":6},"nullable":true}}}}') FROM get_substrait_json('SELECT ts, sum(val) OVER (ORDER BY ts RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total FROM window_timestamp_data'))
+
+query I
+SELECT total FROM from_substrait_json(getvariable('interval_range_plan')) ORDER BY ts
+----
+1
+3
+
+statement ok
+SET VARIABLE negative_interval_range_plan = (SELECT replace(getvariable('interval_range_plan'), '"days":1', '"days":-1'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('negative_interval_range_plan'))
+----
+Invalid Input Error: Negative values in window bound offset are not supported
+
+statement ok
 SET VARIABLE centered_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS total FROM window_test_data'))
 
 query II

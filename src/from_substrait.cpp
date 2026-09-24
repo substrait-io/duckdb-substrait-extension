@@ -1667,10 +1667,25 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				throw InvalidInputException("Unsupported window bounds type");
 			}
 			bool is_rows = bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
-			auto transform_offset = [](const auto &bound) -> unique_ptr<ParsedExpression> {
+			auto transform_offset = [is_rows](const auto &bound) -> unique_ptr<ParsedExpression> {
 				if (bound.has_offset_expr()) {
-					auto offset = ExtractLiteralInteger(bound.offset_expr(), "window bound offset");
-					return make_uniq<ConstantExpression>(Value::BIGINT(static_cast<int64_t>(offset)));
+					if (is_rows) {
+						auto offset = ExtractLiteralInteger(bound.offset_expr(), "window bound offset");
+						return make_uniq<ConstantExpression>(Value::BIGINT(static_cast<int64_t>(offset)));
+					}
+					if (!bound.offset_expr().has_literal()) {
+						throw NotImplementedException("Non-literal expressions in window bound offset are not supported");
+					}
+					auto offset = TransformLiteralToValue(bound.offset_expr().literal());
+					if (offset.IsNull()) {
+						throw NotImplementedException("NULL expressions in window bound offset are not supported");
+					}
+					if ((offset.type().IsNumeric() && offset < Value::Numeric(offset.type(), 0)) ||
+					    (offset.type().id() == LogicalTypeId::INTERVAL &&
+					     offset.template GetValue<interval_t>() < interval_t {})) {
+						throw InvalidInputException("Negative values in window bound offset are not supported");
+					}
+					return make_uniq<ConstantExpression>(std::move(offset));
 				}
 				auto offset = bound.offset();
 				if (offset <= 0) {
