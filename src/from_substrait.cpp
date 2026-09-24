@@ -72,6 +72,39 @@ const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
 
+//! Several Substrait aggregates select their variant with a leading enumeration argument
+//! (std_dev/variance take SAMPLE or POPULATION, median takes EXACT or APPROXIMATE). DuckDB
+//! spells each variant as a separate function instead, so the enum has to be folded into the
+//! name. Anything we cannot express is rejected rather than silently treated as the default.
+static string RemapEnumAggregate(const string &function_name, const vector<string> &enum_args) {
+	if (enum_args.empty()) {
+		return function_name;
+	}
+	if (enum_args.size() != 1) {
+		throw NotImplementedException("Aggregate \"%s\" with %d enumeration arguments is not supported yet",
+		                              function_name, (int)enum_args.size());
+	}
+	auto &option = enum_args[0];
+	// function_name still carries its compound signature (e.g. "std_dev:req_fp64"); compare
+	// against the bare name, as RemapFunctionName does.
+	auto bare = function_name.substr(0, function_name.find(':'));
+	if (bare == "std_dev" || bare == "variance") {
+		auto stem = bare == "std_dev" ? "stddev" : "var";
+		if (StringUtil::CIEquals(option, "SAMPLE")) {
+			return stem + string("_samp");
+		}
+		if (StringUtil::CIEquals(option, "POPULATION")) {
+			return stem + string("_pop");
+		}
+	} else if (bare == "median" && StringUtil::CIEquals(option, "EXACT")) {
+		// DuckDB's median is the exact one; APPROXIMATE would need approx_quantile, which
+		// takes an explicit fraction this encoding does not carry.
+		return function_name;
+	}
+	throw NotImplementedException("Aggregate \"%s\" with enumeration argument \"%s\" is not supported yet",
+	                              bare, option);
+}
+
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
 	string name;
@@ -1284,6 +1317,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// For GROUPING(), the arguments are field references to grouping columns
 			// We need to resolve these to copies of the actual grouping expressions
 			for (auto &sarg : s_aggr_function.arguments()) {
+				if (!sarg.has_value()) {
+					throw NotImplementedException("GROUPING() arguments must be value expressions");
+				}
 				auto arg_expr = TransformExpr(sarg.value());
 				// Check if this is a positional reference
 				if (arg_expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
@@ -1304,9 +1340,20 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// Create an OperatorExpression with GROUPING_FUNCTION type
 			expressions.push_back(make_uniq<OperatorExpression>(ExpressionType::GROUPING_FUNCTION, std::move(children)));
 		} else {
+			// Mirror the scalar path: an argument is a value, a type, or an enum. Calling
+			// value() on an enum argument yields an unset Expression, which has no case to
+			// dispatch on.
+			vector<string> enum_args;
 			for (auto &sarg : s_aggr_function.arguments()) {
-				children.push_back(TransformExpr(sarg.value()));
+				if (sarg.has_value()) {
+					children.push_back(TransformExpr(sarg.value()));
+				} else if (sarg.has_type()) {
+					throw NotImplementedException("Type arguments in Substrait aggregates are not supported yet!");
+				} else {
+					enum_args.push_back(sarg.enum_());
+				}
 			}
+			function_name = RemapEnumAggregate(function_name, enum_args);
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
