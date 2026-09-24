@@ -1838,6 +1838,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		result = TransformSetOp(sop, names);
 		break;
 	case substrait::Rel::RelTypeCase::kWrite:
+		if (sop.write().common().has_emit()) {
+			throw NotImplementedException("emit on a WriteRel is not supported");
+		}
 		return TransformWriteOp(sop);
 	case substrait::Rel::RelTypeCase::kReference:
 		return TransformReferenceOp(sop);
@@ -1854,6 +1857,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 	vector<unique_ptr<ParsedExpression>> expressions;
 	vector<string> aliases;
 	for (auto index : mapping) {
+		// With more than one grouping set, Substrait appends a grouping set index column that DuckDB does not produce.
+		if (sop.has_aggregate() && sop.aggregate().groupings_size() > 1 && static_cast<idx_t>(index) == column_count) {
+			throw NotImplementedException("Emit references the grouping set index column, which is not supported");
+		}
 		if (index < 0 || static_cast<idx_t>(index) >= column_count) {
 			throw InvalidInputException("Relation emit mapping index %d is out of range for %llu output columns", index,
 			                            static_cast<unsigned long long>(column_count));

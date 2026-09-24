@@ -159,6 +159,18 @@ TEST_CASE("Delete rejects emitted inputs without a usable table predicate", "[su
 	}
 }
 
+TEST_CASE("Write rejects its own emit", "[substrait-api][emit][emit-delete]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	CreateEmployeeTable(con);
+	auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+	plan["relations"][0]["root"]["input"]["write"]["common"]["emit"]["outputMapping"] = {0};
+	REQUIRE_THROWS_WITH(FromSubstraitJSON(con, plan.dump()), Catch::Matchers::Contains("emit on a WriteRel"));
+	auto remaining = con.Query("SELECT employee_id FROM employees ORDER BY employee_id");
+	REQUIRE_NO_FAIL(*remaining);
+	REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
+}
+
 TEST_CASE("RelCommon emit preserves direct and omitted mappings", "[substrait-api][emit]") {
 	DuckDB db(nullptr);
 	Connection con(db);
@@ -248,6 +260,25 @@ TEST_CASE("Emit rejects invalid indices and unsupported zero-column outputs", "[
 				auto plan = EmitPlan(rel, mapping.empty() ? EmitJSON::array() : EmitJSON({"output"})).dump();
 				REQUIRE_THROWS_WITH(FromSubstraitJSON(con, plan), Catch::Matchers::Contains("emit"));
 				REQUIRE_NO_FAIL(con.Query("SELECT 42"));
+			}
+		}
+	}
+}
+
+TEST_CASE("Emit on the grouping set index column has its own error", "[substrait-api][emit]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	for (const auto groupings : {1, 2}) {
+		for (const auto index : {3, 4}) {
+			DYNAMIC_SECTION(groupings << " groupings, index " << index) {
+				auto rel = EmitRelation("aggregate");
+				if (groupings == 2) {
+					rel["aggregate"]["groupings"].push_back({{"expressionReferences", {0}}});
+				}
+				rel["aggregate"]["common"]["emit"]["outputMapping"] = {0, index};
+				auto plan = EmitPlan(rel, {"a", "b"}).dump();
+				const auto message = groupings == 2 && index == 3 ? "grouping set index column" : "out of range";
+				REQUIRE_THROWS_WITH(FromSubstraitJSON(con, plan), Catch::Matchers::Contains(message));
 			}
 		}
 	}
