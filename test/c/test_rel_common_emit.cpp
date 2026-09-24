@@ -85,6 +85,24 @@ void CheckEmitColumns(Connection &con, const EmitJSON &rel, const duckdb::vector
 		REQUIRE(CHECK_COLUMN(result, i, columns[i]));
 	}
 }
+
+EmitJSON EmittedDeletePlan(Connection &con, const string &kind) {
+	auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+	auto &input = plan["relations"][0]["root"]["input"]["write"]["input"];
+	if (kind == "filter") {
+		auto condition = input["read"]["filter"];
+		input["read"].erase("filter");
+		input["read"].erase("projection");
+		input = {{"filter", {{"input", input}, {"condition", condition}}}};
+	} else {
+		input["read"]["common"]["emit"]["outputMapping"] = {0};
+		if (kind == "project") {
+			input = {{"project", {{"input", input}, {"expressions", {EmitField(0)}}}}};
+		}
+	}
+	input[kind]["common"]["emit"]["outputMapping"] = {0, 0};
+	return plan;
+}
 } // namespace
 
 TEST_CASE("RelCommon emit reorders, omits and duplicates relation outputs", "[substrait-api][emit]") {
@@ -110,25 +128,29 @@ TEST_CASE("Delete preserves its predicate through emitted projections", "[substr
 			DuckDB db(nullptr);
 			Connection con(db);
 			CreateEmployeeTable(con);
-			auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
-			auto &input = plan["relations"][0]["root"]["input"]["write"]["input"];
-			if (kind == "filter") {
-				auto condition = input["read"]["filter"];
-				input["read"].erase("filter");
-				input["read"].erase("projection");
-				input = {{"filter", {{"input", input}, {"condition", condition}}}};
-			} else {
-				input["read"]["common"]["emit"]["outputMapping"] = {0};
-				if (kind == "project") {
-					input = {{"project", {{"input", input}, {"expressions", {EmitField(0)}}}}};
-				}
-			}
-			input[kind]["common"]["emit"]["outputMapping"] = {0, 0};
-			auto deleted = FromSubstraitJSON(con, plan.dump());
+			auto deleted = FromSubstraitJSON(con, EmittedDeletePlan(con, kind).dump());
 			REQUIRE_NO_FAIL(*deleted);
 			auto remaining = con.Query("SELECT employee_id FROM employees ORDER BY employee_id");
 			REQUIRE_NO_FAIL(*remaining);
 			REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 4}));
+		}
+	}
+}
+
+TEST_CASE("Delete rejects a predicate read from another table", "[substrait-api][emit][emit-delete]") {
+	for (const string kind : {"read", "filter", "project"}) {
+		DYNAMIC_SECTION(kind) {
+			DuckDB db(nullptr);
+			Connection con(db);
+			CreateEmployeeTable(con);
+			REQUIRE_NO_FAIL(con.Query("CREATE TABLE other AS SELECT * FROM employees"));
+			auto plan = EmittedDeletePlan(con, kind);
+			auto &names = plan["relations"][0]["root"]["input"]["write"]["namedTable"]["names"];
+			names[names.size() - 1] = "other";
+			CHECK_THROWS_WITH(FromSubstraitJSON(con, plan.dump()), Catch::Matchers::Contains("not the target table"));
+			auto remaining = con.Query("SELECT employee_id FROM other ORDER BY employee_id");
+			REQUIRE_NO_FAIL(*remaining);
+			REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
 		}
 	}
 }

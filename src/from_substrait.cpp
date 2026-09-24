@@ -1779,8 +1779,23 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		auto &filter = delete_input->Cast<FilterRelation>();
 		// DeleteRelation binds the predicate directly against the target table. A predicate
 		// over projected or filtered input cannot be reused without translating its meaning.
-		if (filter.child->type != RelationType::TABLE_RELATION && filter.child->type != RelationType::VIEW_RELATION) {
+		string source_schema;
+		string source_table;
+		if (filter.child->type == RelationType::TABLE_RELATION) {
+			auto &description = *filter.child->Cast<TableRelation>().description;
+			source_schema = description.schema;
+			source_table = description.table;
+		} else if (filter.child->type == RelationType::VIEW_RELATION) {
+			auto &view = filter.child->Cast<ViewRelation>();
+			source_schema = view.schema_name;
+			source_table = view.view_name;
+		} else {
 			throw NotImplementedException("Unsupported relation type for delete operation");
+		}
+		// The predicate is bound to the target, so it must come from a read of the target.
+		if (!StringUtil::CIEquals(source_table, table_name) ||
+		    (!schema_name.empty() && !StringUtil::CIEquals(source_schema, schema_name))) {
+			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source_table, table_name);
 		}
 		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,
 		                                      table_name);
