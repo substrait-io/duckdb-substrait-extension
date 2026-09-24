@@ -1,5 +1,5 @@
 # name: test/sql/test_substrait_subquery.test
-# description: Consume Substrait Expression.Subquery (scalar, IN, EXISTS, ANY)
+# description: Consume Substrait Expression.Subquery (scalar, IN, EXISTS, ANY, ALL)
 # group: [sql]
 
 require substrait
@@ -13,14 +13,27 @@ statement ok
 CREATE TABLE t2 (b INTEGER);
 
 statement ok
-INSERT INTO t1 VALUES (1), (2), (3), (5), (9);
+CREATE TABLE t3 (c INTEGER);
 
 statement ok
-INSERT INTO t2 VALUES (2), (3);
+CREATE TABLE t4 (d INTEGER);
+
+statement ok
+INSERT INTO t1 VALUES (1), (2), (3), (5), (9), (NULL);
+
+statement ok
+INSERT INTO t2 VALUES (2), (3), (NULL);
+
+statement ok
+INSERT INTO t3 VALUES (2), (3);
+
+statement ok
+INSERT INTO t4 VALUES (2);
 
 # The producer never emits Expression.Subquery -- DuckDB decorrelates subqueries into
-# joins before it runs -- so these plans are handwritten. Each is checked against the
-# SQL it is equivalent to, shown above it.
+# joins before it runs -- so these plans are handwritten. Each is checked against the SQL
+# it is equivalent to. t1 and t2 carry a NULL to exercise three-valued logic; t3 and t4 are
+# NULL-free so the ALL cases assert on a real result rather than an empty one.
 
 # Scalar subquery: a > (SELECT max(b) FROM t2)
 query I
@@ -31,25 +44,64 @@ SELECT a FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"ur
 
 # IN predicate: a IN (SELECT b FROM t2)
 query I
-SELECT a FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_comparison"},{"extensionUrnAnchor":2,"urn":"extension:io.substrait:functions_arithmetic"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"gt:any_any"}},{"extensionFunction":{"extensionUrnReference":2,"functionAnchor":2,"name":"max:i32"}}],"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"inPredicate":{"needles":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}],"haystack":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"inPredicate":{"needles":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}],"haystack":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
 ----
 2
 3
 
 # EXISTS predicate: EXISTS (SELECT b FROM t2)
 query I
-SELECT a FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_comparison"},{"extensionUrnAnchor":2,"urn":"extension:io.substrait:functions_arithmetic"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"gt:any_any"}},{"extensionFunction":{"extensionUrnReference":2,"functionAnchor":2,"name":"max:i32"}}],"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setPredicate":{"predicateOp":"PREDICATE_OP_EXISTS","tuples":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setPredicate":{"predicateOp":"PREDICATE_OP_EXISTS","tuples":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
 ----
 1
 2
 3
 5
 9
+NULL
 
 # ANY comparison: a > ANY (SELECT b FROM t2)
 query I
-SELECT a FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_comparison"},{"extensionUrnAnchor":2,"urn":"extension:io.substrait:functions_arithmetic"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"gt:any_any"}},{"extensionFunction":{"extensionUrnReference":2,"functionAnchor":2,"name":"max:i32"}}],"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setComparison":{"reductionOp":"REDUCTION_OP_ANY","comparisonOp":"COMPARISON_OP_GT","left":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"right":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setComparison":{"reductionOp":"REDUCTION_OP_ANY","comparisonOp":"COMPARISON_OP_GT","left":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"right":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
 ----
 3
 5
 9
+
+# ALL comparison: a > ALL (SELECT c FROM t3)
+query I
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setComparison":{"reductionOp":"REDUCTION_OP_ALL","comparisonOp":"COMPARISON_OP_GT","left":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"right":{"read":{"baseSchema":{"names":["c"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t3"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+----
+5
+9
+
+# ALL with equality against a single-row subquery: a = ALL (SELECT d FROM t4)
+query I
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setComparison":{"reductionOp":"REDUCTION_OP_ALL","comparisonOp":"COMPARISON_OP_EQ","left":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"right":{"read":{"baseSchema":{"names":["d"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t4"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+----
+2
+
+# ALL is unknown for every row once the subquery yields a NULL: a > ALL (SELECT b FROM t2)
+query I
+SELECT a FROM from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setComparison":{"reductionOp":"REDUCTION_OP_ALL","comparisonOp":"COMPARISON_OP_GT","left":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"right":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}') ORDER BY a
+----
+
+# --- rejected shapes: these must fail loudly, not silently mistranslate ---
+
+# SET_PREDICATE UNIQUE is rejected
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setPredicate":{"predicateOp":"PREDICATE_OP_UNIQUE","tuples":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+Substrait set predicate PREDICATE_OP_UNIQUE is not supported yet
+
+# IN over more than one needle is rejected
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"inPredicate":{"needles":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{}},"rootReference":{}}}],"haystack":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+Substrait IN subqueries over 2 needles are not supported yet
+
+# an OuterReference inside a subquery is rejected (this is why the scope barrier exists)
+statement error
+CALL from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_comparison"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"equal:any_any"}}],"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t1"]}}},"condition":{"subquery":{"setPredicate":{"predicateOp":"PREDICATE_OP_EXISTS","tuples":{"filter":{"input":{"read":{"baseSchema":{"names":["b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t2"]}}},"condition":{"scalarFunction":{"functionReference":1,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{}},"outerReference":{"stepsOut":1}}}}]}}}}}}}}},"names":["a"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+OuterReference found outside of any LateralJoinRel scope

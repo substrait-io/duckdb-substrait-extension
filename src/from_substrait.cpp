@@ -899,17 +899,23 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSubqueryExpr(const subs
 	}
 	case substrait::Expression_Subquery::SubqueryTypeCase::kSetComparison: {
 		auto &comparison = subquery.set_comparison();
-		// Only ANY maps onto DuckDB's subquery comparison. ALL would have to be
-		// emitted as NOT ANY with the negated operator, which changes null handling.
-		if (comparison.reduction_op() != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ANY) {
+		auto reduction = comparison.reduction_op();
+		if (reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ANY &&
+		    reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
 			throw NotImplementedException("Substrait set comparison %s is not supported yet",
 			                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ReductionOp_Name(
-			                                  comparison.reduction_op()), comparison.reduction_op()));
+			                                  reduction), reduction));
 		}
 		result->subquery_type = SubqueryType::ANY;
 		result->comparison_type = TransformSetComparisonOp(comparison.comparison_op());
 		result->child = TransformExpr(comparison.left());
 		result->subquery = SubqueryStatement(comparison.right());
+		if (reduction == substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
+			// DuckDB has no ALL subquery type; its own parser expands `x op ALL (s)` to
+			// `NOT (x <negated-op> ANY (s))`, which is exact under three-valued logic.
+			result->comparison_type = NegateComparisonExpression(result->comparison_type);
+			return make_uniq<OperatorExpression>(ExpressionType::OPERATOR_NOT, std::move(result));
+		}
 		return std::move(result);
 	}
 	default:

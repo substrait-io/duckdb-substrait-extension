@@ -155,7 +155,6 @@ supported_expressions:
         - "correlated subqueries: an OuterReference is only resolvable inside a LateralJoinRel"
         - "IN_PREDICATE over more than one needle"
         - "SET_PREDICATE with predicate_op UNIQUE (EXISTS only)"
-        - "SET_COMPARISON with reduction_op ALL (ANY only)"
     subquery_types:
       - "SCALAR"
       - "IN_PREDICATE"
