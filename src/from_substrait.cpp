@@ -1647,6 +1647,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		}
 		
 		// Handle window bounds
+		window_expr->start = WindowBoundary::UNBOUNDED_PRECEDING;
+		window_expr->end = WindowBoundary::UNBOUNDED_FOLLOWING;
 		if (window_func.has_lower_bound() || window_func.has_upper_bound()) {
 			auto bounds_type = window_func.bounds_type();
 			auto requires_bounds_type = [](const substrait::Expression_WindowFunction_Bound &bound) {
@@ -1665,9 +1667,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				throw InvalidInputException("Unsupported window bounds type");
 			}
 			bool is_rows = bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
-			auto transform_offset = [this](const auto &bound) -> unique_ptr<ParsedExpression> {
+			auto transform_offset = [](const auto &bound) -> unique_ptr<ParsedExpression> {
 				if (bound.has_offset_expr()) {
-					return TransformExpr(bound.offset_expr());
+					auto offset = ExtractLiteralInteger(bound.offset_expr(), "window bound offset");
+					return make_uniq<ConstantExpression>(Value::BIGINT(static_cast<int64_t>(offset)));
 				}
 				auto offset = bound.offset();
 				if (offset <= 0) {

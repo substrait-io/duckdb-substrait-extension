@@ -319,9 +319,9 @@ statement ok
 SET VARIABLE zero_offset_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 0 PRECEDING AND CURRENT ROW) AS total FROM window_test_data'))
 
 query TT
-SELECT contains(getvariable('zero_offset_plan'), '"currentRow"')::VARCHAR, contains(getvariable('zero_offset_plan'), '"i64":"0"')::VARCHAR
+SELECT contains(getvariable('zero_offset_plan'), '"preceding"')::VARCHAR, contains(getvariable('zero_offset_plan'), '"offsetExpr"')::VARCHAR
 ----
-true	false
+false	false
 
 statement error
 SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN -1 PRECEDING AND CURRENT ROW) AS total FROM window_test_data')

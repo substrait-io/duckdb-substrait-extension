@@ -1828,6 +1828,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 					// TODO: Support expression-based offsets
 					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
 						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						if (const_expr.value.IsNull()) {
+							throw NotImplementedException("NULL window bound offsets are not supported");
+						}
 						auto offset = const_expr.value.GetValue<int64_t>();
 						if (offset < 0) {
 							throw NotImplementedException("Negative window bound offsets are not supported");
@@ -1855,6 +1858,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 					// For now, we only support constant integer offsets
 					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
 						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
+						if (const_expr.value.IsNull()) {
+							throw NotImplementedException("NULL window bound offsets are not supported");
+						}
 						auto offset = const_expr.value.GetValue<int64_t>();
 						if (offset < 0) {
 							throw NotImplementedException("Negative window bound offsets are not supported");
