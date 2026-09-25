@@ -42,7 +42,6 @@ const std::unordered_map<std::string, std::string> DuckDBToSubstrait::function_n
     {"+", "add"},
     {"/", "divide"},
     {"first", "any_value"},
-    {"!~~", "not_equal"},
     {"&", "bitwise_and"},
     {"|", "bitwise_or"},
     {"xor", "bitwise_xor"},
@@ -390,6 +389,27 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		auto value = child_value->mutable_value();
 		TransformExpr(*dfun.children[0], *key);
 		TransformExpr(*dfun.children[1], *value);
+		return;
+	}
+	if (function_name == "!~~") {
+		// Substrait has no not_like. DuckDB's NOT LIKE operator is emitted as the
+		// composition not(like(x, pattern)); both halves are standard functions.
+		auto not_fun = sexpr.mutable_scalar_function();
+		auto not_arg = not_fun->add_arguments();
+		auto like_fun = not_arg->mutable_value()->mutable_scalar_function();
+		vector<substrait::Type> like_arg_types;
+		for (auto &darg : dfun.children) {
+			auto like_arg = like_fun->add_arguments();
+			TransformExpr(*darg, *like_arg->mutable_value(), col_offset);
+			like_arg_types.emplace_back(DuckToSubstraitType(darg->return_type));
+		}
+		like_fun->set_function_reference(RegisterFunction("like", like_arg_types));
+		*like_fun->mutable_output_type() = DuckToSubstraitType(LogicalType::BOOLEAN);
+
+		vector<substrait::Type> not_arg_types;
+		not_arg_types.emplace_back(DuckToSubstraitType(LogicalType::BOOLEAN));
+		not_fun->set_function_reference(RegisterFunction("not", not_arg_types));
+		*not_fun->mutable_output_type() = DuckToSubstraitType(dfun.return_type);
 		return;
 	}
 	auto sfun = sexpr.mutable_scalar_function();
