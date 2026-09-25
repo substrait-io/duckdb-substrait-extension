@@ -30,6 +30,12 @@ CALL from_substrait_json('{"relations":[{"root":{"input":{"write":{"namedTable":
 ----
 WRITE_OP_UPDATE
 
+# A write with no op at all is WRITE_OP_UNSPECIFIED, 0, which no field number matches.
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"write":{"namedTable":{"names":["t"]},"tableSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"output":"OUTPUT_MODE_NO_OUTPUT"}},"names":["x"]}}]}')
+----
+WRITE_OP_UNSPECIFIED
+
 # A value newer than this build's enum has no name, so the error gives its number.
 statement error
 CALL from_substrait_json('{"relations":[{"root":{"input":{"set":{"common":{"direct":{}},"inputs":[{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}}],"op":99}},"names":["x"]}}]}')
