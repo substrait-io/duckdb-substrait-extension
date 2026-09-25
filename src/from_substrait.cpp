@@ -72,6 +72,12 @@ const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
 
+//! Proto3 enums are open, so _Name() returns an empty string for a value a newer producer
+//! added, leaving a blank where the offending value should be. Fall back to the number.
+static string SubstraitEnumName(const string &name, int value) {
+	return name.empty() ? ("unknown (" + to_string(value) + ")") : name;
+}
+
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
 	string name;
@@ -887,7 +893,7 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 	default:
 		throw NotImplementedException(
 		    "Unsupported ordering %s",
-		    string(substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name()));
+		    SubstraitEnumName(substrait::SortField_SortDirection_Name(sordf.direction()), sordf.direction()));
 	}
 
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
@@ -932,7 +938,7 @@ JoinType SubstraitToDuckDB::TransformJoinType(substrait::JoinRel::JoinType stype
 	}
 	throw NotImplementedException(
 	    "Unsupported %s join type: %s", lateral_only ? "LateralJoinRel" : "JoinRel",
-	    string(substrait::JoinRel::GetDescriptor()->FindFieldByNumber(stype)->name()));
+	    SubstraitEnumName(substrait::JoinRel_JoinType_Name(stype), stype));
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &sop) {
@@ -1727,7 +1733,7 @@ static SetOperationType TransformSetOperationType(substrait::SetRel_SetOp setop)
 	}
 	default: {
 		throw NotImplementedException("SetOperationType transform not implemented for SetRel_SetOp type %s",
-		                              string(substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name()));
+		                              SubstraitEnumName(substrait::SetRel_SetOp_Name(setop), setop));
 	}
 	}
 }
@@ -1804,7 +1810,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",
-		                              string(substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name()));
+		                              SubstraitEnumName(substrait::WriteRel_WriteOp_Name(swrite.op()), swrite.op()));
 	}
 }
 

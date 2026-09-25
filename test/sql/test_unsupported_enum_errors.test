@@ -1,0 +1,37 @@
+# name: test/sql/test_unsupported_enum_errors.test
+# description: An unsupported enum value is refused with its name instead of crashing (issue #277)
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE t (x INTEGER NOT NULL)
+
+# The error for each looked the enum value up as a field number of its message: most values
+# name no field, and the null result was dereferenced.
+
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"set":{"common":{"direct":{}},"inputs":[{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}}],"op":"SET_OP_UNION_DISTINCT"}},"names":["x"]}}]}')
+----
+SET_OP_UNION_DISTINCT
+
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"join":{"common":{"direct":{}},"left":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"right":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"type":"JOIN_TYPE_RIGHT_MARK","expression":{"literal":{"boolean":true}}}},"names":["x","y","mark"]}}]}')
+----
+JOIN_TYPE_RIGHT_MARK
+
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"sort":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"sorts":[{"expr":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}},"direction":"SORT_DIRECTION_CLUSTERED"}]}},"names":["x"]}}]}')
+----
+SORT_DIRECTION_CLUSTERED
+
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"write":{"namedTable":{"names":["t"]},"tableSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"op":"WRITE_OP_UPDATE","input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"output":"OUTPUT_MODE_NO_OUTPUT"}},"names":["x"]}}]}')
+----
+WRITE_OP_UPDATE
+
+# A value newer than this build's enum has no name, so the error gives its number.
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"set":{"common":{"direct":{}},"inputs":[{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}}],"op":99}},"names":["x"]}}]}')
+----
+unknown (99)
