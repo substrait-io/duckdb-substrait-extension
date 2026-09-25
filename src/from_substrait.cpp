@@ -245,16 +245,26 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestamp: {
 		int64_t timestamp_value = literal.precision_timestamp().value();
 		int32_t precision = literal.precision_timestamp().precision();
-		int64_t micros = ScaleToMicros(timestamp_value, precision);
-		timestamp_t ts(micros);
-		return Value::TIMESTAMP(ts);
+		switch (precision) {
+		case 0:
+			return Value::TIMESTAMPSEC(timestamp_sec_t(timestamp_value));
+		case 3:
+			return Value::TIMESTAMPMS(timestamp_ms_t(timestamp_value));
+		case 6:
+			return Value::TIMESTAMP(timestamp_t(timestamp_value));
+		case 9:
+			return Value::TIMESTAMPNS(timestamp_ns_t(timestamp_value));
+		default:
+			throw NotImplementedException("Unsupported timestamp precision: %d", precision);
+		}
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kPrecisionTimestampTz: {
-		int64_t timestamp_value = literal.precision_timestamp_tz().value();
+		// DuckDB's TIMESTAMP_TZ is always microsecond precision (6)
 		int32_t precision = literal.precision_timestamp_tz().precision();
-		int64_t micros = ScaleToMicros(timestamp_value, precision);
-		timestamp_tz_t ts(micros);
-		return Value::TIMESTAMPTZ(ts);
+		if (precision != 6) {
+			throw NotImplementedException("DuckDB TIMESTAMP_TZ only supports microsecond precision (6), got: %d", precision);
+		}
+		return Value::TIMESTAMPTZ(timestamp_tz_t(literal.precision_timestamp_tz().value()));
 	}
 	case substrait::Expression_Literal::LiteralTypeCase::kUuid: {
 		const auto &uuid_bytes = literal.uuid();
@@ -606,6 +616,26 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 	} else if (function_name == "extract") {
 		D_ASSERT(enum_expressions.size() == 1);
 		auto &subfield = enum_expressions[0];
+		// Substrait's UNIX_TIME specifier (epoch seconds, return type i64) has no
+		// DuckDB date_part equivalent of that name. Map it to date_part('epoch') and
+		// floor before casting, to honor the standard's "elapsed whole seconds".
+		if (StringUtil::CIEquals(subfield, "UNIX_TIME")) {
+			// The precision_timestamp_tz impl carries a trailing timezone argument.
+			// UNIX_TIME is timezone-independent, so drop it instead of emitting an
+			// unbindable three-argument date_part.
+			if (children.size() > 1) {
+				children.resize(1);
+			}
+			children.insert(children.begin(), make_uniq<ConstantExpression>(Value("epoch")));
+			auto call = make_uniq<FunctionExpression>(RemapFunctionName(function_name), std::move(children));
+			// date_part('epoch') returns DOUBLE and DuckDB's DOUBLE->BIGINT cast rounds
+			// half-to-even, which would report one second too many for any sub-second
+			// timestamp. UNIX_TIME is elapsed whole seconds, so floor explicitly.
+			vector<unique_ptr<ParsedExpression>> floor_args;
+			floor_args.push_back(std::move(call));
+			auto floored = make_uniq<FunctionExpression>("floor", std::move(floor_args));
+			return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(floored));
+		}
 		VerifyCorrectExtractSubfield(subfield);
 		auto constant_expression = make_uniq<ConstantExpression>(Value(subfield));
 		children.insert(children.begin(), std::move(constant_expression));

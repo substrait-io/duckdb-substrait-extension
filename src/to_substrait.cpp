@@ -154,6 +154,11 @@ void DuckDBToSubstrait::TransformDecimal(const Value &dval, substrait::Expressio
 	allocated_decimal->set_value(raw_value);
 }
 
+void DuckDBToSubstrait::TransformTinyInt(const Value &dval, substrait::Expression &sexpr) {
+	auto &sval = *sexpr.mutable_literal();
+	sval.set_i8(dval.GetValue<int8_t>());
+}
+
 void DuckDBToSubstrait::TransformInteger(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
 	sval.set_i32(dval.GetValue<int32_t>());
@@ -196,6 +201,19 @@ void DuckDBToSubstrait::TransformTimestamp(const Value &dval, substrait::Express
 	sval.set_string(dval.ToString());
 }
 
+void DuckDBToSubstrait::TransformTimestampTz(const Value &dval, substrait::Expression &sexpr) {
+	auto tz_value = dval.GetValue<timestamp_tz_t>();
+	if (!Value::IsFinite(tz_value)) {
+		// DuckDB encodes +/-infinity as INT64_MAX/MIN micros. Emitting that raw would look
+		// like a real instant near year 294241 to any other consumer, so fail loudly instead.
+		throw NotImplementedException("Substrait has no representation for infinite TIMESTAMPTZ values");
+	}
+	auto &sval = *sexpr.mutable_literal();
+	auto precision_timestamp_tz = sval.mutable_precision_timestamp_tz();
+	precision_timestamp_tz->set_precision(6); // microseconds
+	precision_timestamp_tz->set_value(tz_value.value);
+}
+
 void DuckDBToSubstrait::TransformInterval(const Value &dval, substrait::Expression &sexpr) {
 	// Substrait supports two types of INTERVAL (interval_year and interval_day)
 	// whereas DuckDB INTERVAL combines both in one type. Therefore intervals
@@ -230,7 +248,9 @@ void DuckDBToSubstrait::TransformBoolean(const Value &dval, substrait::Expressio
 void DuckDBToSubstrait::TransformHugeInt(const Value &dval, substrait::Expression &sexpr) {
 	auto &sval = *sexpr.mutable_literal();
 	auto *allocated_decimal = sval.mutable_decimal();
-	auto hugeint = dval.GetValueUnsafe<hugeint_t>();
+	// Checked cast so this also handles UBIGINT (stored as uint64, not hugeint),
+	// which DuckToSubstraitType maps to the same decimal(38, 0) representation.
+	auto hugeint = dval.GetValue<hugeint_t>();
 	auto raw_value = GetRawValue(hugeint);
 	allocated_decimal->set_scale(0);
 	allocated_decimal->set_precision(38);
@@ -252,6 +272,9 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 	case LogicalTypeId::DECIMAL:
 		TransformDecimal(dval, sexpr);
 		break;
+	case LogicalTypeId::TINYINT:
+		TransformTinyInt(dval, sexpr);
+		break;
 	case LogicalTypeId::INTEGER:
 		TransformInteger(dval, sexpr);
 		break;
@@ -262,6 +285,20 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 		TransformBigInt(dval, sexpr);
 		break;
 	case LogicalTypeId::HUGEINT:
+		TransformHugeInt(dval, sexpr);
+		break;
+		// Substrait has no unsigned integer types, so these are upcast to the
+		// next-wider signed literal, mirroring DuckToSubstraitType's type mapping.
+	case LogicalTypeId::UTINYINT:
+		TransformSmallInt(dval, sexpr);
+		break;
+	case LogicalTypeId::USMALLINT:
+		TransformInteger(dval, sexpr);
+		break;
+	case LogicalTypeId::UINTEGER:
+		TransformBigInt(dval, sexpr);
+		break;
+	case LogicalTypeId::UBIGINT:
 		TransformHugeInt(dval, sexpr);
 		break;
 	case LogicalTypeId::DATE:
@@ -275,6 +312,9 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 	case LogicalTypeId::TIMESTAMP_NS:
 	case LogicalTypeId::TIMESTAMP:
 		TransformTimestamp(dval, sexpr);
+		break;
+	case LogicalTypeId::TIMESTAMP_TZ:
+		TransformTimestampTz(dval, sexpr);
 		break;
 	case LogicalTypeId::INTERVAL:
 		TransformInterval(dval, sexpr);
@@ -1516,6 +1556,17 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		
 		// GROUPING() returns BIGINT in DuckDB
 		*smeas->mutable_output_type() = DuckToSubstraitType(LogicalType::BIGINT);
+	}
+
+	// With more than one grouping set, the spec appends an i32 column holding
+	// the grouping set index. DuckDB's output has no such column, so leave it out.
+	if (saggr->groupings_size() > 1) {
+		vector<int32_t> output_mapping;
+		int32_t output_count = saggr->grouping_expressions_size() + saggr->measures_size();
+		for (int32_t i = 0; i < output_count; i++) {
+			output_mapping.push_back(i);
+		}
+		saggr->set_allocated_common(CreateOutputMapping(output_mapping));
 	}
 
 	return res.release();

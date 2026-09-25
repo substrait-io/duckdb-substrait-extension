@@ -105,7 +105,7 @@ supported_types:
 
   - type: "PRECISION_TIMESTAMP_TZ"
     system_metadata:
-      name: "TIMESTAMP_TZ"
+      name: "TIMESTAMPTZ"
       supported_as_column: true
     max_precision: 6
 
@@ -510,8 +510,8 @@ supported_scalar_functions:
   - source: "arithmetic"
     name: "bitwise_xor"
     system_metadata:
-      name: "^"
-      notation: "INFIX"
+      name: "xor"
+      notation: "FUNCTION"
     supported_impls:
       - "i8_i8"
       - "i16_i16"
@@ -1430,7 +1430,11 @@ supported_aggregate_functions:
       name: "sum"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   - source: "arithmetic"
@@ -1439,7 +1443,11 @@ supported_aggregate_functions:
       name: "avg"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   - source: "arithmetic"
@@ -1448,7 +1456,11 @@ supported_aggregate_functions:
       name: "min"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   - source: "arithmetic"
@@ -1457,7 +1469,11 @@ supported_aggregate_functions:
       name: "max"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   - source: "arithmetic"
@@ -1466,7 +1482,11 @@ supported_aggregate_functions:
       name: "product"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   - source: "arithmetic"
@@ -1511,7 +1531,11 @@ supported_aggregate_functions:
       name: "mode"
       notation: "FUNCTION"
     supported_impls:
+      - "i8"
+      - "i16"
+      - "i32"
       - "i64"
+      - "fp32"
       - "fp64"
 
   # Boolean Aggregates

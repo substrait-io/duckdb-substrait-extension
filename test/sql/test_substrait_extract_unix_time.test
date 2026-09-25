@@ -1,0 +1,70 @@
+# name: test/sql/test_substrait_extract_unix_time.test
+# description: Consumer-side coverage for Substrait extract(UNIX_TIME) -> date_part('epoch')
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+PRAGMA enable_verification
+
+# The producer can never emit UNIX_TIME: `epoch` is not in to_substrait.cpp's
+# valid_extract_subfields, so get_substrait_json only ever drives the other
+# specifiers. The only way to reach the consumer's UNIX_TIME branch is a plan
+# that carries the enum, so synthesize one from a normal extract and rewrite
+# the enum in the JSON. Lowercase `unix_time` also pins the case-insensitive
+# match (the producer emits lowercase enum values).
+
+statement ok
+CREATE TABLE t (ts TIMESTAMP);
+
+# Values chosen so floor(epoch) differs from round(epoch): DuckDB's DOUBLE->BIGINT
+# cast rounds half-to-even, so .75 -> +1 and 1.5 -> +2 and -0.5 -> 0 without an
+# explicit floor. UNIX_TIME is elapsed whole seconds, so the flooring is the point.
+statement ok
+INSERT INTO t VALUES
+    ('1970-01-01 00:00:00.75'),
+    ('1970-01-01 00:00:01.5'),
+    ('1969-12-31 23:59:59.5'),
+    ('2021-08-03 11:59:44.75');
+
+statement ok
+SET VARIABLE plan_unix = (
+    SELECT replace(json, '"enum":"second"', '"enum":"unix_time"')
+    FROM get_substrait_json('SELECT extract(second FROM ts) AS r FROM t')
+);
+
+query I
+SELECT * FROM from_substrait_json(getvariable('plan_unix')) ORDER BY 1
+----
+-1
+0
+1
+1627991984
+
+# Substrait's precision_timestamp_tz impl signature is
+# extract(component, x, timezone: string) -- the timezone is a value argument, so
+# it lands in `children`. UNIX_TIME is timezone-independent, so the consumer must
+# drop it; otherwise it emits an unbindable three-argument date_part(...). Synthesize
+# that shape by injecting a trailing string literal argument. A plain TIMESTAMP is used
+# (rather than TIMESTAMPTZ, which would pull in the icu extension) because the drop is
+# type-agnostic: any trailing value argument reaches children.resize(1) the same way.
+
+statement ok
+SET VARIABLE plan_unix_tz = (
+    SELECT replace(
+        replace(json, '"enum":"second"', '"enum":"unix_time"'),
+        '{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}',
+        '{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"literal":{"string":"UTC"}}}'
+    )
+    FROM get_substrait_json('SELECT extract(second FROM ts) AS r FROM t')
+);
+
+query I
+SELECT * FROM from_substrait_json(getvariable('plan_unix_tz')) ORDER BY 1
+----
+-1
+0
+1
+1627991984
