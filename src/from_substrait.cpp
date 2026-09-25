@@ -72,6 +72,44 @@ const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
 
+//! Several Substrait aggregates select their variant with a leading enumeration argument
+//! (std_dev/variance take SAMPLE or POPULATION, median takes EXACT or APPROXIMATE). DuckDB
+//! spells each variant as a separate function instead, so the enum has to be folded into the
+//! name. Anything we cannot express is rejected rather than silently treated as the default.
+static string RemapEnumAggregate(const string &function_name, const vector<string> &enum_args) {
+	if (enum_args.empty()) {
+		return function_name;
+	}
+	if (enum_args.size() != 1) {
+		throw NotImplementedException("Aggregate \"%s\" with %d enumeration arguments is not supported yet",
+		                              function_name, (int)enum_args.size());
+	}
+	auto &option = enum_args[0];
+	// function_name still carries its compound signature (e.g. "std_dev:req_fp64"); compare
+	// against the bare name, as RemapFunctionName does.
+	auto bare = function_name.substr(0, function_name.find(':'));
+	if (bare == "std_dev" || bare == "variance") {
+		// SAMPLE is DuckDB's default, so it maps to the plain name rather than to
+		// stddev_samp/var_samp. Those aliases compute the same thing but the producer has no
+		// mapping for them (to_substrait's remap only knows "stddev"/"variance"), so emitting
+		// them would re-serialize as an unresolvable native function.
+		string sample = bare == "std_dev" ? "stddev" : "variance";
+		string population = bare == "std_dev" ? "stddev_pop" : "var_pop";
+		if (StringUtil::CIEquals(option, "SAMPLE")) {
+			return sample;
+		}
+		if (StringUtil::CIEquals(option, "POPULATION")) {
+			return population;
+		}
+	} else if (bare == "median" && StringUtil::CIEquals(option, "EXACT")) {
+		// DuckDB's median is the exact one; APPROXIMATE would need approx_quantile, which
+		// takes an explicit fraction this encoding does not carry.
+		return function_name;
+	}
+	throw NotImplementedException("Aggregate \"%s\" with enumeration argument \"%s\" is not supported yet",
+	                              bare, option);
+}
+
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
 	string name;
@@ -1277,6 +1315,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// For GROUPING(), the arguments are field references to grouping columns
 			// We need to resolve these to copies of the actual grouping expressions
 			for (auto &sarg : s_aggr_function.arguments()) {
+				if (!sarg.has_value()) {
+					throw NotImplementedException("GROUPING() arguments must be value expressions");
+				}
 				auto arg_expr = TransformExpr(sarg.value());
 				// Check if this is a positional reference
 				if (arg_expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
@@ -1297,9 +1338,22 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// Create an OperatorExpression with GROUPING_FUNCTION type
 			expressions.push_back(make_uniq<OperatorExpression>(ExpressionType::GROUPING_FUNCTION, std::move(children)));
 		} else {
+			// Mirror the scalar path: an argument is a value, a type, or an enum. Calling
+			// value() on an enum argument yields an unset Expression, which has no case to
+			// dispatch on.
+			vector<string> enum_args;
 			for (auto &sarg : s_aggr_function.arguments()) {
-				children.push_back(TransformExpr(sarg.value()));
+				if (sarg.has_value()) {
+					children.push_back(TransformExpr(sarg.value()));
+				} else if (sarg.has_type()) {
+					throw NotImplementedException("Type arguments in Substrait aggregates are not supported yet!");
+				} else if (sarg.has_enum_()) {
+					enum_args.push_back(sarg.enum_());
+				} else {
+					throw InvalidInputException("Substrait aggregate argument has no value, type or enum set");
+				}
 			}
+			function_name = RemapEnumAggregate(function_name, enum_args);
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
@@ -1597,6 +1651,25 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 	for (auto &window_func : sop.window().window_functions()) {
 		// Get the function name
 		auto function_name = FindFunction(window_func.function_reference());
+
+		// Scan the arguments before resolving the name: an aggregate used as a window function
+		// carries the same leading enumeration argument (std_dev SAMPLE/POPULATION), and that
+		// selector has to be folded into the name before it is remapped. Calling value() on an
+		// enum argument yields an unset Expression with no case to dispatch on.
+		vector<unique_ptr<ParsedExpression>> window_args;
+		vector<string> window_enum_args;
+		for (auto &arg : window_func.arguments()) {
+			if (arg.has_value()) {
+				window_args.push_back(TransformExpr(arg.value()));
+			} else if (arg.has_type()) {
+				throw NotImplementedException("Type arguments in Substrait window functions are not supported yet!");
+			} else if (arg.has_enum_()) {
+				window_enum_args.push_back(arg.enum_());
+			} else {
+				throw InvalidInputException("Substrait window function argument has no value, type or enum set");
+			}
+		}
+		function_name = RemapEnumAggregate(function_name, window_enum_args);
 		auto remapped_name = RemapFunctionName(function_name);
 		
 		// Determine the expression type based on the function name
@@ -1631,9 +1704,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		// Create window expression
 		auto window_expr = make_uniq<WindowExpression>(expr_type, "", "", remapped_name);
 		
-		// Add function arguments
-		for (auto &arg : window_func.arguments()) {
-			window_expr->children.push_back(TransformExpr(arg.value()));
+		// Add function arguments (already transformed above)
+		for (auto &arg_expr : window_args) {
+			window_expr->children.push_back(std::move(arg_expr));
 		}
 		
 		// Add partition expressions
