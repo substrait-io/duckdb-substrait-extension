@@ -26,6 +26,7 @@
 #include "duckdb/main/table_description.hpp"
 
 #include "duckdb/catalog/catalog_entry/table_catalog_entry.hpp"
+#include "duckdb/planner/binder.hpp"
 #include "duckdb/common/helper.hpp"
 
 #include "duckdb/main/relation.hpp"
@@ -1809,10 +1810,12 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		auto &filter = delete_input->Cast<FilterRelation>();
 		// DeleteRelation binds the predicate directly against the target table. A predicate
 		// over projected or filtered input cannot be reused without translating its meaning.
+		string source_catalog;
 		string source_schema;
 		string source_table;
 		if (filter.child->type == RelationType::TABLE_RELATION) {
 			auto &description = *filter.child->Cast<TableRelation>().description;
+			source_catalog = description.database;
 			source_schema = description.schema;
 			source_table = description.table;
 		} else if (filter.child->type == RelationType::VIEW_RELATION) {
@@ -1822,9 +1825,22 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		} else {
 			throw NotImplementedException("Unsupported relation type for delete operation");
 		}
-		// The predicate is bound to the target, so it must come from a read of the target.
-		if (!StringUtil::CIEquals(source_table, table_name) ||
-		    (!schema_name.empty() && !StringUtil::CIEquals(source_schema, schema_name))) {
+		// The predicate is bound to the target, so it must come from a read of the target. The read
+		// and the write spell a qualified name differently, so compare the tables they resolve to.
+		optional_ptr<TableCatalogEntry> source_entry;
+		optional_ptr<TableCatalogEntry> target_entry;
+		string target_catalog = catalog_name;
+		string target_schema = schema_name;
+		context->RunFunctionInTransaction([&]() {
+			// A read of catalog.schema.table keeps only the catalog, in the schema field.
+			Binder::BindSchemaOrCatalog(*context, source_catalog, source_schema);
+			Binder::BindSchemaOrCatalog(*context, target_catalog, target_schema);
+			source_entry = Catalog::GetEntry<TableCatalogEntry>(*context, source_catalog, source_schema, source_table,
+			                                                    OnEntryNotFound::RETURN_NULL);
+			target_entry = Catalog::GetEntry<TableCatalogEntry>(*context, target_catalog, target_schema, table_name,
+			                                                    OnEntryNotFound::RETURN_NULL);
+		});
+		if (!source_entry || source_entry != target_entry) {
 			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source_table, table_name);
 		}
 		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,

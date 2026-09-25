@@ -155,6 +155,45 @@ TEST_CASE("Delete rejects a predicate read from another table", "[substrait-api]
 	}
 }
 
+TEST_CASE("Delete accepts a predicate read from the target under a qualified name",
+          "[substrait-api][emit][emit-delete]") {
+	const duckdb::vector<duckdb::vector<string>> name_forms = {
+	    {"employees"}, {"main", "employees"}, {"memory", "main", "employees"}};
+	for (auto &names : name_forms) {
+		DYNAMIC_SECTION(names.size() << " names") {
+			DuckDB db(nullptr);
+			Connection con(db);
+			CreateEmployeeTable(con);
+			auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+			auto &write = plan["relations"][0]["root"]["input"]["write"];
+			write["namedTable"]["names"] = names;
+			write["input"]["read"]["namedTable"]["names"] = names;
+			auto deleted = FromSubstraitJSON(con, plan.dump());
+			REQUIRE_NO_FAIL(*deleted);
+			auto remaining = con.Query("SELECT employee_id FROM employees ORDER BY employee_id");
+			REQUIRE_NO_FAIL(*remaining);
+			REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 4}));
+		}
+	}
+}
+
+TEST_CASE("Delete rejects a predicate read from a same-named table in another schema",
+          "[substrait-api][emit][emit-delete]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	CreateEmployeeTable(con);
+	REQUIRE_NO_FAIL(con.Query("CREATE SCHEMA other"));
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE other.employees AS SELECT * FROM employees"));
+	auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+	auto &write = plan["relations"][0]["root"]["input"]["write"];
+	write["namedTable"]["names"] = {"memory", "other", "employees"};
+	write["input"]["read"]["namedTable"]["names"] = {"main", "employees"};
+	CHECK_THROWS_WITH(FromSubstraitJSON(con, plan.dump()), Catch::Matchers::Contains("not the target table"));
+	auto remaining = con.Query("SELECT employee_id FROM other.employees ORDER BY employee_id");
+	REQUIRE_NO_FAIL(*remaining);
+	REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
+}
+
 TEST_CASE("Delete rejects emitted inputs without a usable table predicate", "[substrait-api][emit][emit-delete]") {
 	for (const string kind : {"no filter", "filter above emit"}) {
 		DYNAMIC_SECTION(kind) {
