@@ -1670,11 +1670,17 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 			auto transform_offset = [is_rows](const auto &bound) -> unique_ptr<ParsedExpression> {
 				if (bound.has_offset_expr()) {
 					if (is_rows) {
+						if (!bound.offset_expr().has_literal() ||
+						    bound.offset_expr().literal().literal_type_case() !=
+						        substrait::Expression_Literal::LiteralTypeCase::kI64) {
+							throw InvalidInputException("ROWS window bound offset must be an i64 literal");
+						}
 						auto offset = ExtractLiteralInteger(bound.offset_expr(), "window bound offset");
 						return make_uniq<ConstantExpression>(Value::BIGINT(static_cast<int64_t>(offset)));
 					}
 					if (!bound.offset_expr().has_literal()) {
-						throw NotImplementedException("Non-literal expressions in window bound offset are not supported");
+						throw NotImplementedException(
+						    "Non-literal expressions in window bound offset are not supported");
 					}
 					auto offset = TransformLiteralToValue(bound.offset_expr().literal());
 					if (offset.IsNull()) {
