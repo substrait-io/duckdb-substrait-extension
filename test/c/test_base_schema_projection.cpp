@@ -274,3 +274,37 @@ TEST_CASE("Test localFiles baseSchema skips nested field names", "[substrait-api
 	REQUIRE(CHECK_COLUMN(result, 0, {22}));
 	REQUIRE(CHECK_COLUMN(result, 1, {Value::STRUCT({{"child", Value::INTEGER(11)}})}));
 }
+
+TEST_CASE("Test localFiles baseSchema resolves nested type aliases", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_alias_base_schema.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT {'child': 11}::STRUCT(child INTEGER) AS payload, "
+	                          "22::INTEGER AS a) TO '" + parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan = nlohmann::json::parse(LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["payload","child","a"],"struct":{"types":[{"alias":{"typeAliasReference":1}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"payload", "child", "a"}));
+	plan["typeAliases"] = nlohmann::json::parse(
+	    R"([{"typeAliasAnchor":1,"type":{"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}}])");
+	auto result = FromSubstraitJSON(con, plan.dump());
+	REQUIRE(CHECK_COLUMN(result, 0, {Value::STRUCT({{"child", Value::INTEGER(11)}})}));
+	REQUIRE(CHECK_COLUMN(result, 1, {22}));
+}
+
+TEST_CASE("Test localFiles rejects reordered nested baseSchema fields", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_reordered_nested_base_schema.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT {'x': 11, 'y': 22}::STRUCT(x INTEGER, y INTEGER) AS payload) TO '" +
+	                          parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan_json = LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["payload","y","x"],"struct":{"types":[{"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"payload", "y", "x"});
+	REQUIRE_THROWS(FromSubstraitJSON(con, plan_json));
+}
