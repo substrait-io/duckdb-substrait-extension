@@ -196,3 +196,20 @@ TEST_CASE("Test baseSchema narrower than physical table with non-matching column
 	REQUIRE(CHECK_COLUMN(result, 1, {100, 200, 300}));
 	REQUIRE(CHECK_COLUMN(result, 2, {10, 20, 30}));
 }
+
+TEST_CASE("Test localFiles baseSchema binds Parquet columns by name", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_base_schema.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT 11::INTEGER AS a, 22::INTEGER AS b, 33::INTEGER AS extra) TO '" +
+	                          parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan_json =
+	    R"({"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"localFiles":{"items":[{"uriFile":")" +
+	    parquet_path + R"(","parquet":{}}]}}},"names":["b","a"]}}]})";
+
+	auto result = FromSubstraitJSON(con, plan_json);
+	REQUIRE(CHECK_COLUMN(result, 0, {22}));
+	REQUIRE(CHECK_COLUMN(result, 1, {11}));
+}
