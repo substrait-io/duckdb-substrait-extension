@@ -1325,6 +1325,47 @@ unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &sch
 	return result;
 }
 
+static idx_t NestedNameCount(const substrait::Type &type) {
+	switch (type.kind_case()) {
+	case substrait::Type::kStruct: {
+		idx_t count = 0;
+		for (auto &field : type.struct_().types()) {
+			count += 1 + NestedNameCount(field);
+		}
+		return count;
+	}
+	case substrait::Type::kList:
+		return NestedNameCount(type.list().type());
+	case substrait::Type::kMap:
+		return NestedNameCount(type.map().key()) + NestedNameCount(type.map().value());
+	case substrait::Type::kFunc: {
+		idx_t count = NestedNameCount(type.func().return_type());
+		for (auto &parameter : type.func().parameter_types()) {
+			count += NestedNameCount(parameter);
+		}
+		return count;
+	}
+	default:
+		return 0;
+	}
+}
+
+static vector<string> TopLevelNames(const substrait::NamedStruct &schema) {
+	vector<string> names;
+	idx_t name_idx = 0;
+	for (auto &type : schema.struct_().types()) {
+		if (name_idx >= (idx_t)schema.names_size()) {
+			throw InvalidInputException("baseSchema is missing a field name");
+		}
+		names.push_back(schema.names(name_idx));
+		name_idx += 1 + NestedNameCount(type);
+	}
+	if (name_idx != (idx_t)schema.names_size()) {
+		throw InvalidInputException("baseSchema field names do not match its types");
+	}
+	return names;
+}
+
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &sop) {
 	auto &sget = sop.read();
@@ -1387,9 +1428,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 			}
 		}
 		string name = "parquet_" + StringUtil::GenerateRandomName();
-		// Ignore Hive path columns; baseSchema defines the read schema.
-		named_parameter_map_t named_parameters(
-		    {{"binary_as_string", Value::BOOLEAN(false)}, {"hive_partitioning", Value::BOOLEAN(false)}});
+		named_parameter_map_t named_parameters({{"binary_as_string", Value::BOOLEAN(false)}});
 		vector<Value> parameters {Value::LIST(parquet_files)};
 		shared_ptr<TableFunctionRelation> scan_rel;
 		if (acquire_lock) {
@@ -1485,15 +1524,15 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 	    !sget.has_projection()) {
 		auto &base_schema = sget.base_schema();
 		auto physical_cols = scan->Columns().size();
-		auto declared_cols = (size_t)base_schema.names_size();
+		auto top_level_names = TopLevelNames(base_schema);
+		auto declared_cols = top_level_names.size();
 		bool needs_projection = sget.has_local_files() ? (declared_cols > 0)
 		                                               : (declared_cols > 0 && declared_cols < physical_cols);
 		if (needs_projection) {
 			vector<unique_ptr<ParsedExpression>> proj_exprs;
 			vector<string> proj_aliases;
 			auto &scan_columns = scan->Columns();
-			for (int i = 0; i < base_schema.names_size(); i++) {
-				auto &col_name = base_schema.names(i);
+			for (auto &col_name : top_level_names) {
 				bool found = false;
 				for (size_t j = 0; j < scan_columns.size(); j++) {
 					if (StringUtil::CIEquals(scan_columns[j].Name(), col_name)) {

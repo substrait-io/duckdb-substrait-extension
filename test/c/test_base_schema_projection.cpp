@@ -2,6 +2,9 @@
 #include "test_helpers.hpp"
 #include "test_substrait_c_utils.hpp"
 
+#include <nlohmann/json.hpp>
+#include <vector>
+
 using namespace duckdb;
 using namespace std;
 
@@ -197,6 +200,17 @@ TEST_CASE("Test baseSchema narrower than physical table with non-matching column
 	REQUIRE(CHECK_COLUMN(result, 2, {10, 20, 30}));
 }
 
+static string LocalParquetPlan(const string &parquet_path, const string &base_schema_json,
+                               const std::vector<std::string> &root_names) {
+	auto plan = nlohmann::json::parse(R"({"relations":[{"root":{"input":{"read":{"localFiles":{"items":[{"parquet":{}}]}}}}}]})");
+	auto &root = plan["relations"][0]["root"];
+	auto &read = root["input"]["read"];
+	read["baseSchema"] = nlohmann::json::parse(base_schema_json);
+	read["localFiles"]["items"][0]["uriFile"] = parquet_path;
+	root["names"] = root_names;
+	return plan.dump();
+}
+
 TEST_CASE("Test localFiles baseSchema binds Parquet columns by name", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
@@ -205,11 +219,58 @@ TEST_CASE("Test localFiles baseSchema binds Parquet columns by name", "[substrai
 	REQUIRE_NO_FAIL(con.Query("COPY (SELECT 11::INTEGER AS a, 22::INTEGER AS b, 33::INTEGER AS extra) TO '" +
 	                          parquet_path + "' (FORMAT PARQUET)"));
 
-	auto plan_json =
-	    R"({"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"localFiles":{"items":[{"uriFile":")" +
-	    parquet_path + R"(","parquet":{}}]}}},"names":["b","a"]}}]})";
+	auto plan_json = LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"b", "a"});
 
 	auto result = FromSubstraitJSON(con, plan_json);
 	REQUIRE(CHECK_COLUMN(result, 0, {22}));
 	REQUIRE(CHECK_COLUMN(result, 1, {11}));
+}
+
+TEST_CASE("Test localFiles baseSchema preserves declared Hive columns", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto partition_dir = TestCreatePath("part=blue");
+	TestCreateDirectory(partition_dir);
+	auto parquet_path = TestJoinPath(partition_dir, "local_files_partition.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT 11::INTEGER AS a, 22::INTEGER AS b) TO '" + parquet_path +
+	                          "' (FORMAT PARQUET)"));
+
+	auto declared_plan = LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["part","a"],"struct":{"types":[{"string":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"part", "a"});
+	auto declared_result = FromSubstraitJSON(con, declared_plan);
+	REQUIRE(CHECK_COLUMN(declared_result, 0, {"blue"}));
+	REQUIRE(CHECK_COLUMN(declared_result, 1, {11}));
+
+	auto pruned_plan = LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"b", "a"});
+	auto pruned_result = FromSubstraitJSON(con, pruned_plan);
+	REQUIRE(CHECK_COLUMN(pruned_result, 0, {22}));
+	REQUIRE(CHECK_COLUMN(pruned_result, 1, {11}));
+}
+
+TEST_CASE("Test localFiles baseSchema skips nested field names", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_nested_base_schema.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT {'child': 11}::STRUCT(child INTEGER) AS payload, "
+	                          "22::INTEGER AS a, 33::INTEGER AS extra) TO '" +
+	                          parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan_json = LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["a","payload","child"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"a", "payload"});
+	auto result = FromSubstraitJSON(con, plan_json);
+	REQUIRE(result->ColumnCount() == 2);
+	REQUIRE(CHECK_COLUMN(result, 0, {22}));
+	REQUIRE(CHECK_COLUMN(result, 1, {Value::STRUCT({{"child", Value::INTEGER(11)}})}));
 }
