@@ -1,6 +1,5 @@
 #include "catch.hpp"
 #include "test_helpers.hpp"
-#include "duckdb/main/connection_manager.hpp"
 #include "test_substrait_c_utils.hpp"
 
 using namespace duckdb;
@@ -61,4 +60,31 @@ TEST_CASE("Test that plan compiled on empty table with joins works after data is
 	auto result = FromSubstraitJSON(con, plan_json);
 	REQUIRE(CHECK_COLUMN(result, 0, {"Alice", "Bob"}));
 	REQUIRE(CHECK_COLUMN(result, 1, {200.0, 150.0}));
+}
+
+TEST_CASE("Test that plan compiled on non-empty table is not stats-folded", "[substrait-api]") {
+	// Same bug, but the table is NOT empty at compile time. STATISTICS_PROPAGATION
+	// uses min/max statistics, not just cardinality: with only rows 1..3 present,
+	// `WHERE id > 100` looks always-false and folds into LogicalEmptyResult — the
+	// same non-portable virtualTable {} plan. A Substrait plan must stay valid for
+	// any data conforming to the schema, so the filter must survive into the plan.
+
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE events (id INTEGER, label VARCHAR)"));
+
+	// Populate with rows whose max id (3) is far below the filter constant.
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO events VALUES (1, 'a'), (2, 'b'), (3, 'c')"));
+
+	// Compile while the stats say no row can satisfy id > 100.
+	auto plan_json = GetSubstraitJSON(con, "SELECT id, label FROM events WHERE id > 100 ORDER BY id");
+
+	// Insert a row that DOES satisfy the filter.
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO events VALUES (101, 'z')"));
+
+	// Execute the previously compiled plan — should return the newly matching row.
+	auto result = FromSubstraitJSON(con, plan_json);
+	REQUIRE(CHECK_COLUMN(result, 0, {101}));
+	REQUIRE(CHECK_COLUMN(result, 1, {"z"}));
 }
