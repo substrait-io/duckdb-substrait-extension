@@ -1,0 +1,100 @@
+# name: test/sql/test_substrait_aggregate_enum.test
+# description: Aggregates whose variant is selected by a leading enum argument (issue #292)
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+CREATE TABLE t (x DOUBLE);
+
+statement ok
+INSERT INTO t VALUES (1.0), (2.0), (3.0);
+
+# Substrait selects the std_dev/variance/median variant with a leading enumeration
+# argument; DuckDB spells each variant as its own function, so the enum folds into the
+# name. Calling value() on an enum argument used to yield an unset Expression and take
+# the process down with SIGSEGV (issue #292) -- as a measure and as a window function.
+#
+# Note: the SAMPLE and EXACT cases cannot by themselves prove the enum was read, because
+# DuckDB stddev == stddev_samp and variance == var_samp. The POPULATION cases and the
+# enum-less case are the discriminating ones.
+
+# std_dev SAMPLE -> stddev()
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"std_dev:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"SAMPLE"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+1.0
+
+# std_dev POPULATION -> stddev_pop()
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"std_dev:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"POPULATION"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+0.816496580927726
+
+# variance SAMPLE -> variance()
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"variance:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"SAMPLE"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+1.0
+
+# variance POPULATION -> var_pop()
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"variance:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"POPULATION"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+0.6666666666666666
+
+# median EXACT -> median()
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"median:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"EXACT"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+2.0
+
+# the enum-less deprecated signature still works
+query I
+SELECT * FROM from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"std_dev:fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+1.0
+
+# as a window function: std_dev SAMPLE
+query I
+SELECT * FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"std_dev:req_fp64"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"window":{"input":{"read":{"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t"]}}},"windowFunctions":[{"functionReference":1,"upperBound":{"currentRow":{}},"lowerBound":{"unbounded":{}},"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"enum":"SAMPLE"},{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}],"boundsType":"BOUNDS_TYPE_RANGE"}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["stddev_samp(x) OVER ()"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+1.0
+1.0
+1.0
+
+# as a window function: std_dev POPULATION
+query I
+SELECT * FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"std_dev:req_fp64"}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[1]}},"input":{"window":{"input":{"read":{"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["t"]}}},"windowFunctions":[{"functionReference":1,"upperBound":{"currentRow":{}},"lowerBound":{"unbounded":{}},"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"enum":"POPULATION"},{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}],"boundsType":"BOUNDS_TYPE_RANGE"}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["stddev_samp(x) OVER ()"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}')
+----
+0.816496580927726
+0.816496580927726
+0.816496580927726
+
+# --- variants with no DuckDB equivalent must be rejected, not defaulted ---
+
+# median APPROXIMATE has no DuckDB equivalent
+statement error
+CALL from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"median:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"APPROXIMATE"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+Aggregate "median" with enumeration argument "APPROXIMATE"
+
+# quantile is not supported
+statement error
+CALL from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"quantile:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"BOTH"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+Aggregate "quantile" with enumeration argument "BOTH"
+
+# an unrecognised option is rejected, not defaulted
+statement error
+CALL from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"std_dev:req_fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{"enum":"BOGUS"},{"value":{"selection":{"directReference":{"structField":{"field":0}},"rootReference":{}}}}]}}]}},"names":["r"]}}]}')
+----
+Aggregate "std_dev" with enumeration argument "BOGUS"
+
+# an argument with no value, type or enum set is malformed, not an empty enum
+statement error
+CALL from_substrait_json('{"extensionUrns":[{"extensionUrnAnchor":1,"urn":"https://github.com/substrait-io/substrait/blob/main/extensions/functions_arithmetic.yaml"}],"extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"sum:fp64"}}],"relations":[{"root":{"input":{"aggregate":{"common":{"direct":{}},"input":{"read":{"common":{"direct":{}},"baseSchema":{"names":["x"],"struct":{"types":[{"fp64":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t"]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"invocation":"AGGREGATION_INVOCATION_ALL","arguments":[{}]}}]}},"names":["r"]}}]}')
+----
+Substrait aggregate argument has no value, type or enum set
