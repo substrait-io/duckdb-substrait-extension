@@ -63,6 +63,20 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		// The CommonSubplan optimizer deduplicates repeated subplans into
 		// materialized CTEs, which cannot be expressed in Substrait.
 		disabled_optimizers.insert(OptimizerType::COMMON_SUBPLAN);
+		// STATISTICS_PROPAGATION must be disabled because it uses table
+		// statistics (cardinality, min/max) at plan-generation time to fold
+		// filters that look always-false against the current data — e.g. a
+		// query on an empty table folds into LogicalEmptyResult, and
+		// `WHERE id > 100` folds away when the current max id is 3. This
+		// produces a non-portable plan (virtualTable {}) that returns 0 rows
+		// regardless of runtime data. A Substrait plan must be valid for any
+		// data conforming to the schema.
+		disabled_optimizers.insert(OptimizerType::STATISTICS_PROPAGATION);
+		// EMPTY_RESULT_PULLUP is disabled as an additional safeguard: it
+		// propagates LogicalEmptyResult upward through joins/projections, so
+		// if any other pass introduces an empty-result node in the future,
+		// it won't cascade into a fully-folded plan.
+		disabled_optimizers.insert(OptimizerType::EMPTY_RESULT_PULLUP);
 		// If error(varchar) gets implemented in substrait this can be removed
 		DBConfig::GetConfig(context).SetOption(ScalarSubqueryErrorOnMultipleRowsSetting::Name, false);
 		DBConfig::GetConfig(context).options.disabled_optimizers = disabled_optimizers;
