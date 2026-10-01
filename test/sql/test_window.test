@@ -225,3 +225,209 @@ SELECT * FROM from_substrait_json(getvariable('plan_cume_dist'))
 2	0.75
 2	0.75
 5	1.0
+
+statement ok
+SET VARIABLE plan_bounded = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS total FROM window_test_data'))
+
+query TTT
+SELECT contains(getvariable('plan_bounded'), '"minorNumber":102')::VARCHAR, contains(getvariable('plan_bounded'), '"offset":"2"')::VARCHAR, contains(getvariable('plan_bounded'), '"offsetExpr"')::VARCHAR
+----
+true	true	true
+
+query II
+SELECT * FROM from_substrait_json(getvariable('plan_bounded')) ORDER BY 1
+----
+1	10
+2	30
+3	30
+4	60
+5	15
+6	15
+7	50
+8	80
+9	50
+10	110
+
+statement ok
+SET VARIABLE fractional_rows_offset_plan = (SELECT replace(getvariable('plan_bounded'), '"offsetExpr":{"literal":{"i64":"2"}}', '"offsetExpr":{"literal":{"fp64":1.5}}'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('fractional_rows_offset_plan'))
+----
+Invalid Input Error: ROWS window bound offset must be an i64 literal
+
+statement ok
+SET VARIABLE legacy_bounded_plan = (SELECT replace(getvariable('plan_bounded'), ',"offsetExpr":{"literal":{"i64":"2"}}', ''))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('legacy_bounded_plan')) ORDER BY 1
+----
+1	10
+2	30
+3	30
+4	60
+5	15
+6	15
+7	50
+8	80
+9	50
+10	110
+
+statement ok
+SET VARIABLE missing_offset_plan = (SELECT replace(getvariable('plan_bounded'), '"preceding":{"offset":"2","offsetExpr":{"literal":{"i64":"2"}}}', '"preceding":{}'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('missing_offset_plan'))
+----
+Invalid Input Error: Window bound must specify a positive offset or offset expression
+
+statement ok
+SET VARIABLE invalid_bounded_plan = (SELECT replace(getvariable('plan_bounded'), 'BOUNDS_TYPE_ROWS', 'BOUNDS_TYPE_UNSPECIFIED'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('invalid_bounded_plan'))
+----
+Invalid Input Error: Window bounds type must be specified for current-row or offset bounds
+
+statement ok
+SET VARIABLE unbounded_plan = (SELECT replace(json, 'BOUNDS_TYPE_ROWS', 'BOUNDS_TYPE_UNSPECIFIED') FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS total FROM window_test_data'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('unbounded_plan')) ORDER BY 1
+----
+1	70
+2	70
+3	70
+4	70
+5	95
+6	95
+7	95
+8	95
+9	110
+10	110
+
+statement ok
+CREATE TABLE window_timestamp_data (ts TIMESTAMP, val INTEGER)
+
+statement ok
+INSERT INTO window_timestamp_data VALUES ('2024-01-01 00:00:00', 1), ('2024-01-02 00:00:00', 2), ('2024-01-04 00:00:00', 4)
+
+statement ok
+SET VARIABLE interval_range_plan = (SELECT replace(json, '"lowerBound":{"unbounded":{}}', '"lowerBound":{"preceding":{"offsetExpr":{"literal":{"interval_day_to_second":{"days":1,"precision":6},"nullable":true}}}}') FROM get_substrait_json('SELECT ts, sum(val) OVER (ORDER BY ts RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total FROM window_timestamp_data'))
+
+query I
+SELECT total FROM from_substrait_json(getvariable('interval_range_plan')) ORDER BY ts
+----
+1
+3
+4
+
+statement ok
+SET VARIABLE interval_range_roundtrip_plan = (SELECT json FROM get_substrait_json('SELECT ts, sum(val) OVER (ORDER BY ts RANGE BETWEEN INTERVAL ''1'' DAY PRECEDING AND INTERVAL ''1'' DAY FOLLOWING) AS total FROM window_timestamp_data'))
+
+query I
+SELECT total FROM from_substrait_json(getvariable('interval_range_roundtrip_plan')) ORDER BY ts
+----
+3
+3
+4
+
+statement ok
+CREATE TABLE window_numeric_data (ord_key DOUBLE, val INTEGER)
+
+statement ok
+INSERT INTO window_numeric_data VALUES (0.0, 1), (1.25, 2), (1.75, 3)
+
+statement ok
+SET VARIABLE fractional_range_roundtrip_plan = (SELECT json FROM get_substrait_json('SELECT ord_key, sum(val) OVER (ORDER BY ord_key RANGE BETWEEN 1.5 PRECEDING AND 1.5 FOLLOWING) AS total FROM window_numeric_data'))
+
+query I
+SELECT total FROM from_substrait_json(getvariable('fractional_range_roundtrip_plan')) ORDER BY ord_key
+----
+3
+6
+5
+
+statement ok
+SET VARIABLE decimal_range_roundtrip_plan = (SELECT json FROM get_substrait_json('SELECT ord_key, sum(val) OVER (ORDER BY CAST(ord_key AS INTEGER) RANGE BETWEEN 1.5 PRECEDING AND 0.25 FOLLOWING) AS total FROM window_numeric_data'))
+
+query I
+SELECT total FROM from_substrait_json(getvariable('decimal_range_roundtrip_plan')) ORDER BY ord_key
+----
+1
+3
+5
+
+statement ok
+SET VARIABLE fractional_range_desc_plan = (SELECT json FROM get_substrait_json('SELECT ord_key, sum(val) OVER (ORDER BY ord_key DESC RANGE BETWEEN 1.5 PRECEDING AND CURRENT ROW) AS preceding_total, sum(val) OVER (ORDER BY ord_key DESC RANGE BETWEEN CURRENT ROW AND 1.5 FOLLOWING) AS following_total FROM window_numeric_data'))
+
+query II
+SELECT preceding_total, following_total FROM from_substrait_json(getvariable('fractional_range_desc_plan')) ORDER BY ord_key
+----
+3	1
+5	3
+3	5
+
+statement ok
+SET VARIABLE interval_range_desc_plan = (SELECT json FROM get_substrait_json('SELECT ts, sum(val) OVER (ORDER BY ts DESC RANGE BETWEEN INTERVAL ''1'' DAY PRECEDING AND CURRENT ROW) AS preceding_total, sum(val) OVER (ORDER BY ts DESC RANGE BETWEEN CURRENT ROW AND INTERVAL ''1'' DAY FOLLOWING) AS following_total FROM window_timestamp_data'))
+
+query II
+SELECT preceding_total, following_total FROM from_substrait_json(getvariable('interval_range_desc_plan')) ORDER BY ts
+----
+3	1
+2	3
+4	4
+
+# Calendar days and fixed-duration hours must remain distinct for TIMESTAMPTZ across DST.
+statement ok
+SET VARIABLE component_interval_range_plan = (SELECT json FROM get_substrait_json('SELECT ts, sum(val) OVER (ORDER BY ts RANGE BETWEEN INTERVAL ''1 day -24 hours'' PRECEDING AND CURRENT ROW) AS total FROM window_timestamp_data'))
+
+query II
+SELECT
+    TRY_CAST(regexp_extract(getvariable('component_interval_range_plan'), '"intervalDayToSecond":\{[^}]*"days":(-?[0-9]+)', 1) AS INTEGER),
+    TRY_CAST(regexp_extract(getvariable('component_interval_range_plan'), '"intervalDayToSecond":\{[^}]*"subseconds":"(-?[0-9]+)"', 1) AS BIGINT)
+----
+1	-86400000000
+
+statement error
+SELECT json FROM get_substrait_json('SELECT sum(val) OVER (ORDER BY ts RANGE BETWEEN INTERVAL ''1 month 1 day'' PRECEDING AND CURRENT ROW) FROM window_timestamp_data')
+----
+Not implemented Error: Mixed month and day-time intervals are not supported for RANGE window bounds
+
+statement ok
+SET VARIABLE negative_interval_range_plan = (SELECT replace(getvariable('interval_range_plan'), '"days":1', '"days":-1'))
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('negative_interval_range_plan'))
+----
+Invalid Input Error: Negative values in window bound offset are not supported
+
+statement ok
+SET VARIABLE centered_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS total FROM window_test_data'))
+
+query II
+SELECT * FROM from_substrait_json(getvariable('centered_plan')) ORDER BY 1
+----
+1	30
+2	30
+3	60
+4	40
+5	15
+6	50
+7	80
+8	80
+9	110
+10	110
+
+statement ok
+SET VARIABLE zero_offset_plan = (SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN 0 PRECEDING AND CURRENT ROW) AS total FROM window_test_data'))
+
+query TT
+SELECT contains(getvariable('zero_offset_plan'), '"preceding"')::VARCHAR, contains(getvariable('zero_offset_plan'), '"offsetExpr"')::VARCHAR
+----
+false	false
+
+statement error
+SELECT json FROM get_substrait_json('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN -1 PRECEDING AND CURRENT ROW) AS total FROM window_test_data')
+----
+Not implemented Error: Negative window bound offsets are not supported

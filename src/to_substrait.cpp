@@ -4,6 +4,7 @@
 #include "duckdb/common/constants.hpp"
 #include "duckdb/common/enums/expression_type.hpp"
 #include "duckdb/common/types/value.hpp"
+#include "duckdb/execution/expression_executor.hpp"
 #include "duckdb/execution/index/art/art_key.hpp"
 #include "duckdb/function/table/table_scan.hpp"
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
@@ -1802,14 +1803,13 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			}
 			break;
 		}
-		
+
 		swin_func->set_bounds_type(bounds_type);
-		
+
 		// Helper function to transform window boundaries
-		auto TransformWindowBoundary = [](WindowBoundary boundary_type,
-		                                   const unique_ptr<Expression>& boundary_expr,
-		                                   substrait::Expression_WindowFunction_Bound* bound,
-		                                   bool is_start_bound) {
+		auto TransformWindowBoundary = [this, &dwin_expr](
+			                               WindowBoundary boundary_type, const unique_ptr<Expression> &boundary_expr,
+			                               substrait::Expression_WindowFunction_Bound *bound, bool is_start_bound) {
 			switch (boundary_type) {
 			case WindowBoundary::UNBOUNDED_PRECEDING:
 			case WindowBoundary::UNBOUNDED_FOLLOWING:
@@ -1823,36 +1823,101 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			case WindowBoundary::EXPR_PRECEDING_ROWS:
 			case WindowBoundary::EXPR_PRECEDING_RANGE:
 			case WindowBoundary::EXPR_PRECEDING_GROUPS:
-				if (boundary_expr) {
-					// For now, we only support constant integer offsets
-					// TODO: Support expression-based offsets
-					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
-						auto preceding = bound->mutable_preceding();
-						preceding->set_offset(const_expr.value.GetValue<int64_t>());
-					} else {
-						throw NotImplementedException("Only constant offsets are supported for window bounds");
-					}
-				} else {
-					throw InternalException("Window boundary expression missing for PRECEDING");
-				}
-				break;
 			case WindowBoundary::EXPR_FOLLOWING_ROWS:
 			case WindowBoundary::EXPR_FOLLOWING_RANGE:
-			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
-				if (boundary_expr) {
-					// For now, we only support constant integer offsets
-					if (boundary_expr->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT) {
-						auto &const_expr = boundary_expr->Cast<BoundConstantExpression>();
-						auto following = bound->mutable_following();
-						following->set_offset(const_expr.value.GetValue<int64_t>());
-					} else {
+			case WindowBoundary::EXPR_FOLLOWING_GROUPS: {
+				bool preceding = boundary_type == WindowBoundary::EXPR_PRECEDING_ROWS ||
+					             boundary_type == WindowBoundary::EXPR_PRECEDING_RANGE ||
+					             boundary_type == WindowBoundary::EXPR_PRECEDING_GROUPS;
+				bool is_range = boundary_type == WindowBoundary::EXPR_PRECEDING_RANGE ||
+					            boundary_type == WindowBoundary::EXPR_FOLLOWING_RANGE;
+				if (!boundary_expr) {
+					throw InternalException("Window boundary expression missing for %s",
+						                    preceding ? "PRECEDING" : "FOLLOWING");
+				}
+				auto unwrap_casts = [](Expression &expr) -> Expression & {
+					auto result = &expr;
+					while (result->GetExpressionClass() == ExpressionClass::BOUND_CAST) {
+						result = result->Cast<BoundCastExpression>().child.get();
+					}
+					return *result;
+				};
+				auto offset_expr = boundary_expr.get();
+				if (is_range) {
+					// The binder rewrites RANGE offsets as ORDER +/- offset, reversing arithmetic for DESC.
+					auto &boundary = unwrap_casts(*boundary_expr);
+					if (dwin_expr.orders.size() != 1 ||
+						boundary.GetExpressionClass() != ExpressionClass::BOUND_FUNCTION) {
 						throw NotImplementedException("Only constant offsets are supported for window bounds");
 					}
+					auto &arithmetic = boundary.Cast<BoundFunctionExpression>();
+					auto &order = dwin_expr.orders[0];
+					bool subtract = preceding == (order.type == OrderType::ASCENDING);
+					if (arithmetic.function.name != (subtract ? "-" : "+") || arithmetic.children.size() != 2 ||
+						!unwrap_casts(*arithmetic.children[0]).Equals(unwrap_casts(*order.expression))) {
+						throw NotImplementedException("Unsupported RANGE window boundary expression");
+					}
+					offset_expr = arithmetic.children[1].get();
+				}
+				if (unwrap_casts(*offset_expr).GetExpressionClass() != ExpressionClass::BOUND_CONSTANT) {
+					throw NotImplementedException("Only constant offsets are supported for window bounds");
+				}
+				// Evaluate only the constant offset and its casts, never the ORDER arithmetic.
+				auto offset = ExpressionExecutor::EvaluateScalar(context, *offset_expr);
+				if (offset.IsNull()) {
+					throw NotImplementedException("NULL window bound offsets are not supported");
+				}
+				bool zero;
+				if (is_range && offset.type().id() == LogicalTypeId::INTERVAL) {
+					auto interval = offset.GetValue<interval_t>();
+					if (interval.months != 0 && (interval.days != 0 || interval.micros != 0)) {
+						throw NotImplementedException(
+							"Mixed month and day-time intervals are not supported for RANGE window bounds");
+					}
+					if (interval < interval_t {}) {
+						throw NotImplementedException("Negative window bound offsets are not supported");
+					}
+					zero = interval.months == 0 && interval.days == 0 && interval.micros == 0;
 				} else {
-					throw InternalException("Window boundary expression missing for FOLLOWING");
+					if (!is_range) {
+						offset = Value::BIGINT(offset.GetValue<int64_t>());
+					}
+					if (!offset.type().IsNumeric()) {
+						throw NotImplementedException(
+							"Only numeric or interval offsets are supported for RANGE window bounds");
+					}
+					auto zero_value = Value::Numeric(offset.type(), 0);
+					if (offset < zero_value) {
+						throw NotImplementedException("Negative window bound offsets are not supported");
+					}
+					zero = offset == zero_value;
+				}
+				if (zero) {
+					bound->mutable_current_row();
+					break;
+				}
+				auto serialized_offset = make_uniq<substrait::Expression>();
+				TransformConstant(offset, *serialized_offset);
+				Value legacy_offset, restored_offset;
+				bool has_legacy_offset = offset.type().IsNumeric() &&
+					                     offset.TryCastAs(context, LogicalType::BIGINT, legacy_offset, nullptr) &&
+					                     legacy_offset.TryCastAs(context, offset.type(), restored_offset, nullptr) &&
+					                     offset == restored_offset;
+				if (preceding) {
+					auto preceding_bound = bound->mutable_preceding();
+					preceding_bound->set_allocated_offset_expr(serialized_offset.release());
+					if (has_legacy_offset) {
+						preceding_bound->set_offset(legacy_offset.GetValue<int64_t>());
+					}
+				} else {
+					auto following_bound = bound->mutable_following();
+					following_bound->set_allocated_offset_expr(serialized_offset.release());
+					if (has_legacy_offset) {
+						following_bound->set_offset(legacy_offset.GetValue<int64_t>());
+					}
 				}
 				break;
+			}
 			default:
 				// Default to UNBOUNDED PRECEDING for start, CURRENT ROW for end
 				if (is_start_bound) {
@@ -1863,16 +1928,16 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 				break;
 			}
 		};
-		
+
 		// Transform start bound
 		auto lower_bound = swin_func->mutable_lower_bound();
 		TransformWindowBoundary(dwin_expr.start, dwin_expr.start_expr, lower_bound, true);
-		
+
 		// Transform end bound
 		auto upper_bound = swin_func->mutable_upper_bound();
 		TransformWindowBoundary(dwin_expr.end, dwin_expr.end_expr, upper_bound, false);
 		}
-		
+
 		// Update current_input to chain the next window relation
 		current_input = res.release();
 	}
@@ -2769,7 +2834,7 @@ void DuckDBToSubstrait::TransformPlan(LogicalOperator &dop) {
 	}
 	auto version = plan.mutable_version();
 	version->set_major_number(0);
-	version->set_minor_number(78);
+	version->set_minor_number(102);
 	version->set_patch_number(0);
 	version->set_producer("DuckDB");
 }
