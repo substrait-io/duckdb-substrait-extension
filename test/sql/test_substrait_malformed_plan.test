@@ -1,0 +1,35 @@
+# name: test/sql/test_substrait_malformed_plan.test
+# description: A plan with an unset Rel or Expression oneof must be rejected, not crash
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+CREATE TABLE t1 (a INTEGER);
+
+statement ok
+INSERT INTO t1 VALUES (1), (2);
+
+# Protobuf reports case 0 for an unset oneof, and FindFieldByNumber(0) returns null. Building
+# the diagnostic from that descriptor used to dereference null and take the process down with
+# SIGSEGV, so these must each surface as a clean error.
+
+# Unset Expression oneof (empty filter condition)
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{"read":{"baseSchema":{"names":["a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["t1"]}}},"condition":{}}},"names":["a"]}}],"version":{"minorNumber":98,"producer":"test"}}')
+----
+Unsupported expression type
+
+# Unset Rel oneof (empty filter input)
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{"filter":{"input":{},"condition":{"literal":{"boolean":true}}}},"names":["a"]}}],"version":{"minorNumber":98,"producer":"test"}}')
+----
+Unsupported relation type
+
+# Unset Rel oneof at the plan root
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"input":{},"names":["a"]}}],"version":{"minorNumber":98,"producer":"test"}}')
+----
+Unsupported relation type
