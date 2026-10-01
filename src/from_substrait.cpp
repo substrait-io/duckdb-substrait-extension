@@ -35,6 +35,8 @@
 #include "duckdb/main/relation/table_function_relation.hpp"
 #include "duckdb/main/relation/value_relation.hpp"
 #include "duckdb/main/relation/view_relation.hpp"
+#include "duckdb/parser/expression/subquery_expression.hpp"
+#include "duckdb/parser/statement/select_statement.hpp"
 #include "duckdb/main/relation/aggregate_relation.hpp"
 #include "duckdb/main/relation/cross_product_relation.hpp"
 #include "duckdb/main/relation/filter_relation.hpp"
@@ -71,6 +73,12 @@ const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_n
 const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
+
+//! Proto3 enums are open, so _Name() returns an empty string for a value a newer producer
+//! added, leaving a blank where the offending value should be. Fall back to the number.
+static string SubstraitEnumName(const string &name, int value) {
+	return name.empty() ? ("unknown (" + to_string(value) + ")") : name;
+}
 
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
@@ -810,6 +818,111 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformNested(const substrait:
 	}
 }
 
+ExpressionType SubstraitToDuckDB::TransformSetComparisonOp(
+    substrait::Expression_Subquery_SetComparison::ComparisonOp op) {
+	switch (op) {
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_EQ:
+		return ExpressionType::COMPARE_EQUAL;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_NE:
+		return ExpressionType::COMPARE_NOTEQUAL;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_LT:
+		return ExpressionType::COMPARE_LESSTHAN;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_GT:
+		return ExpressionType::COMPARE_GREATERTHAN;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_LE:
+		return ExpressionType::COMPARE_LESSTHANOREQUALTO;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_GE:
+		return ExpressionType::COMPARE_GREATERTHANOREQUALTO;
+	default:
+		throw NotImplementedException("Unsupported Substrait set comparison operator %s",
+		                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ComparisonOp_Name(op), op));
+	}
+}
+
+//! Wraps a Substrait Rel as a DuckDB scalar subquery's SELECT statement.
+unique_ptr<SelectStatement> SubstraitToDuckDB::SubqueryStatement(const substrait::Rel &rel) {
+	// A subquery is its own correlation boundary. Any enclosing LateralJoinRel scope must be
+	// hidden while transforming it, otherwise an OuterReference inside the subquery would
+	// resolve against that lateral join's left columns instead of being rejected.
+	class ScopeBarrier {
+	public:
+		explicit ScopeBarrier(vector<LateralScope> &scopes) : scopes_(scopes), saved_(std::move(scopes)) {
+			scopes_.clear();
+		}
+		~ScopeBarrier() {
+			scopes_ = std::move(saved_);
+		}
+
+	private:
+		vector<LateralScope> &scopes_;
+		vector<LateralScope> saved_;
+	} barrier(lateral_scopes);
+
+	auto select = make_uniq<SelectStatement>();
+	select->node = TransformOp(rel)->GetQueryNode();
+	return select;
+}
+
+unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSubqueryExpr(const substrait::Expression &sexpr) {
+	auto &subquery = sexpr.subquery();
+	auto result = make_uniq<SubqueryExpression>();
+	switch (subquery.subquery_type_case()) {
+	case substrait::Expression_Subquery::SubqueryTypeCase::kScalar:
+		result->subquery_type = SubqueryType::SCALAR;
+		result->subquery = SubqueryStatement(subquery.scalar().input());
+		return std::move(result);
+	case substrait::Expression_Subquery::SubqueryTypeCase::kSetPredicate: {
+		auto &predicate = subquery.set_predicate();
+		if (predicate.predicate_op() != substrait::Expression_Subquery_SetPredicate::PREDICATE_OP_EXISTS) {
+			throw NotImplementedException("Substrait set predicate %s is not supported yet",
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetPredicate_PredicateOp_Name(
+			                                  predicate.predicate_op()), predicate.predicate_op()));
+		}
+		result->subquery_type = SubqueryType::EXISTS;
+		result->subquery = SubqueryStatement(predicate.tuples());
+		return std::move(result);
+	}
+	case substrait::Expression_Subquery::SubqueryTypeCase::kInPredicate: {
+		auto &in_predicate = subquery.in_predicate();
+		// DuckDB's ANY subquery compares a single expression against the subquery's
+		// single output column; Substrait allows a row of needles, which has no
+		// equivalent here.
+		if (in_predicate.needles_size() != 1) {
+			throw NotImplementedException("Substrait IN subqueries over %d needles are not supported yet",
+			                              in_predicate.needles_size());
+		}
+		result->subquery_type = SubqueryType::ANY;
+		result->comparison_type = ExpressionType::COMPARE_EQUAL;
+		result->child = TransformExpr(in_predicate.needles(0));
+		result->subquery = SubqueryStatement(in_predicate.haystack());
+		return std::move(result);
+	}
+	case substrait::Expression_Subquery::SubqueryTypeCase::kSetComparison: {
+		auto &comparison = subquery.set_comparison();
+		auto reduction = comparison.reduction_op();
+		if (reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ANY &&
+		    reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
+			throw NotImplementedException("Substrait set comparison %s is not supported yet",
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ReductionOp_Name(
+			                                  reduction), reduction));
+		}
+		result->subquery_type = SubqueryType::ANY;
+		result->comparison_type = TransformSetComparisonOp(comparison.comparison_op());
+		result->child = TransformExpr(comparison.left());
+		result->subquery = SubqueryStatement(comparison.right());
+		if (reduction == substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
+			// DuckDB has no ALL subquery type; its own parser expands `x op ALL (s)` to
+			// `NOT (x <negated-op> ANY (s))`, which is exact under three-valued logic.
+			result->comparison_type = NegateComparisonExpression(result->comparison_type);
+			return make_uniq<OperatorExpression>(ExpressionType::OPERATOR_NOT, std::move(result));
+		}
+		return std::move(result);
+	}
+	default:
+		throw NotImplementedException("Unsupported Substrait subquery type");
+	}
+}
+
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::Expression &sexpr,
                                                               RootNameIterator *iterator) {
 	if (iterator) {
@@ -831,6 +944,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::E
 	case substrait::Expression::RexTypeCase::kNested:
 		return TransformNested(sexpr, iterator);
 	case substrait::Expression::RexTypeCase::kSubquery:
+		return TransformSubqueryExpr(sexpr);
 	default:
 		throw NotImplementedException(
 		    "Unsupported expression type %s",
