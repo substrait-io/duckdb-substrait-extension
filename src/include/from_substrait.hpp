@@ -98,6 +98,11 @@ private:
 	unique_ptr<ParsedExpression> TransformIfThenExpr(const substrait::Expression &sexpr);
 	unique_ptr<ParsedExpression> TransformCastExpr(const substrait::Expression &sexpr);
 	unique_ptr<ParsedExpression> TransformInExpr(const substrait::Expression &sexpr);
+	unique_ptr<ParsedExpression> TransformSubqueryExpr(const substrait::Expression &sexpr);
+	//! Wraps a Substrait Rel as the SELECT statement of a DuckDB subquery expression
+	unique_ptr<SelectStatement> SubqueryStatement(const substrait::Rel &rel);
+	static ExpressionType TransformSetComparisonOp(
+	    substrait::Expression_Subquery_SetComparison::ComparisonOp op);
 	unique_ptr<ParsedExpression> TransformNested(const substrait::Expression &sexpr,
 	                                             RootNameIterator *iterator = nullptr);
 

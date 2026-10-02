@@ -36,6 +36,8 @@
 #include "duckdb/main/relation/table_function_relation.hpp"
 #include "duckdb/main/relation/value_relation.hpp"
 #include "duckdb/main/relation/view_relation.hpp"
+#include "duckdb/parser/expression/subquery_expression.hpp"
+#include "duckdb/parser/statement/select_statement.hpp"
 #include "duckdb/main/relation/aggregate_relation.hpp"
 #include "duckdb/main/relation/cross_product_relation.hpp"
 #include "duckdb/main/relation/filter_relation.hpp"
@@ -72,6 +74,20 @@ const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_n
 const case_insensitive_set_t SubstraitToDuckDB::valid_extract_subfields = {
     "year",    "month",       "day",          "decade", "century", "millenium",
     "quarter", "microsecond", "milliseconds", "second", "minute",  "hour"};
+
+//! Proto3 enums are open, so _Name() returns an empty string for a value a newer producer
+//! added, leaving a blank where the offending value should be. Fall back to the number.
+static string SubstraitEnumName(const string &name, int value) {
+	return name.empty() ? ("unknown (" + to_string(value) + ")") : name;
+}
+
+//! Protobuf hands back a null FieldDescriptor when a oneof case is unset or unrecognized, so
+//! any diagnostic built from a case number has to tolerate that or it dereferences null. Falls
+//! back to the raw number, which is what a newer producer's unknown value looks like anyway.
+static string SubstraitFieldName(const google::protobuf::Descriptor *descriptor, int field_number) {
+	auto field = descriptor->FindFieldByNumber(field_number);
+	return field ? string(field->name()) : ("unknown (field " + to_string(field_number) + ")");
+}
 
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
@@ -372,7 +388,7 @@ Value TransformLiteralToValue(const substrait::Expression_Literal &literal) {
 	default:
 		throw NotImplementedException(
 		    "literals of this type are not implemented: %s",
-		    string(substrait::Expression_Literal::GetDescriptor()->FindFieldByNumber(literal.literal_type_case())->name()));
+		    SubstraitFieldName(substrait::Expression_Literal::GetDescriptor(), literal.literal_type_case()));
 	}
 }
 
@@ -438,9 +454,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::ResolveOuterReference(
 	default:
 		throw NotImplementedException(
 		    "Unsupported OuterReference type %s",
-		    string(substrait::Expression_FieldReference_OuterReference::GetDescriptor()
-		               ->FindFieldByNumber(outer_ref.outer_reference_type_case())
-		               ->name()));
+		    SubstraitFieldName(substrait::Expression_FieldReference_OuterReference::GetDescriptor(),
+		                       outer_ref.outer_reference_type_case()));
 	}
 
 	// Validate scope was found (should never be null if switch handled all cases correctly)
@@ -493,9 +508,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSelectionExpr(const sub
 	default:
 		throw NotImplementedException(
 		    "Unsupported FieldReference root type %s",
-		    string(substrait::Expression_FieldReference::GetDescriptor()
-		               ->FindFieldByNumber(selection.root_type_case())
-		               ->name()));
+		    SubstraitFieldName(substrait::Expression_FieldReference::GetDescriptor(),
+		                       selection.root_type_case()));
 	}
 
 	// Nested reference segments select fields within a struct column
@@ -558,25 +572,8 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		                                       std::move(children[1]));
 	} else if (function_name == "not_equal") {
 		D_ASSERT(children.size() == 2);
-		// FIXME: We do a not_like if we are doing a string comparison
-		// This is due to substrait not supporting !~~
-		bool is_it_string = false;
-		for (idx_t child_idx = 0; child_idx < 2; child_idx++) {
-			if (children[child_idx]->GetExpressionClass() == ExpressionClass::CONSTANT) {
-				auto &constant = children[child_idx]->Cast<ConstantExpression>();
-				if (constant.value.type() == LogicalType::VARCHAR) {
-					is_it_string = true;
-				}
-			}
-		}
-		if (is_it_string) {
-			string not_equal = "!~~";
-			return make_uniq<FunctionExpression>(not_equal, std::move(children));
-		} else {
-			return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_NOTEQUAL, std::move(children[0]),
-			                                       std::move(children[1]));
-		}
-
+		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_NOTEQUAL, std::move(children[0]),
+		                                       std::move(children[1]));
 	} else if (function_name == "lte") {
 		D_ASSERT(children.size() == 2);
 		return make_uniq<ComparisonExpression>(ExpressionType::COMPARE_LESSTHANOREQUALTO, std::move(children[0]),
@@ -828,6 +825,111 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformNested(const substrait:
 	}
 }
 
+ExpressionType SubstraitToDuckDB::TransformSetComparisonOp(
+    substrait::Expression_Subquery_SetComparison::ComparisonOp op) {
+	switch (op) {
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_EQ:
+		return ExpressionType::COMPARE_EQUAL;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_NE:
+		return ExpressionType::COMPARE_NOTEQUAL;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_LT:
+		return ExpressionType::COMPARE_LESSTHAN;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_GT:
+		return ExpressionType::COMPARE_GREATERTHAN;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_LE:
+		return ExpressionType::COMPARE_LESSTHANOREQUALTO;
+	case substrait::Expression_Subquery_SetComparison::COMPARISON_OP_GE:
+		return ExpressionType::COMPARE_GREATERTHANOREQUALTO;
+	default:
+		throw NotImplementedException("Unsupported Substrait set comparison operator %s",
+		                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ComparisonOp_Name(op), op));
+	}
+}
+
+//! Wraps a Substrait Rel as a DuckDB scalar subquery's SELECT statement.
+unique_ptr<SelectStatement> SubstraitToDuckDB::SubqueryStatement(const substrait::Rel &rel) {
+	// A subquery is its own correlation boundary. Any enclosing LateralJoinRel scope must be
+	// hidden while transforming it, otherwise an OuterReference inside the subquery would
+	// resolve against that lateral join's left columns instead of being rejected.
+	class ScopeBarrier {
+	public:
+		explicit ScopeBarrier(vector<LateralScope> &scopes) : scopes_(scopes), saved_(std::move(scopes)) {
+			scopes_.clear();
+		}
+		~ScopeBarrier() {
+			scopes_ = std::move(saved_);
+		}
+
+	private:
+		vector<LateralScope> &scopes_;
+		vector<LateralScope> saved_;
+	} barrier(lateral_scopes);
+
+	auto select = make_uniq<SelectStatement>();
+	select->node = TransformOp(rel)->GetQueryNode();
+	return select;
+}
+
+unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformSubqueryExpr(const substrait::Expression &sexpr) {
+	auto &subquery = sexpr.subquery();
+	auto result = make_uniq<SubqueryExpression>();
+	switch (subquery.subquery_type_case()) {
+	case substrait::Expression_Subquery::SubqueryTypeCase::kScalar:
+		result->subquery_type = SubqueryType::SCALAR;
+		result->subquery = SubqueryStatement(subquery.scalar().input());
+		return std::move(result);
+	case substrait::Expression_Subquery::SubqueryTypeCase::kSetPredicate: {
+		auto &predicate = subquery.set_predicate();
+		if (predicate.predicate_op() != substrait::Expression_Subquery_SetPredicate::PREDICATE_OP_EXISTS) {
+			throw NotImplementedException("Substrait set predicate %s is not supported yet",
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetPredicate_PredicateOp_Name(
+			                                  predicate.predicate_op()), predicate.predicate_op()));
+		}
+		result->subquery_type = SubqueryType::EXISTS;
+		result->subquery = SubqueryStatement(predicate.tuples());
+		return std::move(result);
+	}
+	case substrait::Expression_Subquery::SubqueryTypeCase::kInPredicate: {
+		auto &in_predicate = subquery.in_predicate();
+		// DuckDB's ANY subquery compares a single expression against the subquery's
+		// single output column; Substrait allows a row of needles, which has no
+		// equivalent here.
+		if (in_predicate.needles_size() != 1) {
+			throw NotImplementedException("Substrait IN subqueries over %d needles are not supported yet",
+			                              in_predicate.needles_size());
+		}
+		result->subquery_type = SubqueryType::ANY;
+		result->comparison_type = ExpressionType::COMPARE_EQUAL;
+		result->child = TransformExpr(in_predicate.needles(0));
+		result->subquery = SubqueryStatement(in_predicate.haystack());
+		return std::move(result);
+	}
+	case substrait::Expression_Subquery::SubqueryTypeCase::kSetComparison: {
+		auto &comparison = subquery.set_comparison();
+		auto reduction = comparison.reduction_op();
+		if (reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ANY &&
+		    reduction != substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
+			throw NotImplementedException("Substrait set comparison %s is not supported yet",
+			                              SubstraitEnumName(substrait::Expression_Subquery_SetComparison_ReductionOp_Name(
+			                                  reduction), reduction));
+		}
+		result->subquery_type = SubqueryType::ANY;
+		result->comparison_type = TransformSetComparisonOp(comparison.comparison_op());
+		result->child = TransformExpr(comparison.left());
+		result->subquery = SubqueryStatement(comparison.right());
+		if (reduction == substrait::Expression_Subquery_SetComparison::REDUCTION_OP_ALL) {
+			// DuckDB has no ALL subquery type; its own parser expands `x op ALL (s)` to
+			// `NOT (x <negated-op> ANY (s))`, which is exact under three-valued logic.
+			result->comparison_type = NegateComparisonExpression(result->comparison_type);
+			return make_uniq<OperatorExpression>(ExpressionType::OPERATOR_NOT, std::move(result));
+		}
+		return std::move(result);
+	}
+	default:
+		throw NotImplementedException("Unsupported Substrait subquery type");
+	}
+}
+
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::Expression &sexpr,
                                                               RootNameIterator *iterator) {
 	if (iterator) {
@@ -849,10 +951,11 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformExpr(const substrait::E
 	case substrait::Expression::RexTypeCase::kNested:
 		return TransformNested(sexpr, iterator);
 	case substrait::Expression::RexTypeCase::kSubquery:
+		return TransformSubqueryExpr(sexpr);
 	default:
 		throw NotImplementedException(
 		    "Unsupported expression type %s",
-		    string(substrait::Expression::GetDescriptor()->FindFieldByNumber(sexpr.rex_type_case())->name()));
+		    SubstraitFieldName(substrait::Expression::GetDescriptor(), sexpr.rex_type_case()));
 	}
 }
 
@@ -888,7 +991,7 @@ OrderByNode SubstraitToDuckDB::TransformOrder(const substrait::SortField &sordf)
 	default:
 		throw NotImplementedException(
 		    "Unsupported ordering %s",
-		    string(substrait::SortField::GetDescriptor()->FindFieldByNumber(sordf.direction())->name()));
+		    SubstraitEnumName(substrait::SortField_SortDirection_Name(sordf.direction()), sordf.direction()));
 	}
 
 	return {dordertype, dnullorder, TransformExpr(sordf.expr())};
@@ -933,7 +1036,7 @@ JoinType SubstraitToDuckDB::TransformJoinType(substrait::JoinRel::JoinType stype
 	}
 	throw NotImplementedException(
 	    "Unsupported %s join type: %s", lateral_only ? "LateralJoinRel" : "JoinRel",
-	    string(substrait::JoinRel::GetDescriptor()->FindFieldByNumber(stype)->name()));
+	    SubstraitEnumName(substrait::JoinRel_JoinType_Name(stype), stype));
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &sop) {
@@ -1180,7 +1283,7 @@ const substrait::RelCommon *GetCommon(const substrait::Rel &sop) {
 	case substrait::Rel::RelTypeCase::kDdl:
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-		                              string(substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name()));
+		                              SubstraitFieldName(substrait::Rel::GetDescriptor(), sop.rel_type_case()));
 	}
 }
 
@@ -1675,9 +1778,58 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		}
 		
 		// Handle window bounds
+		window_expr->start = WindowBoundary::UNBOUNDED_PRECEDING;
+		window_expr->end = WindowBoundary::UNBOUNDED_FOLLOWING;
 		if (window_func.has_lower_bound() || window_func.has_upper_bound()) {
-			// Determine bounds type (ROWS or RANGE)
-			bool is_rows = window_func.bounds_type() == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			auto bounds_type = window_func.bounds_type();
+			auto requires_bounds_type = [](const substrait::Expression_WindowFunction_Bound &bound) {
+				return bound.has_current_row() || bound.has_preceding() || bound.has_following();
+			};
+			bool bounds_type_required =
+			    (window_func.has_lower_bound() && requires_bounds_type(window_func.lower_bound())) ||
+			    (window_func.has_upper_bound() && requires_bounds_type(window_func.upper_bound()));
+			if (bounds_type_required &&
+			    bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_UNSPECIFIED) {
+				throw InvalidInputException("Window bounds type must be specified for current-row or offset bounds");
+			}
+			if (bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_UNSPECIFIED &&
+			    bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS &&
+			    bounds_type != substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_RANGE) {
+				throw InvalidInputException("Unsupported window bounds type");
+			}
+			bool is_rows = bounds_type == substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
+			auto transform_offset = [is_rows](const auto &bound) -> unique_ptr<ParsedExpression> {
+				if (bound.has_offset_expr()) {
+					if (is_rows) {
+						if (!bound.offset_expr().has_literal() ||
+						    bound.offset_expr().literal().literal_type_case() !=
+						        substrait::Expression_Literal::LiteralTypeCase::kI64) {
+							throw InvalidInputException("ROWS window bound offset must be an i64 literal");
+						}
+						auto offset = ExtractLiteralInteger(bound.offset_expr(), "window bound offset");
+						return make_uniq<ConstantExpression>(Value::BIGINT(static_cast<int64_t>(offset)));
+					}
+					if (!bound.offset_expr().has_literal()) {
+						throw NotImplementedException(
+						    "Non-literal expressions in window bound offset are not supported");
+					}
+					auto offset = TransformLiteralToValue(bound.offset_expr().literal());
+					if (offset.IsNull()) {
+						throw NotImplementedException("NULL expressions in window bound offset are not supported");
+					}
+					if ((offset.type().IsNumeric() && offset < Value::Numeric(offset.type(), 0)) ||
+					    (offset.type().id() == LogicalTypeId::INTERVAL &&
+					     offset.template GetValue<interval_t>() < interval_t {})) {
+						throw InvalidInputException("Negative values in window bound offset are not supported");
+					}
+					return make_uniq<ConstantExpression>(std::move(offset));
+				}
+				auto offset = bound.offset();
+				if (offset <= 0) {
+					throw InvalidInputException("Window bound must specify a positive offset or offset expression");
+				}
+				return make_uniq<ConstantExpression>(Value::BIGINT(offset));
+			};
 			
 			// Transform lower bound
 			if (window_func.has_lower_bound()) {
@@ -1687,10 +1839,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				} else if (lower.has_current_row()) {
 					window_expr->start = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
 				} else if (lower.has_preceding()) {
-					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.preceding().offset()));
+					window_expr->start_expr = transform_offset(lower.preceding());
 					window_expr->start = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
 				} else if (lower.has_following()) {
-					window_expr->start_expr = make_uniq<ConstantExpression>(Value::BIGINT(lower.following().offset()));
+					window_expr->start_expr = transform_offset(lower.following());
 					window_expr->start = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
 				}
 			}
@@ -1703,10 +1855,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				} else if (upper.has_current_row()) {
 					window_expr->end = is_rows ? WindowBoundary::CURRENT_ROW_ROWS : WindowBoundary::CURRENT_ROW_RANGE;
 				} else if (upper.has_preceding()) {
-					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.preceding().offset()));
+					window_expr->end_expr = transform_offset(upper.preceding());
 					window_expr->end = is_rows ? WindowBoundary::EXPR_PRECEDING_ROWS : WindowBoundary::EXPR_PRECEDING_RANGE;
 				} else if (upper.has_following()) {
-					window_expr->end_expr = make_uniq<ConstantExpression>(Value::BIGINT(upper.following().offset()));
+					window_expr->end_expr = transform_offset(upper.following());
 					window_expr->end = is_rows ? WindowBoundary::EXPR_FOLLOWING_ROWS : WindowBoundary::EXPR_FOLLOWING_RANGE;
 				}
 			}
@@ -1738,7 +1890,7 @@ static SetOperationType TransformSetOperationType(substrait::SetRel_SetOp setop)
 	}
 	default: {
 		throw NotImplementedException("SetOperationType transform not implemented for SetRel_SetOp type %s",
-		                              string(substrait::SetRel::GetDescriptor()->FindFieldByNumber(setop)->name()));
+		                              SubstraitEnumName(substrait::SetRel_SetOp_Name(setop), setop));
 	}
 	}
 }
@@ -1848,7 +2000,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 	}
 	default:
 		throw NotImplementedException("Unsupported write operation %s",
-		                              string(substrait::WriteRel::GetDescriptor()->FindFieldByNumber(swrite.op())->name()));
+		                              SubstraitEnumName(substrait::WriteRel_WriteOp_Name(swrite.op()), swrite.op()));
 	}
 }
 
@@ -1907,7 +2059,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformOp(const substrait::Rel &sop,
 		return TransformReferenceOp(sop);
 	default:
 		throw NotImplementedException("Unsupported relation type %s",
-		                              string(substrait::Rel::GetDescriptor()->FindFieldByNumber(sop.rel_type_case())->name()));
+		                              SubstraitFieldName(substrait::Rel::GetDescriptor(), sop.rel_type_case()));
 	}
 
 	const auto &mapping = GetOutputMapping(sop);

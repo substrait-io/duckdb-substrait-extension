@@ -1,0 +1,68 @@
+# name: test/sql/test_substrait_not_like.test
+# description: NOT LIKE must round-trip as not(like(..)), and not_equal must stay inequality
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE t (s VARCHAR);
+
+# 'a%c' is both a literal value in the table and a LIKE pattern that matches 'abc'.
+# That is what makes the two operators distinguishable. The NULL row is dropped by every
+# predicate below, which pins three-valued logic surviving the not(like(..)) round trip.
+statement ok
+INSERT INTO t VALUES ('a%c'), ('abc'), ('aXbYc'), ('zzz'), (NULL);
+
+# --- not_equal must remain inequality -------------------------------------------------
+# The producer used to emit NOT LIKE as not_equal, and the consumer compensated by
+# rewriting any not_equal over a string constant back into NOT LIKE. That corrupted
+# genuine inequality whenever the literal contained a % or _ wildcard: 'abc' was
+# dropped because it matches the pattern 'a%c'.
+
+statement ok
+SET VARIABLE ne = (SELECT json FROM get_substrait_json('SELECT s FROM t WHERE s != ''a%c'''));
+
+query I
+SELECT s FROM from_substrait_json(getvariable('ne')) ORDER BY 1
+----
+aXbYc
+abc
+zzz
+
+# --- NOT LIKE must round-trip with pattern semantics intact ---------------------------
+# 'a%b%c' cannot be folded into starts_with/contains/ends_with, so the real !~~
+# operator survives to the producer. Both 'abc' and 'aXbYc' match the pattern
+# (a...b...c), so both are excluded; the literal 'a%c' has no 'b' and does not match.
+
+statement ok
+SET VARIABLE nl = (SELECT json FROM get_substrait_json('SELECT s FROM t WHERE s NOT LIKE ''a%b%c'''));
+
+query I
+SELECT s FROM from_substrait_json(getvariable('nl')) ORDER BY 1
+----
+a%c
+zzz
+
+# NOT LIKE must be carried by the standard like/not functions, never by not_equal.
+
+query II
+SELECT json LIKE '%"name":"like:str_str"%', json LIKE '%not_equal%'
+FROM get_substrait_json('SELECT s FROM t WHERE s NOT LIKE ''a%b%c''')
+----
+true	false
+
+# --- plain LIKE is unaffected ---------------------------------------------------------
+
+statement ok
+SET VARIABLE lk = (SELECT json FROM get_substrait_json('SELECT s FROM t WHERE s LIKE ''a%b%c'''));
+
+query I
+SELECT s FROM from_substrait_json(getvariable('lk')) ORDER BY 1
+----
+aXbYc
+abc
