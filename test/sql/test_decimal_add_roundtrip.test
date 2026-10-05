@@ -1,0 +1,191 @@
+# name: test/sql/test_decimal_add_roundtrip.test
+# description: Decimal addition preserves its SQL type and values through Substrait
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE t (a DECIMAL(10,2), b DECIMAL(5,1));
+
+statement ok
+INSERT INTO t VALUES (1.00, 3.0), (-2.01, 0.1), (NULL, 3.0);
+
+# Reading a decimal without arithmetic is the control.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(10,2)	-2.01
+DECIMAL(10,2)	1.00
+DECIMAL(10,2)	NULL
+
+# DuckDB casts b to DECIMAL(11,2) when binding a+b. The Substrait add over
+# those arguments returns DECIMAL(12,2), so an outer cast must restore (11,2).
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(11,2)	-1.91
+DECIMAL(11,2)	4.00
+DECIMAL(11,2)	NULL
+
+query IIIIT
+WITH expr AS (
+    SELECT json_extract(getvariable('plan'), '$.relations[0].root.input.project.expressions[0]') AS e
+)
+SELECT json_extract(e, '$.cast.type.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.type.decimal.scale')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.scale')::INTEGER,
+       json_extract_string(e, '$.cast.failureBehavior')
+FROM expr
+----
+11	2	12	2	FAILURE_BEHAVIOR_THROW_EXCEPTION
+
+# Every nested addition must restore its own type before becoming an argument.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT (a+b)+b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(12,2)	-1.81
+DECIMAL(12,2)	7.00
+DECIMAL(12,2)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT ((a+b)+b)+b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(13,2)	-1.71
+DECIMAL(13,2)	10.00
+DECIMAL(13,2)	NULL
+
+statement ok
+SET VARIABLE blob_plan = (SELECT * FROM get_substrait('SELECT ((a+b)+b)+b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait(getvariable('blob_plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(13,2)	-1.71
+DECIMAL(13,2)	10.00
+DECIMAL(13,2)	NULL
+
+# Reversing the operands and an explicit SQL cast must also preserve the result.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT b+a AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(11,2)	-1.91
+DECIMAL(11,2)	4.00
+DECIMAL(11,2)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT CAST(a AS DECIMAL(15,3))+b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(16,3)	-1.910
+DECIMAL(16,3)	4.000
+DECIMAL(16,3)	NULL
+
+# DuckDB caps precision at 18 to avoid an implicit promotion to HUGEINT.
+statement ok
+CREATE TABLE capped (a DECIMAL(18,2), b DECIMAL(18,2));
+
+statement ok
+INSERT INTO capped VALUES (1.00, 2.00), (NULL, 2.00);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b AS r FROM capped'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,2)	3.00
+DECIMAL(18,2)	NULL
+
+# The narrowing cast must retain DuckDB's overflow error.
+statement ok
+INSERT INTO capped VALUES (9999999999999999.99, 0.01);
+
+statement error
+SELECT a+b FROM capped
+----
+Overflow in addition of DECIMAL(18)
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plan'))
+----
+Overflow in addition of DECIMAL(18)
+
+# Precision 38 is representable when Substrait's minimum scale rule keeps scale 6.
+statement ok
+CREATE TABLE wide (a DECIMAL(38,6), b DECIMAL(38,6));
+
+statement ok
+INSERT INTO wide VALUES (1.000001, 2.000001), (NULL, 2.000001);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b AS r FROM wide'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,6)	3.000002
+DECIMAL(38,6)	NULL
+
+query TT
+WITH expr AS (
+    SELECT json_extract(getvariable('plan'), '$.relations[0].root.input.project.expressions[0]') AS e
+)
+SELECT json_extract_string(e, '$.scalarFunction.options[0].name'),
+       json_extract_string(e, '$.scalarFunction.options[0].preference[0]')
+FROM expr
+----
+overflow	ERROR
+
+statement ok
+INSERT INTO wide VALUES (99999999999999999999999999999999.999999, 0.000001);
+
+statement error
+SELECT a+b FROM wide
+----
+Overflow in addition of DECIMAL(38)
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plan'))
+----
+Overflow in addition of DECIMAL(38)
+
+# Substrait reduces (38,10)+(38,10) to (38,9). Casting it back cannot recover
+# a lost fractional digit, so refuse instead of declaring DuckDB's (38,10).
+statement ok
+CREATE TABLE reduced (a DECIMAL(38,10), b DECIMAL(38,10));
+
+statement ok
+INSERT INTO reduced VALUES (1.0000000001, 2.0000000001);
+
+statement error
+CALL get_substrait_json('SELECT a+b FROM reduced')
+----
+Decimal addition would lose scale in Substrait
+
+statement error
+CALL get_substrait('SELECT a+b FROM reduced', strict=true)
+----
+Decimal addition would lose scale in Substrait
