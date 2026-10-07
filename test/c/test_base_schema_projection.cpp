@@ -306,6 +306,53 @@ TEST_CASE("Test localFiles baseSchema skips nested field names", "[substrait-api
 	REQUIRE(CHECK_COLUMN(result, 1, {Value::STRUCT({{"child", Value::INTEGER(11)}})}));
 }
 
+TEST_CASE("Test localFiles baseSchema handles collection struct names", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_collection_structs.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT [{'x': 1}]::STRUCT(x INTEGER)[] AS list_col, "
+	                          "map(['k'], [{'y': 2}])::MAP(VARCHAR, STRUCT(y INTEGER)) AS map_col, "
+	                          "{'z': 3}::STRUCT(z INTEGER) AS payload) TO '" +
+	                          parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan = nlohmann::json::parse(GetSubstraitJSON(con, "SELECT * FROM read_parquet('" + parquet_path + "')"));
+	auto &names = plan["relations"][0]["root"]["input"]["read"]["baseSchema"]["names"];
+	REQUIRE(names == nlohmann::json::array({"list_col", "map_col", "payload", "z"}));
+	auto list_value = Value::LIST({Value::STRUCT({{"x", Value::INTEGER(1)}})});
+	auto map_value = Value::MAP(LogicalType::VARCHAR, LogicalType::STRUCT({{"y", LogicalType::INTEGER}}),
+	                            {Value("k")}, {Value::STRUCT({{"y", Value::INTEGER(2)}})});
+	auto legacy_result = FromSubstraitJSON(con, plan.dump());
+	REQUIRE(legacy_result->ColumnCount() == 3);
+	REQUIRE(CHECK_COLUMN(legacy_result, 0, {list_value}));
+	REQUIRE(CHECK_COLUMN(legacy_result, 1, {map_value}));
+	REQUIRE(CHECK_COLUMN(legacy_result, 2, {Value::STRUCT({{"z", Value::INTEGER(3)}})}));
+
+	names = nlohmann::json::array({"list_col", "map_col", "payload"});
+	auto top_level_result = FromSubstraitJSON(con, plan.dump());
+	REQUIRE(top_level_result->ColumnCount() == 3);
+	REQUIRE(CHECK_COLUMN(top_level_result, 0, {list_value}));
+	REQUIRE(CHECK_COLUMN(top_level_result, 1, {map_value}));
+	REQUIRE(CHECK_COLUMN(top_level_result, 2, {Value::STRUCT({{"z", Value::INTEGER(3)}})}));
+
+	names = nlohmann::json::array({"list_col", "x", "map_col", "y", "payload", "z"});
+	auto complete_result = FromSubstraitJSON(con, plan.dump());
+	REQUIRE(complete_result->ColumnCount() == 3);
+	REQUIRE(CHECK_COLUMN(complete_result, 0, {list_value}));
+	REQUIRE(CHECK_COLUMN(complete_result, 1, {map_value}));
+	REQUIRE(CHECK_COLUMN(complete_result, 2, {Value::STRUCT({{"z", Value::INTEGER(3)}})}));
+
+	names[1] = "wrong";
+	REQUIRE_THROWS(FromSubstraitJSON(con, plan.dump()));
+	names[1] = "x";
+	names[3] = "wrong";
+	REQUIRE_THROWS(FromSubstraitJSON(con, plan.dump()));
+	names = nlohmann::json::array({"list_col", "map_col", "payload", "wrong"});
+	REQUIRE_THROWS(FromSubstraitJSON(con, plan.dump()));
+	names = nlohmann::json::array({"list_col", "x", "map_col", "payload", "z"});
+	REQUIRE_THROWS(FromSubstraitJSON(con, plan.dump()));
+}
+
 TEST_CASE("Test localFiles baseSchema resolves nested type aliases", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);

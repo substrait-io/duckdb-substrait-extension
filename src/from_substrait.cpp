@@ -1348,24 +1348,36 @@ static const substrait::Type &ResolveTypeAlias(const substrait::Type &type, cons
 	return *resolved;
 }
 
-static idx_t NestedNameCount(const substrait::Type &type, const substrait::Plan &plan) {
+enum class BaseSchemaNameLayout { TOP_LEVEL, DIRECT_STRUCTS, ALL_STRUCTS };
+
+static idx_t NestedNameCount(const substrait::Type &type, const substrait::Plan &plan,
+                             BaseSchemaNameLayout layout) {
+	if (layout == BaseSchemaNameLayout::TOP_LEVEL) {
+		return 0;
+	}
 	auto &resolved = ResolveTypeAlias(type, plan);
 	switch (resolved.kind_case()) {
 	case substrait::Type::kStruct: {
 		idx_t count = 0;
 		for (auto &field : resolved.struct_().types()) {
-			count += 1 + NestedNameCount(field, plan);
+			count += 1 + NestedNameCount(field, plan, layout);
 		}
 		return count;
 	}
 	case substrait::Type::kList:
-		return NestedNameCount(resolved.list().type(), plan);
+		return layout == BaseSchemaNameLayout::ALL_STRUCTS ? NestedNameCount(resolved.list().type(), plan, layout) : 0;
 	case substrait::Type::kMap:
-		return NestedNameCount(resolved.map().key(), plan) + NestedNameCount(resolved.map().value(), plan);
+		return layout == BaseSchemaNameLayout::ALL_STRUCTS
+		           ? NestedNameCount(resolved.map().key(), plan, layout) +
+		                 NestedNameCount(resolved.map().value(), plan, layout)
+		           : 0;
 	case substrait::Type::kFunc: {
-		idx_t count = NestedNameCount(resolved.func().return_type(), plan);
+		if (layout != BaseSchemaNameLayout::ALL_STRUCTS) {
+			return 0;
+		}
+		idx_t count = NestedNameCount(resolved.func().return_type(), plan, layout);
 		for (auto &parameter : resolved.func().parameter_types()) {
-			count += NestedNameCount(parameter, plan);
+			count += NestedNameCount(parameter, plan, layout);
 		}
 		return count;
 	}
@@ -1374,27 +1386,43 @@ static idx_t NestedNameCount(const substrait::Type &type, const substrait::Plan 
 	}
 }
 
-static vector<string> TopLevelNames(const substrait::NamedStruct &schema, const substrait::Plan &plan) {
-	vector<string> names;
-	if (schema.names_size() == schema.struct_().types_size()) {
-		return {schema.names().begin(), schema.names().end()};
-	}
-	idx_t name_idx = 0;
+struct BaseSchemaNames {
+	vector<string> top_level;
+	BaseSchemaNameLayout layout;
+};
+
+static BaseSchemaNames TopLevelNames(const substrait::NamedStruct &schema, const substrait::Plan &plan) {
+	idx_t full_count = schema.struct_().types_size();
+	idx_t direct_count = full_count;
 	for (auto &type : schema.struct_().types()) {
-		if (name_idx >= (idx_t)schema.names_size()) {
-			throw InvalidInputException("baseSchema is missing a field name");
-		}
-		names.push_back(schema.names(name_idx));
-		name_idx += 1 + NestedNameCount(type, plan);
+		full_count += NestedNameCount(type, plan, BaseSchemaNameLayout::ALL_STRUCTS);
+		direct_count += NestedNameCount(type, plan, BaseSchemaNameLayout::DIRECT_STRUCTS);
 	}
-	if (name_idx != (idx_t)schema.names_size()) {
+	BaseSchemaNameLayout layout;
+	if (schema.names_size() == (int)full_count) {
+		layout = BaseSchemaNameLayout::ALL_STRUCTS;
+	} else if (schema.names_size() == (int)direct_count) {
+		layout = BaseSchemaNameLayout::DIRECT_STRUCTS;
+	} else if (schema.names_size() == schema.struct_().types_size()) {
+		layout = BaseSchemaNameLayout::TOP_LEVEL;
+	} else {
 		throw InvalidInputException("baseSchema field names do not match its types");
 	}
-	return names;
+	vector<string> names;
+	idx_t name_idx = 0;
+	for (auto &type : schema.struct_().types()) {
+		names.push_back(schema.names(name_idx));
+		name_idx += 1 + NestedNameCount(type, plan, layout);
+	}
+	return {std::move(names), layout};
 }
 
 static void ValidateNestedNames(const substrait::NamedStruct &schema, const substrait::Type &type,
-                                const LogicalType &physical, idx_t &name_idx, const substrait::Plan &plan) {
+                                const LogicalType &physical, idx_t &name_idx, const substrait::Plan &plan,
+                                BaseSchemaNameLayout layout) {
+	if (layout == BaseSchemaNameLayout::TOP_LEVEL) {
+		return;
+	}
 	auto &resolved = ResolveTypeAlias(type, plan);
 	switch (resolved.kind_case()) {
 	case substrait::Type::kStruct: {
@@ -1408,7 +1436,7 @@ static void ValidateNestedNames(const substrait::NamedStruct &schema, const subs
 			    !StringUtil::CIEquals(children[i].first, schema.names(name_idx++))) {
 				throw InvalidInputException("baseSchema nested struct field order does not match physical column");
 			}
-			ValidateNestedNames(schema, resolved.struct_().types(i), children[i].second, name_idx, plan);
+			ValidateNestedNames(schema, resolved.struct_().types(i), children[i].second, name_idx, plan, layout);
 		}
 		break;
 	}
@@ -1416,14 +1444,20 @@ static void ValidateNestedNames(const substrait::NamedStruct &schema, const subs
 		if (physical.id() != LogicalTypeId::LIST) {
 			throw InvalidInputException("baseSchema nested list does not match physical column");
 		}
-		ValidateNestedNames(schema, resolved.list().type(), ListType::GetChildType(physical), name_idx, plan);
+		if (layout == BaseSchemaNameLayout::ALL_STRUCTS) {
+			ValidateNestedNames(schema, resolved.list().type(), ListType::GetChildType(physical), name_idx, plan,
+			                    layout);
+		}
 		break;
 	case substrait::Type::kMap:
 		if (physical.id() != LogicalTypeId::MAP) {
 			throw InvalidInputException("baseSchema nested map does not match physical column");
 		}
-		ValidateNestedNames(schema, resolved.map().key(), MapType::KeyType(physical), name_idx, plan);
-		ValidateNestedNames(schema, resolved.map().value(), MapType::ValueType(physical), name_idx, plan);
+		if (layout == BaseSchemaNameLayout::ALL_STRUCTS) {
+			ValidateNestedNames(schema, resolved.map().key(), MapType::KeyType(physical), name_idx, plan, layout);
+			ValidateNestedNames(schema, resolved.map().value(), MapType::ValueType(physical), name_idx, plan,
+			                    layout);
+		}
 		break;
 	default:
 		break;
@@ -1587,7 +1621,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		auto &base_schema = sget.base_schema();
 		auto &scan_columns = scan->Columns();
 		auto physical_cols = scan_columns.size();
-		auto top_level_names = TopLevelNames(base_schema, plan);
+		auto schema_names = TopLevelNames(base_schema, plan);
+		auto &top_level_names = schema_names.top_level;
 		auto declared_cols = top_level_names.size();
 		bool has_nested_names = base_schema.names_size() > base_schema.struct_().types_size();
 		bool needs_projection = sget.has_local_files() ? (declared_cols > 0)
@@ -1612,7 +1647,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 					if (StringUtil::CIEquals(scan_columns[j].Name(), col_name)) {
 						if (has_nested_names) {
 							ValidateNestedNames(base_schema, base_schema.struct_().types(i), scan_columns[j].Type(),
-							                    name_idx, plan);
+							                    name_idx, plan, schema_names.layout);
 						}
 						proj_exprs.push_back(make_uniq<PositionalReferenceExpression>(j + 1));
 						proj_aliases.push_back(col_name);
