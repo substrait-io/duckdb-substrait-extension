@@ -200,6 +200,18 @@ TEST_CASE("Test baseSchema narrower than physical table with non-matching column
 	REQUIRE(CHECK_COLUMN(result, 2, {10, 20, 30}));
 }
 
+TEST_CASE("Test named table baseSchema reorders equal-width columns", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE reordered_table (a INTEGER, b INTEGER)"));
+	REQUIRE_NO_FAIL(con.Query("INSERT INTO reordered_table VALUES (11, 22)"));
+
+	auto plan_json = R"({"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["reordered_table"]}}},"names":["b","a"]}}]})";
+	auto result = FromSubstraitJSON(con, plan_json);
+	REQUIRE(CHECK_COLUMN(result, 0, {22}));
+	REQUIRE(CHECK_COLUMN(result, 1, {11}));
+}
+
 static string LocalParquetPlan(const string &parquet_path, const string &base_schema_json,
                                const std::vector<std::string> &root_names) {
 	auto plan = nlohmann::json::parse(R"({"relations":[{"root":{"input":{"read":{"localFiles":{"items":[{"parquet":{}}]}}}}}]})");
@@ -227,6 +239,25 @@ TEST_CASE("Test localFiles baseSchema binds Parquet columns by name", "[substrai
 	auto result = FromSubstraitJSON(con, plan_json);
 	REQUIRE(CHECK_COLUMN(result, 0, {22}));
 	REQUIRE(CHECK_COLUMN(result, 1, {11}));
+}
+
+TEST_CASE("Test localFiles projection uses baseSchema column order", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	auto parquet_path = TestCreatePath("local_files_projected_base_schema.parquet");
+	TestDeleteFile(parquet_path);
+	REQUIRE_NO_FAIL(con.Query("COPY (SELECT 11::INTEGER AS a, 22::INTEGER AS b, 33::INTEGER AS extra) TO '" +
+	                          parquet_path + "' (FORMAT PARQUET)"));
+
+	auto plan = nlohmann::json::parse(LocalParquetPlan(
+	    parquet_path,
+	    R"({"names":["b","a"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}})",
+	    {"b"}));
+	plan["relations"][0]["root"]["input"]["read"]["projection"] =
+	    nlohmann::json::parse(R"({"select":{"structItems":[{}]}})");
+	auto result = FromSubstraitJSON(con, plan.dump());
+	REQUIRE(result->ColumnCount() == 1);
+	REQUIRE(CHECK_COLUMN(result, 0, {22}));
 }
 
 TEST_CASE("Test localFiles baseSchema preserves declared Hive columns", "[substrait-api]") {

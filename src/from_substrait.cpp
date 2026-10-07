@@ -1583,19 +1583,26 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 	}
 
 	// Align positional references with baseSchema.
-	if ((sget.has_named_table() || sget.has_local_files()) && sget.has_base_schema() &&
-	    !sget.has_projection()) {
+	if ((sget.has_named_table() || sget.has_local_files()) && sget.has_base_schema()) {
 		auto &base_schema = sget.base_schema();
-		auto physical_cols = scan->Columns().size();
+		auto &scan_columns = scan->Columns();
+		auto physical_cols = scan_columns.size();
 		auto top_level_names = TopLevelNames(base_schema, plan);
 		auto declared_cols = top_level_names.size();
 		bool has_nested_names = base_schema.names_size() > base_schema.struct_().types_size();
 		bool needs_projection = sget.has_local_files() ? (declared_cols > 0)
-		                                               : (declared_cols > 0 && declared_cols < physical_cols);
+		                                               : (declared_cols > 0 && declared_cols != physical_cols);
+		if (!needs_projection && sget.has_named_table()) {
+			for (idx_t i = 0; i < declared_cols; i++) {
+				if (!StringUtil::CIEquals(scan_columns[i].Name(), top_level_names[i])) {
+					needs_projection = true;
+					break;
+				}
+			}
+		}
 		if (needs_projection) {
 			vector<unique_ptr<ParsedExpression>> proj_exprs;
 			vector<string> proj_aliases;
-			auto &scan_columns = scan->Columns();
 			idx_t name_idx = 0;
 			for (idx_t i = 0; i < top_level_names.size(); i++) {
 				auto &col_name = top_level_names[i];
