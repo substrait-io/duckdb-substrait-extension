@@ -1,5 +1,5 @@
 # name: test/sql/test_decimal_add_roundtrip.test
-# description: Decimal addition preserves its SQL type and values through Substrait
+# description: Decimal addition and subtraction preserve SQL types and values through Substrait
 # group: [sql]
 
 require substrait
@@ -103,6 +103,64 @@ DECIMAL(16,3)	-1.910
 DECIMAL(16,3)	4.000
 DECIMAL(16,3)	NULL
 
+# Subtraction follows the same precision/scale rule as addition.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a-b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(11,2)	-2.11
+DECIMAL(11,2)	-2.00
+DECIMAL(11,2)	NULL
+
+# A third operand at a different scale exercises both argument positions.
+statement ok
+CREATE TABLE chains (a DECIMAL(10,2), b DECIMAL(5,1), c DECIMAL(3,0));
+
+statement ok
+INSERT INTO chains VALUES (1.00, 3.0, 2), (-2.01, 0.1, -1), (NULL, 3.0, 2);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a-b-c AS r FROM chains'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(12,2)	-4.00
+DECIMAL(12,2)	-1.11
+DECIMAL(12,2)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b-c AS r FROM chains'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(12,2)	-0.91
+DECIMAL(12,2)	2.00
+DECIMAL(12,2)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+(b+c) AS r FROM chains'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(11,2)	-2.91
+DECIMAL(11,2)	6.00
+DECIMAL(11,2)	NULL
+
+statement ok
+SET VARIABLE blob_plan = (SELECT * FROM get_substrait('SELECT a-b-c AS r FROM chains'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait(getvariable('blob_plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(12,2)	-4.00
+DECIMAL(12,2)	-1.11
+DECIMAL(12,2)	NULL
+
 # DuckDB caps precision at 18 to avoid an implicit promotion to HUGEINT.
 statement ok
 CREATE TABLE capped (a DECIMAL(18,2), b DECIMAL(18,2));
@@ -189,3 +247,19 @@ statement error
 CALL get_substrait('SELECT a+b FROM reduced', strict=true)
 ----
 Decimal addition would lose scale in Substrait
+
+# Export also rejects lossy scale reduction without strict mode, for both operators.
+statement error
+CALL get_substrait('SELECT a+b FROM reduced')
+----
+Decimal addition would lose scale in Substrait
+
+statement error
+CALL get_substrait_json('SELECT a-b FROM reduced')
+----
+Decimal subtraction would lose scale in Substrait
+
+statement error
+CALL get_substrait('SELECT a-b FROM reduced')
+----
+Decimal subtraction would lose scale in Substrait
