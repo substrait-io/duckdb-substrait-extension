@@ -1,0 +1,167 @@
+{
+  "extensions": [
+    {
+      "extensionFunction": {
+        "functionAnchor": 1,
+        "name": "sum:i64",
+        "extensionUrnReference": 1
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "project": {
+            "common": {
+              "emit": {
+                "outputMapping": [
+                  3,
+                  4
+                ]
+              },
+              "hint": {
+                "outputNames": [
+                  "c0",
+                  "s"
+                ]
+              }
+            },
+            "input": {
+              "window": {
+                "common": {
+                  "direct": {}
+                },
+                "input": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "baseSchema": {
+                      "names": [
+                        "c0",
+                        "c1"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i64": {
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "i64": {
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          }
+                        ],
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": [
+                        "spark_catalog",
+                        "default",
+                        "t_sum"
+                      ]
+                    }
+                  }
+                },
+                "windowFunctions": [
+                  {
+                    "functionReference": 1,
+                    "upperBound": {
+                      "currentRow": {}
+                    },
+                    "lowerBound": {
+                      "preceding": {
+                        "offset": "1",
+                        "offsetExpr": {
+                          "literal": {
+                            "i64": "1"
+                          }
+                        }
+                      }
+                    },
+                    "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+                    "outputType": {
+                      "i64": {
+                        "nullability": "NULLABILITY_NULLABLE"
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "value": {
+                          "selection": {
+                            "directReference": {
+                              "structField": {}
+                            },
+                            "rootReference": {}
+                          }
+                        }
+                      }
+                    ],
+                    "invocation": "AGGREGATION_INVOCATION_ALL",
+                    "boundsType": "BOUNDS_TYPE_ROWS"
+                  }
+                ],
+                "sorts": [
+                  {
+                    "expr": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 1
+                          }
+                        },
+                        "rootReference": {}
+                      }
+                    },
+                    "direction": "SORT_DIRECTION_ASC_NULLS_FIRST"
+                  }
+                ]
+              }
+            },
+            "expressions": [
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {}
+                  },
+                  "rootReference": {}
+                }
+              },
+              {
+                "selection": {
+                  "directReference": {
+                    "structField": {
+                      "field": 2
+                    }
+                  },
+                  "rootReference": {}
+                }
+              }
+            ]
+          }
+        },
+        "names": [
+          "c0",
+          "s"
+        ]
+      }
+    }
+  ],
+  "version": {
+    "minorNumber": 102,
+    "producer": "substrait-spark"
+  },
+  "extensionUrns": [
+    {
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_arithmetic"
+    }
+  ],
+  "executionBehavior": {
+    "variableEvalMode": "VARIABLE_EVALUATION_MODE_PER_PLAN"
+  }
+}

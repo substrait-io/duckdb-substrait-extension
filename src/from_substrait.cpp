@@ -1868,7 +1868,27 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		window_expr->distinct =
 			window_func.invocation() == substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
 		
-		expressions.push_back(std::move(window_expr));
+		unique_ptr<ParsedExpression> result = std::move(window_expr);
+		if (StringUtil::StartsWith(function_name, "sum:") && window_func.output_type().has_i64()) {
+			// Keep the wide window accumulator, then enforce the declared integer SUM result.
+			for (auto &option : window_func.options()) {
+				if (option.name() != "overflow") {
+					continue;
+				}
+				bool supports_error = false;
+				for (auto &preference : option.preference()) {
+					if (preference == "ERROR") {
+						supports_error = true;
+						break;
+					}
+				}
+				if (!supports_error) {
+					throw NotImplementedException("%s supports only ERROR overflow behavior", function_name);
+				}
+			}
+			result = make_uniq<CastExpression>(LogicalType::BIGINT, std::move(result));
+		}
+		expressions.push_back(std::move(result));
 		aliases.push_back(""); // Empty alias, DuckDB will generate one
 	}
 	
