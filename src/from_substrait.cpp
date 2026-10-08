@@ -88,42 +88,61 @@ static string SubstraitFieldName(const google::protobuf::Descriptor *descriptor,
 	return field ? string(field->name()) : ("unknown (field " + to_string(field_number) + ")");
 }
 
-//! Several Substrait aggregates select their variant with a leading enumeration argument
-//! (std_dev/variance take SAMPLE or POPULATION, median takes EXACT or APPROXIMATE). DuckDB
-//! spells each variant as a separate function instead, so the enum has to be folded into the
-//! name. Anything we cannot express is rejected rather than silently treated as the default.
-static string RemapEnumAggregate(const string &function_name, const vector<string> &enum_args) {
-	if (enum_args.empty()) {
+//! Returns the first preference of the named function option that this consumer recognizes,
+//! or an empty string when the option is absent.
+static string FindFunctionOption(const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options,
+                                 const string &option_name) {
+	for (auto &option : options) {
+		if (StringUtil::CIEquals(option.name(), option_name) && option.preference_size() > 0) {
+			// The spec says to use the first preference the consumer supports; the caller
+			// decides which values it knows, so hand back the first one listed.
+			return option.preference(0);
+		}
+	}
+	return "";
+}
+
+string SubstraitToDuckDB::RemapEnumAggregate(
+    const string &function_name, const vector<string> &enum_args,
+    const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options) {
+	auto bare = RemoveExtension(function_name);
+
+	// std_dev and variance select their variant two ways: the current impls take a leading
+	// `distribution` enumeration argument, the deprecated ones carry it as a function option.
+	bool is_distribution = bare == "std_dev" || bare == "variance";
+	string option;
+	if (!enum_args.empty()) {
+		if (enum_args.size() != 1) {
+			throw NotImplementedException("Function \"%s\" with %d enumeration arguments is not supported yet",
+			                              bare, (int)enum_args.size());
+		}
+		option = enum_args[0];
+	} else if (is_distribution) {
+		option = FindFunctionOption(options, "distribution");
+	}
+	if (option.empty()) {
 		return function_name;
 	}
-	if (enum_args.size() != 1) {
-		throw NotImplementedException("Aggregate \"%s\" with %d enumeration arguments is not supported yet",
-		                              function_name, (int)enum_args.size());
-	}
-	auto &option = enum_args[0];
-	// function_name still carries its compound signature (e.g. "std_dev:req_fp64"); compare
-	// against the bare name, as RemapFunctionName does.
-	auto bare = function_name.substr(0, function_name.find(':'));
-	if (bare == "std_dev" || bare == "variance") {
+
+	if (is_distribution) {
 		// SAMPLE is DuckDB's default, so it maps to the plain name rather than to
-		// stddev_samp/var_samp. Those aliases compute the same thing but the producer has no
-		// mapping for them (to_substrait's remap only knows "stddev"/"variance"), so emitting
-		// them would re-serialize as an unresolvable native function.
-		string sample = bare == "std_dev" ? "stddev" : "variance";
-		string population = bare == "std_dev" ? "stddev_pop" : "var_pop";
+		// stddev_samp/var_samp. Those compute the same thing but the producer has no mapping
+		// for them, so emitting them would re-serialize as an unresolvable native function.
 		if (StringUtil::CIEquals(option, "SAMPLE")) {
-			return sample;
+			return bare == "std_dev" ? "stddev" : "variance";
 		}
 		if (StringUtil::CIEquals(option, "POPULATION")) {
-			return population;
+			return bare == "std_dev" ? "stddev_pop" : "var_pop";
 		}
-	} else if (bare == "median" && StringUtil::CIEquals(option, "EXACT")) {
-		// DuckDB's median is the exact one; APPROXIMATE would need approx_quantile, which
-		// takes an explicit fraction this encoding does not carry.
-		return function_name;
+	} else if (bare == "median") {
+		// DuckDB's median is exact, which also satisfies APPROXIMATE: the spec only asks that an
+		// approximate result lie between the input's minimum and maximum.
+		if (StringUtil::CIEquals(option, "EXACT") || StringUtil::CIEquals(option, "APPROXIMATE")) {
+			return function_name;
+		}
 	}
-	throw NotImplementedException("Aggregate \"%s\" with enumeration argument \"%s\" is not supported yet",
-	                              bare, option);
+	throw NotImplementedException("Function \"%s\" with enumeration argument \"%s\" is not supported yet", bare,
+	                              option);
 }
 
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
@@ -1473,7 +1492,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 					throw InvalidInputException("Substrait aggregate argument has no value, type or enum set");
 				}
 			}
-			function_name = RemapEnumAggregate(function_name, enum_args);
+			function_name = RemapEnumAggregate(function_name, enum_args, s_aggr_function.options());
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
@@ -1789,7 +1808,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 				throw InvalidInputException("Substrait window function argument has no value, type or enum set");
 			}
 		}
-		function_name = RemapEnumAggregate(function_name, window_enum_args);
+		function_name = RemapEnumAggregate(function_name, window_enum_args, window_func.options());
 		auto remapped_name = RemapFunctionName(function_name);
 		
 		// Determine the expression type based on the function name
