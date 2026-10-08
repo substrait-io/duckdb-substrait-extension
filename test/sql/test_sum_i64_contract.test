@@ -1,5 +1,5 @@
 # name: test/sql/test_sum_i64_contract.test
-# description: Consume Isthmus sum:i64 with its declared BIGINT result
+# description: Consume integer SUM signatures with their declared BIGINT result
 # group: [sql]
 
 require substrait
@@ -145,3 +145,140 @@ statement error
 SELECT * FROM from_substrait_json(getvariable('plain'))
 ----
 out of range
+
+# Retype only the required input fields in the Isthmus fixtures. The nullable
+# output stays i64 for each standard integer SUM signature.
+statement ok
+CREATE MACRO integer_sum_plan(plan, signature, table_name) AS
+    regexp_replace(replace(replace(plan, 'sum:i64', 'sum:' || signature), 'T_SUM', table_name),
+                   '"i64"(\s*:\s*\{\s*"nullability"\s*:\s*"NULLABILITY_REQUIRED")',
+                   '"' || signature || '"\1', 'g');
+
+statement ok
+CREATE TABLE t_sum_i8 (c0 TINYINT NOT NULL, c1 TINYINT NOT NULL);
+
+statement ok
+INSERT INTO t_sum_i8 VALUES (1,0), (1,0), (2,1);
+
+statement ok
+SET VARIABLE plain_i8 = integer_sum_plan(getvariable('plain'), 'i8', 'T_SUM_I8');
+
+statement ok
+SET VARIABLE grouped_i8 = integer_sum_plan(getvariable('grouped'), 'i8', 'T_SUM_I8');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i8'))
+----
+BIGINT	4
+
+query ITI rowsort
+SELECT c1, typeof(s), s FROM from_substrait_json(getvariable('grouped_i8'))
+----
+0	BIGINT	2
+1	BIGINT	2
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(integer_sum_plan(getvariable('distinct_plan'), 'i8', 'T_SUM_I8'))
+----
+BIGINT	3
+
+statement ok
+DELETE FROM t_sum_i8;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i8'))
+----
+BIGINT	NULL
+
+query I
+SELECT count(*) FROM from_substrait_json(getvariable('grouped_i8'))
+----
+0
+
+statement ok
+CREATE TABLE t_sum_i16 (c0 SMALLINT NOT NULL, c1 SMALLINT NOT NULL);
+
+statement ok
+INSERT INTO t_sum_i16 VALUES (1,0), (1,0), (2,1);
+
+statement ok
+SET VARIABLE plain_i16 = integer_sum_plan(getvariable('plain'), 'i16', 'T_SUM_I16');
+
+statement ok
+SET VARIABLE grouped_i16 = integer_sum_plan(getvariable('grouped'), 'i16', 'T_SUM_I16');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i16'))
+----
+BIGINT	4
+
+query ITI rowsort
+SELECT c1, typeof(s), s FROM from_substrait_json(getvariable('grouped_i16'))
+----
+0	BIGINT	2
+1	BIGINT	2
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(integer_sum_plan(getvariable('distinct_plan'), 'i16', 'T_SUM_I16'))
+----
+BIGINT	3
+
+statement ok
+DELETE FROM t_sum_i16;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i16'))
+----
+BIGINT	NULL
+
+query I
+SELECT count(*) FROM from_substrait_json(getvariable('grouped_i16'))
+----
+0
+
+statement ok
+CREATE TABLE t_sum_i32 (c0 INTEGER NOT NULL, c1 INTEGER NOT NULL);
+
+statement ok
+INSERT INTO t_sum_i32 VALUES (1,0), (1,0), (2,1);
+
+statement ok
+SET VARIABLE plain_i32 = integer_sum_plan(getvariable('plain'), 'i32', 'T_SUM_I32');
+
+statement ok
+SET VARIABLE grouped_i32 = integer_sum_plan(getvariable('grouped'), 'i32', 'T_SUM_I32');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i32'))
+----
+BIGINT	4
+
+query ITI rowsort
+SELECT c1, typeof(s), s FROM from_substrait_json(getvariable('grouped_i32'))
+----
+0	BIGINT	2
+1	BIGINT	2
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(integer_sum_plan(getvariable('distinct_plan'), 'i32', 'T_SUM_I32'))
+----
+BIGINT	3
+
+statement ok
+DELETE FROM t_sum_i32;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain_i32'))
+----
+BIGINT	NULL
+
+query I
+SELECT count(*) FROM from_substrait_json(getvariable('grouped_i32'))
+----
+0
+
+# Unsupported overflow behavior is rejected for the smaller signatures too.
+statement error
+SELECT * FROM from_substrait_json(integer_sum_plan(getvariable('silent_plan'), 'i32', 'T_SUM_I32'))
+----
+sum:i32 supports only ERROR overflow behavior
