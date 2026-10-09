@@ -10,12 +10,8 @@ CREATE TABLE orders (order_id INTEGER, customer_id INTEGER, order_date VARCHAR, 
 statement ok
 INSERT INTO orders VALUES (1, 100, '2024-01-01', 99.99), (2, 101, '2024-01-02', 149.50);
 
-# Plan declares 10 columns in baseSchema but the actual table only has 4.
-# The emit mapping [10] means: output the item at index 10, which should be
-# expression index 10 - 10 = 0 (relative to 10 declared input columns).
-# At runtime, num_input_columns = 4 (actual table), so the code computes
-# expression index 10 - 4 = 6, but only 1 expression exists -> out of bounds.
-# Before the fix this caused a segfault; after the fix it raises an error.
+# Reject the missing baseSchema columns before applying the project's emit mapping.
+# The plan declares 10 columns, but the table has only 4.
 statement error
 CALL from_substrait_json('{
   "relations": [{
@@ -65,4 +61,4 @@ CALL from_substrait_json('{
   "version": {"minorNumber": 85}
 }')
 ----
-expression index
+baseSchema column 'col5' not found
