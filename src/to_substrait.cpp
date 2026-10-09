@@ -357,6 +357,31 @@ bool DuckDBToSubstrait::IsExtractFunction(const string &function_name) {
 	return valid_extract_subfields.count(function_name);
 }
 
+static Value NormalizeDecimalConstant(const Value &value) {
+	if (value.IsNull()) {
+		return value;
+	}
+	auto text = value.ToString();
+	auto scale = DecimalType::GetScale(value.type());
+	while (scale > 0 && text.back() == '0') {
+		text.pop_back();
+		scale--;
+	}
+	uint8_t precision = 0;
+	bool significant = false;
+	for (auto ch : text) {
+		if (ch < '0' || ch > '9') {
+			continue;
+		}
+		significant = significant || ch != '0';
+		if (significant) {
+			precision++;
+		}
+	}
+	precision = MaxValue<uint8_t>(1, MaxValue(precision, scale));
+	return value.DefaultCastAs(LogicalType::DECIMAL(precision, scale));
+}
+
 void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait::Expression &sexpr,
                                                     uint64_t col_offset) {
 	auto &dfun = dexpr.Cast<BoundFunctionExpression>();
@@ -428,11 +453,18 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 	// range. Revisit and emit the wider arguments directly if an i64 substring signature is
 	// ever added to the Substrait function definitions.
 	bool is_substring = function_name == "substring" || function_name == "substr";
+	bool is_decimal_multiply = dfun.function.name == "*" && dfun.return_type.id() == LogicalTypeId::DECIMAL;
 	vector<substrait::Type> args_types;
 	for (idx_t arg_idx = 0; arg_idx < dfun.children.size(); arg_idx++) {
 		auto &darg = dfun.children[arg_idx];
 		auto sarg = sfun->add_arguments();
-		if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
+		if (is_decimal_multiply && darg->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT &&
+		    darg->return_type.id() == LogicalTypeId::DECIMAL) {
+			// Bound casts can inflate a constant's precision/scale. Keep its exact value in the smallest decimal type.
+			auto normalized = NormalizeDecimalConstant(darg->Cast<BoundConstantExpression>().value);
+			TransformConstant(normalized, *sarg->mutable_value());
+			args_types.emplace_back(DuckToSubstraitType(normalized.type()));
+		} else if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
 			auto narrowed = LogicalType::INTEGER;
 			auto scast = sarg->mutable_value()->mutable_cast();
 			TransformExpr(*darg, *scast->mutable_input(), col_offset);
@@ -447,6 +479,40 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 
 	auto output_type = sfun->mutable_output_type();
 	*output_type = DuckToSubstraitType(dfun.return_type);
+	if (dfun.function.name != "*" || dfun.return_type.id() != LogicalTypeId::DECIMAL || args_types.size() != 2 ||
+	    !args_types[0].has_decimal() || !args_types[1].has_decimal()) {
+		return;
+	}
+
+	// Derive standard multiply's type from the exported arguments, including DuckDB's bound casts.
+	auto &left = args_types[0].decimal();
+	auto &right = args_types[1].decimal();
+	auto scale = left.scale() + right.scale();
+	auto input_scale = scale;
+	auto precision = left.precision() + right.precision() + 1;
+	if (precision > 38) {
+		scale = MaxValue(scale - (precision - 38), MinValue<int32_t>(scale, 6));
+		precision = 38;
+	}
+	auto multiply_type = LogicalType::DECIMAL(NumericCast<uint8_t>(precision), NumericCast<uint8_t>(scale));
+	if (scale != input_scale) {
+		// A cast back cannot recover fractional digits removed by Substrait's scale reduction.
+		throw NotImplementedException("Decimal multiplication would lose scale in Substrait: %s instead of %s",
+		                              multiply_type.ToString(), dfun.return_type.ToString());
+	}
+	*output_type = DuckToSubstraitType(multiply_type);
+	auto overflow = sfun->add_options();
+	overflow->set_name("overflow");
+	overflow->add_preference("ERROR");
+	if (multiply_type != dfun.return_type) {
+		// Restore the SQL type before this expression becomes another function's argument.
+		substrait::Expression multiplication;
+		multiplication.Swap(&sexpr);
+		auto cast = sexpr.mutable_cast();
+		cast->mutable_input()->Swap(&multiplication);
+		*cast->mutable_type() = DuckToSubstraitType(dfun.return_type);
+		cast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
+	}
 }
 
 void DuckDBToSubstrait::TransformConstantExpression(Expression &dexpr, substrait::Expression &sexpr) {
