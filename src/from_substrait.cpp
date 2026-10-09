@@ -94,8 +94,13 @@ static string SubstraitFieldName(const google::protobuf::Descriptor *descriptor,
 static string FindFunctionOption(const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options,
                                  const string &option_name, const vector<string> &supported_values) {
 	for (auto &option : options) {
-		if (!StringUtil::CIEquals(option.name(), option_name) || option.preference_size() == 0) {
+		if (!StringUtil::CIEquals(option.name(), option_name)) {
 			continue;
+		}
+		// The spec requires at least one preference; an entry with none is malformed, and
+		// treating it as absent would silently select the default.
+		if (option.preference_size() == 0) {
+			throw InvalidInputException("Substrait function option \"%s\" lists no preferences", option.name());
 		}
 		// The spec says to use the first preference the consumer supports, not simply the
 		// first one listed, so skip over values we do not recognize.
@@ -131,6 +136,9 @@ string SubstraitToDuckDB::RemapEnumAggregate(
 			                              bare, (int)enum_args.size());
 		}
 		option = enum_args[0];
+		if (option.empty()) {
+			throw InvalidInputException("Substrait function \"%s\" has an empty enumeration argument", bare);
+		}
 	} else if (is_distribution) {
 		option = FindFunctionOption(options, "distribution", {"SAMPLE", "POPULATION"});
 	}
