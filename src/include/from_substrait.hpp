@@ -108,6 +108,10 @@ private:
 
 	static void VerifyCorrectExtractSubfield(const string &subfield);
 	static string RemapFunctionName(const string &function_name);
+	//! Folds an aggregate's variant selector -- carried either as a leading enumeration
+	//! argument or as a `distribution` function option -- into the DuckDB function name.
+	static string RemapEnumAggregate(const string &function_name, const vector<string> &enum_args,
+	                                 const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options);
 	static string RemoveExtension(const string &function_name);
 	static LogicalType SubstraitToDuckType(const substrait::Type &s_type);
 	//! Looks up for aggregation function in functions_map

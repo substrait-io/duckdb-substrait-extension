@@ -89,6 +89,100 @@ static string SubstraitFieldName(const google::protobuf::Descriptor *descriptor,
 	return field ? string(field->name()) : ("unknown (field " + to_string(field_number) + ")");
 }
 
+//! Returns the first preference of the named function option that this consumer supports, or an
+//! empty string when the option is absent. Throws when the option is present but lists only
+//! values we cannot honor, which the spec requires a consumer to reject rather than default.
+static string FindFunctionOption(const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options,
+                                 const string &option_name, const vector<string> &supported_values) {
+	for (auto &option : options) {
+		if (!StringUtil::CIEquals(option.name(), option_name)) {
+			continue;
+		}
+		// The spec requires at least one preference; an entry with none is malformed, and
+		// treating it as absent would silently select the default.
+		if (option.preference_size() == 0) {
+			throw InvalidInputException("Substrait function option \"%s\" lists no preferences", option.name());
+		}
+		// The spec says to use the first preference the consumer supports, not simply the
+		// first one listed, so skip over values we do not recognize.
+		for (auto &preference : option.preference()) {
+			for (auto &supported : supported_values) {
+				if (StringUtil::CIEquals(preference, supported)) {
+					return preference;
+				}
+			}
+		}
+		throw NotImplementedException("Substrait function option \"%s\" lists no value this consumer "
+		                              "supports: offered [%s], supported [%s]",
+		                              option.name(), StringUtil::Join(vector<string>(option.preference().begin(),
+		                                                                            option.preference().end()),
+		                                                             ", "),
+		                              StringUtil::Join(supported_values, ", "));
+	}
+	return "";
+}
+
+string SubstraitToDuckDB::RemapEnumAggregate(
+    const string &function_name, const vector<string> &enum_args,
+    const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options) {
+	auto bare = RemoveExtension(function_name);
+
+	// std_dev and variance select their variant two ways: the current impls take a leading
+	// `distribution` enumeration argument, the deprecated ones carry it as a function option.
+	bool is_distribution = bare == "std_dev" || bare == "variance";
+	string option;
+	if (!enum_args.empty()) {
+		if (enum_args.size() != 1) {
+			throw NotImplementedException("Function \"%s\" with %d enumeration arguments is not supported yet",
+			                              bare, (int)enum_args.size());
+		}
+		option = enum_args[0];
+		if (option.empty()) {
+			throw InvalidInputException("Substrait function \"%s\" has an empty enumeration argument", bare);
+		}
+	} else if (is_distribution) {
+		option = FindFunctionOption(options, "distribution", {"SAMPLE", "POPULATION"});
+	}
+	if (option.empty()) {
+		return function_name;
+	}
+
+	if (is_distribution) {
+		// SAMPLE is DuckDB's default, so it maps to the plain name rather than to
+		// stddev_samp/var_samp. Those compute the same thing but the producer has no mapping
+		// for them, so emitting them would re-serialize as an unresolvable native function.
+		if (StringUtil::CIEquals(option, "SAMPLE")) {
+			return bare == "std_dev" ? "stddev" : "variance";
+		}
+		if (StringUtil::CIEquals(option, "POPULATION")) {
+			return bare == "std_dev" ? "stddev_pop" : "var_pop";
+		}
+	} else if (bare == "median") {
+		// Substrait's integer median returns the same integer type and carries a `rounding`
+		// option for the midway case. DuckDB's median averages the two middle values and
+		// returns DOUBLE -- median of {1, 2} is 1.5, not a rounded integer -- so the integer
+		// impls cannot be mapped onto it.
+		auto colon = function_name.find(':');
+		if (colon != string::npos) {
+			auto signature = function_name.substr(colon + 1);
+			auto arg = signature.substr(signature.rfind('_') + 1);
+			if (arg == "i8" || arg == "i16" || arg == "i32" || arg == "i64") {
+				throw NotImplementedException(
+				    "Substrait median over %s is not supported yet: it returns %s with a rounding "
+				    "option, while DuckDB's median returns DOUBLE",
+				    arg, arg);
+			}
+		}
+		// DuckDB's median is exact, which also satisfies APPROXIMATE: the spec only asks that an
+		// approximate result lie between the input's minimum and maximum.
+		if (StringUtil::CIEquals(option, "EXACT") || StringUtil::CIEquals(option, "APPROXIMATE")) {
+			return function_name;
+		}
+	}
+	throw NotImplementedException("Function \"%s\" with enumeration argument \"%s\" is not supported yet", bare,
+	                              option);
+}
+
 string SubstraitToDuckDB::RemapFunctionName(const string &function_name) {
 	// Let's first drop any extension id
 	string name;
@@ -1408,6 +1502,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// For GROUPING(), the arguments are field references to grouping columns
 			// We need to resolve these to copies of the actual grouping expressions
 			for (auto &sarg : s_aggr_function.arguments()) {
+				if (!sarg.has_value()) {
+					throw NotImplementedException("GROUPING() arguments must be value expressions");
+				}
 				auto arg_expr = TransformExpr(sarg.value());
 				// Check if this is a positional reference
 				if (arg_expr->GetExpressionClass() == ExpressionClass::POSITIONAL_REFERENCE) {
@@ -1428,9 +1525,22 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			// Create an OperatorExpression with GROUPING_FUNCTION type
 			expressions.push_back(make_uniq<OperatorExpression>(ExpressionType::GROUPING_FUNCTION, std::move(children)));
 		} else {
+			// Mirror the scalar path: an argument is a value, a type, or an enum. Calling
+			// value() on an enum argument yields an unset Expression, which has no case to
+			// dispatch on.
+			vector<string> enum_args;
 			for (auto &sarg : s_aggr_function.arguments()) {
-				children.push_back(TransformExpr(sarg.value()));
+				if (sarg.has_value()) {
+					children.push_back(TransformExpr(sarg.value()));
+				} else if (sarg.has_type()) {
+					throw NotImplementedException("Type arguments in Substrait aggregates are not supported yet!");
+				} else if (sarg.has_enum_()) {
+					enum_args.push_back(sarg.enum_());
+				} else {
+					throw InvalidInputException("Substrait aggregate argument has no value, type or enum set");
+				}
 			}
+			function_name = RemapEnumAggregate(function_name, enum_args, s_aggr_function.options());
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
@@ -1728,6 +1838,25 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 	for (auto &window_func : sop.window().window_functions()) {
 		// Get the function name
 		auto function_name = FindFunction(window_func.function_reference());
+
+		// Scan the arguments before resolving the name: an aggregate used as a window function
+		// carries the same leading enumeration argument (std_dev SAMPLE/POPULATION), and that
+		// selector has to be folded into the name before it is remapped. Calling value() on an
+		// enum argument yields an unset Expression with no case to dispatch on.
+		vector<unique_ptr<ParsedExpression>> window_args;
+		vector<string> window_enum_args;
+		for (auto &arg : window_func.arguments()) {
+			if (arg.has_value()) {
+				window_args.push_back(TransformExpr(arg.value()));
+			} else if (arg.has_type()) {
+				throw NotImplementedException("Type arguments in Substrait window functions are not supported yet!");
+			} else if (arg.has_enum_()) {
+				window_enum_args.push_back(arg.enum_());
+			} else {
+				throw InvalidInputException("Substrait window function argument has no value, type or enum set");
+			}
+		}
+		function_name = RemapEnumAggregate(function_name, window_enum_args, window_func.options());
 		auto remapped_name = RemapFunctionName(function_name);
 		
 		// Determine the expression type based on the function name
@@ -1762,9 +1891,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		// Create window expression
 		auto window_expr = make_uniq<WindowExpression>(expr_type, "", "", remapped_name);
 		
-		// Add function arguments
-		for (auto &arg : window_func.arguments()) {
-			window_expr->children.push_back(TransformExpr(arg.value()));
+		// Add function arguments (already transformed above)
+		for (auto &arg_expr : window_args) {
+			window_expr->children.push_back(std::move(arg_expr));
 		}
 		
 		// Add partition expressions
