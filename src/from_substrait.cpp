@@ -88,16 +88,30 @@ static string SubstraitFieldName(const google::protobuf::Descriptor *descriptor,
 	return field ? string(field->name()) : ("unknown (field " + to_string(field_number) + ")");
 }
 
-//! Returns the first preference of the named function option that this consumer recognizes,
-//! or an empty string when the option is absent.
+//! Returns the first preference of the named function option that this consumer supports, or an
+//! empty string when the option is absent. Throws when the option is present but lists only
+//! values we cannot honor, which the spec requires a consumer to reject rather than default.
 static string FindFunctionOption(const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options,
-                                 const string &option_name) {
+                                 const string &option_name, const vector<string> &supported_values) {
 	for (auto &option : options) {
-		if (StringUtil::CIEquals(option.name(), option_name) && option.preference_size() > 0) {
-			// The spec says to use the first preference the consumer supports; the caller
-			// decides which values it knows, so hand back the first one listed.
-			return option.preference(0);
+		if (!StringUtil::CIEquals(option.name(), option_name) || option.preference_size() == 0) {
+			continue;
 		}
+		// The spec says to use the first preference the consumer supports, not simply the
+		// first one listed, so skip over values we do not recognize.
+		for (auto &preference : option.preference()) {
+			for (auto &supported : supported_values) {
+				if (StringUtil::CIEquals(preference, supported)) {
+					return preference;
+				}
+			}
+		}
+		throw NotImplementedException("Substrait function option \"%s\" lists no value this consumer "
+		                              "supports: offered [%s], supported [%s]",
+		                              option.name(), StringUtil::Join(vector<string>(option.preference().begin(),
+		                                                                            option.preference().end()),
+		                                                             ", "),
+		                              StringUtil::Join(supported_values, ", "));
 	}
 	return "";
 }
@@ -118,7 +132,7 @@ string SubstraitToDuckDB::RemapEnumAggregate(
 		}
 		option = enum_args[0];
 	} else if (is_distribution) {
-		option = FindFunctionOption(options, "distribution");
+		option = FindFunctionOption(options, "distribution", {"SAMPLE", "POPULATION"});
 	}
 	if (option.empty()) {
 		return function_name;
@@ -135,6 +149,21 @@ string SubstraitToDuckDB::RemapEnumAggregate(
 			return bare == "std_dev" ? "stddev_pop" : "var_pop";
 		}
 	} else if (bare == "median") {
+		// Substrait's integer median returns the same integer type and carries a `rounding`
+		// option for the midway case. DuckDB's median averages the two middle values and
+		// returns DOUBLE -- median of {1, 2} is 1.5, not a rounded integer -- so the integer
+		// impls cannot be mapped onto it.
+		auto colon = function_name.find(':');
+		if (colon != string::npos) {
+			auto signature = function_name.substr(colon + 1);
+			auto arg = signature.substr(signature.rfind('_') + 1);
+			if (arg == "i8" || arg == "i16" || arg == "i32" || arg == "i64") {
+				throw NotImplementedException(
+				    "Substrait median over %s is not supported yet: it returns %s with a rounding "
+				    "option, while DuckDB's median returns DOUBLE",
+				    arg, arg);
+			}
+		}
 		// DuckDB's median is exact, which also satisfies APPROXIMATE: the spec only asks that an
 		// approximate result lie between the input's minimum and maximum.
 		if (StringUtil::CIEquals(option, "EXACT") || StringUtil::CIEquals(option, "APPROXIMATE")) {
