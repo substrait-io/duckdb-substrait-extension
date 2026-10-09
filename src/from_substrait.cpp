@@ -1544,8 +1544,30 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
-			expressions.push_back(make_uniq<FunctionExpression>(RemapFunctionName(function_name), std::move(children),
-			                                                    nullptr, nullptr, is_distinct));
+			unique_ptr<ParsedExpression> expression = make_uniq<FunctionExpression>(
+			    RemapFunctionName(function_name), std::move(children), nullptr, nullptr, is_distinct);
+			if (StringUtil::StartsWith(function_name, "sum:") && s_aggr_function.output_type().has_i64()) {
+				// functions_arithmetic declares integer sum -> i64?, while DuckDB's SUM returns HUGEINT.
+				// Keep the wide accumulator, but check that its result fits the Substrait type.
+				for (auto &option : s_aggr_function.options()) {
+					if (option.name() != "overflow") {
+						continue;
+					}
+					bool supports_error = false;
+					for (auto &preference : option.preference()) {
+						if (preference == "ERROR") {
+							supports_error = true;
+							break;
+						}
+					}
+					if (!supports_error) {
+						throw NotImplementedException("%s supports only ERROR overflow behavior", function_name);
+					}
+				}
+				// When overflow is omitted, the function contract lets the consumer choose ERROR.
+				expression = make_uniq<CastExpression>(LogicalType::BIGINT, std::move(expression));
+			}
+			expressions.push_back(std::move(expression));
 		}
 	}
 
