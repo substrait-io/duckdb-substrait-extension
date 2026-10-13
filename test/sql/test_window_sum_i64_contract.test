@@ -1,0 +1,210 @@
+# name: test/sql/test_window_sum_i64_contract.test
+# description: Window SUM honors its declared i64 result
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+# Spark 3.5.4 exported these fixtures through substrait-java from:
+# SELECT c0, SUM(c0) OVER () AS s FROM t_sum
+# SELECT c0, SUM(c0) OVER (PARTITION BY c1) AS s FROM t_sum
+# SELECT c0, SUM(c0) OVER (ORDER BY c1 ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS s FROM t_sum
+# All three standard sum:i64 calls declare a nullable i64 result.
+statement ok
+CREATE SCHEMA spark_catalog;
+
+statement ok
+CREATE TABLE spark_catalog.t_sum (c0 BIGINT, c1 BIGINT);
+
+statement ok
+SET VARIABLE plain = (SELECT content FROM read_text('test/data/spark_window_sum_i64.json'));
+
+statement ok
+SET VARIABLE partitioned = (SELECT content FROM read_text('test/data/spark_partition_sum_i64.json'));
+
+statement ok
+SET VARIABLE framed = (SELECT content FROM read_text('test/data/spark_frame_sum_i64.json'));
+
+statement ok
+INSERT INTO spark_catalog.t_sum VALUES (1,0), (2,0), (4,1);
+
+query ITI rowsort
+SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('plain'))
+----
+1	BIGINT	7
+2	BIGINT	7
+4	BIGINT	7
+
+query ITI rowsort
+SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('partitioned'))
+----
+1	BIGINT	3
+2	BIGINT	3
+4	BIGINT	4
+
+# Give every ordering key a unique value for the ROWS frame.
+statement ok
+UPDATE spark_catalog.t_sum SET c1=c0;
+
+query ITI rowsort
+SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('framed'))
+----
+1	BIGINT	1
+2	BIGINT	3
+4	BIGINT	6
+
+# The native SQL control still exposes DuckDB's wider result type.
+query TI
+SELECT typeof(s), s FROM (SELECT SUM(c0) OVER () AS s FROM spark_catalog.t_sum) LIMIT 1
+----
+HUGEINT	7
+
+# Retype the two read-schema fields in the fixture; the window result remains i64.
+statement ok
+CREATE MACRO window_sum_input_type(signature) AS
+    replace(regexp_replace(regexp_replace(getvariable('plain'), '"i64"', '"' || signature || '"'),
+                           '"i64"', '"' || signature || '"'), 'sum:i64', 'sum:' || signature);
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE TINYINT;
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE TINYINT;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i8')) LIMIT 1
+----
+BIGINT	7
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE SMALLINT;
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE SMALLINT;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i16')) LIMIT 1
+----
+BIGINT	7
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE INTEGER;
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE INTEGER;
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i32')) LIMIT 1
+----
+BIGINT	7
+
+# A floating-point SUM with a floating-point declaration keeps its native type.
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE DOUBLE;
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE DOUBLE;
+
+statement ok
+SET VARIABLE floating = replace(replace(getvariable('plain'), 'sum:i64', 'sum:fp64'), '"i64"', '"fp64"');
+
+query TR
+SELECT typeof(s), s FROM from_substrait_json(getvariable('floating')) LIMIT 1
+----
+DOUBLE	7.0
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE BIGINT;
+
+statement ok
+ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE BIGINT;
+
+statement ok
+DELETE FROM spark_catalog.t_sum;
+
+query I
+SELECT count(*) FROM from_substrait_json(getvariable('plain'))
+----
+0
+
+statement ok
+INSERT INTO spark_catalog.t_sum VALUES (NULL,0), (NULL,0);
+
+query TI rowsort
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain'))
+----
+BIGINT	NULL
+BIGINT	NULL
+
+statement ok
+DELETE FROM spark_catalog.t_sum;
+
+# Retain the wide accumulator so an intermediate value above i64 can cancel.
+statement ok
+INSERT INTO spark_catalog.t_sum VALUES (9223372036854775807,0), (1,0), (-1,0);
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('plain')) LIMIT 1
+----
+BIGINT	9223372036854775807
+
+statement ok
+DELETE FROM spark_catalog.t_sum;
+
+statement ok
+INSERT INTO spark_catalog.t_sum VALUES (4611686018427387904,0), (4611686018427387904,0), (4611686018427387904,0);
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plain'))
+----
+out of range
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('partitioned'))
+----
+out of range
+
+statement ok
+SET VARIABLE error_plan = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["ERROR"]}]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('error_plan'))
+----
+out of range
+
+statement ok
+SET VARIABLE fallback_plan = replace(getvariable('error_plan'), '["ERROR"]', '["SATURATE","ERROR"]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('fallback_plan'))
+----
+out of range
+
+statement ok
+SET VARIABLE silent_plan = replace(getvariable('error_plan'), '["ERROR"]', '["SILENT"]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('silent_plan'))
+----
+sum:i64 supports only ERROR overflow behavior
+
+statement ok
+SET VARIABLE saturate_plan = replace(getvariable('error_plan'), '["ERROR"]', '["SATURATE"]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('saturate_plan'))
+----
+sum:i64 supports only ERROR overflow behavior
+
+statement ok
+DELETE FROM spark_catalog.t_sum;
+
+statement ok
+INSERT INTO spark_catalog.t_sum VALUES (-9223372036854775808,0), (-1,0);
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plain'))
+----
+out of range
