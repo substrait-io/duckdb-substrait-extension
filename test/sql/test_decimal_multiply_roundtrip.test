@@ -1,0 +1,292 @@
+# name: test/sql/test_decimal_multiply_roundtrip.test
+# description: Decimal multiplication preserves SQL types and values through Substrait
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE t (a DECIMAL(10,2), b DECIMAL(5,1), c DECIMAL(3,0));
+
+statement ok
+INSERT INTO t VALUES (1.23, 2.1, 3), (-2.01, 0.1, -2), (NULL, 3.0, 2);
+
+# A read without multiplication is the control.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(10,2)	-2.01
+DECIMAL(10,2)	1.23
+DECIMAL(10,2)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(15,3)	-0.201
+DECIMAL(15,3)	2.583
+DECIMAL(15,3)	NULL
+
+# DuckDB casts b to (15,1); standard multiply over (10,2) and (15,1) derives (26,3).
+query IIIITT
+WITH expr AS (
+    SELECT json_extract(getvariable('plan'), '$.relations[0].root.input.project.expressions[0]') AS e
+)
+SELECT json_extract(e, '$.cast.type.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.type.decimal.scale')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.scale')::INTEGER,
+       json_extract_string(e, '$.cast.failureBehavior'),
+       json_extract_string(e, '$.cast.input.scalarFunction.options[0].preference[0]')
+FROM expr
+----
+15	3	26	3	FAILURE_BEHAVIOR_THROW_EXCEPTION	ERROR
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT b*a AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(15,3)	-0.201
+DECIMAL(15,3)	2.583
+DECIMAL(15,3)	NULL
+
+# Nested products must restore their own SQL type in both argument positions.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT (a*b)*c AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,3)	0.402
+DECIMAL(18,3)	7.749
+DECIMAL(18,3)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*(b*c) AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,3)	0.402
+DECIMAL(18,3)	7.749
+DECIMAL(18,3)	NULL
+
+statement ok
+SET VARIABLE blob_plan = (SELECT * FROM get_substrait('SELECT a*(b*c) AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait(getvariable('blob_plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,3)	0.402
+DECIMAL(18,3)	7.749
+DECIMAL(18,3)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT (a*b)*b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,4)	-0.0201
+DECIMAL(18,4)	5.4243
+DECIMAL(18,4)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT CAST(a AS DECIMAL(15,3))*b AS r FROM t'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,4)	-0.2010
+DECIMAL(18,4)	2.5830
+DECIMAL(18,4)	NULL
+
+# DuckDB's precision-18 cap and overflow behavior must be retained.
+statement ok
+CREATE TABLE capped (a DECIMAL(18,2), b DECIMAL(18,2));
+
+statement ok
+INSERT INTO capped VALUES (1.00, 2.00), (NULL, 2.00);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*b AS r FROM capped'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(18,4)	2.0000
+DECIMAL(18,4)	NULL
+
+statement ok
+INSERT INTO capped VALUES (9999999999999999.99, 2.00);
+
+statement error
+SELECT a*b FROM capped
+----
+Overflow in multiplication of DECIMAL(18)
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plan'))
+----
+Overflow in multiplication of DECIMAL(18)
+
+# At scale 6, the standard minimum scale rule keeps the SQL result representable.
+statement ok
+CREATE TABLE wide (a DECIMAL(38,3), b DECIMAL(38,3));
+
+statement ok
+INSERT INTO wide VALUES (1.001, 2.003), (NULL, 2.003);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*b AS r FROM wide'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,6)	2.005003
+DECIMAL(38,6)	NULL
+
+statement ok
+INSERT INTO wide VALUES (99999999999999999999999999999999.999, 2.000);
+
+statement error
+SELECT a*b FROM wide
+----
+Overflow in multiplication of DECIMAL(38)
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('plan'))
+----
+Overflow in multiplication of DECIMAL(38)
+
+# TPC-H Q11's factor has trailing zeros; narrowing its exact literal avoids artificial scale reduction.
+statement ok
+CREATE TABLE amount (a DECIMAL(38,2));
+
+statement ok
+INSERT INTO amount VALUES (123.45), (-2.01), (NULL);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*0.0001000000 AS r FROM amount'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,12)	-0.000201000000
+DECIMAL(38,12)	0.012345000000
+DECIMAL(38,12)	NULL
+
+query IIII
+WITH expr AS (
+    SELECT json_extract(getvariable('plan'), '$.relations[0].root.input.project.expressions[0]') AS e
+)
+SELECT json_extract(e, '$.cast.input.scalarFunction.arguments[1].value.literal.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.arguments[1].value.literal.decimal.scale')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.precision')::INTEGER,
+       json_extract(e, '$.cast.input.scalarFunction.outputType.decimal.scale')::INTEGER
+FROM expr
+----
+4	4	38	6
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT 0.0001000000*a AS r FROM amount'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,12)	-0.000201000000
+DECIMAL(38,12)	0.012345000000
+DECIMAL(38,12)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*(-0.0001000000) AS r FROM amount'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,12)	-0.012345000000
+DECIMAL(38,12)	0.000201000000
+DECIMAL(38,12)	NULL
+
+# Leading fractional zeros and integer trailing zeros remain part of the literal's value.
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*10.0000000000 AS r FROM amount'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,12)	-20.100000000000
+DECIMAL(38,12)	1234.500000000000
+DECIMAL(38,12)	NULL
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a*0.0000000000 AS r FROM amount'));
+
+query TT
+SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
+----
+DECIMAL(38,12)	0.000000000000
+DECIMAL(38,12)	0.000000000000
+DECIMAL(38,12)	NULL
+
+# A constant with meaningful fractional digits still requires rejection when scale would be lost.
+statement error
+CALL get_substrait('SELECT a*0.1234567890 FROM amount')
+----
+Decimal multiplication would lose scale in Substrait
+
+# Substrait reduces (38,10)*(38,10) to (38,6), losing fractional digits.
+statement ok
+CREATE TABLE reduced (a DECIMAL(38,10), b DECIMAL(38,10));
+
+statement ok
+INSERT INTO reduced VALUES (1.0000000001, 2.0000000001);
+
+statement error
+CALL get_substrait_json('SELECT a*b FROM reduced')
+----
+Decimal multiplication would lose scale in Substrait
+
+statement error
+CALL get_substrait('SELECT a*b FROM reduced')
+----
+Decimal multiplication would lose scale in Substrait
+
+statement error
+CALL get_substrait('SELECT a*b FROM reduced', strict=true)
+----
+Decimal multiplication would lose scale in Substrait
+
+# Non-decimal multiplication keeps its native result type.
+statement ok
+CREATE TABLE numeric_control (i BIGINT, f DOUBLE);
+
+statement ok
+INSERT INTO numeric_control VALUES (3, 2.5);
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT i*i AS r FROM numeric_control'));
+
+query TI
+SELECT typeof(r), r FROM from_substrait_json(getvariable('plan'))
+----
+BIGINT	9
+
+statement ok
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT f*f AS r FROM numeric_control'));
+
+query TR
+SELECT typeof(r), r FROM from_substrait_json(getvariable('plan'))
+----
+DOUBLE	6.25
