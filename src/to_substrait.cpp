@@ -479,37 +479,42 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 
 	auto output_type = sfun->mutable_output_type();
 	*output_type = DuckToSubstraitType(dfun.return_type);
-	if (dfun.function.name != "*" || dfun.return_type.id() != LogicalTypeId::DECIMAL || args_types.size() != 2 ||
+	if ((dfun.function.name != "+" && dfun.function.name != "-" && dfun.function.name != "*") ||
+	    dfun.return_type.id() != LogicalTypeId::DECIMAL || args_types.size() != 2 ||
 	    !args_types[0].has_decimal() || !args_types[1].has_decimal()) {
 		return;
 	}
 
-	// Derive standard multiply's type from the exported arguments, including DuckDB's bound casts.
+	// Derive the arithmetic type from the exported arguments, including DuckDB's bound casts.
 	auto &left = args_types[0].decimal();
 	auto &right = args_types[1].decimal();
-	auto scale = left.scale() + right.scale();
+	auto scale = is_decimal_multiply ? left.scale() + right.scale() : MaxValue(left.scale(), right.scale());
 	auto input_scale = scale;
-	auto precision = left.precision() + right.precision() + 1;
+	auto precision = is_decimal_multiply
+	                     ? left.precision() + right.precision() + 1
+	                     : scale + MaxValue(left.precision() - left.scale(), right.precision() - right.scale()) + 1;
 	if (precision > 38) {
 		scale = MaxValue(scale - (precision - 38), MinValue<int32_t>(scale, 6));
 		precision = 38;
 	}
-	auto multiply_type = LogicalType::DECIMAL(NumericCast<uint8_t>(precision), NumericCast<uint8_t>(scale));
-	if (scale != input_scale) {
+	auto arithmetic_type = LogicalType::DECIMAL(NumericCast<uint8_t>(precision), NumericCast<uint8_t>(scale));
+	auto required_scale = is_decimal_multiply ? input_scale : DecimalType::GetScale(dfun.return_type);
+	if (scale != required_scale) {
 		// A cast back cannot recover fractional digits removed by Substrait's scale reduction.
-		throw NotImplementedException("Decimal multiplication would lose scale in Substrait: %s instead of %s",
-		                              multiply_type.ToString(), dfun.return_type.ToString());
+		auto operation = is_decimal_multiply ? "multiplication" : (dfun.function.name == "+" ? "addition" : "subtraction");
+		throw NotImplementedException("Decimal %s would lose scale in Substrait: %s instead of %s", operation,
+		                              arithmetic_type.ToString(), dfun.return_type.ToString());
 	}
-	*output_type = DuckToSubstraitType(multiply_type);
+	*output_type = DuckToSubstraitType(arithmetic_type);
 	auto overflow = sfun->add_options();
 	overflow->set_name("overflow");
 	overflow->add_preference("ERROR");
-	if (multiply_type != dfun.return_type) {
+	if (arithmetic_type != dfun.return_type) {
 		// Restore the SQL type before this expression becomes another function's argument.
-		substrait::Expression multiplication;
-		multiplication.Swap(&sexpr);
+		substrait::Expression arithmetic;
+		arithmetic.Swap(&sexpr);
 		auto cast = sexpr.mutable_cast();
-		cast->mutable_input()->Swap(&multiplication);
+		cast->mutable_input()->Swap(&arithmetic);
 		*cast->mutable_type() = DuckToSubstraitType(dfun.return_type);
 		cast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 	}
