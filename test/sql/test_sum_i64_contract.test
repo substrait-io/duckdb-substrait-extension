@@ -34,6 +34,15 @@ SELECT c1, typeof(s), s FROM from_substrait_json(getvariable('grouped'))
 0	BIGINT	3
 1	BIGINT	3
 
+# A function name without a signature has the same declared result contract.
+statement ok
+SET VARIABLE bare = replace(getvariable('plain'), 'sum:i64', 'sum');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('bare'))
+----
+BIGINT	6
+
 # DuckDB's own SQL retains its wider accumulator and result type.
 query TI
 SELECT typeof(sum(c0)), sum(c0) FROM t_sum
@@ -106,6 +115,19 @@ statement error
 SELECT * FROM from_substrait_json(getvariable('error_plan'))
 ----
 out of range
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('bare'))
+----
+out of range
+
+statement ok
+SET VARIABLE bare_silent = replace(getvariable('bare'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["SILENT"]}]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('bare_silent'))
+----
+sum supports only ERROR overflow behavior
 
 # Preferences may include a fallback which this consumer can deliver.
 statement ok

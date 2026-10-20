@@ -55,6 +55,15 @@ SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('framed'))
 2	BIGINT	3
 4	BIGINT	6
 
+# A function name without a signature has the same declared result contract.
+statement ok
+SET VARIABLE bare = replace(getvariable('plain'), 'sum:i64', 'sum');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('bare')) LIMIT 1
+----
+BIGINT	7
+
 # The native SQL control still exposes DuckDB's wider result type.
 query TI
 SELECT typeof(s), s FROM (SELECT SUM(c0) OVER () AS s FROM spark_catalog.t_sum) LIMIT 1
@@ -165,6 +174,19 @@ statement error
 SELECT * FROM from_substrait_json(getvariable('partitioned'))
 ----
 out of range
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('bare'))
+----
+out of range
+
+statement ok
+SET VARIABLE bare_silent = replace(getvariable('bare'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["SILENT"]}]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('bare_silent'))
+----
+sum supports only ERROR overflow behavior
 
 statement ok
 SET VARIABLE error_plan = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["ERROR"]}]');
