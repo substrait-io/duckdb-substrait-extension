@@ -447,6 +447,42 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 
 	auto output_type = sfun->mutable_output_type();
 	*output_type = DuckToSubstraitType(dfun.return_type);
+	if ((dfun.function.name != "+" && dfun.function.name != "-") || dfun.return_type.id() != LogicalTypeId::DECIMAL ||
+	    args_types.size() != 2 || !args_types[0].has_decimal() || !args_types[1].has_decimal()) {
+		return;
+	}
+
+	// functions_arithmetic_decimal derives add/subtract types from the exported arguments.
+	// DuckDB's bound arguments can already be cast to the SQL result type, so
+	// copying that result type onto the call can miss another digit of precision.
+	auto &left = args_types[0].decimal();
+	auto &right = args_types[1].decimal();
+	auto scale = MaxValue(left.scale(), right.scale());
+	auto precision = scale + MaxValue(left.precision() - left.scale(), right.precision() - right.scale()) + 1;
+	if (precision > 38) {
+		scale = MaxValue(scale - (precision - 38), MinValue<int32_t>(scale, 6));
+		precision = 38;
+	}
+	auto arithmetic_type = LogicalType::DECIMAL(NumericCast<uint8_t>(precision), NumericCast<uint8_t>(scale));
+	if (scale != DecimalType::GetScale(dfun.return_type)) {
+		// A cast back cannot recover fractional digits removed by Substrait's scale reduction.
+		throw NotImplementedException("Decimal %s would lose scale in Substrait: %s instead of %s",
+		                              dfun.function.name == "+" ? "addition" : "subtraction",
+		                              arithmetic_type.ToString(), dfun.return_type.ToString());
+	}
+	*output_type = DuckToSubstraitType(arithmetic_type);
+	auto overflow = sfun->add_options();
+	overflow->set_name("overflow");
+	overflow->add_preference("ERROR");
+	if (arithmetic_type != dfun.return_type) {
+		// Restore the SQL type before this expression becomes another function's argument.
+		substrait::Expression arithmetic;
+		arithmetic.Swap(&sexpr);
+		auto cast = sexpr.mutable_cast();
+		cast->mutable_input()->Swap(&arithmetic);
+		*cast->mutable_type() = DuckToSubstraitType(dfun.return_type);
+		cast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
+	}
 }
 
 void DuckDBToSubstrait::TransformConstantExpression(Expression &dexpr, substrait::Expression &sexpr) {
