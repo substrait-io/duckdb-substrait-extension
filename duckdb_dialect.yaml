@@ -1538,7 +1538,6 @@ supported_aggregate_functions:
       name: "median"
       notation: "FUNCTION"
     supported_impls:
-      - "req_i64"
       - "req_fp64"
 
   - source: "arithmetic"
