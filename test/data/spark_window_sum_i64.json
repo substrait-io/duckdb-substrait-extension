@@ -1,0 +1,133 @@
+{
+  "extensions": [
+    {
+      "extensionFunction": {
+        "functionAnchor": 1,
+        "name": "sum:i64",
+        "extensionUrnReference": 1
+      }
+    }
+  ],
+  "relations": [
+    {
+      "root": {
+        "input": {
+          "window": {
+            "common": {
+              "direct": {}
+            },
+            "input": {
+              "project": {
+                "common": {
+                  "emit": {
+                    "outputMapping": [
+                      2
+                    ]
+                  },
+                  "hint": {
+                    "outputNames": [
+                      "c0"
+                    ]
+                  }
+                },
+                "input": {
+                  "read": {
+                    "common": {
+                      "direct": {}
+                    },
+                    "baseSchema": {
+                      "names": [
+                        "c0",
+                        "c1"
+                      ],
+                      "struct": {
+                        "types": [
+                          {
+                            "i64": {
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          },
+                          {
+                            "i64": {
+                              "nullability": "NULLABILITY_NULLABLE"
+                            }
+                          }
+                        ],
+                        "nullability": "NULLABILITY_REQUIRED"
+                      }
+                    },
+                    "namedTable": {
+                      "names": [
+                        "spark_catalog",
+                        "default",
+                        "t_sum"
+                      ]
+                    }
+                  }
+                },
+                "expressions": [
+                  {
+                    "selection": {
+                      "directReference": {
+                        "structField": {}
+                      },
+                      "rootReference": {}
+                    }
+                  }
+                ]
+              }
+            },
+            "windowFunctions": [
+              {
+                "functionReference": 1,
+                "upperBound": {
+                  "unbounded": {}
+                },
+                "lowerBound": {
+                  "unbounded": {}
+                },
+                "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+                "outputType": {
+                  "i64": {
+                    "nullability": "NULLABILITY_NULLABLE"
+                  }
+                },
+                "arguments": [
+                  {
+                    "value": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {}
+                        },
+                        "rootReference": {}
+                      }
+                    }
+                  }
+                ],
+                "invocation": "AGGREGATION_INVOCATION_ALL",
+                "boundsType": "BOUNDS_TYPE_ROWS"
+              }
+            ]
+          }
+        },
+        "names": [
+          "c0",
+          "s"
+        ]
+      }
+    }
+  ],
+  "version": {
+    "minorNumber": 102,
+    "producer": "substrait-spark"
+  },
+  "extensionUrns": [
+    {
+      "extensionUrnAnchor": 1,
+      "urn": "extension:io.substrait:functions_arithmetic"
+    }
+  ],
+  "executionBehavior": {
+    "variableEvalMode": "VARIABLE_EVALUATION_MODE_PER_PLAN"
+  }
+}
