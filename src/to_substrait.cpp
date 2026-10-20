@@ -357,6 +357,31 @@ bool DuckDBToSubstrait::IsExtractFunction(const string &function_name) {
 	return valid_extract_subfields.count(function_name);
 }
 
+static Value NormalizeDecimalConstant(const Value &value) {
+	if (value.IsNull()) {
+		return value;
+	}
+	auto text = value.ToString();
+	auto scale = DecimalType::GetScale(value.type());
+	while (scale > 0 && text.back() == '0') {
+		text.pop_back();
+		scale--;
+	}
+	uint8_t precision = 0;
+	bool significant = false;
+	for (auto ch : text) {
+		if (ch < '0' || ch > '9') {
+			continue;
+		}
+		significant = significant || ch != '0';
+		if (significant) {
+			precision++;
+		}
+	}
+	precision = MaxValue<uint8_t>(1, MaxValue(precision, scale));
+	return value.DefaultCastAs(LogicalType::DECIMAL(precision, scale));
+}
+
 void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait::Expression &sexpr,
                                                     uint64_t col_offset) {
 	auto &dfun = dexpr.Cast<BoundFunctionExpression>();
@@ -428,11 +453,18 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 	// range. Revisit and emit the wider arguments directly if an i64 substring signature is
 	// ever added to the Substrait function definitions.
 	bool is_substring = function_name == "substring" || function_name == "substr";
+	bool is_decimal_multiply = dfun.function.name == "*" && dfun.return_type.id() == LogicalTypeId::DECIMAL;
 	vector<substrait::Type> args_types;
 	for (idx_t arg_idx = 0; arg_idx < dfun.children.size(); arg_idx++) {
 		auto &darg = dfun.children[arg_idx];
 		auto sarg = sfun->add_arguments();
-		if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
+		if (is_decimal_multiply && darg->GetExpressionClass() == ExpressionClass::BOUND_CONSTANT &&
+		    darg->return_type.id() == LogicalTypeId::DECIMAL) {
+			// Bound casts can inflate a constant's precision/scale. Keep its exact value in the smallest decimal type.
+			auto normalized = NormalizeDecimalConstant(darg->Cast<BoundConstantExpression>().value);
+			TransformConstant(normalized, *sarg->mutable_value());
+			args_types.emplace_back(DuckToSubstraitType(normalized.type()));
+		} else if (is_substring && arg_idx > 0 && darg->return_type.id() == LogicalTypeId::BIGINT) {
 			auto narrowed = LogicalType::INTEGER;
 			auto scast = sarg->mutable_value()->mutable_cast();
 			TransformExpr(*darg, *scast->mutable_input(), col_offset);
@@ -447,27 +479,30 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 
 	auto output_type = sfun->mutable_output_type();
 	*output_type = DuckToSubstraitType(dfun.return_type);
-	if ((dfun.function.name != "+" && dfun.function.name != "-") || dfun.return_type.id() != LogicalTypeId::DECIMAL ||
-	    args_types.size() != 2 || !args_types[0].has_decimal() || !args_types[1].has_decimal()) {
+	if ((dfun.function.name != "+" && dfun.function.name != "-" && dfun.function.name != "*") ||
+	    dfun.return_type.id() != LogicalTypeId::DECIMAL || args_types.size() != 2 ||
+	    !args_types[0].has_decimal() || !args_types[1].has_decimal()) {
 		return;
 	}
 
-	// functions_arithmetic_decimal derives add/subtract types from the exported arguments.
-	// DuckDB's bound arguments can already be cast to the SQL result type, so
-	// copying that result type onto the call can miss another digit of precision.
+	// Derive the arithmetic type from the exported arguments, including DuckDB's bound casts.
 	auto &left = args_types[0].decimal();
 	auto &right = args_types[1].decimal();
-	auto scale = MaxValue(left.scale(), right.scale());
-	auto precision = scale + MaxValue(left.precision() - left.scale(), right.precision() - right.scale()) + 1;
+	auto scale = is_decimal_multiply ? left.scale() + right.scale() : MaxValue(left.scale(), right.scale());
+	auto input_scale = scale;
+	auto precision = is_decimal_multiply
+	                     ? left.precision() + right.precision() + 1
+	                     : scale + MaxValue(left.precision() - left.scale(), right.precision() - right.scale()) + 1;
 	if (precision > 38) {
 		scale = MaxValue(scale - (precision - 38), MinValue<int32_t>(scale, 6));
 		precision = 38;
 	}
 	auto arithmetic_type = LogicalType::DECIMAL(NumericCast<uint8_t>(precision), NumericCast<uint8_t>(scale));
-	if (scale != DecimalType::GetScale(dfun.return_type)) {
+	auto required_scale = is_decimal_multiply ? input_scale : DecimalType::GetScale(dfun.return_type);
+	if (scale != required_scale) {
 		// A cast back cannot recover fractional digits removed by Substrait's scale reduction.
-		throw NotImplementedException("Decimal %s would lose scale in Substrait: %s instead of %s",
-		                              dfun.function.name == "+" ? "addition" : "subtraction",
+		auto operation = is_decimal_multiply ? "multiplication" : (dfun.function.name == "+" ? "addition" : "subtraction");
+		throw NotImplementedException("Decimal %s would lose scale in Substrait: %s instead of %s", operation,
 		                              arithmetic_type.ToString(), dfun.return_type.ToString());
 	}
 	*output_type = DuckToSubstraitType(arithmetic_type);
