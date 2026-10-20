@@ -64,6 +64,31 @@ SELECT typeof(s), s FROM from_substrait_json(getvariable('bare')) LIMIT 1
 ----
 BIGINT	7
 
+# Option names and preference values are case-insensitive.
+statement ok
+SET VARIABLE lower_error = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["error"]}]');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('lower_error')) LIMIT 1
+----
+BIGINT	7
+
+statement ok
+SET VARIABLE mixed_fallback = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"OvErFlOw", "preference":["saturate","eRrOr"]}]');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('mixed_fallback')) LIMIT 1
+----
+BIGINT	7
+
+statement ok
+SET VARIABLE upper_saturate = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"OVERFLOW", "preference":["SATURATE"]}]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('upper_saturate'))
+----
+sum:i64 supports only ERROR overflow behavior
+
 # The native SQL control still exposes DuckDB's wider result type.
 query TI
 SELECT typeof(s), s FROM (SELECT SUM(c0) OVER () AS s FROM spark_catalog.t_sum) LIMIT 1

@@ -43,6 +43,31 @@ SELECT typeof(s), s FROM from_substrait_json(getvariable('bare'))
 ----
 BIGINT	6
 
+# Option names and preference values are case-insensitive.
+statement ok
+SET VARIABLE lower_error = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"overflow", "preference":["error"]}]');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('lower_error'))
+----
+BIGINT	6
+
+statement ok
+SET VARIABLE mixed_fallback = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"OvErFlOw", "preference":["saturate","eRrOr"]}]');
+
+query TI
+SELECT typeof(s), s FROM from_substrait_json(getvariable('mixed_fallback'))
+----
+BIGINT	6
+
+statement ok
+SET VARIABLE upper_saturate = replace(getvariable('plain'), '"functionReference": 1', '"functionReference": 1, "options": [{"name":"OVERFLOW", "preference":["SATURATE"]}]');
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('upper_saturate'))
+----
+sum:i64 supports only ERROR overflow behavior
+
 # DuckDB's own SQL retains its wider accumulator and result type.
 query TI
 SELECT typeof(sum(c0)), sum(c0) FROM t_sum

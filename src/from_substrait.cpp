@@ -1466,12 +1466,12 @@ static unique_ptr<ParsedExpression> EnforceIntegerSumResult(
 		return expression;
 	}
 	for (auto &option : options) {
-		if (option.name() != "overflow") {
+		if (!StringUtil::CIEquals(option.name(), "overflow")) {
 			continue;
 		}
 		bool supports_error = false;
 		for (auto &preference : option.preference()) {
-			if (preference == "ERROR") {
+			if (StringUtil::CIEquals(preference, "ERROR")) {
 				supports_error = true;
 				break;
 			}
