@@ -1457,6 +1457,33 @@ SubstraitToDuckDB::TransformProjectOp(const substrait::Rel &sop,
 	return make_shared_ptr<ProjectionRelation>(input_rel, std::move(expressions), std::move(mock_aliases));
 }
 
+// Integer SUM uses a wide accumulator, then checks the declared i64 result.
+static unique_ptr<ParsedExpression> EnforceIntegerSumResult(
+    const string &function_name, const substrait::Type &output_type,
+    const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options,
+    unique_ptr<ParsedExpression> expression) {
+	if ((function_name != "sum" && !StringUtil::StartsWith(function_name, "sum:")) || !output_type.has_i64()) {
+		return expression;
+	}
+	for (auto &option : options) {
+		if (!StringUtil::CIEquals(option.name(), "overflow")) {
+			continue;
+		}
+		bool supports_error = false;
+		for (auto &preference : option.preference()) {
+			if (StringUtil::CIEquals(preference, "ERROR")) {
+				supports_error = true;
+				break;
+			}
+		}
+		if (!supports_error) {
+			throw NotImplementedException("%s supports only ERROR overflow behavior", function_name);
+		}
+	}
+	// When overflow is omitted, the function contract lets the consumer choose ERROR.
+	return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(expression));
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
 	vector<unique_ptr<ParsedExpression>> expressions;
 	GroupByNode group_node;
@@ -1546,27 +1573,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			}
 			unique_ptr<ParsedExpression> expression = make_uniq<FunctionExpression>(
 			    RemapFunctionName(function_name), std::move(children), nullptr, nullptr, is_distinct);
-			if (StringUtil::StartsWith(function_name, "sum:") && s_aggr_function.output_type().has_i64()) {
-				// functions_arithmetic declares integer sum -> i64?, while DuckDB's SUM returns HUGEINT.
-				// Keep the wide accumulator, but check that its result fits the Substrait type.
-				for (auto &option : s_aggr_function.options()) {
-					if (option.name() != "overflow") {
-						continue;
-					}
-					bool supports_error = false;
-					for (auto &preference : option.preference()) {
-						if (preference == "ERROR") {
-							supports_error = true;
-							break;
-						}
-					}
-					if (!supports_error) {
-						throw NotImplementedException("%s supports only ERROR overflow behavior", function_name);
-					}
-				}
-				// When overflow is omitted, the function contract lets the consumer choose ERROR.
-				expression = make_uniq<CastExpression>(LogicalType::BIGINT, std::move(expression));
-			}
+			expression = EnforceIntegerSumResult(function_name, s_aggr_function.output_type(), s_aggr_function.options(),
+			                                     std::move(expression));
 			expressions.push_back(std::move(expression));
 		}
 	}
@@ -2172,7 +2180,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 		window_expr->distinct =
 			window_func.invocation() == substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
 		
-		expressions.push_back(std::move(window_expr));
+		expressions.push_back(EnforceIntegerSumResult(function_name, window_func.output_type(), window_func.options(),
+		                                             std::move(window_expr)));
 		aliases.push_back(""); // Empty alias, DuckDB will generate one
 	}
 	
