@@ -1833,7 +1833,7 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		swin_func->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
 		
 		// Set window frame bounds
-		// Determine frame type (ROWS, RANGE, or GROUPS)
+		// Offset-free GROUPS frames use the same peer groups as RANGE.
 		substrait::Expression_WindowFunction_BoundsType bounds_type;
 		
 		switch (dwin_expr.start) {
@@ -1843,11 +1843,6 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
 			break;
 		case WindowBoundary::CURRENT_ROW_GROUPS:
-		case WindowBoundary::EXPR_PRECEDING_GROUPS:
-		case WindowBoundary::EXPR_FOLLOWING_GROUPS:
-			// GROUPS is not supported in this version of Substrait, treat as ROWS
-			bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
-			break;
 		case WindowBoundary::CURRENT_ROW_RANGE:
 		case WindowBoundary::EXPR_PRECEDING_RANGE:
 		case WindowBoundary::EXPR_FOLLOWING_RANGE:
@@ -1859,12 +1854,6 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			case WindowBoundary::CURRENT_ROW_ROWS:
 			case WindowBoundary::EXPR_PRECEDING_ROWS:
 			case WindowBoundary::EXPR_FOLLOWING_ROWS:
-				bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
-				break;
-			case WindowBoundary::CURRENT_ROW_GROUPS:
-			case WindowBoundary::EXPR_PRECEDING_GROUPS:
-			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
-				// GROUPS is not supported in this version of Substrait, treat as ROWS
 				bounds_type = substrait::Expression_WindowFunction_BoundsType_BOUNDS_TYPE_ROWS;
 				break;
 			default:
@@ -1891,15 +1880,15 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			case WindowBoundary::CURRENT_ROW_GROUPS:
 				bound->mutable_current_row();
 				break;
+			case WindowBoundary::EXPR_PRECEDING_GROUPS:
+			case WindowBoundary::EXPR_FOLLOWING_GROUPS:
+				throw NotImplementedException("GROUPS window frames with offsets are not supported");
 			case WindowBoundary::EXPR_PRECEDING_ROWS:
 			case WindowBoundary::EXPR_PRECEDING_RANGE:
-			case WindowBoundary::EXPR_PRECEDING_GROUPS:
 			case WindowBoundary::EXPR_FOLLOWING_ROWS:
-			case WindowBoundary::EXPR_FOLLOWING_RANGE:
-			case WindowBoundary::EXPR_FOLLOWING_GROUPS: {
+			case WindowBoundary::EXPR_FOLLOWING_RANGE: {
 				bool preceding = boundary_type == WindowBoundary::EXPR_PRECEDING_ROWS ||
-					             boundary_type == WindowBoundary::EXPR_PRECEDING_RANGE ||
-					             boundary_type == WindowBoundary::EXPR_PRECEDING_GROUPS;
+					             boundary_type == WindowBoundary::EXPR_PRECEDING_RANGE;
 				bool is_range = boundary_type == WindowBoundary::EXPR_PRECEDING_RANGE ||
 					            boundary_type == WindowBoundary::EXPR_FOLLOWING_RANGE;
 				if (!boundary_expr) {
