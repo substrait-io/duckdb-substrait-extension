@@ -231,6 +231,7 @@ SELECT * FROM from_substrait_json('{
               {
                 "measure": {
                   "functionReference": 1,
+                  "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
                   "outputType": { "i64": { "nullability": "NULLABILITY_NULLABLE" } }
                 }
               }

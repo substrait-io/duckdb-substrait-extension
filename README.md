@@ -128,6 +128,18 @@ they will also be disabled when generating Substrait.
 The `from_substrait(blob)` function **always** respects the connection-level settings when deciding whether to
 optimize a Substrait plan before executing it.
 
+### Aggregation phases
+
+The producer emits `INITIAL_TO_RESULT` for aggregate and window functions. The
+consumer also supports intermediate phases for non-distinct `count`, whose state
+is an `i64` count. Count-state merges return zero for empty input and support
+`ERROR` overflow behavior. Other intermediate aggregate states and phased windows
+are rejected.
+
+Older DuckDB-generated plans omitted the phase. Substrait defines an omitted phase
+as `INTERMEDIATE_TO_RESULT`, so regenerate those plans or set raw-input calls to
+`INITIAL_TO_RESULT` before consuming them.
+
 ### Python
 
 You can use this extension using the [duckdb](https://pypi.org/project/duckdb/) Python package by running:
