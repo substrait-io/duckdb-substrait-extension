@@ -1526,6 +1526,9 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		// Special handling for GROUPING() function
 		// GROUPING() is not a regular aggregate function - it's a special operator
 		if (function_name == "grouping") {
+			if (s_aggr_function.sorts_size() > 0) {
+				throw NotImplementedException("Ordering on GROUPING() is not supported");
+			}
 			// For GROUPING(), the arguments are field references to grouping columns
 			// We need to resolve these to copies of the actual grouping expressions
 			for (auto &sarg : s_aggr_function.arguments()) {
@@ -1571,8 +1574,15 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
+			unique_ptr<OrderModifier> order_bys;
+			if (s_aggr_function.sorts_size() > 0) {
+				order_bys = make_uniq<OrderModifier>();
+				for (auto &sort : s_aggr_function.sorts()) {
+					order_bys->orders.push_back(TransformOrder(sort));
+				}
+			}
 			unique_ptr<ParsedExpression> expression = make_uniq<FunctionExpression>(
-			    RemapFunctionName(function_name), std::move(children), nullptr, nullptr, is_distinct);
+			    RemapFunctionName(function_name), std::move(children), nullptr, std::move(order_bys), is_distinct);
 			expression = EnforceIntegerSumResult(function_name, s_aggr_function.output_type(), s_aggr_function.options(),
 			                                     std::move(expression));
 			expressions.push_back(std::move(expression));

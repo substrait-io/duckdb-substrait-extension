@@ -128,6 +128,29 @@ they will also be disabled when generating Substrait.
 The `from_substrait(blob)` function **always** respects the connection-level settings when deciding whether to
 optimize a Substrait plan before executing it.
 
+### Roundtripping ordered aggregates
+
+An aggregate's `ORDER BY` controls the order of values passed to that aggregate. For order-sensitive functions such as `string_agg`, it must survive export and import. A query-level `ORDER BY` only sorts the final result rows and cannot replace it.
+
+The [ordered-aggregate example](examples/ordered_string_agg.sql) uses two sort keys, descending priority with NULLs last, then ascending label:
+
+```sql
+SELECT string_agg(label, ',' ORDER BY priority DESC NULLS LAST, label ASC) AS summary
+FROM labels;
+```
+
+The example creates its own input table and compares native DuckDB execution with imported JSON and binary plans. Each returns `beta,gamma,alpha,omega`.
+
+After [building the extension](#building), run this command from the repository root:
+
+```sh
+./build/release/duckdb -unsigned < examples/ordered_string_agg.sql
+```
+
+The example loads the unsigned extension from the local `build/release` directory. Its input table must remain available when the exported plans are executed. Aggregate sort keys are carried in `AggregateFunction.sorts`, including their direction, NULL placement, and priority.
+
+The current exporter does not preserve a non-default `string_agg` separator. This example uses the default comma separator.
+
 ### Python
 
 You can use this extension using the [duckdb](https://pypi.org/project/duckdb/) Python package by running:
