@@ -1522,7 +1522,7 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		bool is_distinct = s_aggr_function.invocation() ==
 		                   substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
 		auto function_name = FindFunction(s_aggr_function.function_reference());
-
+		
 		// Special handling for GROUPING() function
 		// GROUPING() is not a regular aggregate function - it's a special operator
 		if (function_name == "grouping") {
