@@ -353,6 +353,9 @@ void DuckDBToSubstrait::TransformCastExpression(Expression &dexpr, substrait::Ex
 	auto scast = sexpr.mutable_cast();
 	TransformExpr(*dcast.child, *scast->mutable_input(), col_offset);
 	*scast->mutable_type() = DuckToSubstraitType(dcast.return_type);
+	scast->set_failure_behavior(
+	    dcast.try_cast ? substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_RETURN_NULL
+	                  : substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 }
 
 bool DuckDBToSubstrait::IsExtractFunction(const string &function_name) {
