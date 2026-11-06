@@ -3,6 +3,7 @@
 # group: [sql]
 
 require substrait
+require json
 
 statement ok
 CREATE SCHEMA myschema
@@ -20,3 +21,51 @@ CALL from_substrait_json('{"relations":[{"root":{"input":{"fetch":{"input":{"rea
 1	Acme Corp
 2	Widgets Ltd
 3	Gizmo Inc
+
+statement ok
+ATTACH ':memory:' AS db
+
+statement ok
+CREATE SCHEMA db.s
+
+statement ok
+CREATE TABLE db.main.t (x INTEGER)
+
+statement ok
+INSERT INTO db.main.t VALUES (99)
+
+statement ok
+CREATE TABLE db.s.t (x INTEGER)
+
+statement ok
+INSERT INTO db.s.t VALUES (42)
+
+statement ok
+CREATE VIEW db.main.v AS SELECT 99 AS x
+
+statement ok
+CREATE VIEW db.s.v AS SELECT 42 AS x
+
+statement ok
+CREATE MACRO named_table_plan(table_names) AS
+    '{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["x"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":'
+    || to_json(table_names) ||
+    '}}},"names":["x"]}}],"version":{"minorNumber":78,"producer":"DuckDB"}}'
+
+# A three-part name keeps the attached catalog and requested schema separate.
+query I
+SELECT * FROM from_substrait_json(named_table_plan(['db', 's', 't']))
+----
+42
+
+# The same qualification is used when the target is a view.
+query I
+SELECT * FROM from_substrait_json(named_table_plan(['db', 's', 'v']))
+----
+42
+
+# Two-part attached-catalog shorthand still resolves against its default schema.
+query I
+SELECT * FROM from_substrait_json(named_table_plan(['db', 't']))
+----
+99
