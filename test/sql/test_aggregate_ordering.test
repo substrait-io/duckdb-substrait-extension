@@ -1,0 +1,121 @@
+# name: test/sql/test_aggregate_ordering.test
+# description: Preserve aggregate ordering in Substrait plans and DuckDB queries
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE ordered_values (g VARCHAR, position INTEGER, label VARCHAR)
+
+statement ok
+INSERT INTO ordered_values VALUES ('a',2,'b'), ('a',1,'a'), ('a',NULL,'c'), ('a',1,'d'), ('a',3,'b'), ('b',2,'y'), ('b',NULL,'x'), ('b',2,'z'), ('b',1,NULL)
+
+# Import ordering independently of the producer, including a secondary key.
+statement ok
+SET VARIABLE ordered_plan = '{
+  "extensionUrns": [{"extensionUrnAnchor": 1, "urn": "extension:io.substrait:functions_string"}],
+  "extensions": [{"extensionFunction": {"extensionUrnReference": 1, "functionAnchor": 1, "name": "string_agg:str_str"}}],
+  "relations": [{"root": {"input": {"aggregate": {
+    "input": {"read": {
+      "baseSchema": {"names": ["g", "position", "label"], "struct": {"types": [
+        {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"string": {"nullability": "NULLABILITY_NULLABLE"}}
+      ], "nullability": "NULLABILITY_REQUIRED"}},
+      "namedTable": {"names": ["ordered_values"]}
+    }},
+    "groupingExpressions": [{"selection": {"directReference": {"structField": {}}, "rootReference": {}}}],
+    "groupings": [{"expressionReferences": [0]}],
+    "measures": [{"measure": {
+      "functionReference": 1,
+      "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+      "outputType": {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+      "arguments": [
+        {"value": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}},
+        {"value": {"literal": {"string": ","}}}
+      ],
+      "sorts": [
+        {"expr": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}, "direction": "SORT_DIRECTION_ASC_NULLS_FIRST"},
+        {"expr": {"selection": {"directReference": {"structField": {"field": 2}}, "rootReference": {}}}, "direction": "SORT_DIRECTION_DESC_NULLS_LAST"}
+      ]
+    }}]
+  }}, "names": ["g", "labels"]}}]
+}'
+
+query TT
+SELECT * FROM from_substrait_json(getvariable('ordered_plan')) ORDER BY g
+----
+a	c,d,a,b,b
+b	x,z,y
+
+statement ok
+PRAGMA enable_verification
+
+# Each measure keeps its own ordering, direction, and NULL placement.
+statement ok
+SET VARIABLE ordered_sql = 'SELECT g, string_agg(label, '','' ORDER BY position ASC NULLS FIRST, label DESC), string_agg(label, '','' ORDER BY position DESC NULLS LAST, label ASC) FROM ordered_values GROUP BY g'
+
+statement ok
+SET VARIABLE ordered_json = (SELECT json FROM get_substrait_json(getvariable('ordered_sql'), enable_optimizer=false))
+
+query TTT
+SELECT * FROM from_substrait_json(getvariable('ordered_json')) ORDER BY g
+----
+a	c,d,a,b,b	b,b,a,d,c
+b	x,z,y	y,z,x
+
+statement ok
+SET VARIABLE ordered_binary = (SELECT * FROM get_substrait(getvariable('ordered_sql'), enable_optimizer=true))
+
+query TTT
+SELECT * FROM from_substrait(getvariable('ordered_binary')) ORDER BY g
+----
+a	c,d,a,b,b	b,b,a,d,c
+b	x,z,y	y,z,x
+
+# DISTINCT applies to the values before ordered concatenation.
+statement ok
+SET VARIABLE distinct_sql = 'SELECT g, string_agg(DISTINCT label, '','' ORDER BY label DESC NULLS FIRST) FROM ordered_values GROUP BY g'
+
+statement ok
+SET VARIABLE distinct_json = (SELECT json FROM get_substrait_json(getvariable('distinct_sql'), enable_optimizer=true))
+
+query TT
+SELECT * FROM from_substrait_json(getvariable('distinct_json')) ORDER BY g
+----
+a	d,c,b,a
+b	z,y,x
+
+statement ok
+SET VARIABLE distinct_binary = (SELECT * FROM get_substrait(getvariable('distinct_sql'), enable_optimizer=false))
+
+query TT
+SELECT * FROM from_substrait(getvariable('distinct_binary')) ORDER BY g
+----
+a	d,c,b,a
+b	z,y,x
+
+statement error
+SELECT * FROM from_substrait_json('{
+  "extensions": [{"extensionFunction": {"functionAnchor": 1, "name": "grouping"}}],
+  "relations": [{"root": {"input": {"aggregate": {
+    "input": {"read": {
+      "baseSchema": {"names": ["g", "position", "label"], "struct": {"types": [
+        {"string": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"i32": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"string": {"nullability": "NULLABILITY_NULLABLE"}}
+      ], "nullability": "NULLABILITY_REQUIRED"}},
+      "namedTable": {"names": ["ordered_values"]}
+    }},
+    "groupingExpressions": [{"selection": {"directReference": {"structField": {}}, "rootReference": {}}}],
+    "groupings": [{"expressionReferences": [0]}],
+    "measures": [{"measure": {
+      "functionReference": 1, "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+      "outputType": {"i64": {"nullability": "NULLABILITY_REQUIRED"}},
+      "arguments": [{"value": {"selection": {"directReference": {"structField": {}}, "rootReference": {}}}}],
+      "sorts": [{"expr": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}, "direction": "SORT_DIRECTION_ASC_NULLS_FIRST"}]
+    }}]
+  }}, "names": ["g", "grouping"]}}]
+}')
+----
+Ordering on GROUPING() is not supported
