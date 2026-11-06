@@ -1,0 +1,167 @@
+# name: test/sql/test_aggregate_phases.test
+# description: Aggregate phases distinguish raw values from intermediate states
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE partial_counts (p BIGINT, g INTEGER);
+
+statement ok
+INSERT INTO partial_counts VALUES (1,0), (2,0), (4,1), (NULL,2);
+
+statement ok
+SET VARIABLE count_plan = '{
+  "extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_aggregate_generic"}],
+  "extensions":[{"extensionFunction":{"extensionUrnReference":1,"functionAnchor":1,"name":"count:any"}}],
+  "relations":[{"root":{"names":["n"],"input":{"aggregate":{
+    "input":{"read":{
+      "baseSchema":{"names":["p","g"],"struct":{
+        "types":[{"i64":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],
+        "nullability":"NULLABILITY_REQUIRED"}},
+      "namedTable":{"names":["partial_counts"]}}},
+    "measures":[{"measure":{
+      "phase":"AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT",
+      "functionReference":1,
+      "arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}],
+      "outputType":{"i64":{"nullability":"NULLABILITY_REQUIRED"}}
+    }}]
+  }}}}]
+}';
+
+# Final and intermediate merges add the partial counts rather than counting rows.
+query TI
+SELECT typeof(n), n FROM from_substrait_json(getvariable('count_plan'))
+----
+BIGINT	7
+
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), '"measures":[{"measure":', '"measures":[{"filter":{"literal":{"boolean":false}},"measure":'))
+----
+0
+
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'INTERMEDIATE_TO_RESULT', 'INTERMEDIATE_TO_INTERMEDIATE'))
+----
+7
+
+# UNSPECIFIED has the same meaning as INTERMEDIATE_TO_RESULT in the spec.
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), '"phase":"AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT",', ''))
+----
+7
+
+# A zero-argument count signature also consumes one count state in merge phases.
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'count:any', 'count:'))
+----
+7
+
+# Initial phases count non-null raw values instead.
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'INTERMEDIATE_TO_RESULT', 'INITIAL_TO_INTERMEDIATE'))
+----
+3
+
+query I
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'INTERMEDIATE_TO_RESULT', 'INITIAL_TO_RESULT'))
+----
+3
+
+statement ok
+SET VARIABLE grouped = replace(replace(getvariable('count_plan'), '"names":["n"]', '"names":["g","n"]'), '"measures":', '"groupingExpressions":[{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}],"groupings":[{"expressionReferences":[0]}],"measures":');
+
+query II rowsort
+SELECT * FROM from_substrait_json(getvariable('grouped'))
+----
+0	3
+1	4
+2	0
+
+# Native raw-input plans must declare INITIAL_TO_RESULT in both encodings.
+statement ok
+CALL get_substrait('SELECT count(p) FROM partial_counts', strict=true);
+
+statement ok
+CALL get_substrait('SELECT g,count(p) FROM partial_counts GROUP BY g ORDER BY g', strict=true);
+
+statement ok
+CALL get_substrait('SELECT count(p) OVER () FROM partial_counts', strict=true);
+
+# Count is zero on an empty set of states, not SUM's NULL result.
+statement ok
+DELETE FROM partial_counts;
+
+query TI
+SELECT typeof(n), n FROM from_substrait_json(getvariable('count_plan'))
+----
+BIGINT	0
+
+# Other functions need their own intermediate-state implementation.
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_plan'), 'count:any', 'avg:i64'))
+----
+Substrait aggregate phase AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT is not supported for avg:i64
+
+statement error
+SELECT * FROM from_substrait_json(replace(replace(getvariable('count_plan'), 'count:any', 'avg:i64'), 'INTERMEDIATE_TO_RESULT', 'INITIAL_TO_INTERMEDIATE'))
+----
+Substrait aggregate phase AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE is not supported for avg:i64
+
+# Counts alone cannot carry DISTINCT values between stages.
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_plan'), '"functionReference":1', '"functionReference":1,"invocation":"AGGREGATION_INVOCATION_DISTINCT"'))
+----
+Substrait aggregate phase AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT is not supported for count:any DISTINCT
+
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_plan'), '"AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT"', '42'))
+----
+Substrait aggregate phase unknown (42) is not supported
+
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_plan'), '"outputType":{"i64"', '"outputType":{"i32"'))
+----
+Merging Substrait count requires one i64 intermediate argument and an i64 result
+
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_plan'), '"functionReference":1', '"functionReference":1,"options":[{"name":"overflow","preference":["SATURATE"]}]'))
+----
+Substrait function option "overflow" lists no value this consumer supports
+
+# Merge arithmetic is checked against the count state's i64 range.
+statement ok
+INSERT INTO partial_counts VALUES (9223372036854775807,0), (1,0);
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('count_plan'))
+----
+out of range
+
+statement ok
+DELETE FROM partial_counts;
+
+statement ok
+INSERT INTO partial_counts VALUES (1,0), (2,0);
+
+statement ok
+SET VARIABLE count_window = (SELECT * FROM get_substrait_json('SELECT count(p) OVER () AS n FROM partial_counts'));
+
+statement error
+SELECT * FROM from_substrait_json(replace(getvariable('count_window'), 'INITIAL_TO_RESULT', 'INTERMEDIATE_TO_RESULT'))
+----
+Substrait window phase AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT is not supported
+
+statement ok
+DROP TABLE partial_counts;
+
+statement ok
+CREATE TABLE partial_counts (p INTEGER, g INTEGER);
+
+statement error
+SELECT * FROM from_substrait_json(getvariable('count_plan'))
+----
+Merging Substrait count requires an i64 intermediate argument

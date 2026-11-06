@@ -1610,6 +1610,7 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		auto &daexpr = dmeas->Cast<BoundAggregateExpression>();
 
 		*smeas->mutable_output_type() = DuckToSubstraitType(daexpr.return_type);
+		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
 		vector<::substrait::Type> args_types;
 		for (auto &darg : daexpr.children) {
 			auto s_arg = smeas->add_arguments();
@@ -1627,7 +1628,8 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	// that takes field references to the grouping columns it references
 	for (auto &grouping_func : daggr.grouping_functions) {
 		auto smeas = saggr->add_measures()->mutable_measure();
-		
+		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
+
 		// Build argument types - each argument is a reference to a grouping column
 		vector<::substrait::Type> args_types;
 		for (auto &group_idx : grouping_func) {
@@ -1751,7 +1753,8 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			auto &dexpr = dwindow.expressions[expr_idx];
 			auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
 		auto swin_func = swindow->add_window_functions();
-		
+		swin_func->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
+
 		// Set output type
 		*swin_func->mutable_output_type() = DuckToSubstraitType(dwin_expr.return_type);
 		
