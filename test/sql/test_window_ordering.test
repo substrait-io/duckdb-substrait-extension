@@ -1,0 +1,88 @@
+# name: test/sql/test_window_ordering.test
+# description: Preserve null ordering and output positions across window specifications
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE ranking_input AS SELECT * FROM (VALUES (1,NULL),(2,1),(3,2),(4,1)) t(id,k)
+
+# Windows that differ only in null ordering must use separate specifications.
+statement ok
+SET VARIABLE ascending_windows = 'SELECT id, row_number() OVER (ORDER BY k ASC NULLS FIRST, id) AS a, row_number() OVER (ORDER BY k ASC NULLS LAST, id) AS b FROM ranking_input'
+
+statement ok
+SET VARIABLE ascending_json = (SELECT json FROM get_substrait_json(getvariable('ascending_windows'), enable_optimizer=false))
+
+query III
+SELECT * FROM from_substrait_json(getvariable('ascending_json')) ORDER BY id
+----
+1	1	4
+2	2	1
+3	4	3
+4	3	2
+
+statement ok
+SET VARIABLE ascending_binary = (SELECT * FROM get_substrait(getvariable('ascending_windows'), enable_optimizer=true))
+
+query III
+SELECT * FROM from_substrait(getvariable('ascending_binary')) ORDER BY id
+----
+1	1	4
+2	2	1
+3	4	3
+4	3	2
+
+statement ok
+SET VARIABLE descending_windows = 'SELECT id, row_number() OVER (ORDER BY k DESC NULLS FIRST, id) AS a, row_number() OVER (ORDER BY k DESC NULLS LAST, id) AS b FROM ranking_input'
+
+statement ok
+SET VARIABLE descending_json = (SELECT json FROM get_substrait_json(getvariable('descending_windows'), enable_optimizer=false))
+
+query III
+SELECT * FROM from_substrait_json(getvariable('descending_json')) ORDER BY id
+----
+1	1	4
+2	3	2
+3	2	1
+4	4	3
+
+statement ok
+SET VARIABLE descending_binary = (SELECT * FROM get_substrait(getvariable('descending_windows'), enable_optimizer=true))
+
+query III
+SELECT * FROM from_substrait(getvariable('descending_binary')) ORDER BY id
+----
+1	1	4
+2	3	2
+3	2	1
+4	4	3
+
+# Grouping the first and third windows must preserve their original output positions.
+statement ok
+SET VARIABLE interleaved_windows = 'SELECT id, row_number() OVER (ORDER BY k ASC NULLS FIRST, id) AS a, rank() OVER (ORDER BY k ASC NULLS LAST, id) AS b, dense_rank() OVER (ORDER BY k ASC NULLS FIRST, id) AS c FROM ranking_input'
+
+statement ok
+SET VARIABLE interleaved_json = (SELECT json FROM get_substrait_json(getvariable('interleaved_windows'), enable_optimizer=false))
+
+query IIII
+SELECT * FROM from_substrait_json(getvariable('interleaved_json')) ORDER BY id
+----
+1	1	4	1
+2	2	1	2
+3	4	3	4
+4	3	2	3
+
+statement ok
+SET VARIABLE interleaved_binary = (SELECT * FROM get_substrait(getvariable('interleaved_windows'), enable_optimizer=true))
+
+query IIII
+SELECT * FROM from_substrait(getvariable('interleaved_binary')) ORDER BY id
+----
+1	1	4	1
+2	2	1	2
+3	4	3	4
+4	3	2	3
