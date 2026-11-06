@@ -1617,6 +1617,11 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 
 		*smeas->mutable_output_type() = DuckToSubstraitType(daexpr.return_type);
 		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
+		if (daexpr.order_bys) {
+			for (auto &order : daexpr.order_bys->orders) {
+				TransformOrder(order, *smeas->add_sorts());
+			}
+		}
 		vector<::substrait::Type> args_types;
 		for (auto &darg : daexpr.children) {
 			auto s_arg = smeas->add_arguments();
