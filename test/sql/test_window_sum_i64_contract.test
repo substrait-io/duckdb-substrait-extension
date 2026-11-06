@@ -13,10 +13,13 @@ PRAGMA enable_verification
 # SELECT c0, SUM(c0) OVER (ORDER BY c1 ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS s FROM t_sum
 # All three standard sum:i64 calls declare a nullable i64 result.
 statement ok
-CREATE SCHEMA spark_catalog;
+ATTACH ':memory:' AS spark_catalog;
 
 statement ok
-CREATE TABLE spark_catalog.t_sum (c0 BIGINT, c1 BIGINT);
+CREATE SCHEMA spark_catalog."default";
+
+statement ok
+CREATE TABLE spark_catalog."default".t_sum (c0 BIGINT, c1 BIGINT);
 
 statement ok
 SET VARIABLE plain = (SELECT content FROM read_text('test/data/spark_window_sum_i64.json'));
@@ -28,7 +31,7 @@ statement ok
 SET VARIABLE framed = (SELECT content FROM read_text('test/data/spark_frame_sum_i64.json'));
 
 statement ok
-INSERT INTO spark_catalog.t_sum VALUES (1,0), (2,0), (4,1);
+INSERT INTO spark_catalog."default".t_sum VALUES (1,0), (2,0), (4,1);
 
 query ITI rowsort
 SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('plain'))
@@ -46,7 +49,7 @@ SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('partitioned'))
 
 # Give every ordering key a unique value for the ROWS frame.
 statement ok
-UPDATE spark_catalog.t_sum SET c1=c0;
+UPDATE spark_catalog."default".t_sum SET c1=c0;
 
 query ITI rowsort
 SELECT c0, typeof(s), s FROM from_substrait_json(getvariable('framed'))
@@ -91,7 +94,7 @@ sum:i64 supports only ERROR overflow behavior
 
 # The native SQL control still exposes DuckDB's wider result type.
 query TI
-SELECT typeof(s), s FROM (SELECT SUM(c0) OVER () AS s FROM spark_catalog.t_sum) LIMIT 1
+SELECT typeof(s), s FROM (SELECT SUM(c0) OVER () AS s FROM spark_catalog."default".t_sum) LIMIT 1
 ----
 HUGEINT	7
 
@@ -102,10 +105,10 @@ CREATE MACRO window_sum_input_type(signature) AS
                            '"i64"', '"' || signature || '"'), 'sum:i64', 'sum:' || signature);
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE TINYINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c0 TYPE TINYINT;
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE TINYINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c1 TYPE TINYINT;
 
 query TI
 SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i8')) LIMIT 1
@@ -113,10 +116,10 @@ SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i8')) LIMIT 
 BIGINT	7
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE SMALLINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c0 TYPE SMALLINT;
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE SMALLINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c1 TYPE SMALLINT;
 
 query TI
 SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i16')) LIMIT 1
@@ -124,10 +127,10 @@ SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i16')) LIMIT
 BIGINT	7
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE INTEGER;
+ALTER TABLE spark_catalog."default".t_sum ALTER c0 TYPE INTEGER;
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE INTEGER;
+ALTER TABLE spark_catalog."default".t_sum ALTER c1 TYPE INTEGER;
 
 query TI
 SELECT typeof(s), s FROM from_substrait_json(window_sum_input_type('i32')) LIMIT 1
@@ -136,10 +139,10 @@ BIGINT	7
 
 # A floating-point SUM with a floating-point declaration keeps its native type.
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE DOUBLE;
+ALTER TABLE spark_catalog."default".t_sum ALTER c0 TYPE DOUBLE;
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE DOUBLE;
+ALTER TABLE spark_catalog."default".t_sum ALTER c1 TYPE DOUBLE;
 
 statement ok
 SET VARIABLE floating = replace(replace(getvariable('plain'), 'sum:i64', 'sum:fp64'), '"i64"', '"fp64"');
@@ -150,13 +153,13 @@ SELECT typeof(s), s FROM from_substrait_json(getvariable('floating')) LIMIT 1
 DOUBLE	7.0
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c0 TYPE BIGINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c0 TYPE BIGINT;
 
 statement ok
-ALTER TABLE spark_catalog.t_sum ALTER c1 TYPE BIGINT;
+ALTER TABLE spark_catalog."default".t_sum ALTER c1 TYPE BIGINT;
 
 statement ok
-DELETE FROM spark_catalog.t_sum;
+DELETE FROM spark_catalog."default".t_sum;
 
 query I
 SELECT count(*) FROM from_substrait_json(getvariable('plain'))
@@ -164,7 +167,7 @@ SELECT count(*) FROM from_substrait_json(getvariable('plain'))
 0
 
 statement ok
-INSERT INTO spark_catalog.t_sum VALUES (NULL,0), (NULL,0);
+INSERT INTO spark_catalog."default".t_sum VALUES (NULL,0), (NULL,0);
 
 query TI rowsort
 SELECT typeof(s), s FROM from_substrait_json(getvariable('plain'))
@@ -173,11 +176,11 @@ BIGINT	NULL
 BIGINT	NULL
 
 statement ok
-DELETE FROM spark_catalog.t_sum;
+DELETE FROM spark_catalog."default".t_sum;
 
 # Retain the wide accumulator so an intermediate value above i64 can cancel.
 statement ok
-INSERT INTO spark_catalog.t_sum VALUES (9223372036854775807,0), (1,0), (-1,0);
+INSERT INTO spark_catalog."default".t_sum VALUES (9223372036854775807,0), (1,0), (-1,0);
 
 query TI
 SELECT typeof(s), s FROM from_substrait_json(getvariable('plain')) LIMIT 1
@@ -185,10 +188,10 @@ SELECT typeof(s), s FROM from_substrait_json(getvariable('plain')) LIMIT 1
 BIGINT	9223372036854775807
 
 statement ok
-DELETE FROM spark_catalog.t_sum;
+DELETE FROM spark_catalog."default".t_sum;
 
 statement ok
-INSERT INTO spark_catalog.t_sum VALUES (4611686018427387904,0), (4611686018427387904,0), (4611686018427387904,0);
+INSERT INTO spark_catalog."default".t_sum VALUES (4611686018427387904,0), (4611686018427387904,0), (4611686018427387904,0);
 
 statement error
 SELECT * FROM from_substrait_json(getvariable('plain'))
@@ -246,10 +249,10 @@ SELECT * FROM from_substrait_json(getvariable('saturate_plan'))
 sum:i64 supports only ERROR overflow behavior
 
 statement ok
-DELETE FROM spark_catalog.t_sum;
+DELETE FROM spark_catalog."default".t_sum;
 
 statement ok
-INSERT INTO spark_catalog.t_sum VALUES (-9223372036854775808,0), (-1,0);
+INSERT INTO spark_catalog."default".t_sum VALUES (-9223372036854775808,0), (-1,0);
 
 statement error
 SELECT * FROM from_substrait_json(getvariable('plain'))
