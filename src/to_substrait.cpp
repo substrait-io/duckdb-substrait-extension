@@ -1683,8 +1683,7 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			}
 			sig += "O:";
 			for (auto &order : orders) {
-				sig += order.expression->ToString() + ":" +
-				       (order.type == OrderType::ASCENDING ? "ASC" : "DESC") + ";";
+				sig += order.ToString() + ";";
 			}
 			return sig;
 		}
@@ -1728,7 +1727,13 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 	
 	// Now create chained window relations, one for each unique spec
 	substrait::Rel *current_input = TransformOp(*dop.children[0]);
-	
+	auto child_column_count = GetColumnCount(*dop.children[0]);
+	vector<int32_t> output_mapping(child_column_count + dwindow.expressions.size());
+	for (idx_t i = 0; i < child_column_count; i++) {
+		output_mapping[i] = i;
+	}
+	idx_t output_idx = child_column_count;
+
 	for (auto &spec : window_specs) {
 		auto res = make_uniq<substrait::Rel>();
 		auto swindow = res->mutable_window();
@@ -1748,6 +1753,7 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		
 		// Process each window function expression in this group
 		for (auto expr_idx : spec.expression_indices) {
+			output_mapping[child_column_count + expr_idx] = output_idx++;
 			auto &dexpr = dwindow.expressions[expr_idx];
 			auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
 		auto swin_func = swindow->add_window_functions();
@@ -2001,8 +2007,11 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		// Update current_input to chain the next window relation
 		current_input = res.release();
 	}
-	
-	// Return the last window relation in the chain
+
+	// Grouping interleaved specifications changes the order in which window columns are appended.
+	if (window_specs.size() > 1) {
+		current_input->mutable_window()->set_allocated_common(CreateOutputMapping(output_mapping));
+	}
 	return current_input;
 }
 
