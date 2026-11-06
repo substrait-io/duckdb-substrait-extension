@@ -1522,10 +1522,13 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		bool is_distinct = s_aggr_function.invocation() ==
 		                   substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
 		auto function_name = FindFunction(s_aggr_function.function_reference());
-		
+
 		// Special handling for GROUPING() function
 		// GROUPING() is not a regular aggregate function - it's a special operator
 		if (function_name == "grouping") {
+			if (smeas.has_filter()) {
+				throw NotImplementedException("FILTER on GROUPING() is not supported");
+			}
 			// For GROUPING(), the arguments are field references to grouping columns
 			// We need to resolve these to copies of the actual grouping expressions
 			for (auto &sarg : s_aggr_function.arguments()) {
@@ -1571,8 +1574,12 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
+			unique_ptr<ParsedExpression> filter;
+			if (smeas.has_filter()) {
+				filter = TransformExpr(smeas.filter());
+			}
 			unique_ptr<ParsedExpression> expression = make_uniq<FunctionExpression>(
-			    RemapFunctionName(function_name), std::move(children), nullptr, nullptr, is_distinct);
+			    RemapFunctionName(function_name), std::move(children), std::move(filter), nullptr, is_distinct);
 			expression = EnforceIntegerSumResult(function_name, s_aggr_function.output_type(), s_aggr_function.options(),
 			                                     std::move(expression));
 			expressions.push_back(std::move(expression));
