@@ -47,6 +47,7 @@ EmitJSON EmitRelation(const string &kind) {
 		op = {{"inputs", {input, input}}, {"op", "SET_OP_UNION_ALL"}};
 	} else if (kind == "window") {
 		op["windowFunctions"] = {{{"functionReference", 2},
+		                          {"phase", "AGGREGATION_PHASE_INITIAL_TO_RESULT"},
 		                          {"outputType", {{"i64", {{"nullability", "NULLABILITY_REQUIRED"}}}}},
 		                          {"boundsType", "BOUNDS_TYPE_ROWS"},
 		                          {"lowerBound", {{"unbounded", EmitJSON::object()}}},
@@ -286,6 +287,7 @@ TEST_CASE("Emit addresses generated aggregate and window columns", "[substrait-a
 			if (kind == "aggregate") {
 				rel[kind]["measures"] = {{{"measure",
 				                           {{"functionReference", 1},
+				                            {"phase", "AGGREGATION_PHASE_INITIAL_TO_RESULT"},
 				                            {"outputType", {{"i64", {{"nullability", "NULLABILITY_REQUIRED"}}}}}}}}};
 			}
 			rel[kind]["common"]["emit"]["outputMapping"] = {3, 0, 3};

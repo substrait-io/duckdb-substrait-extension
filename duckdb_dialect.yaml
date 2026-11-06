@@ -172,7 +172,9 @@ supported_relations:
       - "LOCAL_FILES"
   - "FILTER"
   - "PROJECT"
-  - "AGGREGATE"
+  - relation: "AGGREGATE"
+    metadata:
+      aggregation_phases: "INITIAL_TO_RESULT; count also supports intermediate phases with ALL invocation"
   - "SORT"
   - "FETCH"
   - relation: "JOIN"
@@ -189,7 +191,9 @@ supported_relations:
       - "LEFT_MARK"
   - "CROSS"
   - "LATERAL_JOIN"
-  - "CONSISTENT_PARTITION_WINDOW"
+  - relation: "CONSISTENT_PARTITION_WINDOW"
+    metadata:
+      aggregation_phases: "INITIAL_TO_RESULT only"
   - relation: "SET"
     operations:
       - "UNION_ALL"

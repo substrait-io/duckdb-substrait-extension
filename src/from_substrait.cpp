@@ -1484,6 +1484,29 @@ static unique_ptr<ParsedExpression> EnforceIntegerSumResult(
 	return make_uniq<CastExpression>(LogicalType::BIGINT, std::move(expression));
 }
 
+static bool UsesCountIntermediateState(const string &function_name, substrait::AggregationPhase phase,
+                                       bool is_distinct) {
+	if (phase == substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT) {
+		return false;
+	}
+	const bool is_count = function_name == "count" || StringUtil::StartsWith(function_name, "count:");
+	if (is_count && !is_distinct) {
+		switch (phase) {
+		case substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE:
+			return false;
+		case substrait::AGGREGATION_PHASE_UNSPECIFIED:
+		case substrait::AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE:
+		case substrait::AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT:
+			return true;
+		default:
+			break;
+		}
+	}
+	throw NotImplementedException("Substrait aggregate phase %s is not supported for %s%s",
+	                              SubstraitEnumName(substrait::AggregationPhase_Name(phase), phase), function_name,
+	                              is_distinct ? " DISTINCT" : "");
+}
+
 shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Rel &sop) {
 	vector<unique_ptr<ParsedExpression>> expressions;
 	GroupByNode group_node;
@@ -1522,7 +1545,8 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 		bool is_distinct = s_aggr_function.invocation() ==
 		                   substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT;
 		auto function_name = FindFunction(s_aggr_function.function_reference());
-		
+		const bool merge_count = UsesCountIntermediateState(function_name, s_aggr_function.phase(), is_distinct);
+
 		// Special handling for GROUPING() function
 		// GROUPING() is not a regular aggregate function - it's a special operator
 		if (function_name == "grouping") {
@@ -1568,6 +1592,28 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 				}
 			}
 			function_name = RemapEnumAggregate(function_name, enum_args, s_aggr_function.options());
+			if (merge_count) {
+				if (children.size() != 1 || !enum_args.empty() || !s_aggr_function.output_type().has_i64()) {
+					throw InvalidInputException(
+					    "Merging Substrait count requires one i64 intermediate argument and an i64 result");
+				}
+				vector<unique_ptr<ParsedExpression>> state;
+				state.push_back(children[0]->Copy());
+				if (input_rel->Project(std::move(state), {"state"})->Columns()[0].Type() != LogicalType::BIGINT) {
+					throw InvalidInputException("Merging Substrait count requires an i64 intermediate argument");
+				}
+				FindFunctionOption(s_aggr_function.options(), "overflow", {"ERROR"});
+				auto filter = smeas.has_filter() ? TransformExpr(smeas.filter()) : nullptr;
+				unique_ptr<ParsedExpression> sum =
+				    make_uniq<FunctionExpression>("sum", std::move(children), std::move(filter), nullptr, false);
+				sum = make_uniq<CastExpression>(LogicalType::BIGINT, std::move(sum));
+				vector<unique_ptr<ParsedExpression>> result;
+				result.push_back(std::move(sum));
+				result.push_back(make_uniq<ConstantExpression>(Value::BIGINT(0)));
+				expressions.push_back(
+				    make_uniq<OperatorExpression>(ExpressionType::OPERATOR_COALESCE, std::move(result)));
+				continue;
+			}
 			if (function_name == "count" && children.empty()) {
 				function_name = "count_star";
 			}
@@ -2021,6 +2067,11 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWindowOp(const substrait::Rel &
 	for (auto &window_func : sop.window().window_functions()) {
 		// Get the function name
 		auto function_name = FindFunction(window_func.function_reference());
+		if (window_func.phase() != substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT) {
+			throw NotImplementedException(
+			    "Substrait window phase %s is not supported",
+			    SubstraitEnumName(substrait::AggregationPhase_Name(window_func.phase()), window_func.phase()));
+		}
 
 		// Scan the arguments before resolving the name: an aggregate used as a window function
 		// carries the same leading enumeration argument (std_dev SAMPLE/POPULATION), and that

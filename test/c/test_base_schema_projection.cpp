@@ -115,6 +115,7 @@ TEST_CASE("Test baseSchema narrower than physical table with aggregate", "[subst
 						"measures": [{
 							"measure": {
 								"functionReference": 1,
+								"phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
 								"outputType": {"i64": {"nullability": "NULLABILITY_REQUIRED"}},
 								"arguments": [{"value": {"selection": {"directReference": {"structField": {}}, "rootReference": {}}}}]
 							}
