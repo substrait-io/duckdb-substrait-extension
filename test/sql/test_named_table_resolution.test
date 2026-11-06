@@ -3,6 +3,7 @@
 # group: [sql]
 
 require substrait
+
 require json
 
 statement ok
