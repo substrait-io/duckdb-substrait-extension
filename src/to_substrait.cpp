@@ -1603,7 +1603,6 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 	}
 	for (auto &dmeas : daggr.expressions) {
 		auto smeas = saggr->add_measures()->mutable_measure();
-		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
 		if (dmeas->type != ExpressionType::BOUND_AGGREGATE) {
 			// TODO push projection or push substrait, too
 			throw NotImplementedException("No non-aggregate expressions in measures yet");
@@ -1611,6 +1610,7 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		auto &daexpr = dmeas->Cast<BoundAggregateExpression>();
 
 		*smeas->mutable_output_type() = DuckToSubstraitType(daexpr.return_type);
+		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
 		vector<::substrait::Type> args_types;
 		for (auto &darg : daexpr.children) {
 			auto s_arg = smeas->add_arguments();
