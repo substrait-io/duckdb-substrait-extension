@@ -1,0 +1,37 @@
+# name: test/sql/test_division.test
+# description: Integer division is Substrait's divide with an integer output type, / with a floating one
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE n (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO n VALUES (7, 2);
+
+statement ok
+CALL get_substrait('SELECT a // b AS q, a / b AS f, -a // b AS nq FROM n')
+
+# DuckDB's // is emitted as divide, not leaked under its own name.
+query I
+SELECT json LIKE '%"divide:i32_i32"%' AND json NOT LIKE '%"//"%' FROM get_substrait_json('SELECT a // b FROM n')
+----
+true
+
+# An external plan that declares an integer divide gets an integer result...
+query IT
+SELECT q, typeof(q) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:i32_i32","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["n"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}]}},"names":["q"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+3	INTEGER
+
+# ...and one that declares a floating-point divide gets a floating-point result.
+query IT
+SELECT f, typeof(f) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:fp64_fp64","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["n"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}}},{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}}}]}}]}},"names":["f"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+3.5	DOUBLE
