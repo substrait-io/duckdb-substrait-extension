@@ -12,6 +12,10 @@ jobs:
     runs-on: macos-latest
     env:
       GEN: ninja
+      # Name the DuckDB version the build identifies as, like the distribution pipeline does.
+      # Without it the build takes the submodule's commit sha, and the tests' INSTALL of avro
+      # and iceberg look for extensions under that sha instead of under v2.0.0.
+      OVERRIDE_GIT_DESCRIBE: v2.0.0
 
     steps:
     - name: Install Ninja
