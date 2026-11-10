@@ -831,3 +831,49 @@ TEST_CASE("Test extension URN for every any1-expanded overload", "[substrait-api
 	REQUIRE(CHECK_COLUMN(result, 0, {1}));
 	REQUIRE(CHECK_COLUMN(result, 1, {1}));
 }
+
+TEST_CASE("Test C CTAS with create_on_conflict via Substrait API", "[substrait-api]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+
+	CreateEmployeeTable(con);
+
+	REQUIRE(GetSubstraitJSON(con, "CREATE TABLE t AS SELECT 1").find("CREATE_MODE_ERROR_IF_EXISTS") != string::npos);
+	REQUIRE(GetSubstraitJSON(con, "CREATE TABLE IF NOT EXISTS t AS SELECT 1").find("CREATE_MODE_IGNORE_IF_EXISTS") !=
+	        string::npos);
+	REQUIRE(GetSubstraitJSON(con, "CREATE OR REPLACE TABLE t AS SELECT 1").find("CREATE_MODE_REPLACE_IF_EXISTS") !=
+	        string::npos);
+
+	REQUIRE_NO_FAIL(ExecuteViaSubstraitJSON(con, "CREATE TABLE employee_salaries AS "
+	                                             "SELECT employee_id, salary FROM employees"));
+
+	auto result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+	// IF NOT EXISTS leaves the existing table untouched.
+	REQUIRE_NO_FAIL(ExecuteViaSubstraitJSON(con, "CREATE TABLE IF NOT EXISTS employee_salaries AS "
+	                                             "SELECT employee_id, department_id, salary FROM employees"));
+
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(result->ColumnCount() == 2);
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+	// A plain CREATE fails when the table exists.
+	REQUIRE_FAIL(ExecuteViaSubstraitJSON(con, "CREATE TABLE employee_salaries AS "
+	                                          "SELECT employee_id, department_id, salary FROM employees"));
+
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(result->ColumnCount() == 2);
+	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3, 4, 5}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+
+	// OR REPLACE swaps in the new definition.
+	REQUIRE_NO_FAIL(ExecuteViaSubstraitJSON(con, "CREATE OR REPLACE TABLE employee_salaries AS "
+	                                             "SELECT name, salary FROM employees"));
+
+	result = con.Query("SELECT * from employee_salaries");
+	REQUIRE(CHECK_COLUMN(result, 0, {"John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", "Charlie Black"}));
+	REQUIRE(CHECK_COLUMN(result, 1, {120000, 80000, 50000, 95000, 60000}));
+}
