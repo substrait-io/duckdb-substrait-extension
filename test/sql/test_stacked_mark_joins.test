@@ -1,0 +1,89 @@
+# name: test/sql/test_stacked_mark_joins.test
+# description: Several IN/EXISTS subqueries stack MARK joins; each adds one mark column to its left side
+# group: [sql]
+
+require substrait
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE orders (o_id INTEGER, o_cust INTEGER, o_note VARCHAR, o_total DECIMAL(10,2));
+
+statement ok
+INSERT INTO orders VALUES (1, 10, 'a', 5.00), (2, 20, 'b', 7.00), (3, 30, 'c', 9.00), (4, 40, 'd', 1.00);
+
+statement ok
+CREATE TABLE vip (c_id INTEGER, c_name VARCHAR);
+
+statement ok
+INSERT INTO vip VALUES (10, 'ten'), (30, 'thirty'), (40, 'forty');
+
+statement ok
+CREATE TABLE big (amount DECIMAL(10,2), tag VARCHAR);
+
+statement ok
+INSERT INTO big VALUES (5.00, 'x'), (9.00, 'y');
+
+statement ok
+CALL get_substrait('SELECT o_id FROM orders WHERE o_cust IN (SELECT c_id FROM vip) AND o_total IN (SELECT amount FROM big) ORDER BY o_id')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT o_id FROM orders WHERE o_cust IN (SELECT c_id FROM vip) AND o_total IN (SELECT amount FROM big) ORDER BY o_id'));
+
+query I
+SELECT o_id FROM from_substrait(getvariable('plan'))
+----
+1
+3
+
+statement ok
+CALL get_substrait('SELECT o_id FROM orders o WHERE EXISTS (SELECT 1 FROM vip WHERE c_id = o.o_cust) AND NOT EXISTS (SELECT 1 FROM big WHERE amount = o.o_total) ORDER BY o_id')
+
+# With OR the marks cannot become semi joins, so the outer MARK join sits right on the inner one.
+statement ok
+CALL get_substrait('SELECT o_id FROM orders WHERE o_cust IN (SELECT c_id FROM vip) OR o_total IN (SELECT amount FROM big) ORDER BY o_id')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT o_id, o_note FROM orders WHERE o_cust IN (SELECT c_id FROM vip) OR o_total IN (SELECT amount FROM big) ORDER BY o_id'));
+
+query IT
+SELECT o_id, o_note FROM from_substrait(getvariable('plan'))
+----
+1	a
+3	c
+4	d
+
+# Projecting the marks themselves keeps the outer MARK join directly on top of the inner one.
+statement ok
+CALL get_substrait('SELECT o_id, o_cust IN (SELECT c_id FROM vip) AS in_vip, o_total IN (SELECT amount FROM big) AS is_big FROM orders ORDER BY o_id')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT o_id, o_note, o_cust IN (SELECT c_id FROM vip) AS in_vip, o_total IN (SELECT amount FROM big) AS is_big FROM orders ORDER BY o_id'));
+
+query ITII
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+1	a	true	true
+2	b	false	false
+3	c	true	true
+4	d	true	false
+
+statement ok
+CALL get_substrait('SELECT o_id FROM orders o WHERE EXISTS (SELECT 1 FROM vip WHERE c_id = o.o_cust) OR NOT EXISTS (SELECT 1 FROM big WHERE amount = o.o_total) ORDER BY o_id')
+
+# A subquery correlated on two columns gives the inner MARK join a two-column right side, so
+# the outer join's offset must count the mark, not the right side.
+statement ok
+CALL get_substrait('SELECT o_id, EXISTS (SELECT 1 FROM vip v WHERE v.c_id = o.o_cust AND v.c_name <> o.o_note) AS known, o_total IN (SELECT amount FROM big) AS is_big FROM orders o ORDER BY o_id')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT o_id, EXISTS (SELECT 1 FROM vip v WHERE v.c_id = o.o_cust AND v.c_name <> o.o_note) AS known, o_total IN (SELECT amount FROM big) AS is_big FROM orders o ORDER BY o_id'));
+
+query III
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+1	true	true
+2	false	false
+3	true	true
+4	true	false
