@@ -76,6 +76,7 @@ private:
 	substrait::Rel *TransformExcept(LogicalOperator &dop);
 	substrait::Rel *TransformIntersect(LogicalOperator &dop);
 	substrait::Rel *TransformCreateTable(LogicalOperator &dop);
+	static substrait::WriteRel_CreateMode TransformOnCreateConflict(OnCreateConflict on_conflict);
 	substrait::Rel *TransformInsertTable(LogicalOperator &dop);
 	substrait::Rel *TransformDeleteTable(LogicalOperator &dop);
 	substrait::Rel *TransformCTERef(LogicalOperator &dop);
