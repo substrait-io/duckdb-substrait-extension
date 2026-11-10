@@ -403,7 +403,7 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		auto struct_expression = nested_expression->mutable_struct_();
 		for (auto &child : dfun.GetChildren()) {
 			auto child_expression = struct_expression->add_fields();
-			TransformExpr(*child, *child_expression);
+			TransformExpr(*child, *child_expression, col_offset);
 		}
 		return;
 	}
@@ -412,19 +412,19 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		auto list_expression = nested_expression->mutable_list();
 		for (auto &child : dfun.GetChildren()) {
 			auto child_value = list_expression->add_values();
-			TransformExpr(*child, *child_value);
+			TransformExpr(*child, *child_value, col_offset);
 		}
 		return;
 	}
 	if (function_name == "map") {
 		auto nested_expression = sexpr.mutable_nested();
 		auto map_expression = nested_expression->mutable_map();
-		D_ASSERT(dfun.children.size() == 2);
+		D_ASSERT(dfun.GetChildren().size() == 2);
 		auto child_value = map_expression->add_key_values();
 		auto key = child_value->mutable_key();
 		auto value = child_value->mutable_value();
-		TransformExpr(*dfun.GetChildren()[0], *key);
-		TransformExpr(*dfun.GetChildren()[1], *value);
+		TransformExpr(*dfun.GetChildren()[0], *key, col_offset);
+		TransformExpr(*dfun.GetChildren()[1], *value, col_offset);
 		return;
 	}
 	if (function_name == "!~~") {
@@ -1479,6 +1479,9 @@ substrait::Rel *DuckDBToSubstrait::TransformComparisonJoin(LogicalOperator &dop)
 			left_col_count = child_join.right_projection_map.size();
 		} else if (child_join.join_type == JoinType::SEMI || child_join.join_type == JoinType::ANTI) {
 			left_col_count = child_join.left_projection_map.size();
+		} else if (child_join.join_type == JoinType::MARK) {
+			// A mark join outputs its left side plus the mark column.
+			left_col_count = child_join.left_projection_map.size() + 1;
 		} else {
 			left_col_count = child_join.left_projection_map.size() + child_join.right_projection_map.size();
 		}
