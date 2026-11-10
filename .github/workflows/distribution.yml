@@ -32,6 +32,8 @@ jobs:
       extension_name: substrait
       # Intel macOS is opt-in in the 2.0 build matrix; keep shipping it.
       opt_in_archs: "osx_amd64"
+      # Build and test the whole matrix on pull requests too, as before 2.0.
+      reduced_ci_mode: disabled
 
   duckdb-stable-deploy:
     name: Deploy extension binaries
@@ -45,4 +47,6 @@ jobs:
       extension_name: substrait
       # Intel macOS is opt-in in the 2.0 build matrix; keep shipping it.
       opt_in_archs: "osx_amd64"
+      # Build and test the whole matrix on pull requests too, as before 2.0.
+      reduced_ci_mode: disabled
       deploy_latest: true

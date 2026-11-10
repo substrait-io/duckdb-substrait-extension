@@ -55,8 +55,6 @@ namespace duckdb {
 // those semantics, so mapping them would consume them as something they are not.
 const std::unordered_map<std::string, std::string> SubstraitToDuckDB::function_names_remap = {
     {"modulus", "mod"},
-    // DuckDB 2.0's divide() function raises on division by zero where the / operator does not.
-    {"divide", "/"},
     {"std_dev", "stddev"},
     {"starts_with", "prefix"},
     {"ends_with", "suffix"},
@@ -734,6 +732,13 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		VerifyCorrectExtractSubfield(subfield);
 		auto constant_expression = ConstantExpression::FromValue(Value(subfield));
 		children.insert(children.begin(), std::move(constant_expression));
+	}
+	if (function_name == "divide") {
+		// Substrait's divide truncates an integer result while DuckDB's / promotes to DOUBLE; the
+		// declared output type says which the plan means. DuckDB 2.0's divide() function is not
+		// used because it raises on division by zero where the operators do not.
+		auto output_type = SubstraitToDuckType(sexpr.scalar_function().output_type());
+		return make_uniq<FunctionExpression>(Identifier(output_type.IsIntegral() ? "//" : "/"), std::move(children));
 	}
 
 	return make_uniq<FunctionExpression>(Identifier(RemapFunctionName(function_name)), std::move(children));
