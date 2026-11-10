@@ -25,7 +25,7 @@ struct DataDirectoryFixture {
 TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
   Connection con(db);
-  con.EnableQueryVerification();
+  REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
   // create the database
   REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
   REQUIRE_NO_FAIL(
@@ -44,7 +44,7 @@ TEST_CASE("Test C Get and To Substrait API", "[substrait-api]") {
 TEST_CASE("Test C Get and To Json-Substrait API", "[substrait-api]") {
   DuckDB db(nullptr);
   Connection con(db);
-  con.EnableQueryVerification();
+  REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
   // create the database
   REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
   REQUIRE_NO_FAIL(

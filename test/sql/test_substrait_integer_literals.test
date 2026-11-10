@@ -8,11 +8,11 @@ require substrait
 require json
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # Each filter is selective (rows straddle the constant) so the literal cannot be
 # folded away by the optimizer and must be emitted by the producer. Under
-# enable_verification every get_substrait round-trips and compares results.
+# substrait_verify_roundtrip every get_substrait round-trips and compares results.
 #
 # Each unsigned constant also exceeds the max of the next-narrower signed type,
 # so a wrong upcast width (e.g. UTINYINT routed to i8 instead of i16) makes the

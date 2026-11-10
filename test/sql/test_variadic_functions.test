@@ -10,7 +10,7 @@ require substrait
 # emitted name and URN, and the pragma independently pins that the plan still means what the
 # query meant. That second half is what catches a resolution that is well-formed but wrong.
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # `variadic` in an extension YAML marks an impl's final argument as repeatable. It is a
 # separate key from the `?` that marks an argument nullable, and neither can be derived

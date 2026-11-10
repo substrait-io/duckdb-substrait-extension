@@ -78,7 +78,7 @@ TEST_CASE("Test grouping set index column is not emitted", "[substrait-api]") {
 
 	auto result = FromSubstraitJSON(con, json_str);
 	REQUIRE(result->ColumnCount() == 3);
-	REQUIRE(result->Cast<MaterializedQueryResult>().RowCount() == 6);
+	REQUIRE(result->RowCount() == 6);
 
 	// One grouping set has no index column, so nothing is dropped.
 	json_str = GetSubstraitJSON(con, "SELECT c0, count(*) AS n FROM t GROUP BY c0");

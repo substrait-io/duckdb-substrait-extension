@@ -5,7 +5,7 @@
 require substrait
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # Create two tables to use in the EXCEPT
 statement ok

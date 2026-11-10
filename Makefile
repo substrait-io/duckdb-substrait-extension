@@ -26,10 +26,6 @@ endif
 # Include the Makefile from extension-ci-tools
 include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
-pull:
-	git submodule init
-	git submodule update --recursive --remote
-
 # Client builds
 %_js: export BUILD_NODE=1
 debug_js: debug
@@ -71,6 +67,3 @@ format:
 	find src/ -iname *.hpp -o -iname *.cpp | xargs clang-format --sort-includes=0 -style=file -i
 	cmake-format -i CMakeLists.txt
 	rm .clang-format
-
-update:
-	git submodule update --remote --merge

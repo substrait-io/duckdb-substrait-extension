@@ -5,7 +5,7 @@
 require substrait
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 statement ok
 CREATE table customer as select range c_custkey, range::VARCHAR c_name from range(10000);
