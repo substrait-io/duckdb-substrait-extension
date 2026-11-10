@@ -45,7 +45,7 @@ void CheckTimestampResult(Connection &con, const TimestampJSON &rel, const Logic
                           const duckdb::vector<int64_t> &values) {
 	auto result = FromSubstraitJSON(con, TimestampPlan(rel).dump());
 	REQUIRE_NO_FAIL(*result);
-	REQUIRE(result->types == duckdb::vector<LogicalType> {type});
+	REQUIRE(result->GetTypes() == duckdb::vector<LogicalType> {type});
 	idx_t row = 0;
 	while (auto chunk = result->Fetch()) {
 		for (idx_t i = 0; i < chunk->size(); i++) {
@@ -116,7 +116,7 @@ TEST_CASE("Timestamp precision survives nested literals", "[substrait-api][times
 	     {{"list", {{"values", {TimestampLiteral(9, -1)["literal"], TimestampLiteral(9, 1234567891)["literal"]}}}}}}};
 	auto result = FromSubstraitJSON(con, TimestampPlan(TimestampProject(literal)).dump());
 	REQUIRE_NO_FAIL(*result);
-	REQUIRE(result->types == duckdb::vector<LogicalType> {LogicalType::LIST(LogicalType::TIMESTAMP_NS)});
+	REQUIRE(result->GetTypes() == duckdb::vector<LogicalType> {LogicalType::LIST(LogicalType::TIMESTAMP_NS)});
 	auto chunk = result->Fetch();
 	REQUIRE(chunk);
 	REQUIRE(chunk->size() == 1);

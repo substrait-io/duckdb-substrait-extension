@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5...3.29)
 set(TARGET_NAME substrait_c_test)
 project(${TARGET_NAME})
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 include_directories(../../duckdb/src/include)
@@ -36,5 +36,6 @@ if (SUBSTRAIT_EXTENSION_TEST_EXE)
     # Add an executable target with main.cpp
     add_executable(test_substrait_exe $<TARGET_OBJECTS:test_substrait> main.cpp)
     # Link the executable with necessary libraries
-    target_link_libraries(test_substrait_exe duckdb substrait_extension test_helpers nlohmann_json_schema_validator::validator yaml-cpp::yaml-cpp)
+    # The tests also read and write parquet, which DuckDB 2.0 no longer links into libduckdb.
+    target_link_libraries(test_substrait_exe duckdb substrait_extension parquet_extension test_helpers nlohmann_json_schema_validator::validator yaml-cpp::yaml-cpp)
 endif()

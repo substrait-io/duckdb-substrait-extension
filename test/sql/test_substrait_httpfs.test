@@ -9,7 +9,7 @@ require httpfs
 require parquet
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 statement ok
 CALL get_substrait('SELECT * FROM parquet_scan(''https://raw.githubusercontent.com/cwida/duckdb/master/data/parquet-testing/userdata1.parquet'')')

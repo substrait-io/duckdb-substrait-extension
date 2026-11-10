@@ -1,0 +1,34 @@
+# name: test/sql/test_join_condition_case.test
+# description: Expressions on the right side of a join condition refer to the right side's columns
+# group: [sql]
+
+require substrait
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE lhs (id INTEGER, a DECIMAL(10,2), b DECIMAL(10,2));
+
+statement ok
+INSERT INTO lhs VALUES (1, 1.00, 3.00), (2, 2.00, 1.00), (3, 0.00, 5.00);
+
+statement ok
+CREATE TABLE rhs (id INTEGER, name VARCHAR, c DECIMAL(10,2), d DECIMAL(10,2));
+
+statement ok
+INSERT INTO rhs VALUES (1, 'one', 1.00, 2.00), (2, 'two', 4.00, 1.00), (3, 'three', 1.00, 1.00);
+
+# DuckDB plans the CASE comparison as a join condition whose right side is a CASE
+# over the right table. Its field references must be offset past the left side.
+statement ok
+CALL get_substrait('SELECT l.id FROM lhs l, rhs r WHERE l.id = r.id AND CASE WHEN l.a > 0 THEN l.b / l.a ELSE 0.0 END > CASE WHEN r.c > 0 THEN r.d / r.c ELSE 0.0 END ORDER BY l.id')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT l.id FROM lhs l, rhs r WHERE l.id = r.id AND CASE WHEN l.a > 0 THEN l.b / l.a ELSE 0.0 END > CASE WHEN r.c > 0 THEN r.d / r.c ELSE 0.0 END ORDER BY l.id'));
+
+query I
+SELECT id FROM from_substrait(getvariable('plan'))
+----
+1
+2

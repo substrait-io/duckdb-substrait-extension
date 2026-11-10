@@ -7,7 +7,7 @@ require substrait
 require json
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 statement ok
 CREATE TABLE t (s VARCHAR);

@@ -7,7 +7,7 @@ require substrait
 require json
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # The producer can never emit UNIX_TIME: `epoch` is not in to_substrait.cpp's
 # valid_extract_subfields, so get_substrait_json only ever drives the other

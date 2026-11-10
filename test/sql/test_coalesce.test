@@ -5,7 +5,7 @@
 require substrait
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # The tables below are built from constants, which lets statistics propagation decide most of
 # these COALESCEs before the producer runs: a single-argument one always folds to its argument,

@@ -135,8 +135,8 @@ TEST_CASE("Test baseSchema narrower than physical table with aggregate", "[subst
 	auto result = FromSubstraitJSON(con, plan_json);
 	// Verify correct types (order may vary since no ORDER BY)
 	REQUIRE(result->ColumnCount() == 2);
-	REQUIRE(result->types[0] == LogicalType::VARCHAR);
-	REQUIRE(result->types[1] == LogicalType::BIGINT);
+	REQUIRE(result->GetTypes()[0] == LogicalType::VARCHAR);
+	REQUIRE(result->GetTypes()[1] == LogicalType::BIGINT);
 }
 
 TEST_CASE("Test baseSchema narrower than physical table with non-matching column order", "[substrait-api]") {

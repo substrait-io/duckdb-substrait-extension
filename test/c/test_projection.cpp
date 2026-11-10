@@ -190,7 +190,7 @@ TEST_CASE("Test C Project on Join with duplicate columns Substrait API", "[subst
 TEST_CASE("Test Project with bad plan", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
 
@@ -203,7 +203,7 @@ TEST_CASE("Test Project with bad plan", "[substrait-api]") {
 TEST_CASE("Test Project with duplicate columns", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
 
@@ -216,7 +216,7 @@ TEST_CASE("Test Project with duplicate columns", "[substrait-api]") {
 TEST_CASE("Test Project simple join on tables with multiple columns", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 	REQUIRE_NO_FAIL(con.Query("CREATE TABLE orders ( o_orderkey INT PRIMARY KEY, o_orderdate DATE );"));
 	REQUIRE_NO_FAIL(con.Query(" CREATE TABLE lineitem ( l_orderkey INT, l_extendedprice DECIMAL(10,2),"
 		" l_discount DECIMAL(4,2), FOREIGN KEY (l_orderkey) REFERENCES orders(o_orderkey)); "));
@@ -234,7 +234,7 @@ TEST_CASE("Test Project simple join on tables with multiple columns", "[substrai
 TEST_CASE("Test tpch Q12", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 	REQUIRE_NO_FAIL(con.Query(" CREATE TABLE orders (o_orderkey INT PRIMARY KEY, o_orderpriority VARCHAR(15))"));
 	REQUIRE_NO_FAIL(con.Query(" INSERT INTO orders (o_orderkey, o_orderpriority) VALUES (1, '1-URGENT'), (2, '2-HIGH'), (3, '3-MEDIUM'), (4, '4-LOW'), ;"));
 
@@ -299,7 +299,7 @@ void CreateTablesForTpcdsQ32(Connection& con) {
 TEST_CASE("Test multiple joins in tpcds Q32", "[substrait-api]") {
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 
 	CreateTablesForTpcdsQ32(con);
 	auto query_text1 = "SELECT i_item_id, s_state, "
@@ -340,7 +340,7 @@ TEST_CASE("Test tpcds Q32", "[substrait-api]") {
 	// return;
 	DuckDB db(nullptr);
 	Connection con(db);
-	con.EnableQueryVerification();
+	REQUIRE_NO_FAIL(con.Query("SET substrait_verify_roundtrip = true"));
 
 	CreateTablesForTpcdsQ32(con);
 
