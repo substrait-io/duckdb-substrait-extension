@@ -46,6 +46,7 @@
 #include "duckdb/main/relation/order_relation.hpp"
 #include "duckdb/main/relation/projection_relation.hpp"
 #include "duckdb/main/relation/setop_relation.hpp"
+#include "duckdb/parser/tableref/basetableref.hpp"
 
 namespace duckdb {
 // `least_skip_null`/`greatest_skip_null` are here because that is what the producer emits for
@@ -1605,15 +1606,16 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformAggregateOp(const substrait::Re
 
 	return make_shared_ptr<AggregateRelation>(input_rel, std::move(expressions), std::move(group_node));
 }
-unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &schema_name, const string &table_name) {
+unique_ptr<TableDescription> TableInfo(ClientContext &context, const string &catalog_name, const string &schema_name,
+                                       const string &table_name) {
 	// obtain the table info
-	auto table = Catalog::GetEntry<TableCatalogEntry>(context, INVALID_CATALOG, schema_name, table_name,
+	auto table = Catalog::GetEntry<TableCatalogEntry>(context, catalog_name, schema_name, table_name,
 	                                                  OnEntryNotFound::RETURN_NULL);
 	if (!table) {
 		return {};
 	}
 	// write the table info to the result
-	auto result = make_uniq<TableDescription>(INVALID_CATALOG, schema_name, table_name);
+	auto result = make_uniq<TableDescription>(catalog_name, schema_name, table_name);
 	for (auto &column : table->GetColumns().Logical()) {
 		result->columns.emplace_back(column.Copy());
 	}
@@ -1779,12 +1781,10 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 		} else {
 			table_name = named_table.names(0);
 		}
-		// Resolve the effective schema for lookup: for 3-component names (catalog.schema.table),
-		// use catalog as the schema since DuckDB resolves attached DB names as schemas.
-		string effective_schema = (!catalog_name.empty()) ? catalog_name : schema_name;
 		// If we can't find a table with that name, let's try a view.
 		try {
-			auto table_info = TableInfo(*context, effective_schema, table_name);
+			auto table_info =
+			    TableInfo(*context, catalog_name.empty() ? INVALID_CATALOG : catalog_name, schema_name, table_name);
 			if (!table_info) {
 				throw CatalogException("Table '%s' does not exist!", table_name);
 			}
@@ -1795,11 +1795,17 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformReadOp(const substrait::Rel &so
 				scan = make_shared_ptr<TableRelation>(context_wrapper, std::move(table_info));
 			}
 		} catch (...) {
-			if (acquire_lock) {
-				scan = make_shared_ptr<ViewRelation>(context, effective_schema, table_name);
+			if (!catalog_name.empty()) {
+				auto view_ref = make_uniq<BaseTableRef>();
+				view_ref->catalog_name = catalog_name;
+				view_ref->schema_name = schema_name;
+				view_ref->table_name = table_name;
+				scan = make_shared_ptr<ViewRelation>(context, std::move(view_ref), table_name);
+			} else if (acquire_lock) {
+				scan = make_shared_ptr<ViewRelation>(context, schema_name, table_name);
 
 			} else {
-				scan = make_shared_ptr<ViewRelation>(context_wrapper, effective_schema, table_name);
+				scan = make_shared_ptr<ViewRelation>(context_wrapper, schema_name, table_name);
 			}
 		}
 	} else if (sget.has_local_files()) {
@@ -2313,38 +2319,31 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		auto &filter = delete_input->Cast<FilterRelation>();
 		// DeleteRelation binds the predicate directly against the target table. A predicate
 		// over projected or filtered input cannot be reused without translating its meaning.
-		string source_catalog;
-		string source_schema;
-		string source_table;
-		if (filter.child->type == RelationType::TABLE_RELATION) {
-			auto &description = *filter.child->Cast<TableRelation>().description;
-			source_catalog = description.database;
-			source_schema = description.schema;
-			source_table = description.table;
-		} else if (filter.child->type == RelationType::VIEW_RELATION) {
-			auto &view = filter.child->Cast<ViewRelation>();
-			source_schema = view.schema_name;
-			source_table = view.view_name;
-		} else {
+		if (filter.child->type != RelationType::TABLE_RELATION && filter.child->type != RelationType::VIEW_RELATION) {
 			throw NotImplementedException("Unsupported relation type for delete operation");
 		}
+		auto table_ref = filter.child->GetTableRef();
+		auto &source = table_ref->Cast<BaseTableRef>();
 		// The predicate is bound to the target, so it must come from a read of the target. The read
 		// and the write spell a qualified name differently, so compare the tables they resolve to.
-		optional_ptr<TableCatalogEntry> source_entry;
+		optional_ptr<CatalogEntry> source_entry;
 		optional_ptr<TableCatalogEntry> target_entry;
 		string target_catalog = catalog_name;
 		string target_schema = schema_name;
 		context->RunFunctionInTransaction([&]() {
-			// A read of catalog.schema.table keeps only the catalog, in the schema field.
-			Binder::BindSchemaOrCatalog(*context, source_catalog, source_schema);
+			// Normalize attached-catalog shorthand before comparing the read and write targets.
+			Binder::BindSchemaOrCatalog(*context, source.catalog_name, source.schema_name);
 			Binder::BindSchemaOrCatalog(*context, target_catalog, target_schema);
-			source_entry = Catalog::GetEntry<TableCatalogEntry>(*context, source_catalog, source_schema, source_table,
-			                                                    OnEntryNotFound::RETURN_NULL);
+			// A named read can resolve to a view in the same namespace as tables.
+			EntryLookupInfo source_lookup(CatalogType::TABLE_ENTRY, source.table_name);
+			source_entry = Catalog::GetEntry(*context, source.catalog_name, source.schema_name, source_lookup,
+			                                 OnEntryNotFound::RETURN_NULL);
 			target_entry = Catalog::GetEntry<TableCatalogEntry>(*context, target_catalog, target_schema, table_name,
 			                                                    OnEntryNotFound::RETURN_NULL);
 		});
-		if (!source_entry || source_entry != target_entry) {
-			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source_table, table_name);
+		if (!source_entry || source_entry.get() != target_entry.get()) {
+			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source.table_name,
+			                              table_name);
 		}
 		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,
 		                                      table_name);
