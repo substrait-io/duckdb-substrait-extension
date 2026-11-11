@@ -1704,6 +1704,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		}
 		
 		auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
+		if (dwin_expr.filter_expr) {
+			throw NotImplementedException("Substrait export does not support FILTER on window functions");
+		}
 		
 		// Create a spec for this expression
 		WindowSpec current_spec;

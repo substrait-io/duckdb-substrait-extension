@@ -170,3 +170,24 @@ query I
 SELECT * FROM from_substrait_json(getvariable('exported_plan'))
 ----
 7
+
+statement ok
+SET VARIABLE grouped_plan = (
+    SELECT json FROM get_substrait_json(
+        'SELECT g,
+                count(*) FILTER (WHERE x > 1),
+                sum(DISTINCT x) FILTER (WHERE x > 1),
+                sum(x) FILTER (WHERE g = ''a''),
+                grouping(g)
+         FROM aggregate_filter_input
+         GROUP BY ROLLUP (g)
+         ORDER BY g NULLS LAST'
+    )
+)
+
+query TIIII
+SELECT * FROM from_substrait_json(getvariable('grouped_plan')) ORDER BY 1 NULLS LAST
+----
+a	2	2	5	0
+b	1	3	NULL	0
+NULL	3	5	5	1
