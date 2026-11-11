@@ -2295,38 +2295,31 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformWriteOp(const substrait::Rel &s
 		auto &filter = delete_input->Cast<FilterRelation>();
 		// DeleteRelation binds the predicate directly against the target table. A predicate
 		// over projected or filtered input cannot be reused without translating its meaning.
-		string source_catalog;
-		string source_schema;
-		string source_table;
-		if (filter.child->type == RelationType::TABLE_RELATION) {
-			auto &description = *filter.child->Cast<TableRelation>().description;
-			source_catalog = description.database;
-			source_schema = description.schema;
-			source_table = description.table;
-		} else if (filter.child->type == RelationType::VIEW_RELATION) {
-			auto &view = filter.child->Cast<ViewRelation>();
-			source_schema = view.schema_name;
-			source_table = view.view_name;
-		} else {
+		if (filter.child->type != RelationType::TABLE_RELATION && filter.child->type != RelationType::VIEW_RELATION) {
 			throw NotImplementedException("Unsupported relation type for delete operation");
 		}
+		auto table_ref = filter.child->GetTableRef();
+		auto &source = table_ref->Cast<BaseTableRef>();
 		// The predicate is bound to the target, so it must come from a read of the target. The read
 		// and the write spell a qualified name differently, so compare the tables they resolve to.
-		optional_ptr<TableCatalogEntry> source_entry;
+		optional_ptr<CatalogEntry> source_entry;
 		optional_ptr<TableCatalogEntry> target_entry;
 		string target_catalog = catalog_name;
 		string target_schema = schema_name;
 		context->RunFunctionInTransaction([&]() {
 			// Normalize attached-catalog shorthand before comparing the read and write targets.
-			Binder::BindSchemaOrCatalog(*context, source_catalog, source_schema);
+			Binder::BindSchemaOrCatalog(*context, source.catalog_name, source.schema_name);
 			Binder::BindSchemaOrCatalog(*context, target_catalog, target_schema);
-			source_entry = Catalog::GetEntry<TableCatalogEntry>(*context, source_catalog, source_schema, source_table,
-			                                                    OnEntryNotFound::RETURN_NULL);
+			// A named read can resolve to a view in the same namespace as tables.
+			EntryLookupInfo source_lookup(CatalogType::TABLE_ENTRY, source.table_name);
+			source_entry = Catalog::GetEntry(*context, source.catalog_name, source.schema_name, source_lookup,
+			                                 OnEntryNotFound::RETURN_NULL);
 			target_entry = Catalog::GetEntry<TableCatalogEntry>(*context, target_catalog, target_schema, table_name,
 			                                                    OnEntryNotFound::RETURN_NULL);
 		});
-		if (!source_entry || source_entry != target_entry) {
-			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source_table, table_name);
+		if (!source_entry || source_entry.get() != target_entry.get()) {
+			throw NotImplementedException("Delete predicate reads %s, not the target table %s", source.table_name,
+			                              table_name);
 		}
 		return make_shared_ptr<DeleteRelation>(filter.context, std::move(filter.condition), catalog_name, schema_name,
 		                                      table_name);

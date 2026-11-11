@@ -194,6 +194,48 @@ TEST_CASE("Delete rejects a predicate read from a same-named table in another sc
 	REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
 }
 
+TEST_CASE("Delete rejects a three-part predicate read from another schema", "[substrait-api][emit][emit-delete]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	CreateEmployeeTable(con);
+	REQUIRE_NO_FAIL(con.Query("CREATE SCHEMA other"));
+	SECTION("table") {
+		REQUIRE_NO_FAIL(con.Query("CREATE TABLE other.employees AS SELECT * FROM main.employees"));
+	}
+	SECTION("view") {
+		REQUIRE_NO_FAIL(con.Query("CREATE VIEW other.employees AS SELECT * FROM main.employees"));
+	}
+	auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+	auto &write = plan["relations"][0]["root"]["input"]["write"];
+	write["namedTable"]["names"] = {"main", "employees"};
+	write["input"]["read"]["namedTable"]["names"] = {"memory", "other", "employees"};
+	CHECK_THROWS_WITH(FromSubstraitJSON(con, plan.dump()), Catch::Matchers::Contains("not the target table"));
+	auto remaining = con.Query("SELECT employee_id FROM main.employees ORDER BY employee_id");
+	REQUIRE_NO_FAIL(*remaining);
+	REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 3, 4, 5}));
+}
+
+TEST_CASE("Delete accepts a predicate read from the target in an attached catalog",
+          "[substrait-api][emit][emit-delete]") {
+	DuckDB db(nullptr);
+	Connection con(db);
+	CreateEmployeeTable(con);
+	REQUIRE_NO_FAIL(con.Query("ATTACH ':memory:' AS attached"));
+	REQUIRE_NO_FAIL(con.Query("CREATE TABLE attached.main.employees AS SELECT * FROM employees"));
+	auto plan = EmitJSON::parse(GetSubstraitJSON(con, "DELETE FROM employees WHERE salary < 80000"));
+	auto &write = plan["relations"][0]["root"]["input"]["write"];
+	write["namedTable"]["names"] = {"attached", "main", "employees"};
+	write["input"]["read"]["namedTable"]["names"] = {"attached", "main", "employees"};
+	auto deleted = FromSubstraitJSON(con, plan.dump());
+	REQUIRE_NO_FAIL(*deleted);
+	auto remaining = con.Query("SELECT employee_id FROM attached.main.employees ORDER BY employee_id");
+	REQUIRE_NO_FAIL(*remaining);
+	REQUIRE(CHECK_COLUMN(remaining, 0, {1, 2, 4}));
+	auto local = con.Query("SELECT employee_id FROM main.employees ORDER BY employee_id");
+	REQUIRE_NO_FAIL(*local);
+	REQUIRE(CHECK_COLUMN(local, 0, {1, 2, 3, 4, 5}));
+}
+
 TEST_CASE("Delete rejects emitted inputs without a usable table predicate", "[substrait-api][emit][emit-delete]") {
 	for (const string kind : {"no filter", "filter above emit"}) {
 		DYNAMIC_SECTION(kind) {
