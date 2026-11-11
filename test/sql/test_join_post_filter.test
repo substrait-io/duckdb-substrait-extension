@@ -1,0 +1,148 @@
+# name: test/sql/test_join_post_filter.test
+# description: Test JoinRel post-join filter application
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE join_filter_left (k INTEGER NOT NULL)
+
+statement ok
+INSERT INTO join_filter_left VALUES (1), (2)
+
+statement ok
+CREATE TABLE join_filter_right (k INTEGER NOT NULL)
+
+statement ok
+INSERT INTO join_filter_right VALUES (1), (3)
+
+# The post-join filter sees NULL-extended rows before the emit mapping reorders columns.
+query II
+SELECT * FROM from_substrait_json('{
+  "version": {"minorNumber": 19, "producer": "DuckDB"},
+  "relations": [{
+    "root": {
+      "input": {
+        "join": {
+          "common": {"emit": {"outputMapping": [1, 0]}},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["k"],
+                "struct": {
+                  "types": [{"i32": {"nullability": "NULLABILITY_REQUIRED"}}],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["join_filter_left"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["k"],
+                "struct": {
+                  "types": [{"i32": {"nullability": "NULLABILITY_REQUIRED"}}],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["join_filter_right"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "postJoinFilter": {
+            "scalarFunction": {
+              "functionReference": 2,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "type": "JOIN_TYPE_OUTER"
+        }
+      },
+      "names": ["right_k", "left_k"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}},
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 2, "name": "is_null"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}') ORDER BY 2
+----
+NULL	2
+
+# Field 1 of a left mark join is the Boolean mark. Only the matching left key passes.
+query I
+SELECT * FROM from_substrait_json('{
+  "version": {"minorNumber": 19, "producer": "DuckDB"},
+  "relations": [{
+    "root": {
+      "input": {
+        "join": {
+          "common": {"emit": {"outputMapping": [0]}},
+          "left": {
+            "read": {
+              "baseSchema": {
+                "names": ["k"],
+                "struct": {
+                  "types": [{"i32": {"nullability": "NULLABILITY_REQUIRED"}}],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["join_filter_left"]}
+            }
+          },
+          "right": {
+            "read": {
+              "baseSchema": {
+                "names": ["k"],
+                "struct": {
+                  "types": [{"i32": {"nullability": "NULLABILITY_REQUIRED"}}],
+                  "nullability": "NULLABILITY_REQUIRED"
+                }
+              },
+              "namedTable": {"names": ["join_filter_right"]}
+            }
+          },
+          "expression": {
+            "scalarFunction": {
+              "functionReference": 1,
+              "arguments": [
+                {"value": {"selection": {"directReference": {"structField": {"field": 0}}, "rootReference": {}}}},
+                {"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}
+              ],
+              "outputType": {"bool": {"nullability": "NULLABILITY_REQUIRED"}}
+            }
+          },
+          "postJoinFilter": {
+            "selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}
+          },
+          "type": "JOIN_TYPE_LEFT_MARK"
+        }
+      },
+      "names": ["left_k"]
+    }
+  }],
+  "extensions": [
+    {"extension_function": {"extension_urn_reference": 0, "function_anchor": 1, "name": "equal"}}
+  ],
+  "extension_urns": [
+    {"extension_urn_anchor": 0, "urn": "extension:io.substrait:functions_comparison"}
+  ]
+}')
+----
+1

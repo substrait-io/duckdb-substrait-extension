@@ -1138,9 +1138,13 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 
 	JoinType djointype = TransformJoinType(sjoin.type(), false);
 	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
-	return make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
-	                                     TransformOp(sjoin.right())->Alias("right"), std::move(join_condition),
-	                                     djointype);
+	shared_ptr<Relation> result =
+	    make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
+	                                  TransformOp(sjoin.right())->Alias("right"), std::move(join_condition), djointype);
+	if (sjoin.has_post_join_filter()) {
+		result = make_shared_ptr<FilterRelation>(std::move(result), TransformExpr(sjoin.post_join_filter()));
+	}
+	return result;
 }
 
 shared_ptr<Relation> SubstraitToDuckDB::TransformLateralJoinOp(const substrait::Rel &sop) {
