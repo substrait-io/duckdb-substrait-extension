@@ -1,0 +1,83 @@
+# name: test/sql/test_substrait_try_cast.test
+# description: Preserve TRY_CAST failure behavior across Substrait plans
+# group: [sql]
+
+require substrait
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+CREATE TABLE cast_values (id INTEGER, raw_value VARCHAR)
+
+statement ok
+INSERT INTO cast_values VALUES (1, '42'), (2, 'not-an-integer'), (3, NULL), (4, '2147483648')
+
+statement ok
+SET VARIABLE try_cast_json = (SELECT json FROM get_substrait_json('SELECT id, TRY_CAST(raw_value AS INTEGER) AS parsed FROM cast_values', enable_optimizer = false))
+
+query II
+SELECT id, parsed FROM from_substrait_json(getvariable('try_cast_json')) ORDER BY id
+----
+1	42
+2	NULL
+3	NULL
+4	NULL
+
+statement ok
+SET VARIABLE try_cast_binary = (SELECT * FROM get_substrait('SELECT id, TRY_CAST(raw_value AS INTEGER) AS parsed FROM cast_values', enable_optimizer = true))
+
+query II
+SELECT id, parsed FROM from_substrait(getvariable('try_cast_binary')) ORDER BY id
+----
+1	42
+2	NULL
+3	NULL
+4	NULL
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT TRY_CAST(''not-an-integer'' AS INTEGER) AS parsed', enable_optimizer = false)
+WHERE contains("Json", '"failureBehavior":"FAILURE_BEHAVIOR_RETURN_NULL"')
+----
+1
+
+query I
+SELECT count(*) FROM get_substrait_json('SELECT CAST(''42'' AS INTEGER) AS parsed', enable_optimizer = false)
+WHERE contains("Json", '"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"')
+----
+1
+
+# The producer casts the substring offset and both CASE results.
+query I
+SELECT len(regexp_extract_all("Json", '"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"'))
+FROM get_substrait_json('SELECT CASE WHEN raw_value IS NOT NULL THEN substring(raw_value, length(raw_value)) ELSE raw_value END FROM cast_values', enable_optimizer = false)
+----
+3
+
+statement ok
+CREATE MACRO manual_cast_plan(failure_behavior) AS
+    '{"version":{"minorNumber":102,"producer":"test"},"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["raw"],"struct":{"types":[{"string":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"virtualTable":{"expressions":[{"fields":[{"literal":{"string":"not-an-integer","nullable":false}}]}]}}},"expressions":[{"cast":{"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},' ||
+    CASE WHEN failure_behavior IS NULL THEN '' ELSE '"failureBehavior":"' || failure_behavior || '",' END ||
+    '"type":{"i32":{"nullability":"NULLABILITY_NULLABLE"}}}}]}},"names":["raw","parsed"]}}]}'
+
+# An omitted failure behavior keeps the existing strict-cast default.
+statement error
+SELECT parsed FROM from_substrait_json(manual_cast_plan(NULL))
+----
+Conversion Error
+
+query TT
+SELECT raw, parsed FROM from_substrait_json(manual_cast_plan('FAILURE_BEHAVIOR_RETURN_NULL'))
+----
+not-an-integer	NULL
+
+statement error
+SELECT parsed FROM from_substrait_json(manual_cast_plan('FAILURE_BEHAVIOR_THROW_EXCEPTION'))
+----
+Conversion Error
+
+# Reject unknown numeric failure behavior enum values instead of treating them as a cast mode.
+statement error
+SELECT parsed FROM from_substrait_json(replace(manual_cast_plan('FAILURE_BEHAVIOR_THROW_EXCEPTION'), '"FAILURE_BEHAVIOR_THROW_EXCEPTION"', '99'))
+----
+Substrait cast failure behavior not yet supported: 99

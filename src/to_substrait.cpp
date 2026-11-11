@@ -353,6 +353,9 @@ void DuckDBToSubstrait::TransformCastExpression(Expression &dexpr, substrait::Ex
 	auto scast = sexpr.mutable_cast();
 	TransformExpr(*dcast.child, *scast->mutable_input(), col_offset);
 	*scast->mutable_type() = DuckToSubstraitType(dcast.return_type);
+	scast->set_failure_behavior(
+	    dcast.try_cast ? substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_RETURN_NULL
+	                  : substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 }
 
 bool DuckDBToSubstrait::IsExtractFunction(const string &function_name) {
@@ -449,9 +452,8 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 	// Substrait only defines substring/substr over i32 offsets and lengths, but DuckDB binds
 	// those arguments as i64 (BIGINT). Emit them cast to i32 so the call resolves to the
 	// standard substring signature instead of an unknown native function.
-	// NOTE: this narrows i64 to i32 and so truncates offsets/lengths that exceed the i32
-	// range. Revisit and emit the wider arguments directly if an i64 substring signature is
-	// ever added to the Substrait function definitions.
+	// Offsets and lengths outside the i32 range cause the cast to fail. If Substrait adds
+	// an i64 substring signature, emit the wider arguments directly.
 	bool is_substring = function_name == "substring" || function_name == "substr";
 	bool is_decimal_multiply = dfun.function.name == "*" && dfun.return_type.id() == LogicalTypeId::DECIMAL;
 	vector<substrait::Type> args_types;
@@ -469,6 +471,7 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 			auto scast = sarg->mutable_value()->mutable_cast();
 			TransformExpr(*darg, *scast->mutable_input(), col_offset);
 			*scast->mutable_type() = DuckToSubstraitType(narrowed);
+			scast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 			args_types.emplace_back(DuckToSubstraitType(narrowed));
 		} else {
 			TransformExpr(*darg, *sarg->mutable_value(), col_offset);
@@ -642,11 +645,13 @@ void DuckDBToSubstrait::TransformCaseExpression(Expression &dexpr, substrait::Ex
 		auto scast = sif->mutable_then()->mutable_cast();
 		TransformExpr(*dcheck.then_expr, *scast->mutable_input());
 		*scast->mutable_type() = DuckToSubstraitType(dcase.return_type);
+		scast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 	}
 	// Push a Cast
 	auto else_cast = scase->mutable_else_()->mutable_cast();
 	TransformExpr(*dcase.else_expr, *else_cast->mutable_input());
 	*else_cast->mutable_type() = DuckToSubstraitType(dcase.return_type);
+	else_cast->set_failure_behavior(substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION);
 }
 
 void DuckDBToSubstrait::TransformInExpression(Expression &dexpr, substrait::Expression &sexpr) {

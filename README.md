@@ -63,6 +63,8 @@ This extension provides four new functions to DuckDB:
 - `from_substrait`: Executes a binary Substrait plan (provided as bytes) against DuckDB and returns the result
 - `from_substrait_json`: Executes a Substrait plan written in JSON against DuckDB and returns the results
 
+In exported and imported plans, DuckDB's `TRY_CAST` corresponds to Substrait's `FAILURE_BEHAVIOR_RETURN_NULL`, and `CAST` corresponds to `FAILURE_BEHAVIOR_THROW_EXCEPTION`. On import, the extension treats an omitted cast failure behavior as `FAILURE_BEHAVIOR_THROW_EXCEPTION` and rejects unknown values.
+
 ### Examples
 
 Before using the extension, you need to install and load it.

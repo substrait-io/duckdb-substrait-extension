@@ -862,7 +862,20 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformCastExpr(const substrai
 	const auto &scast = sexpr.cast();
 	auto cast_type = SubstraitToDuckType(scast.type());
 	auto cast_child = TransformExpr(scast.input());
-	return make_uniq<CastExpression>(cast_type, std::move(cast_child));
+	bool try_cast;
+	switch (scast.failure_behavior()) {
+	case substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_RETURN_NULL:
+		try_cast = true;
+		break;
+	case substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_UNSPECIFIED:
+	case substrait::Expression_Cast_FailureBehavior_FAILURE_BEHAVIOR_THROW_EXCEPTION:
+		try_cast = false;
+		break;
+	default:
+		throw NotImplementedException("Substrait cast failure behavior not yet supported: %d",
+		                              static_cast<int>(scast.failure_behavior()));
+	}
+	return make_uniq<CastExpression>(cast_type, std::move(cast_child), try_cast);
 }
 
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformInExpr(const substrait::Expression &sexpr) {
