@@ -35,3 +35,62 @@ query IT
 SELECT f, typeof(f) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:fp64_fp64","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["n"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}}},{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}}}]}}]}},"names":["f"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
 ----
 3.5	DOUBLE
+
+# Zero divisors: / follows IEEE, // raises; the exported plan says which through on_division_by_zero.
+statement ok
+CREATE TABLE z (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO z VALUES (7, 2), (1, 0);
+
+query I
+SELECT json LIKE '%"on_division_by_zero"%' AND json LIKE '%"ERROR"%' FROM get_substrait_json('SELECT a // b FROM n')
+----
+true
+
+query I
+SELECT json LIKE '%"on_division_by_zero"%' AND json LIKE '%"IEEE"%' FROM get_substrait_json('SELECT a / b FROM n')
+----
+true
+
+statement ok
+CREATE TABLE d (a DOUBLE, b DOUBLE);
+
+statement ok
+INSERT INTO d VALUES (7, 2), (1, 0);
+
+# Both sides give infinity for / and both raise for //, so the round trip compares equal.
+statement ok
+CALL get_substrait('SELECT a / b FROM d')
+
+statement ok
+SET substrait_verify_roundtrip = false
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT a // b FROM d'));
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement error
+SELECT a // b FROM d
+----
+Division by zero
+
+statement error
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+Division by zero
+
+# An external plan that asks for NULL on a zero divisor gets it.
+query I
+SELECT q FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:i32_i32","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["z"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}],"options":[{"name":"on_division_by_zero","preference":["NULL"]}]}}]}},"names":["q"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}') ORDER BY q NULLS LAST
+----
+3
+NULL
+
+# A preference this consumer cannot honor is rejected.
+statement error
+SELECT * FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:fp64_fp64","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["z"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"}}},{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"}}}],"options":[{"name":"on_division_by_zero","preference":["LIMIT"]}]}}]}},"names":["f"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+on_division_by_zero

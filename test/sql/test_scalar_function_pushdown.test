@@ -1,0 +1,23 @@
+# name: test/sql/test_scalar_function_pushdown.test
+# description: Functions DuckDB pushes into a file reader still appear in the exported plan
+# group: [sql]
+
+require substrait
+
+require parquet
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+# Without the pushdown optimizer disabled, the plan only reads l_comment and the round trip
+# returns the comment instead of its length.
+statement ok
+CALL get_substrait('SELECT strlen(l_comment) FROM parquet_scan(''data/parquet-testing/lineitem-top10000.gzip.parquet'') LIMIT 3')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT strlen(l_comment) AS n FROM parquet_scan(''data/parquet-testing/lineitem-top10000.gzip.parquet'') WHERE l_orderkey = 1 ORDER BY l_linenumber'));
+
+query I
+SELECT typeof(n) FROM from_substrait(getvariable('plan')) LIMIT 1
+----
+BIGINT

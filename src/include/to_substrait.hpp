@@ -50,6 +50,10 @@ private:
 	                                   vector<substrait::Type> &arg_types);
 	//! Creates a reference to a table column
 	static void CreateFieldRef(substrait::Expression *expr, uint64_t col_idx);
+	//! A reference to a scan column, following the column index into struct fields.
+	static void CreateFieldRef(substrait::Expression *expr, const ColumnIndex &column);
+	//! The type of what a column index reaches, following it into struct fields.
+	static LogicalType ScanColumnType(const ColumnIndex &column, const vector<LogicalType> &types);
 	//! In case of struct types we might we do DFS to get all names
 	static vector<string> DepthFirstNames(const LogicalType &type);
 	static void DepthFirstNamesRecurse(vector<string> &names, const LogicalType &type);
@@ -96,7 +100,7 @@ private:
 	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping);
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;
-	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;
+	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, TableCatalogEntry &table) const;
 	void TransformParquetScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, BindInfo &bind_info,
 	                                     const FunctionData &bind_data) const;
 
@@ -121,7 +125,7 @@ private:
 
 	//! Methods to transform a DuckDB Expression to a Substrait Expression
 	void TransformExpr(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
-	static void TransformBoundRefExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
+	void TransformBoundRefExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformCastExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformFunctionExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	static void TransformConstantExpression(Expression &dexpr, substrait::Expression &sexpr);
@@ -154,6 +158,9 @@ private:
 		substrait::Expression *TransformStructExtractFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 		substrait::Expression *TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 	substrait::Expression *TransformMultiColumnFilter(const TableFilter &dfilter, const vector<ColumnIndex> &column_ids);
+	//! The scan columns a table filter's bound references stand for, including the struct field each one
+	//! reaches into. Set while a filter is transformed and empty otherwise.
+	vector<ColumnIndex> filter_columns;
 		substrait::Expression *TransformInFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 	substrait::Expression *TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 

@@ -115,6 +115,8 @@ private:
 	                                 const google::protobuf::RepeatedPtrField<substrait::FunctionOption> &options);
 	static string RemoveExtension(const string &function_name);
 	static LogicalType SubstraitToDuckType(const substrait::Type &s_type);
+	static unique_ptr<ParsedExpression> TransformDivide(const substrait::Expression &sexpr, const string &signature,
+	                                                    vector<unique_ptr<ParsedExpression>> children);
 	//! Looks up for aggregation function in functions_map
 	string FindFunction(uint64_t id);
 

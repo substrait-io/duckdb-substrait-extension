@@ -631,9 +631,74 @@ void SubstraitToDuckDB::VerifyCorrectExtractSubfield(const string &subfield) {
 	D_ASSERT(SubstraitToDuckDB::valid_extract_subfields.count(subfield));
 }
 
+//! Substrait's divide truncates an integer result while DuckDB's / promotes to DOUBLE, so the declared output
+//! type picks the operator. Its on_division_by_zero option picks what a zero divisor does: IEEE is what / does,
+//! ERROR is what // and divide() do, and NULL is spelled out as a CASE. Without the option each operator keeps
+//! its own behavior.
+unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait::Expression &sexpr,
+                                                                const string &signature,
+                                                                vector<unique_ptr<ParsedExpression>> children) {
+	if (children.size() != 2) {
+		throw InvalidInputException("divide takes two arguments, got %llu", children.size());
+	}
+	auto &function = sexpr.scalar_function();
+	auto output_type = SubstraitToDuckType(function.output_type());
+	auto declared_type = output_type;
+	if (output_type.id() == LogicalTypeId::DECIMAL) {
+		// HUGEINT and UBIGINT travel through Substrait as DECIMAL(38,0), the only integer types wide enough, and
+		// Substrait's own decimal division always declares a scale of at least six. A decimal divide whose result
+		// has scale 0 is therefore integer division over integer-valued operands. DuckDB's decimal / goes through
+		// DOUBLE and loses precision past 2^53, so compute it in HUGEINT, which holds every DECIMAL(38,0) exactly.
+		if (DecimalType::GetScale(output_type) != 0 || !StringUtil::EndsWith(signature, ":dec_dec")) {
+			throw NotImplementedException(
+			    "divide with result type %s is not supported: DuckDB divides decimals in DOUBLE, which cannot "
+			    "produce that type exactly. Supported are integer and floating-point results, and DECIMAL(p,0) "
+			    "results of decimal operands (how HUGEINT and UBIGINT are exported)",
+			    output_type.ToString());
+		}
+		for (auto &child : children) {
+			child = make_uniq<CastExpression>(LogicalType::HUGEINT, std::move(child));
+		}
+		output_type = LogicalType::HUGEINT;
+	}
+	bool integral = output_type.IsIntegral();
+	string policy;
+	for (auto &option : function.options()) {
+		if (StringUtil::CIEquals(option.name(), "on_division_by_zero")) {
+			policy = FindFunctionOption(function.options(), "on_division_by_zero", {"IEEE", "ERROR", "NULL"});
+		}
+	}
+	if (StringUtil::CIEquals(policy, "IEEE") && integral) {
+		throw InvalidInputException("divide with on_division_by_zero IEEE needs a floating-point result, not %s",
+		                            declared_type.ToString());
+	}
+	unique_ptr<ParsedExpression> result;
+	if (StringUtil::CIEquals(policy, "ERROR")) {
+		result = make_uniq<FunctionExpression>("divide", std::move(children));
+	} else {
+		auto divisor = children[1]->Copy();
+		result = make_uniq<FunctionExpression>(Identifier(integral ? "//" : "/"), std::move(children));
+		if (StringUtil::CIEquals(policy, "NULL")) {
+			// CASE evaluates its branches per row, so the division is skipped where the divisor is zero.
+			auto null_on_zero = make_uniq<CaseExpression>();
+			CaseCheck zero_divisor;
+			zero_divisor.when_expr = make_uniq<ComparisonExpression>(
+			    ExpressionType::COMPARE_EQUAL, std::move(divisor), ConstantExpression::FromValue(Value::INTEGER(0)));
+			zero_divisor.then_expr = ConstantExpression::FromValue(Value(output_type));
+			null_on_zero->CaseChecksMutable().push_back(std::move(zero_divisor));
+			null_on_zero->ElseMutable() = std::move(result);
+			result = std::move(null_on_zero);
+		}
+	}
+	if (declared_type.id() == LogicalTypeId::DECIMAL) {
+		result = make_uniq<CastExpression>(declared_type, std::move(result));
+	}
+	return result;
+}
+
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(const substrait::Expression &sexpr) {
-	auto function_name = FindFunction(sexpr.scalar_function().function_reference());
-	function_name = RemoveExtension(function_name);
+	auto signature = FindFunction(sexpr.scalar_function().function_reference());
+	auto function_name = RemoveExtension(signature);
 	vector<unique_ptr<ParsedExpression>> children;
 	vector<string> enum_expressions;
 	auto &function_arguments = sexpr.scalar_function().arguments();
@@ -734,11 +799,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		children.insert(children.begin(), std::move(constant_expression));
 	}
 	if (function_name == "divide") {
-		// Substrait's divide truncates an integer result while DuckDB's / promotes to DOUBLE; the
-		// declared output type says which the plan means. DuckDB 2.0's divide() function is not
-		// used because it raises on division by zero where the operators do not.
-		auto output_type = SubstraitToDuckType(sexpr.scalar_function().output_type());
-		return make_uniq<FunctionExpression>(Identifier(output_type.IsIntegral() ? "//" : "/"), std::move(children));
+		return TransformDivide(sexpr, signature, std::move(children));
 	}
 
 	return make_uniq<FunctionExpression>(Identifier(RemapFunctionName(function_name)), std::move(children));
@@ -1158,10 +1219,11 @@ shared_ptr<Relation> SubstraitToDuckDB::TransformJoinOp(const substrait::Rel &so
 	auto &sjoin = sop.join();
 
 	JoinType djointype = TransformJoinType(sjoin.type(), false);
-	// A join without a condition pairs every row.
-	unique_ptr<ParsedExpression> join_condition = sjoin.has_expression()
-	                                                  ? TransformExpr(sjoin.expression())
-	                                                  : ConstantExpression::FromValue(Value::BOOLEAN(true));
+	// Substrait requires a join expression; a join that pairs every row spells it out as a literal true.
+	if (!sjoin.has_expression()) {
+		throw InvalidInputException("JoinRel has no join expression");
+	}
+	unique_ptr<ParsedExpression> join_condition = TransformExpr(sjoin.expression());
 	shared_ptr<Relation> result =
 	    make_shared_ptr<JoinRelation>(TransformOp(sjoin.left())->Alias("left"),
 	                                  TransformOp(sjoin.right())->Alias("right"), std::move(join_condition), djointype);

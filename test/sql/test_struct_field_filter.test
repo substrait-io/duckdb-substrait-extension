@@ -1,0 +1,32 @@
+# name: test/sql/test_struct_field_filter.test
+# description: A filter pushed down onto a struct field tests that field, not the struct
+# group: [sql]
+
+require substrait
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE t (id INTEGER, s STRUCT(a INTEGER, b INTEGER));
+
+statement ok
+INSERT INTO t VALUES (1, {'a': NULL, 'b': 2}), (2, {'a': 5, 'b': 3}), (3, {'a': 1, 'b': NULL});
+
+statement ok
+CALL get_substrait('SELECT id FROM t WHERE s.a IS NULL')
+
+statement ok
+CALL get_substrait('SELECT id FROM t WHERE s.a > 1')
+
+statement ok
+CALL get_substrait('SELECT id FROM t WHERE s.a IS NOT NULL AND s.b IS NOT NULL')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT id FROM t WHERE s.a IS NULL OR s.b IS NULL ORDER BY id'));
+
+query I
+SELECT id FROM from_substrait(getvariable('plan'))
+----
+1
+3
