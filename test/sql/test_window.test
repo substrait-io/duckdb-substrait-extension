@@ -77,6 +77,11 @@ CALL get_substrait('SELECT id, part1, sum(val) OVER (PARTITION BY part1) AS part
 statement ok
 CALL get_substrait('SELECT id, sum(val) OVER (ORDER BY id) AS running_sum FROM window_test_data')
 
+statement error
+CALL get_substrait('SELECT sum(val) FILTER (WHERE val > 20) OVER (ORDER BY id) FROM window_test_data')
+----
+Not implemented Error: Substrait export does not support FILTER on window functions
+
 statement ok
 CALL get_substrait('SELECT id, sum(val) OVER (PARTITION BY part1 ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS rows_running_sum FROM window_test_data')
 

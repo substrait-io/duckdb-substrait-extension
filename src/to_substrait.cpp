@@ -1607,7 +1607,8 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		}
 	}
 	for (auto &dmeas : daggr.expressions) {
-		auto smeas = saggr->add_measures()->mutable_measure();
+		auto measure = saggr->add_measures();
+		auto smeas = measure->mutable_measure();
 		if (dmeas->type != ExpressionType::BOUND_AGGREGATE) {
 			// TODO push projection or push substrait, too
 			throw NotImplementedException("No non-aggregate expressions in measures yet");
@@ -1621,12 +1622,15 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 			args_types.emplace_back(DuckToSubstraitType(darg->return_type));
 			TransformExpr(*darg, *s_arg->mutable_value());
 		}
+		if (daexpr.filter) {
+			TransformExpr(*daexpr.filter, *measure->mutable_filter());
+		}
 		smeas->set_function_reference(RegisterFunction(RemapFunctionName(daexpr.function.name), args_types));
 		if (daexpr.aggr_type == AggregateType::DISTINCT) {
 			smeas->set_invocation(substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT);
 		}
 	}
-	
+
 	// Transform GROUPING() function calls
 	// Each grouping function is represented as an aggregate function measure
 	// that takes field references to the grouping columns it references
@@ -1700,6 +1704,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		}
 		
 		auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
+		if (dwin_expr.filter_expr) {
+			throw NotImplementedException("Substrait export does not support FILTER on window functions");
+		}
 		
 		bool found = false;
 		for (auto &spec : window_specs) {

@@ -1,0 +1,193 @@
+# name: test/sql/test_substrait_aggregate_filter.test
+# description: Test AggregateRel measure filters
+# group: [sql]
+
+require substrait
+
+statement ok
+CREATE TABLE aggregate_filter_input (g VARCHAR, x INTEGER)
+
+statement ok
+INSERT INTO aggregate_filter_input VALUES ('a', 1), ('a', 2), ('a', 2), ('a', NULL), ('b', 3)
+
+# An ungrouped filtered aggregate returns NULL when its filter rejects every row.
+query I
+SELECT * FROM from_substrait_json('
+{
+  "extensionUrns": [{"extensionUrnAnchor": 1, "urn": "extension:io.substrait:functions_arithmetic"}],
+  "extensions": [{"extensionFunction": {"extensionUrnReference": 1, "functionAnchor": 1, "name": "sum:i32"}}],
+  "relations": [{"root": {"input": {"aggregate": {
+    "input": {"read": {
+      "baseSchema": {"names": ["g", "x"], "struct": {"types": [
+        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"i32": {"nullability": "NULLABILITY_NULLABLE"}}
+      ], "nullability": "NULLABILITY_REQUIRED"}},
+      "namedTable": {"names": ["aggregate_filter_input"]}
+    }},
+    "measures": [{
+      "measure": {
+        "functionReference": 1,
+        "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+        "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+        "invocation": "AGGREGATION_INVOCATION_ALL",
+        "arguments": [{"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}]
+      },
+      "filter": {"literal": {"boolean": false, "nullable": false}}
+    }]
+  }}, "names": ["sum_false"]}}]
+}')
+----
+NULL
+
+# Each grouped measure keeps its own filter. DISTINCT and NULL filters are independent.
+query TIIII
+SELECT * FROM from_substrait_json('
+{
+  "extensionUrns": [
+    {"extensionUrnAnchor": 1, "urn": "extension:io.substrait:functions_arithmetic"},
+    {"extensionUrnAnchor": 2, "urn": "extension:io.substrait:functions_comparison"},
+    {"extensionUrnAnchor": 3, "urn": "extension:io.substrait:functions_aggregate_generic"}
+  ],
+  "extensions": [
+    {"extensionFunction": {"extensionUrnReference": 1, "functionAnchor": 1, "name": "sum:i32"}},
+    {"extensionFunction": {"extensionUrnReference": 2, "functionAnchor": 2, "name": "gt:i32_i32"}},
+    {"extensionFunction": {"extensionUrnReference": 3, "functionAnchor": 3, "name": "count:"}}
+  ],
+  "relations": [{"root": {"input": {"aggregate": {
+    "input": {"read": {
+      "baseSchema": {"names": ["g", "x"], "struct": {"types": [
+        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"i32": {"nullability": "NULLABILITY_NULLABLE"}}
+      ], "nullability": "NULLABILITY_REQUIRED"}},
+      "namedTable": {"names": ["aggregate_filter_input"]}
+    }},
+    "groupingExpressions": [{"selection": {"directReference": {"structField": {}}, "rootReference": {}}}],
+    "groupings": [{"expressionReferences": [0]}],
+    "measures": [
+      {
+        "measure": {
+          "functionReference": 1,
+          "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+          "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+          "invocation": "AGGREGATION_INVOCATION_ALL",
+          "arguments": [{"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}]
+        },
+        "filter": {"literal": {"boolean": false, "nullable": false}}
+      },
+      {
+        "measure": {
+          "functionReference": 1,
+          "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+          "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+          "invocation": "AGGREGATION_INVOCATION_DISTINCT",
+          "arguments": [{"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}]
+        },
+        "filter": {"scalarFunction": {
+          "functionReference": 2,
+          "outputType": {"bool": {"nullability": "NULLABILITY_NULLABLE"}},
+          "arguments": [
+            {"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}},
+            {"value": {"literal": {"i32": 1, "nullable": false}}}
+          ]
+        }}
+      },
+      {
+        "measure": {
+          "functionReference": 1,
+          "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+          "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+          "invocation": "AGGREGATION_INVOCATION_ALL",
+          "arguments": [{"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}}]
+        },
+        "filter": {"literal": {"boolean": true, "nullable": false}}
+      },
+      {
+        "measure": {
+          "functionReference": 3,
+          "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+          "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+          "invocation": "AGGREGATION_INVOCATION_ALL",
+          "arguments": []
+        },
+        "filter": {"scalarFunction": {
+          "functionReference": 2,
+          "outputType": {"bool": {"nullability": "NULLABILITY_NULLABLE"}},
+          "arguments": [
+            {"value": {"selection": {"directReference": {"structField": {"field": 1}}, "rootReference": {}}}},
+            {"value": {"literal": {"i32": 1, "nullable": false}}}
+          ]
+        }}
+      }
+    ]
+  }}, "names": ["g", "sum_false", "sum_distinct", "sum_true", "count_filtered"]}}]
+}') ORDER BY 1
+----
+a	NULL	2	5	2
+b	NULL	3	3	1
+
+# GROUPING() is a special operator, so reject a filter rather than dropping it.
+statement error
+CALL from_substrait_json('
+{
+  "extensionUrns": [{"extensionUrnAnchor": 1, "urn": "extension:io.substrait:functions_arithmetic"}],
+  "extensions": [{"extensionFunction": {"extensionUrnReference": 1, "functionAnchor": 1, "name": "grouping"}}],
+  "relations": [{"root": {"input": {"aggregate": {
+    "input": {"read": {
+      "baseSchema": {"names": ["g", "x"], "struct": {"types": [
+        {"varchar": {"nullability": "NULLABILITY_NULLABLE"}},
+        {"i32": {"nullability": "NULLABILITY_NULLABLE"}}
+      ], "nullability": "NULLABILITY_REQUIRED"}},
+      "namedTable": {"names": ["aggregate_filter_input"]}
+    }},
+    "groupingExpressions": [{"selection": {"directReference": {"structField": {}}, "rootReference": {}}}],
+    "groupings": [{"expressionReferences": [0]}],
+    "measures": [{
+      "measure": {
+        "functionReference": 1,
+        "phase": "AGGREGATION_PHASE_INITIAL_TO_RESULT",
+        "outputType": {"i64": {"nullability": "NULLABILITY_NULLABLE"}},
+        "arguments": [{"value": {"selection": {"directReference": {"structField": {}}, "rootReference": {}}}}]
+      },
+      "filter": {"literal": {"boolean": false, "nullable": false}}
+    }]
+  }}, "names": ["g", "grouping"]}}]
+}')
+----
+FILTER on GROUPING() is not supported
+
+# Verification checks that the producer and consumer preserve native SQL FILTER.
+statement ok
+PRAGMA enable_verification
+
+statement ok
+SET VARIABLE exported_plan = (
+    SELECT json FROM get_substrait_json(
+        'SELECT sum(x) FILTER (WHERE x > 1) AS s FROM aggregate_filter_input'
+    )
+)
+
+query I
+SELECT * FROM from_substrait_json(getvariable('exported_plan'))
+----
+7
+
+statement ok
+SET VARIABLE grouped_plan = (
+    SELECT json FROM get_substrait_json(
+        'SELECT g,
+                count(*) FILTER (WHERE x > 1),
+                sum(DISTINCT x) FILTER (WHERE x > 1),
+                sum(x) FILTER (WHERE g = ''a''),
+                grouping(g)
+         FROM aggregate_filter_input
+         GROUP BY ROLLUP (g)
+         ORDER BY g NULLS LAST'
+    )
+)
+
+query TIIII
+SELECT * FROM from_substrait_json(getvariable('grouped_plan')) ORDER BY 1 NULLS LAST
+----
+a	2	2	5	0
+b	1	3	NULL	0
+NULL	3	5	5	1
