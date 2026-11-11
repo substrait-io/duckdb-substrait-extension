@@ -68,6 +68,11 @@ CALL get_substrait('SELECT id, nth_value(val, 2) OVER (PARTITION BY part1 ORDER 
 
 # Aggregate Window Functions
 
+statement error
+CALL get_substrait('SELECT string_agg(part2, '','' ORDER BY id DESC) OVER (PARTITION BY part1) FROM window_test_data', enable_optimizer=false)
+----
+ORDER BY in window function arguments is not supported
+
 statement ok
 CALL get_substrait('SELECT id, sum(val) OVER () AS total_sum FROM window_test_data')
 

@@ -42,6 +42,9 @@ private:
 	void TransformPlan(LogicalOperator &dop);
 	//! Registers a function
 	uint64_t RegisterFunction(const std::string &name, vector<::substrait::Type> &args_types);
+	uint64_t RegisterAggregateFunction(const AggregateFunction &function, optional_ptr<FunctionData> bind_data,
+	                                   google::protobuf::RepeatedPtrField<substrait::FunctionArgument> &arguments,
+	                                   vector<substrait::Type> &arg_types);
 	//! Creates a reference to a table column
 	static void CreateFieldRef(substrait::Expression *expr, uint64_t col_idx);
 	//! In case of struct types we might we do DFS to get all names

@@ -135,28 +135,26 @@ To migrate a saved DuckDB plan, regenerate it from the original SQL with the upd
 
 If a non-distinct `COUNT` aggregate produces a partial count, use `AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE` for raw rows or `AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE` for partial counts. A merge returns zero for empty input and raises an error on overflow. The consumer does not support intermediate phases for other aggregates or for window calls.
 
-### Roundtripping ordered aggregates
+### Roundtripping grouped aggregates with ORDER BY
 
-An aggregate's `ORDER BY` controls the order of values passed to that aggregate. For order-sensitive functions such as `string_agg`, it must survive export and import. A query-level `ORDER BY` only sorts the final result rows and cannot replace it.
+For grouped aggregates, the extension preserves each aggregate's sort keys in `AggregateFunction.sorts`, including their priority, direction, and NULL placement. Without a `GROUP BY` clause, the aggregate treats all input rows as one group. A query-level `ORDER BY` sorts the result rows after aggregation.
 
-The [ordered-aggregate example](examples/ordered_string_agg.sql) uses two sort keys, descending priority with NULLs last, then ascending label:
+The [ordered-aggregate example](examples/ordered_string_agg.sql) sorts labels by descending priority with NULLs last, then by ascending label.
 
 ```sql
 SELECT string_agg(label, ',' ORDER BY priority DESC NULLS LAST, label ASC) AS summary
 FROM labels;
 ```
 
-The example creates its own input table and compares native DuckDB execution with imported JSON and binary plans. Each returns `beta,gamma,alpha,omega`.
+The example creates the `labels` table and runs the native query and both imported plans in the same database so they can read that table. The native query, JSON plan, and binary plan each return `beta,gamma,alpha,omega`.
 
-After [building the extension](#building), run this command from the repository root:
+After [building the extension](#building), run the example from the repository root.
 
 ```sh
 ./build/release/duckdb -unsigned < examples/ordered_string_agg.sql
 ```
 
-The example loads the unsigned extension from the local `build/release` directory. Its input table must remain available when the exported plans are executed. Aggregate sort keys are carried in `AggregateFunction.sorts`, including their direction, NULL placement, and priority.
-
-The current exporter does not preserve a non-default `string_agg` separator. This example uses the default comma separator.
+Substrait window functions support ordering in the `OVER` clause. If the DuckDB plan contains a window function with an `ORDER BY` inside its argument list, export fails because Substrait cannot represent that separate ordering.
 
 ### Python
 
