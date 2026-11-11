@@ -3,6 +3,9 @@
 #include "duckdb/catalog/catalog_entry/duck_table_entry.hpp"
 #include "duckdb/common/constants.hpp"
 #include "duckdb/common/enums/expression_type.hpp"
+#include "duckdb/common/serializer/binary_deserializer.hpp"
+#include "duckdb/common/serializer/binary_serializer.hpp"
+#include "duckdb/common/serializer/memory_stream.hpp"
 #include "duckdb/common/types/decimal.hpp"
 #include "duckdb/common/types/hugeint.hpp"
 #include "duckdb/common/types/value.hpp"
@@ -1575,6 +1578,33 @@ substrait::Rel *DuckDBToSubstrait::TransformDuplicateEliminatedGet(LogicalOperat
 	return res;
 }
 
+uint64_t
+DuckDBToSubstrait::RegisterAggregateFunction(const AggregateFunction &function, optional_ptr<FunctionData> bind_data,
+                                             google::protobuf::RepeatedPtrField<substrait::FunctionArgument> &arguments,
+                                             vector<substrait::Type> &arg_types) {
+	auto name = function.name;
+	if (name != "string_agg" && name != "group_concat" && name != "listagg") {
+		return RegisterFunction(RemapFunctionName(name), arg_types);
+	}
+	if (!bind_data || !function.HasSerializationCallbacks()) {
+		throw NotImplementedException("Cannot export string_agg without its bound separator");
+	}
+	// DuckDB removes the separator argument during binding and stores it in field 100 of the serialized bind data.
+	MemoryStream stream;
+	BinarySerializer serializer(stream);
+	serializer.Begin();
+	function.GetSerializeCallback()(serializer, bind_data, function);
+	serializer.End();
+	stream.Rewind();
+	BinaryDeserializer deserializer(stream);
+	deserializer.Begin();
+	auto separator = deserializer.ReadProperty<string>(100, "separator");
+	deserializer.End();
+	arguments.Add()->mutable_value()->mutable_literal()->set_string(separator);
+	arg_types.emplace_back(DuckToSubstraitType(LogicalType::VARCHAR));
+	return RegisterFunction("string_agg", arg_types);
+}
+
 substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop) {
 	auto res = make_uniq<substrait::Rel>();
 	auto &daggr = dop.Cast<LogicalAggregate>();
@@ -1617,6 +1647,11 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 
 		*smeas->mutable_output_type() = DuckToSubstraitType(daexpr.return_type);
 		smeas->set_phase(substrait::AGGREGATION_PHASE_INITIAL_TO_RESULT);
+		if (daexpr.order_bys) {
+			for (auto &order : daexpr.order_bys->orders) {
+				TransformOrder(order, *smeas->add_sorts());
+			}
+		}
 		vector<::substrait::Type> args_types;
 		for (auto &darg : daexpr.children) {
 			auto s_arg = smeas->add_arguments();
@@ -1626,7 +1661,8 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 		if (daexpr.filter) {
 			TransformExpr(*daexpr.filter, *measure->mutable_filter());
 		}
-		smeas->set_function_reference(RegisterFunction(RemapFunctionName(daexpr.function.name), args_types));
+		smeas->set_function_reference(
+		    RegisterAggregateFunction(daexpr.function, daexpr.bind_info, *smeas->mutable_arguments(), args_types));
 		if (daexpr.aggr_type == AggregateType::DISTINCT) {
 			smeas->set_invocation(substrait::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT);
 		}
@@ -1709,6 +1745,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		if (dwin_expr.filter_expr) {
 			throw NotImplementedException("Substrait export does not support FILTER on window functions");
 		}
+		if (!dwin_expr.arg_orders.empty()) {
+			throw NotImplementedException("ORDER BY in window function arguments is not supported");
+		}
 		
 		bool found = false;
 		for (auto &spec : window_specs) {
@@ -1770,7 +1809,6 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			if (!dwin_expr.aggregate) {
 				throw InternalException("Window aggregate expression missing aggregate function");
 			}
-			function_name = dwin_expr.aggregate->name;
 			
 			// Handle DISTINCT aggregates
 			if (dwin_expr.distinct) {
@@ -1836,7 +1874,12 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 			TransformExpr(*dwin_expr.default_expr, *s_arg->mutable_value());
 		}
 		
-		swin_func->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
+		if (dwin_expr.aggregate) {
+			swin_func->set_function_reference(RegisterAggregateFunction(*dwin_expr.aggregate, dwin_expr.bind_info,
+			                                                           *swin_func->mutable_arguments(), args_types));
+		} else {
+			swin_func->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
+		}
 		
 		// Set window frame bounds
 		// Offset-free GROUPS frames use the same peer groups as RANGE.
