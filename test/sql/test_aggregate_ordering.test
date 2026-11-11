@@ -53,7 +53,7 @@ PRAGMA enable_verification
 
 # Each measure keeps its own ordering, direction, and NULL placement.
 statement ok
-SET VARIABLE ordered_sql = 'SELECT g, string_agg(label, '','' ORDER BY position ASC NULLS FIRST, label DESC), string_agg(label, '','' ORDER BY position DESC NULLS LAST, label ASC) FROM ordered_values GROUP BY g'
+SET VARIABLE ordered_sql = 'SELECT g, string_agg(label, '','' ORDER BY position ASC NULLS FIRST, label DESC), string_agg(label, ''|'' ORDER BY position DESC NULLS LAST, label ASC) FROM ordered_values GROUP BY g'
 
 statement ok
 SET VARIABLE ordered_json = (SELECT json FROM get_substrait_json(getvariable('ordered_sql'), enable_optimizer=false))
@@ -61,8 +61,8 @@ SET VARIABLE ordered_json = (SELECT json FROM get_substrait_json(getvariable('or
 query TTT
 SELECT * FROM from_substrait_json(getvariable('ordered_json')) ORDER BY g
 ----
-a	c,d,a,b,b	b,b,a,d,c
-b	x,z,y	y,z,x
+a	c,d,a,b,b	b|b|a|d|c
+b	x,z,y	y|z|x
 
 statement ok
 SET VARIABLE ordered_binary = (SELECT * FROM get_substrait(getvariable('ordered_sql'), enable_optimizer=true))
@@ -70,8 +70,18 @@ SET VARIABLE ordered_binary = (SELECT * FROM get_substrait(getvariable('ordered_
 query TTT
 SELECT * FROM from_substrait(getvariable('ordered_binary')) ORDER BY g
 ----
-a	c,d,a,b,b	b,b,a,d,c
-b	x,z,y	y,z,x
+a	c,d,a,b,b	b|b|a|d|c
+b	x,z,y	y|z|x
+
+# Window ordering is specified by OVER. The aggregate still needs its separator.
+statement ok
+SET VARIABLE window_json = (SELECT json FROM get_substrait_json('SELECT g, group_concat(label, ''|'') OVER (PARTITION BY g ORDER BY label ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS labels FROM ordered_values', enable_optimizer=false))
+
+query TT
+SELECT DISTINCT * FROM from_substrait_json(getvariable('window_json')) ORDER BY g
+----
+a	a|b|b|c|d
+b	x|y|z
 
 # DISTINCT applies to the values before ordered concatenation.
 statement ok
