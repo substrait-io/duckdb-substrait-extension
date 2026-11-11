@@ -1,0 +1,55 @@
+# name: test/sql/test_wide_integer_division.test
+# description: HUGEINT and UBIGINT travel as DECIMAL(38,0); their division stays exact integer division
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+# Values past 2^53 so that a detour through DOUBLE would show.
+statement ok
+CREATE TABLE h (a HUGEINT, b HUGEINT);
+
+statement ok
+INSERT INTO h VALUES (1152921504606846977, 3), (-1152921504606846977, 3), (7, 2);
+
+statement ok
+CALL get_substrait('SELECT a // b, a % b FROM h')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT a // b AS q, a % b AS r FROM h ORDER BY a'));
+
+# The quotient carries the type the plan declares for it.
+query IITT
+SELECT q, r, typeof(q), typeof(r) FROM from_substrait(getvariable('plan'))
+----
+-384307168202282325	-2	DECIMAL(38,0)	HUGEINT
+3	1	DECIMAL(38,0)	HUGEINT
+384307168202282325	2	DECIMAL(38,0)	HUGEINT
+
+statement ok
+CREATE TABLE u (a UBIGINT, b UBIGINT);
+
+statement ok
+INSERT INTO u VALUES (18446744073709551615, 7), (7, 2);
+
+statement ok
+CALL get_substrait('SELECT a // b, a % b FROM u')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT a // b AS q, a % b AS r FROM u ORDER BY a'));
+
+query II
+SELECT q, r FROM from_substrait(getvariable('plan'))
+----
+3	1
+2635249153387078802	1
+
+# The modulus goes out under Substrait's name.
+query I
+SELECT contains(json, '"modulus:') AND NOT contains(json, '"%"') FROM get_substrait_json('SELECT a % b FROM h')
+----
+true

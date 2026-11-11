@@ -82,6 +82,9 @@ struct ToSubstraitFunctionData : public TableFunctionData {
 		// they factor out through a materialized CTE.
 		disabled_optimizers.insert(OptimizerType::PROJECTION_PULLUP);
 		disabled_optimizers.insert(OptimizerType::DISTINCT_AGGREGATE_REWRITE);
+		// Scalar function pushdown moves functions such as strlen into the file
+		// reader, leaving a plan that only reads the column.
+		disabled_optimizers.insert(OptimizerType::SCALAR_FN_PUSHDOWN);
 		// STATISTICS_PROPAGATION must be disabled because it uses table
 		// statistics (cardinality, min/max) at plan-generation time to fold
 		// filters that look always-false against the current data — e.g. a

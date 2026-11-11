@@ -1,0 +1,24 @@
+# name: test/sql/test_join_without_expression.test
+# description: A JoinRel without an expression is rejected; Substrait requires one
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+CREATE TABLE l (id INTEGER);
+
+statement ok
+INSERT INTO l VALUES (1), (2);
+
+statement ok
+CREATE TABLE r (id INTEGER);
+
+statement ok
+INSERT INTO r VALUES (1), (2), (3);
+
+statement error
+SELECT * FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"equal:any_any","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[0]}},"input":{"project":{"common":{"emit":{"outputMapping":[2,3]}},"input":{"join":{"left":{"read":{"baseSchema":{"names":["id"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["l"]}}},"right":{"read":{"baseSchema":{"names":["id"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{}]},"maintainSingularStruct":true},"namedTable":{"names":["r"]}}},"type":"JOIN_TYPE_INNER"}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}},{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["id"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_comparison"}]}')
+----
+JoinRel has no join expression

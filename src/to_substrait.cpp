@@ -52,6 +52,7 @@ const std::unordered_map<std::string, std::string> DuckDBToSubstrait::function_n
     {"+", "add"},
     {"/", "divide"},
     {"//", "divide"},
+    {"%", "modulus"},
     {"first", "any_value"},
     {"&", "bitwise_and"},
     {"|", "bitwise_or"},
@@ -353,6 +354,11 @@ void DuckDBToSubstrait::TransformConstant(const Value &dval, substrait::Expressi
 void DuckDBToSubstrait::TransformBoundRefExpression(Expression &dexpr, substrait::Expression &sexpr,
                                                     uint64_t col_offset) {
 	auto &dref = dexpr.Cast<BoundReferenceExpression>();
+	if (!filter_columns.empty()) {
+		// Inside a table filter, references index the filter's columns.
+		CreateFieldRef(&sexpr, filter_columns[dref.Index()]);
+		return;
+	}
 	CreateFieldRef(&sexpr, dref.Index() + col_offset);
 }
 
@@ -464,6 +470,21 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 	// an i64 substring signature, emit the wider arguments directly.
 	bool is_substring = function_name == "substring" || function_name == "substr";
 	bool is_decimal_multiply = dfun.Function().GetName() == "*" && dfun.GetReturnType().id() == LogicalTypeId::DECIMAL;
+	// Substrait's divide takes its zero-divisor behavior as an option, and DuckDB's operators each have a fixed
+	// one: / follows IEEE (infinity or NaN) while // and divide() raise. The option exists for the integer and
+	// floating-point signatures only.
+	string division_by_zero;
+	if (function_name == "/" || function_name == "//" || function_name == "divide") {
+		bool option_applies = true;
+		for (auto &darg : dfun.GetChildren()) {
+			auto &arg_type = darg->GetReturnType();
+			option_applies &= arg_type.IsIntegral() || arg_type.id() == LogicalTypeId::FLOAT ||
+			                  arg_type.id() == LogicalTypeId::DOUBLE;
+		}
+		if (option_applies) {
+			division_by_zero = function_name == "/" ? "IEEE" : "ERROR";
+		}
+	}
 	vector<substrait::Type> args_types;
 	for (idx_t arg_idx = 0; arg_idx < dfun.GetChildren().size(); arg_idx++) {
 		auto &darg = dfun.GetChildren()[arg_idx];
@@ -487,6 +508,11 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		}
 	}
 	sfun->set_function_reference(RegisterFunction(RemapFunctionName(function_name), args_types));
+	if (!division_by_zero.empty()) {
+		auto option = sfun->add_options();
+		option->set_name("on_division_by_zero");
+		option->add_preference(division_by_zero);
+	}
 
 	auto output_type = sfun->mutable_output_type();
 	*output_type = DuckToSubstraitType(dfun.GetReturnType());
@@ -836,6 +862,31 @@ uint64_t DuckDBToSubstrait::RegisterFunction(const string &name, vector<::substr
 	return function_entry->second;
 }
 
+void DuckDBToSubstrait::CreateFieldRef(substrait::Expression *expr, const ColumnIndex &column) {
+	auto selection = expr->mutable_selection();
+	selection->mutable_root_reference();
+	auto segment = selection->mutable_direct_reference()->mutable_struct_field();
+	segment->set_field(static_cast<int32_t>(column.GetPrimaryIndex()));
+	for (auto index = &column; index->HasChildren(); index = &index->GetChildIndexes()[0]) {
+		if (index->GetChildIndexes().size() != 1) {
+			throw NotImplementedException("A table filter on more than one field of a struct column is not supported");
+		}
+		segment = segment->mutable_child()->mutable_struct_field();
+		segment->set_field(static_cast<int32_t>(index->GetChildIndexes()[0].GetPrimaryIndex()));
+	}
+}
+
+LogicalType DuckDBToSubstrait::ScanColumnType(const ColumnIndex &column, const vector<LogicalType> &types) {
+	auto type = types[column.GetPrimaryIndex()];
+	for (auto index = &column; index->HasChildren(); index = &index->GetChildIndexes()[0]) {
+		if (index->GetChildIndexes().size() != 1) {
+			throw NotImplementedException("A table filter on more than one field of a struct column is not supported");
+		}
+		type = StructType::GetChildType(type, index->GetChildIndexes()[0].GetPrimaryIndex());
+	}
+	return type;
+}
+
 void DuckDBToSubstrait::CreateFieldRef(substrait::Expression *expr, uint64_t col_idx) {
 	auto selection = expr->mutable_selection();
 	selection->mutable_direct_reference()->mutable_struct_field()->set_field(static_cast<int32_t>(col_idx));
@@ -851,12 +902,11 @@ vector<string> DuckDBToSubstrait::DepthFirstNames(const LogicalType &type) {
 }
 
 void DuckDBToSubstrait::DepthFirstNamesRecurse(vector<string> &names, const LogicalType &type) {
-	if (type.id() == LogicalTypeId::STRUCT) {
-		// Recurse this
-		idx_t struct_size = StructType::GetChildCount(type);
-		for (idx_t i = 0; i < struct_size; i++) {
-			names.emplace_back(StructType::GetChildName(type, i));
-			DepthFirstNamesRecurse(names, StructType::GetChildType(type, i));
+	if (type.id() == LogicalTypeId::STRUCT || type.id() == LogicalTypeId::TUPLE) {
+		// Recurse this; a TUPLE's members get the positional names DuckDB synthesizes for them.
+		for (auto &child : TupleType::NamedChildren(type)) {
+			names.emplace_back(child.first.GetIdentifierName());
+			DepthFirstNamesRecurse(names, child.second);
 		}
 	}
 }
@@ -1027,8 +1077,9 @@ static unique_ptr<Expression> StripTableFilterFunctions(unique_ptr<Expression> e
 substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type) {
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
 
-	// Create a proper column reference for the ToExpression method
-	auto column_ref = make_uniq<BoundReferenceExpression>(column_type, col_idx);
+	// The placeholder stands for the filtered column: filter_columns[0] when the caller registered the
+	// column (and the struct field it reaches into), the plain column otherwise.
+	auto column_ref = make_uniq<BoundReferenceExpression>(column_type, filter_columns.empty() ? col_idx : 0);
 	auto bound_expr = StripTableFilterFunctions(expr_filter.ToExpression(*column_ref));
 	if (!bound_expr) {
 		return nullptr;
@@ -1041,30 +1092,22 @@ substrait::Expression *DuckDBToSubstrait::TransformExpressionFilter(uint64_t col
 }
 
 //! A filter over several columns refers to them as BoundReferenceExpressions whose indexes point into the
-//! filter's own column list, which in turn names scan columns. Point them at the table columns instead,
-//! which is what every other field reference in the ReadRel means.
-static void RemapFilterReferences(Expression &expr, const vector<ProjectionIndex> &column_indexes,
-                                  const vector<ColumnIndex> &column_ids) {
-	if (expr.GetExpressionType() == ExpressionType::BOUND_REF) {
-		auto &ref = expr.Cast<BoundReferenceExpression>();
-		ref.IndexMutable() = column_ids[column_indexes[ref.Index()]].GetPrimaryIndex();
-		return;
-	}
-	ExpressionIterator::EnumerateChildren(
-	    expr, [&](Expression &child) { RemapFilterReferences(child, column_indexes, column_ids); });
-}
-
+//! filter's own column list, which in turn names scan columns. Register those scan columns as the filter's
+//! columns so the references resolve to them, struct field paths included.
 substrait::Expression *DuckDBToSubstrait::TransformMultiColumnFilter(const TableFilter &dfilter,
                                                                      const vector<ColumnIndex> &column_ids) {
 	auto &expr_filter = dfilter.Cast<ExpressionFilter>();
-	auto bound_expr = expr_filter.expr->Copy();
-	RemapFilterReferences(*bound_expr, expr_filter.column_indexes, column_ids);
-	bound_expr = StripTableFilterFunctions(std::move(bound_expr));
+	auto bound_expr = StripTableFilterFunctions(expr_filter.expr->Copy());
 	if (!bound_expr) {
 		return nullptr;
 	}
+	filter_columns.clear();
+	for (auto &column_index : expr_filter.column_indexes) {
+		filter_columns.push_back(column_ids[column_index]);
+	}
 	auto s_expr = make_uniq<substrait::Expression>();
 	TransformExpr(*bound_expr, *s_expr);
+	filter_columns.clear();
 	return s_expr.release();
 }
 
@@ -2302,7 +2345,9 @@ substrait::Type DuckDBToSubstrait::DuckToSubstraitType(const LogicalType &type, 
 		enum_type->set_nullability(type_nullability);
 		return s_type;
 	}
+	case LogicalTypeId::TUPLE:
 	case LogicalTypeId::STRUCT: {
+		// Substrait structs are positional, so a TUPLE (an unnamed struct) is the same thing.
 		auto struct_type = s_type.mutable_struct_();
 		struct_type->set_nullability(type_nullability);
 		// ok lets get the children of our struct
@@ -2364,9 +2409,8 @@ set<idx_t> GetNotNullConstraintCol(const TableCatalogEntry &tbl) {
 	return not_null;
 }
 
-void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const {
-	auto &table_scan_bind_data = dget.bind_data->Cast<TableScanBindData>();
-	auto &table = table_scan_bind_data.table;
+void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget,
+                                                      TableCatalogEntry &table) const {
 	sget->mutable_named_table()->add_names(table.name.GetIdentifierName());
 	auto base_schema = make_uniq<substrait::NamedStruct>();
 	auto type_info = make_uniq<substrait::Type_Struct>();
@@ -2379,7 +2423,7 @@ void DuckDBToSubstrait::TransformTableScanToSubstrait(LogicalGet &dget, substrai
 		for (auto &name : depth_names) {
 			base_schema->add_names(name);
 		}
-		auto column_statistics = GetColumnStatistics(context, dget.function, &table_scan_bind_data, i);
+		auto column_statistics = GetColumnStatistics(context, dget.function, dget.bind_data.get(), i);
 		bool not_null = not_null_constraint.find(i) != not_null_constraint.end();
 		auto new_type = type_info->add_types();
 		*new_type = DuckToSubstraitType(cur_type, column_statistics.get(), not_null);
@@ -2467,13 +2511,15 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 	// A scan of a DuckDB table no longer describes itself through get_bind_info; the table is on the
 	// operator. Other scans (parquet) still do, and the bound function leaves that callback on the
 	// definition it was bound from.
+	// Attached catalogs (postgres, mysql, ...) also return a table entry, but with their own bind data.
 	auto scanned_table = dget.GetTable();
-	BindInfo bind_info(scanned_table ? ScanType::TABLE : ScanType::EXTERNAL);
-	if (!scanned_table) {
+	bool duck_table_scan = scanned_table && scanned_table->IsDuckTable();
+	BindInfo bind_info(duck_table_scan ? ScanType::TABLE : ScanType::EXTERNAL);
+	if (!duck_table_scan) {
 		auto &function_definition = *dget.function.GetDefinition();
 		if (!function_definition.get_bind_info) {
-			throw NotImplementedException("This Scanner Type can't be used in substrait because a get bind info "
-			                              "is not yet implemented");
+			throw NotImplementedException("Scans of table function %s cannot be exported: it has no bind info",
+			                              dget.function.GetName().GetIdentifierName());
 		}
 		TableFunctionGetBindInfoInput bind_input(context, dget.bind_data.get());
 		bind_info = function_definition.get_bind_info(bind_input);
@@ -2494,9 +2540,12 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 		auto &column_ids = dget.GetColumnIds();
 		vector<substrait::Expression *> filters;
 		for (auto &in : table_filters) {
-			auto col_idx = column_ids[in.GetIndex()].GetPrimaryIndex();
-			auto return_type = dget.returned_types[col_idx];
-			filters.push_back(TransformFilter(col_idx, return_type, in.Filter(), return_type));
+			// The column may reach into a struct field (a pushed-down extract); the filter tests that field.
+			auto &column = column_ids[in.GetIndex()];
+			auto field_type = ScanColumnType(column, dget.returned_types);
+			filter_columns.assign(1, column);
+			filters.push_back(TransformFilter(column.GetPrimaryIndex(), field_type, in.Filter(), field_type));
+			filter_columns.clear();
 		}
 		for (auto &multi_column_filter : table_filters.GetMultiColumnFilters()) {
 			filters.push_back(TransformMultiColumnFilter(*multi_column_filter, column_ids));
@@ -2597,7 +2646,7 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 	// Add Table Schema
 	switch (bind_info.type) {
 	case ScanType::TABLE:
-		TransformTableScanToSubstrait(dget, sget);
+		TransformTableScanToSubstrait(dget, sget, *scanned_table);
 		break;
 	case ScanType::PARQUET:
 		TransformParquetScanToSubstrait(dget, sget, bind_info, *dget.bind_data);

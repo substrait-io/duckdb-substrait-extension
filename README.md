@@ -166,6 +166,11 @@ This is what the extension's own tests use; it is off by default.
 SET substrait_verify_roundtrip = true;
 ```
 
+Verification runs the SQL and the plan on separate connections, so it does not see the calling connection's
+temporary tables or uncommitted changes; use committed, non-temporary tables. A write statement is executed by
+each run, once for the SQL and once per plan format, and a verification error does not undo the earlier runs.
+Only verify writes against a database you can discard.
+
 ### Python
 
 You can use this extension using the [duckdb](https://pypi.org/project/duckdb/) Python package by running:
