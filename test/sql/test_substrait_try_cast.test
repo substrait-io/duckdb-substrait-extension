@@ -47,6 +47,13 @@ WHERE contains("Json", '"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"')
 ----
 1
 
+# The producer casts the substring offset and both CASE results.
+query I
+SELECT len(regexp_extract_all("Json", '"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"'))
+FROM get_substrait_json('SELECT CASE WHEN raw_value IS NOT NULL THEN substring(raw_value, length(raw_value)) ELSE raw_value END FROM cast_values', enable_optimizer = false)
+----
+3
+
 statement ok
 CREATE MACRO manual_cast_plan(failure_behavior) AS
     '{"version":{"minorNumber":102,"producer":"test"},"relations":[{"root":{"input":{"project":{"input":{"read":{"baseSchema":{"names":["raw"],"struct":{"types":[{"string":{"nullability":"NULLABILITY_REQUIRED"}}],"nullability":"NULLABILITY_REQUIRED"}},"virtualTable":{"expressions":[{"fields":[{"literal":{"string":"not-an-integer","nullable":false}}]}]}}},"expressions":[{"cast":{"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},' ||

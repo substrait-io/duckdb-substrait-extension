@@ -63,7 +63,7 @@ This extension provides four new functions to DuckDB:
 - `from_substrait`: Executes a binary Substrait plan (provided as bytes) against DuckDB and returns the result
 - `from_substrait_json`: Executes a Substrait plan written in JSON against DuckDB and returns the results
 
-A plan describes operations and references to named tables. It does not copy those tables' data. Keep the referenced tables available when importing the plan, or recreate matching tables in the destination connection.
+In exported and imported plans, DuckDB's `TRY_CAST` corresponds to Substrait's `FAILURE_BEHAVIOR_RETURN_NULL`, and `CAST` corresponds to `FAILURE_BEHAVIOR_THROW_EXCEPTION`. On import, the extension treats an omitted cast failure behavior as `FAILURE_BEHAVIOR_THROW_EXCEPTION` and rejects unknown values.
 
 ### Examples
 
@@ -109,27 +109,6 @@ CALL from_substrait('\x12\x07\x1A\x05\x1A\x03lte\x12\x11\x1A\x0F\x10\x01\x1A\x0B
 ----
 2
 ```
-
-### Roundtripping safe casts
-
-`TRY_CAST` returns NULL for values that cannot be converted. Exported plans record this behavior as `FAILURE_BEHAVIOR_RETURN_NULL`; ordinary `CAST` uses `FAILURE_BEHAVIOR_THROW_EXCEPTION`. Imported plans preserve the requested behavior.
-
-The [safe-cast example](examples/try_cast.sql) creates a table containing valid text, invalid text, and NULL. It runs the query directly, exports a JSON plan, and exports a binary plan. Both imported plans return the same rows as DuckDB:
-
-```text
-id  amount
-1   42
-2   NULL
-3   NULL
-```
-
-After [building the extension](#building), run this command from the repository root:
-
-```sh
-./build/release/duckdb -unsigned < examples/try_cast.sql
-```
-
-The example loads the extension from `build/release`, so it exercises the local build. The `-unsigned` flag permits loading that unsigned build. To inspect the exported JSON in an interactive session, run the example with `./build/release/duckdb -unsigned -init examples/try_cast.sql`, then enter `SELECT getvariable('json_plan');`.
 
 ### Controlling Query Optimization
 
