@@ -1,8 +1,6 @@
 #include "catch.hpp"
 #include "test_helpers.hpp"
 #include "duckdb/main/connection_manager.hpp"
-#include "duckdb/main/relation/table_function_relation.hpp"
-#include "duckdb/main/relation/value_relation.hpp"
 #include "test_substrait_c_utils.hpp"
 
 #include <chrono>

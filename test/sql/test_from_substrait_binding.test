@@ -1,0 +1,139 @@
+# name: test/sql/test_from_substrait_binding.test
+# description: A defect in any part of a plan refuses the plan, also in a part the final statement does not contain
+# group: [sql]
+
+require substrait
+
+require json
+
+require parquet
+
+# A node that adds something to validate is bound when it is translated. The plans below have a relation that the
+# root never refers to, so the statement that finally runs does not contain it, with a defect that only binding finds.
+
+# a read of a missing table
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"read":{"namedTable":{"names":["missing_table"]}}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Catalog Error: Table with name missing_table does not exist!
+
+# a filter with a field reference out of range
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"filter":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"condition":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# a projection with a field reference out of range
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"expressions":[{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}]}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# an aggregate over a field reference out of range
+statement error
+CALL from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"sum"}}],"relations":[{"rel":{"aggregate":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","arguments":[{"value":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}}]}}]}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# a sort on a field reference out of range
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"sort":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"sorts":[{"expr":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}},"direction":"SORT_DIRECTION_ASC_NULLS_FIRST"}]}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: ORDER term out of range - should be between 1 and 1
+
+# a join on a field reference out of range
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"join":{"left":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"right":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"expression":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}},"type":"JOIN_TYPE_INNER"}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 2 columns)
+
+# a union of inputs with one and two columns
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"set":{"inputs":[{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}},{"literal":{"i32":2}}]}]}}}],"op":"SET_OP_UNION_ALL"}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: Set operations can only apply to expressions with the same number of result columns
+
+# a virtual table with rows of one and of two fields
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]},{"fields":[{"literal":{"i32":1}},{"literal":{"i32":2}}]}]}}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+Binder Error: VALUES lists must all be the same length
+
+# a read of a missing Parquet file
+statement error
+CALL from_substrait_json('{"relations":[{"rel":{"read":{"localFiles":{"items":[{"uriFile":"no_such_file.parquet","parquet":{}}]}}}},{"root":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"names":["x"]}}]}')
+----
+IO Error: No files found that match the pattern "no_such_file.parquet"
+
+# A DELETE keeps only the predicate of its input. The projection above the predicate has a field reference out of
+# range.
+
+statement ok
+CREATE TABLE del_t (i INTEGER);
+
+statement ok
+INSERT INTO del_t VALUES (1), (2);
+
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"names":["Count"],"input":{"write":{"namedTable":{"names":["del_t"]},"op":"WRITE_OP_DELETE","input":{"project":{"input":{"filter":{"input":{"read":{"namedTable":{"names":["del_t"]}}},"condition":{"literal":{"boolean":true}}}},"expressions":[{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}],"common":{"emit":{"outputMapping":[1]}}}}}}}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# A macro that ignores its argument drops the subquery in it before the enclosing statement is bound. The subquery
+# reads a missing table, then has a filter with a field reference out of range.
+
+statement ok
+CREATE MACRO ignore_arg(x) AS true;
+
+statement error
+CALL from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"ignore_arg"}}],"relations":[{"root":{"names":["x"],"input":{"write":{"namedTable":{"names":["del_t"]},"op":"WRITE_OP_DELETE","input":{"filter":{"input":{"read":{"namedTable":{"names":["del_t"]}}},"condition":{"scalarFunction":{"functionReference":1,"arguments":[{"value":{"subquery":{"scalar":{"input":{"read":{"namedTable":{"names":["missing_table"]}}}}}}}]}}}}}}}}]}')
+----
+Catalog Error: Table with name missing_table does not exist!
+
+statement error
+CALL from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"ignore_arg"}}],"relations":[{"root":{"names":["x"],"input":{"write":{"namedTable":{"names":["del_t"]},"op":"WRITE_OP_DELETE","input":{"filter":{"input":{"read":{"namedTable":{"names":["del_t"]}}},"condition":{"scalarFunction":{"functionReference":1,"arguments":[{"value":{"subquery":{"scalar":{"input":{"filter":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"condition":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}}}}}}}]}}}}}}}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+query I
+SELECT count(*) FROM del_t
+----
+2
+
+# A relation the root never refers to is bound, not planned: this view binds, and only planning refuses it.
+
+statement ok
+CREATE TABLE samp_t (x INTEGER);
+
+statement ok
+INSERT INTO samp_t VALUES (1);
+
+statement ok
+CREATE VIEW samp_v AS SELECT (SELECT sum(i) FROM (SELECT a.x AS i) z USING SAMPLE 50%) AS y FROM samp_t a;
+
+query I
+CALL from_substrait_json('{"relations":[{"rel":{"read":{"namedTable":{"names":["samp_v"]}}}},{"root":{"names":["x"],"input":{"read":{"namedTable":{"names":["samp_t"]}}}}}]}')
+----
+1
+
+# A plan with two defects reports the one in the part that is translated first.
+
+# a filter with a field reference out of range, and an emit mapping out of range
+statement error
+CALL from_substrait_json('{"relations":[{"root":{"names":["x"],"input":{"filter":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"condition":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}},"common":{"emit":{"outputMapping":[-1]}}}}}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# an aggregate with an unsupported type argument, over a filter with a field reference out of range
+statement error
+CALL from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"sum"}}],"relations":[{"root":{"names":["x"],"input":{"aggregate":{"input":{"filter":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[{"literal":{"i32":1}}]}]}}},"condition":{"selection":{"directReference":{"structField":{"field":7}},"rootReference":{}}}}},"measures":[{"measure":{"functionReference":1,"phase":"AGGREGATION_PHASE_INITIAL_TO_RESULT","arguments":[{"type":{"i32":{}}}]}}]}}}}]}')
+----
+Binder Error: Positional reference 8 out of range (total 1 columns)
+
+# The columns a node reports come from its bind: unnest of a struct is one expression and two columns, and the emit
+# mapping of the projection above counts both.
+
+query I
+CALL from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"unnest"}}],"relations":[{"root":{"names":["b"],"input":{"project":{"input":{"project":{"input":{"read":{"virtualTable":{"expressions":[{"fields":[]}]}}},"expressions":[{"scalarFunction":{"functionReference":1,"arguments":[{"value":{"literal":{"struct":{"fields":[{"i32":10},{"i32":20}]}}}}]}}]}},"expressions":[{"literal":{"i32":99}}],"common":{"emit":{"outputMapping":[1]}}}}}}]}')
+----
+20

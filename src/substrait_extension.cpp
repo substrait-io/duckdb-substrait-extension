@@ -193,9 +193,9 @@ static unique_ptr<FunctionData> ToJsonBind(ClientContext &context, TableFunction
 	return InitToSubstraitFunctionData(context, input);
 }
 
-shared_ptr<Relation> SubstraitPlanToDuckDBRel(shared_ptr<ClientContext> &context, const string &serialized,
-                                              bool json = false, bool acquire_lock = false) {
-	SubstraitToDuckDB transformer_s2d(context, serialized, json, acquire_lock);
+shared_ptr<PlanRelation> SubstraitPlanToDuckDBRel(shared_ptr<ClientContext> &context, const string &serialized,
+                                                  bool json = false) {
+	SubstraitToDuckDB transformer_s2d(context, serialized, json);
 	return transformer_s2d.TransformPlan();
 }
 
@@ -220,8 +220,8 @@ static void VerifySubstraitRoundtrip(unique_ptr<LogicalOperator> &query_plan, Cl
 	auto con = Connection(*context.db);
 	auto actual_result = con.Query(data.query);
 	auto con_2 = Connection(*context.db);
-	auto sub_relation = SubstraitPlanToDuckDBRel(con_2.context, serialized, is_json, true);
-	auto substrait_result = sub_relation->Execute();
+	auto sub_relation = SubstraitPlanToDuckDBRel(con_2.context, serialized, is_json);
+	auto substrait_result = con_2.Query(sub_relation->GetStatement());
 	auto &actual_col_coll = actual_result->Collection();
 	auto &subs_col_coll = substrait_result->Collection();
 	string error_message;
@@ -233,7 +233,7 @@ static void VerifySubstraitRoundtrip(unique_ptr<LogicalOperator> &query_plan, Cl
 			return;
 		}
 		query_plan->Print();
-		sub_relation->Print();
+		Printer::Print(sub_relation->GetStatement()->ToString());
 		Printer::Print(serialized);
 		actual_col_coll.Print();
 		subs_col_coll.Print();
@@ -335,7 +335,7 @@ static unique_ptr<TableRef> FromSubstraitBindReplaceJSON(ClientContext &context,
 
 struct FromSubstraitFunctionData : public TableFunctionData {
 	FromSubstraitFunctionData() = default;
-	shared_ptr<Relation> plan;
+	shared_ptr<PlanRelation> plan;
 	unique_ptr<QueryResult> res;
 	unique_ptr<Connection> conn;
 };
@@ -372,8 +372,7 @@ static void FromSubFunction(ClientContext &context, TableFunctionInput &data_p, 
 	auto &data = data_p.bind_data->CastNoConst<FromSubstraitFunctionData>();
 	if (!data.res) {
 		auto con = Connection(*context.db);
-		data.plan->context = make_shared_ptr<ClientContextWrapper>(con.context);
-		data.res = data.plan->Execute();
+		data.res = con.Query(data.plan->GetStatement());
 	}
 	auto result_chunk = data.res->Fetch();
 	if (!result_chunk) {
