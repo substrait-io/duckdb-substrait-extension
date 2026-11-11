@@ -1694,10 +1694,15 @@ DuckDBToSubstrait::RegisterAggregateFunction(const BoundAggregateFunction &funct
 	if (name != "string_agg" && name != "group_concat" && name != "listagg") {
 		return RegisterFunction(RemapFunctionName(name), arg_types);
 	}
+	if (arguments.size() >= 2) {
+		// DuckDB 2.0 keeps the separator argument in the expression tree, so it is already emitted.
+		return RegisterFunction("string_agg", arg_types);
+	}
 	if (!bind_data || !function.HasSerializationCallbacks()) {
 		throw NotImplementedException("Cannot export string_agg without its bound separator");
 	}
-	// DuckDB removes the separator argument during binding and stores it in field 100 of the serialized bind data.
+	// Without a separator argument the default comes from the bind data, where DuckDB stores it in field 100
+	// of its serialized form.
 	MemoryStream stream;
 	BinarySerializer serializer(stream);
 	serializer.Begin();
