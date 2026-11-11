@@ -1,36 +1,53 @@
 #include "test_helpers.hpp"
 #include "test_substrait_c_utils.hpp"
+#include "duckdb/parser/expression/constant_expression.hpp"
+#include "duckdb/parser/expression/function_expression.hpp"
+#include "duckdb/parser/expression/star_expression.hpp"
+#include "duckdb/parser/query_node/select_node.hpp"
+#include "duckdb/parser/statement/select_statement.hpp"
+#include "duckdb/parser/tableref/table_function_ref.hpp"
+#include "duckdb/planner/binder.hpp"
 
 using namespace duckdb;
 using namespace std;
 
+// The tests expect a bind error to throw and an execution error to come back in the result.
+static duckdb::unique_ptr<QueryResult> CallTableFunction(Connection &con, const string &name, const Value &argument) {
+	duckdb::vector<duckdb::unique_ptr<ParsedExpression>> children;
+	children.push_back(ConstantExpression::FromValue(argument));
+	auto table_function = make_uniq<TableFunctionRef>();
+	table_function->function = make_uniq<FunctionExpression>(Identifier(name), std::move(children));
+	auto node = make_uniq<SelectNode>();
+	node->select_list.push_back(make_uniq<StarExpression>());
+	node->from_table = std::move(table_function);
+	auto statement = make_uniq<SelectStatement>();
+	statement->node = std::move(node);
+	auto &context = *con.context;
+	context.RunFunctionInTransaction([&]() {
+		auto to_bind = statement->Copy();
+		Binder::CreateBinder(context)->Bind(*to_bind);
+	});
+	return con.Query(std::move(statement));
+}
 
 string GetSubstrait(Connection &con,const string &query) {
-	duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait", params)->Execute();
+	auto result = CallTableFunction(con, "get_substrait", Value(query));
 	auto protobuf = result->FetchRaw()->GetValue(0, 0);
 	return protobuf.GetValueUnsafe<string_t>().GetString();
 }
 
 string GetSubstraitJSON(Connection &con,const string &query) {
-	duckdb::vector<Value> params;
-	params.emplace_back(query);
-	auto result = con.TableFunction("get_substrait_json", params)->Execute();
+	auto result = CallTableFunction(con, "get_substrait_json", Value(query));
 	auto protobuf = result->FetchRaw()->GetValue(0, 0);
 	return protobuf.GetValueUnsafe<string_t>().GetString();
 }
 
 duckdb::unique_ptr<QueryResult> FromSubstrait(Connection &con, const string &proto) {
-	duckdb::vector<Value> params;
-	params.emplace_back(Value::BLOB_RAW(proto));
-	return con.TableFunction("from_substrait", params)->Execute();
+	return CallTableFunction(con, "from_substrait", Value::BLOB_RAW(proto));
 }
 
 duckdb::unique_ptr<QueryResult> FromSubstraitJSON(Connection &con, const string &proto) {
-	duckdb::vector<Value> params;
-	params.emplace_back(proto);
-	return con.TableFunction("from_substrait_json", params)->Execute();
+	return CallTableFunction(con, "from_substrait_json", Value(proto));
 }
 
 duckdb::unique_ptr<QueryResult> ExecuteViaSubstrait(Connection &con, const string &sql) {
