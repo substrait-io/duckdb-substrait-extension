@@ -78,36 +78,30 @@ LOAD substrait;
 
 #### Blob Generation
 
-To generate a Substrait blob the `get_substrait(SQL)` function must be called with a valid SQL select query.
+Use `get_substrait` to generate a binary plan. Save it in a variable so you can execute it later in the same connection.
 
 ```sql
 --- Insert some data first
 CREATE TABLE crossfit (exercise text, difficulty_level int);
 INSERT INTO crossfit VALUES ('Push Ups', 3), ('Pull Ups', 5) , (' Push Jerk', 7), ('Bar Muscle Up', 10);
 
-CALL get_substrait('select count(exercise) as exercise from crossfit where difficulty_level <=5');
-----
-\x12\x09\x1A\x07\x10\x01\x1A\x03lte\x12\x11\x1A\x0F\x10\x02\x1A\x0Bis_not_null\x12\x09\x1A\x07\x10\x03\x1A\x03and\x12\x10\x1A\x0E\x10\x04\x1A\x0Acount_star\x1A\xCB\x01\x12\xC8\x01\x0A\xBB\x01:\xB8\x01\x12\xAB\x01"\xA8\x01\x12\x97\x01\x0A\x94\x01\x12.\x0A\x08exercise\x0A\x0Fdifficulty_level\x12\x11\x0A\x07\xB2\x01\x04\x08\x0D\x18\x01\x0A\x04*\x02\x10\x01\x18\x02\x1AJ\x1AH\x08\x03\x1A\x04\x0A\x02\x10\x01""\x1A \x1A\x1E\x08\x01\x1A\x04*\x02\x10\x01"\x0C\x1A\x0A\x12\x08\x0A\x04\x12\x02\x08\x01"\x00"\x06\x1A\x04\x0A\x02(\x05"\x1A\x1A\x18\x1A\x16\x08\x02\x1A\x04*\x02\x10\x01"\x0C\x1A\x0A\x12\x08\x0A\x04\x12\x02\x08\x01"\x00"\x0A\x0A\x06\x0A\x02\x08\x01\x0A\x00\x10\x01:\x0A\x0A\x08crossfit\x1A\x00"\x0A\x0A\x08\x08\x04*\x04:\x02\x10\x01\x1A\x08\x12\x06\x0A\x02\x12\x00"\x00\x12\x08exercise
+SET VARIABLE exercise_plan = (SELECT * FROM get_substrait('SELECT count(exercise) AS exercise FROM crossfit WHERE difficulty_level <= 5'));
 ```
 
 #### JSON Generation
 
-To generate a JSON representation of a Substrait plan the `get_substrait_json(SQL)` function must be called with a valid SQL select query.
+Use `get_substrait_json` to see the same plan in JSON.
 
 ```sql
-CALL get_substrait_json('select count(exercise) as exercise from crossfit where difficulty_level <=5');
-----
-{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"lte"}},{"extensionFunction":{"functionAnchor":2,"name":"is_not_null"}},{"extensionFunction":{"functionAnchor":3,"name":"and"}},{"extensionFunction":{"functionAnchor":4,"name":"count_star"}}],"relations":[{"root":{"input":{"project":{"input":{"aggregate":{"input":{"read":{"baseSchema":{"names":["exercise","difficulty_level"],"struct":{"types":[{"varchar":{"length":13,"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"filter":{"scalarFunction":{"functionReference":3,"outputType":{"bool":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}},{"value":{"literal":{"i32":5}}}]}}},{"value":{"scalarFunction":{"functionReference":2,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}}]}},"projection":{"select":{"structItems":[{"field":1},{}]},"maintainSingularStruct":true},"namedTable":{"names":["crossfit"]}}},"groupings":[{}],"measures":[{"measure":{"functionReference":4,"outputType":{"i64":{"nullability":"NULLABILITY_NULLABLE"}}}}]}},"expressions":[{"selection":{"directReference":{"structField":{}},"rootReference":{}}}]}},"names":["exercise"]}}]}
+CALL get_substrait_json('SELECT count(exercise) AS exercise FROM crossfit WHERE difficulty_level <= 5');
 ```
 
 ### Blob Consumption
 
-To consume a Substrait blob the `from_substrait(blob)` function must be called with a valid Substrait BLOB plan.
+Pass the saved binary plan to `from_substrait`. With the sample data, the count is `2`.
 
 ```sql
-CALL from_substrait('\x12\x07\x1A\x05\x1A\x03lte\x12\x11\x1A\x0F\x10\x01\x1A\x0Bis_not_null\x12\x09\x1A\x07\x10\x02\x1A\x03and\x12\x10\x1A\x0E\x10\x03\x1A\x0Acount_star\x1A\xA4\x01\x12\xA1\x01\x0A\x94\x01:\x91\x01\x12\x86\x01"\x83\x01\x12y:w\x12c\x12a\x12+\x0A)\x12\x1B\x0A\x08exercise\x0A\x0Fdifficulty_level:\x0A\x0A\x08crossfit\x1A2\x1A0\x08\x02"\x18\x1A\x16\x1A\x14"\x0A\x1A\x08\x12\x06\x0A\x04\x12\x02\x08\x01"\x06\x1A\x04\x0A\x02(\x05"\x12\x1A\x10\x1A\x0E\x08\x01"\x0A\x1A\x08\x12\x06\x0A\x04\x12\x02\x08\x01\x1A\x08\x12\x06\x0A\x04\x12\x02\x08\x01\x1A\x06\x12\x04\x0A\x02\x12\x00\x1A\x00"\x04\x0A\x02\x08\x03\x1A\x06\x12\x04\x0A\x02\x12\x00\x12\x08exercise'::BLOB);
-----
-2
+SELECT * FROM from_substrait(getvariable('exercise_plan'));
 ```
 
 ### Controlling Query Optimization
@@ -129,6 +123,17 @@ they will also be disabled when generating Substrait.
 
 The `from_substrait(blob)` function **always** respects the connection-level settings when deciding whether to
 optimize a Substrait plan before executing it.
+
+### Aggregation phases
+
+`from_substrait` and `from_substrait_json` reject a plan if any aggregate or window call omits `phase` or sets it to `AGGREGATION_PHASE_UNSPECIFIED`. This breaks compatibility with older DuckDB exports that omitted `phase` and with DataFusion plans that leave it unspecified.
+
+To migrate a saved DuckDB plan, regenerate it from the original SQL with the updated extension. If you edit the plan or its producer instead, check what each call reads. An `i64` column can contain either raw values or partial counts:
+
+- If the call reads raw rows and produces a final result, set `phase` to `AGGREGATION_PHASE_INITIAL_TO_RESULT`. The DuckDB exporter uses this phase for aggregate and window calls.
+- If a non-distinct `COUNT` aggregate reads partial `i64` counts and produces the final count, use `AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT`. For example, partial counts of `1`, `2`, and `4` add up to `7`. Marking them as raw input would count three rows instead.
+
+If a non-distinct `COUNT` aggregate produces a partial count, use `AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE` for raw rows or `AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE` for partial counts. A merge returns zero for empty input and raises an error on overflow. The consumer does not support intermediate phases for other aggregates or for window calls.
 
 ### Python
 
