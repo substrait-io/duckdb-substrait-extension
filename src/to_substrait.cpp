@@ -1667,25 +1667,21 @@ substrait::Rel *DuckDBToSubstrait::TransformAggregateGroup(LogicalOperator &dop)
 substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 	auto &dwindow = dop.Cast<LogicalWindow>();
 	
-	// Group window expressions by their partition and order specifications
-	// Key: hash of partition expressions + order expressions
-	// Value: vector of indices into dwindow.expressions
 	struct WindowSpec {
-		vector<unique_ptr<Expression>> partitions;
-		vector<BoundOrderByNode> orders;
+		const BoundWindowExpression &window;
 		vector<idx_t> expression_indices;
-		
-		// Helper to create a signature for comparison
-		string GetSignature() const {
-			string sig = "P:";
-			for (auto &part : partitions) {
-				sig += part->ToString() + ";";
+
+		bool Matches(const BoundWindowExpression &other) const {
+			if (!Expression::ListEquals(window.partitions, other.partitions) ||
+			    window.orders.size() != other.orders.size()) {
+				return false;
 			}
-			sig += "O:";
-			for (auto &order : orders) {
-				sig += order.ToString() + ";";
+			for (idx_t i = 0; i < window.orders.size(); i++) {
+				if (!window.orders[i].Equals(other.orders[i])) {
+					return false;
+				}
 			}
-			return sig;
+			return true;
 		}
 	};
 	
@@ -1700,19 +1696,9 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		
 		auto &dwin_expr = dexpr->Cast<BoundWindowExpression>();
 		
-		// Create a spec for this expression
-		WindowSpec current_spec;
-		for (auto &part : dwin_expr.partitions) {
-			current_spec.partitions.push_back(part->Copy());
-		}
-		for (auto &order : dwin_expr.orders) {
-			current_spec.orders.push_back(order.Copy());
-		}
-		
-		// Find if we already have this spec
 		bool found = false;
 		for (auto &spec : window_specs) {
-			if (spec.GetSignature() == current_spec.GetSignature()) {
+			if (spec.Matches(dwin_expr)) {
 				spec.expression_indices.push_back(i);
 				found = true;
 				break;
@@ -1720,8 +1706,7 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		}
 		
 		if (!found) {
-			current_spec.expression_indices.push_back(i);
-			window_specs.push_back(std::move(current_spec));
+			window_specs.push_back({dwin_expr, {i}});
 		}
 	}
 	
@@ -1742,12 +1727,12 @@ substrait::Rel *DuckDBToSubstrait::TransformWindow(LogicalOperator &dop) {
 		swindow->set_allocated_input(current_input);
 		
 		// Set partition expressions at relation level
-		for (auto &dpart : spec.partitions) {
+		for (auto &dpart : spec.window.partitions) {
 			TransformExpr(*dpart, *swindow->add_partition_expressions());
 		}
 		
 		// Set sort specifications at relation level
-		for (auto &dorder : spec.orders) {
+		for (auto &dorder : spec.window.orders) {
 			TransformOrder(dorder, *swindow->add_sorts());
 		}
 		
