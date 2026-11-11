@@ -48,11 +48,16 @@ SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'INTERMEDIA
 ----
 7
 
-# UNSPECIFIED has the same meaning as INTERMEDIATE_TO_RESULT in the spec.
-query I
+# BIGINT values can be raw inputs or partial counts, so COUNT needs an explicit phase.
+statement error
 SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), '"phase":"AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT",', ''))
 ----
-7
+use INITIAL_TO_RESULT for raw input or INTERMEDIATE_TO_RESULT for partial counts
+
+statement error
+SELECT n FROM from_substrait_json(replace(getvariable('count_plan'), 'INTERMEDIATE_TO_RESULT', 'UNSPECIFIED'))
+----
+use INITIAL_TO_RESULT for raw input or INTERMEDIATE_TO_RESULT for partial counts
 
 # A zero-argument count signature also consumes one count state in merge phases.
 query I

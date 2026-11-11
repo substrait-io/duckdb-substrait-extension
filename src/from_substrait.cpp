@@ -1495,6 +1495,8 @@ static bool UsesCountIntermediateState(const string &function_name, substrait::A
 		case substrait::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE:
 			return false;
 		case substrait::AGGREGATION_PHASE_UNSPECIFIED:
+			throw NotImplementedException("Substrait count phase is unspecified: use INITIAL_TO_RESULT for raw input "
+			                              "or INTERMEDIATE_TO_RESULT for partial counts");
 		case substrait::AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE:
 		case substrait::AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT:
 			return true;
