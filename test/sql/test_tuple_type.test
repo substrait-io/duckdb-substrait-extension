@@ -1,0 +1,26 @@
+# name: test/sql/test_tuple_type.test
+# description: DuckDB 2.0 binds row() as a TUPLE, which is a positional Substrait struct
+# group: [sql]
+
+require substrait
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE t (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO t VALUES (1, 1), (1, 2);
+
+statement ok
+CALL get_substrait('SELECT row(a, b) = row(b, a) FROM t', enable_optimizer=false)
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT a, row(a, b) = row(b, a) AS same FROM t ORDER BY b', enable_optimizer=false));
+
+query II
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+1	true
+1	false

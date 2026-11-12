@@ -7,7 +7,7 @@ require substrait
 require json
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 statement ok
 CREATE TABLE t (a DECIMAL(10,2), b DECIMAL(5,1));
@@ -161,35 +161,32 @@ DECIMAL(12,2)	-4.00
 DECIMAL(12,2)	-1.11
 DECIMAL(12,2)	NULL
 
-# DuckDB caps precision at 18 to avoid an implicit promotion to HUGEINT.
+# Adding two 18-digit decimals widens to 19 digits, past the 18 that fit a 64-bit integer.
 statement ok
-CREATE TABLE capped (a DECIMAL(18,2), b DECIMAL(18,2));
+CREATE TABLE widened (a DECIMAL(18,2), b DECIMAL(18,2));
 
 statement ok
-INSERT INTO capped VALUES (1.00, 2.00), (NULL, 2.00);
+INSERT INTO widened VALUES (1.00, 2.00), (NULL, 2.00);
 
 statement ok
-SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b AS r FROM capped'));
+SET VARIABLE plan = (SELECT json FROM get_substrait_json('SELECT a+b AS r FROM widened'));
 
 query TT
 SELECT typeof(r), r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
 ----
-DECIMAL(18,2)	3.00
-DECIMAL(18,2)	NULL
+DECIMAL(19,2)	3.00
+DECIMAL(19,2)	NULL
 
-# The narrowing cast must retain DuckDB's overflow error.
+# The widened type holds a sum that would overflow the operands' type.
 statement ok
-INSERT INTO capped VALUES (9999999999999999.99, 0.01);
+INSERT INTO widened VALUES (9999999999999999.99, 0.01);
 
-statement error
-SELECT a+b FROM capped
+query I
+SELECT r::VARCHAR FROM from_substrait_json(getvariable('plan')) ORDER BY r NULLS LAST
 ----
-Overflow in addition of DECIMAL(18)
-
-statement error
-SELECT * FROM from_substrait_json(getvariable('plan'))
-----
-Overflow in addition of DECIMAL(18)
+3.00
+10000000000000000.00
+NULL
 
 # Precision 38 is representable when Substrait's minimum scale rule keeps scale 6.
 statement ok

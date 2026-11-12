@@ -5,7 +5,7 @@
 require substrait
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 statement ok
 CREATE TABLE crossfit (exercise text,dificulty_level int);
@@ -78,7 +78,7 @@ Catalog Error: Table with name t does not exist!
 statement error
 CALL from_substrait('ongezoutennoten')
 ----
-No function matches the given name and argument types 'from_substrait(VARCHAR)'
+Was not possible to convert binary into Substrait plan
 
 # Should fail on empty plan
 statement error

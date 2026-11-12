@@ -1,0 +1,25 @@
+# name: test/sql/test_base_schema_name_case.test
+# description: baseSchema names match the table's columns case-insensitively, as DuckDB identifiers do
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+CREATE TABLE cased (Amount INTEGER);
+
+statement ok
+INSERT INTO cased VALUES (1);
+
+# Producers such as Isthmus upper-case identifiers; the scan still resolves to the column.
+query I
+SELECT * FROM from_substrait_json('{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["AMOUNT"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["cased"]}}},"names":["AMOUNT"]}}],"version":{"minorNumber":85}}')
+----
+1
+
+# A name that differs by more than case is still rejected.
+statement error
+SELECT * FROM from_substrait_json('{"relations":[{"root":{"input":{"read":{"baseSchema":{"names":["amounts"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"namedTable":{"names":["cased"]}}},"names":["amounts"]}}],"version":{"minorNumber":85}}')
+----
+baseSchema column 'amounts' not found

@@ -1,0 +1,25 @@
+# name: test/sql/test_multi_column_filter.test
+# description: A predicate over two columns that DuckDB pushes into the scan is exported in the ReadRel's filter
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE pairs (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO pairs VALUES (7, 2), (1, 5), (3, 3);
+
+statement ok
+CALL get_substrait('SELECT a FROM pairs WHERE a < b')
+
+# The predicate stays in the FilterRel and is also pushed into the scan, so the plan carries it twice.
+query I
+SELECT (length(json) - length(replace(json, '"filter":', ''))) / length('"filter":') FROM get_substrait_json('SELECT a FROM pairs WHERE a < b')
+----
+2

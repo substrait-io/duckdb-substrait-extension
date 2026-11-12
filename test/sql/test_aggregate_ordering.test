@@ -49,7 +49,7 @@ a	c,d,a,b,b
 b	x,z,y
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # Each measure keeps its own ordering, direction, and NULL placement.
 statement ok

@@ -156,6 +156,25 @@ After [building the extension](#building), run the example from the repository r
 
 Substrait window functions support ordering in the `OVER` clause. If the DuckDB plan contains a window function with an `ORDER BY` inside its argument list, export fails because Substrait cannot represent that separate ordering.
 
+### Verifying Round Trips
+
+With the `substrait_verify_roundtrip` setting enabled, `get_substrait` and `get_substrait_json` also run the plan
+they produced through `from_substrait` and compare its result with that of running the SQL directly. The comparison
+is DuckDB's own result check, which has limits: it first compares the rows in order and, if that fails, accepts the
+results when each column holds the same multiset of values, so it cannot tell `(1, 1), (2, 2)` from `(1, 2), (2, 1)`.
+`FLOAT` and `DOUBLE` values are compared approximately, and a `NaN` from the SQL where the plan produced `NULL` is
+accepted, since that is how division by zero on decimals has differed between the two. Column names are not
+compared. This is what the extension's own tests use; it is off by default.
+
+```sql
+SET substrait_verify_roundtrip = true;
+```
+
+Verification runs the SQL and the plan on separate connections, so it does not see the calling connection's
+temporary tables or uncommitted changes; use committed, non-temporary tables. A write statement is executed by
+each run, once for the SQL and once per plan format, and a verification error does not undo the earlier runs.
+Only verify writes against a database you can discard.
+
 ### Python
 
 You can use this extension using the [duckdb](https://pypi.org/project/duckdb/) Python package by running:

@@ -26,7 +26,7 @@ statement ok
 INSERT INTO stores VALUES (5001, 'TN'), (5002, 'CA'), (5003, 'TN');
 
 # The expanded duplicate eliminated gets are tied to the join's data side with
-# saved/loaded computation hints. This runs before enable_verification because
+# saved/loaded computation hints. This runs before substrait_verify_roundtrip because
 # selecting from get_substrait_json is unrelated to round-tripping.
 query I
 SELECT "Json" LIKE '%savedComputations%' AND "Json" LIKE '%loadedComputations%' FROM get_substrait_json('WITH totals AS (SELECT store_sk, customer_sk, Sum(amount) AS total FROM sales GROUP BY store_sk, customer_sk) SELECT t1.customer_sk FROM totals t1, stores WHERE t1.total > (SELECT Avg(total) * 1.2 FROM totals t2 WHERE t1.store_sk = t2.store_sk) AND stores.store_sk = t1.store_sk AND stores.state = ''TN'' ORDER BY t1.customer_sk');
@@ -34,7 +34,7 @@ SELECT "Json" LIKE '%savedComputations%' AND "Json" LIKE '%loadedComputations%' 
 true
 
 statement ok
-PRAGMA enable_verification
+SET substrait_verify_roundtrip = true
 
 # Correlated aggregate over a grouped common table expression referenced twice
 # (the pattern of TPC-DS Q1): the duplicate eliminated join survives the

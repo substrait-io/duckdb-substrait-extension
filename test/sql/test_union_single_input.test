@@ -1,0 +1,28 @@
+# name: test/sql/test_union_single_input.test
+# description: A set operation left with a single input after optimization is that input
+# group: [sql]
+
+require substrait
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE x (id INTEGER);
+
+statement ok
+INSERT INTO x VALUES (1), (2);
+
+# The filter on the constant column folds one branch of the union away, leaving the
+# union with a single input. Substrait set operations need two.
+statement ok
+CALL get_substrait('SELECT id FROM (SELECT id, ''s'' AS kind FROM x UNION ALL SELECT id, ''w'' FROM x) t WHERE kind = ''s''')
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT id FROM (SELECT id, ''s'' AS kind FROM x UNION ALL SELECT id, ''w'' FROM x) t WHERE kind = ''s'''));
+
+query I
+SELECT id FROM from_substrait(getvariable('plan')) ORDER BY id
+----
+1
+2

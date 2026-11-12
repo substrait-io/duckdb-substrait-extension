@@ -10,6 +10,7 @@
 
 #include "custom_extensions/custom_extensions.hpp"
 #include "duckdb/common/helper.hpp"
+#include "duckdb/common/table_index.hpp"
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/planner/bound_result_modifier.hpp"
 #include "duckdb/planner/expression.hpp"
@@ -22,10 +23,12 @@
 #include <unordered_map>
 
 namespace duckdb {
+class BoundAggregateFunction;
+
 class DuckDBToSubstrait {
 public:
 	explicit DuckDBToSubstrait(ClientContext &context, LogicalOperator &dop, bool strict_p,
-	                           vector<string> plan_names_p = {})
+	                           vector<Identifier> plan_names_p = {})
 	    : context(context), strict(strict_p), plan_names(std::move(plan_names_p)) {
 		TransformPlan(dop);
 	};
@@ -42,11 +45,15 @@ private:
 	void TransformPlan(LogicalOperator &dop);
 	//! Registers a function
 	uint64_t RegisterFunction(const std::string &name, vector<::substrait::Type> &args_types);
-	uint64_t RegisterAggregateFunction(const AggregateFunction &function, optional_ptr<FunctionData> bind_data,
+	uint64_t RegisterAggregateFunction(const BoundAggregateFunction &function, optional_ptr<FunctionData> bind_data,
 	                                   google::protobuf::RepeatedPtrField<substrait::FunctionArgument> &arguments,
 	                                   vector<substrait::Type> &arg_types);
 	//! Creates a reference to a table column
 	static void CreateFieldRef(substrait::Expression *expr, uint64_t col_idx);
+	//! A reference to a scan column, following the column index into struct fields.
+	static void CreateFieldRef(substrait::Expression *expr, const ColumnIndex &column);
+	//! The type of what a column index reaches, following it into struct fields.
+	static LogicalType ScanColumnType(const ColumnIndex &column, const vector<LogicalType> &types);
 	//! In case of struct types we might we do DFS to get all names
 	static vector<string> DepthFirstNames(const LogicalType &type);
 	static void DepthFirstNamesRecurse(vector<string> &names, const LogicalType &type);
@@ -93,7 +100,7 @@ private:
 	static bool IsPassthroughProjection(LogicalProjection &dproj, idx_t child_column_count, bool &needs_output_mapping);
 	//! Methods to transform different LogicalGet Types (e.g., Table, Parquet)
 	//! To Substrait;
-	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget) const;
+	void TransformTableScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, TableCatalogEntry &table) const;
 	void TransformParquetScanToSubstrait(LogicalGet &dget, substrait::ReadRel *sget, BindInfo &bind_info,
 	                                     const FunctionData &bind_data) const;
 
@@ -118,19 +125,19 @@ private:
 
 	//! Methods to transform a DuckDB Expression to a Substrait Expression
 	void TransformExpr(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
-	static void TransformBoundRefExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
+	void TransformBoundRefExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformCastExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformFunctionExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	static void TransformConstantExpression(Expression &dexpr, substrait::Expression &sexpr);
-	void TransformComparisonExpression(Expression &dexpr, substrait::Expression &sexpr);
-	void TransformBetweenExpression(Expression &dexpr, substrait::Expression &sexpr);
+	void TransformComparisonExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
+	void TransformBetweenExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
 	void TransformConjunctionExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformNotNullExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformIsNullExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformNotExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
 	void TransformCoalesceExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset);
-	void TransformCaseExpression(Expression &dexpr, substrait::Expression &sexpr);
-	void TransformInExpression(Expression &dexpr, substrait::Expression &sexpr);
+	void TransformCaseExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
+	void TransformInExpression(Expression &dexpr, substrait::Expression &sexpr, uint64_t col_offset = 0);
 	//! Transforms a DuckDB Logical Type into a Substrait Type
 	static substrait::Type DuckToSubstraitType(const LogicalType &type, BaseStatistics *column_statistics = nullptr,
 	                                           bool not_null = false);
@@ -150,6 +157,10 @@ private:
 	                                                         const TableFilter &dfilter, const LogicalType &return_type);
 		substrait::Expression *TransformStructExtractFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 		substrait::Expression *TransformExpressionFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
+	substrait::Expression *TransformMultiColumnFilter(const TableFilter &dfilter, const vector<ColumnIndex> &column_ids);
+	//! The scan columns a table filter's bound references stand for, including the struct field each one
+	//! reaches into. Set while a filter is transformed and empty otherwise.
+	vector<ColumnIndex> filter_columns;
 		substrait::Expression *TransformInFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 	substrait::Expression *TransformDynamicFilter(uint64_t col_idx, const LogicalType &column_type, const TableFilter &dfilter, const LogicalType &return_type);
 
@@ -227,12 +238,12 @@ private:
 	substrait::Plan plan;
 	ClientContext &context;
 	//! Map the CTE index to the Substrait reference
-	vector<uint32_t> cte_indices;
+	vector<TableIndex> cte_indices;
 	//! If we are generating a query plan on strict mode we will error if
 	//! things don't go perfectly shiny
 	bool strict;
 	//! Output column names from the planner (fallback when no projection in plan)
-	vector<string> plan_names;
+	vector<Identifier> plan_names;
 	string errors;
 };
 } // namespace duckdb

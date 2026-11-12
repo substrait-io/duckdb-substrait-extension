@@ -1,0 +1,143 @@
+# name: test/sql/test_division.test
+# description: Integer division is Substrait's divide with an integer output type, / with a floating one
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement ok
+CREATE TABLE n (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO n VALUES (7, 2);
+
+statement ok
+CALL get_substrait('SELECT a // b AS q, a / b AS f, -a // b AS nq FROM n')
+
+# DuckDB's // is emitted as divide, not leaked under its own name.
+query I
+SELECT json LIKE '%"divide:i32_i32"%' AND json NOT LIKE '%"//"%' FROM get_substrait_json('SELECT a // b FROM n')
+----
+true
+
+# An external plan that declares an integer divide gets an integer result...
+query IT
+SELECT q, typeof(q) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:i32_i32","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["n"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}]}},"names":["q"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+3	INTEGER
+
+# ...and one that declares a floating-point divide gets a floating-point result.
+query IT
+SELECT f, typeof(f) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:fp64_fp64","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["n"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}}}},{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}}}]}}]}},"names":["f"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+3.5	DOUBLE
+
+# Zero divisors: / follows IEEE, // raises; the exported plan says which through on_division_by_zero.
+statement ok
+CREATE TABLE z (a INTEGER, b INTEGER);
+
+statement ok
+INSERT INTO z VALUES (7, 2), (1, 0);
+
+query I
+SELECT json LIKE '%"on_division_by_zero"%' AND json LIKE '%"ERROR"%' FROM get_substrait_json('SELECT a // b FROM n')
+----
+true
+
+query I
+SELECT json LIKE '%"on_division_by_zero"%' AND json LIKE '%"IEEE"%' FROM get_substrait_json('SELECT a / b FROM n')
+----
+true
+
+statement ok
+CREATE TABLE d (a DOUBLE, b DOUBLE);
+
+statement ok
+INSERT INTO d VALUES (7, 2), (1, 0);
+
+# Both sides give infinity for / and both raise for //, so the round trip compares equal.
+statement ok
+CALL get_substrait('SELECT a / b FROM d')
+
+statement ok
+SET substrait_verify_roundtrip = false
+
+statement ok
+SET VARIABLE plan = (SELECT * FROM get_substrait('SELECT a // b FROM d'));
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+statement error
+SELECT a // b FROM d
+----
+Division by zero
+
+statement error
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+Division by zero
+
+# An external plan that asks for NULL on a zero divisor gets it.
+query I
+SELECT q FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:i32_i32","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["z"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"i32":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}],"options":[{"name":"on_division_by_zero","preference":["NULL"]}]}}]}},"names":["q"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}') ORDER BY q NULLS LAST
+----
+3
+NULL
+
+# A preference this consumer cannot honor is rejected.
+statement error
+SELECT * FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:fp64_fp64","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"i32":{"nullability":"NULLABILITY_NULLABLE"}},{"i32":{"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["z"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{}},"rootReference":{}}},"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"}}},{"value":{"cast":{"type":{"fp64":{"nullability":"NULLABILITY_NULLABLE"}},"input":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}},"failureBehavior":"FAILURE_BEHAVIOR_THROW_EXCEPTION"}}}],"options":[{"name":"on_division_by_zero","preference":["LIMIT"]}]}}]}},"names":["f"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic"}]}')
+----
+on_division_by_zero
+
+# DuckDB's operators take their zero-divisor behavior from session settings. The exported plan records what the
+# session does, and an imported plan's explicit policy holds whatever the session says. Verification would run the
+# SQL on a fresh connection with default settings, so it is off here.
+statement ok
+SET substrait_verify_roundtrip = false
+
+statement ok
+SET error_on_division_by_zero = false
+
+query I
+SELECT json LIKE '%"on_division_by_zero"%' AND json LIKE '%"NULL"%' AND json NOT LIKE '%"ERROR"%' FROM get_substrait_json('SELECT a // b FROM z')
+----
+true
+
+statement ok
+SET VARIABLE null_plan = (SELECT * FROM get_substrait('SELECT a // b FROM z'));
+
+query I
+SELECT * FROM from_substrait(getvariable('null_plan')) ORDER BY 1 NULLS LAST
+----
+3
+NULL
+
+# The plan exported earlier under the default setting says ERROR, so it still raises.
+statement error
+SELECT * FROM from_substrait(getvariable('plan'))
+----
+Division by zero
+
+statement ok
+SET error_on_division_by_zero = true
+
+# Without IEEE floating-point operations, / raises like // does, and the plan says so.
+statement ok
+SET ieee_floating_point_ops = false
+
+query I
+SELECT json LIKE '%"ERROR"%' AND json NOT LIKE '%"IEEE"%' FROM get_substrait_json('SELECT a / b FROM d')
+----
+true
+
+statement ok
+SET ieee_floating_point_ops = true
+
+statement ok
+SET substrait_verify_roundtrip = true

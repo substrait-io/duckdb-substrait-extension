@@ -1,0 +1,67 @@
+# name: test/sql/test_wide_integer_division.test
+# description: HUGEINT and UBIGINT travel as DECIMAL(38,0), whose Substrait divide is not integer division
+# group: [sql]
+
+require substrait
+
+require json
+
+statement ok
+SET substrait_verify_roundtrip = true
+
+# Values past 2^53 so that a detour through DOUBLE would show.
+statement ok
+CREATE TABLE h (a HUGEINT, b HUGEINT);
+
+statement ok
+INSERT INTO h VALUES (1152921504606846977, 3), (-1152921504606846977, 3), (7, 2);
+
+statement ok
+CREATE TABLE u (a UBIGINT, b UBIGINT);
+
+statement ok
+INSERT INTO u VALUES (18446744073709551615, 7), (7, 2);
+
+# Substrait's decimal divide returns a scaled decimal, so a truncated quotient over these types cannot be
+# expressed; the export says so instead of emitting a plan that means something else.
+statement error
+CALL get_substrait('SELECT a // b FROM h')
+----
+Integer division of HUGEINT cannot be exported to Substrait
+
+statement error
+CALL get_substrait('SELECT a // b FROM u')
+----
+Integer division of UBIGINT cannot be exported to Substrait
+
+# Casting the operands to BIGINT gives an exportable integer division.
+statement ok
+CALL get_substrait('SELECT a::BIGINT // b::BIGINT FROM h WHERE a > 0')
+
+# The modulus of DECIMAL(38,0) operands is exact and stays under Substrait's name.
+statement ok
+CALL get_substrait('SELECT a % b FROM h')
+
+statement ok
+CALL get_substrait('SELECT a % b FROM u')
+
+query I
+SELECT contains(json, '"modulus:') AND NOT contains(json, '"%"') FROM get_substrait_json('SELECT a % b FROM h')
+----
+true
+
+# The floating-point division of these types is exported as such.
+statement ok
+CALL get_substrait('SELECT a / b FROM h')
+
+# A decimal divide in an external plan takes DuckDB's decimal /, which computes in DOUBLE.
+statement ok
+CREATE TABLE d (a DECIMAL(10,2), b DECIMAL(10,2));
+
+statement ok
+INSERT INTO d VALUES (7.50, 2.50);
+
+query IT
+SELECT q, typeof(q) FROM from_substrait_json('{"extensions":[{"extensionFunction":{"functionAnchor":1,"name":"divide:dec_dec","extensionUrnReference":1}}],"relations":[{"root":{"input":{"project":{"common":{"emit":{"outputMapping":[2]}},"input":{"read":{"baseSchema":{"names":["a","b"],"struct":{"types":[{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}},{"decimal":{"scale":2,"precision":10,"nullability":"NULLABILITY_NULLABLE"}}],"nullability":"NULLABILITY_REQUIRED"}},"projection":{"select":{"structItems":[{},{"field":1}]},"maintainSingularStruct":true},"namedTable":{"names":["d"]}}},"expressions":[{"scalarFunction":{"functionReference":1,"outputType":{"decimal":{"scale":6,"precision":21,"nullability":"NULLABILITY_NULLABLE"}},"arguments":[{"value":{"selection":{"directReference":{"structField":{}},"rootReference":{}}}},{"value":{"selection":{"directReference":{"structField":{"field":1}},"rootReference":{}}}}]}}]}},"names":["q"]}}],"version":{"minorNumber":102,"producer":"DuckDB"},"extensionUrns":[{"extensionUrnAnchor":1,"urn":"extension:io.substrait:functions_arithmetic_decimal"}]}')
+----
+3.0	DOUBLE
