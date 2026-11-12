@@ -480,6 +480,16 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 		bool option_applies = true;
 		for (auto &darg : dfun.GetChildren()) {
 			auto &arg_type = darg->GetReturnType();
+			if (function_name != "/" &&
+			    (arg_type.id() == LogicalTypeId::HUGEINT || arg_type.id() == LogicalTypeId::UBIGINT)) {
+				// These travel as DECIMAL(38,0), and Substrait's decimal divide returns a scaled decimal rather
+				// than a truncated quotient, so integer division over them cannot be expressed yet.
+				throw NotImplementedException(
+				    "Integer division of %s cannot be exported to Substrait: the type travels as DECIMAL(38,0), "
+				    "whose divide produces a scaled decimal rather than an integer quotient. Cast the operands to "
+				    "BIGINT, or use / for a floating-point result",
+				    arg_type.ToString());
+			}
 			option_applies &= arg_type.IsIntegral() || arg_type.id() == LogicalTypeId::FLOAT ||
 			                  arg_type.id() == LogicalTypeId::DOUBLE;
 		}

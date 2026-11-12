@@ -637,31 +637,13 @@ void SubstraitToDuckDB::VerifyCorrectExtractSubfield(const string &subfield) {
 //! is spelled out as a CASE on the divisor. IEEE is what / does with its default settings. Without the option each
 //! operator keeps its own behavior.
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait::Expression &sexpr,
-                                                                const string &signature,
                                                                 vector<unique_ptr<ParsedExpression>> children) {
 	if (children.size() != 2) {
 		throw InvalidInputException("divide takes two arguments, got %llu", children.size());
 	}
 	auto &function = sexpr.scalar_function();
 	auto output_type = SubstraitToDuckType(function.output_type());
-	auto declared_type = output_type;
-	if (output_type.id() == LogicalTypeId::DECIMAL) {
-		// HUGEINT and UBIGINT travel through Substrait as DECIMAL(38,0), the only integer types wide enough, and
-		// Substrait's own decimal division always declares a scale of at least six. A decimal divide whose result
-		// has scale 0 is therefore integer division over integer-valued operands. DuckDB's decimal / goes through
-		// DOUBLE and loses precision past 2^53, so compute it in HUGEINT, which holds every DECIMAL(38,0) exactly.
-		if (DecimalType::GetScale(output_type) != 0 || !StringUtil::EndsWith(signature, ":dec_dec")) {
-			throw NotImplementedException(
-			    "divide with result type %s is not supported: DuckDB divides decimals in DOUBLE, which cannot "
-			    "produce that type exactly. Supported are integer and floating-point results, and DECIMAL(p,0) "
-			    "results of decimal operands (how HUGEINT and UBIGINT are exported)",
-			    output_type.ToString());
-		}
-		for (auto &child : children) {
-			child = make_uniq<CastExpression>(LogicalType::HUGEINT, std::move(child));
-		}
-		output_type = LogicalType::HUGEINT;
-	}
+	// A decimal result takes DuckDB's decimal /, which computes in DOUBLE; only the declared type's exactness is lost.
 	bool integral = output_type.IsIntegral();
 	string policy;
 	for (auto &option : function.options()) {
@@ -671,7 +653,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait:
 	}
 	if (StringUtil::CIEquals(policy, "IEEE") && integral) {
 		throw InvalidInputException("divide with on_division_by_zero IEEE needs a floating-point result, not %s",
-		                            declared_type.ToString());
+		                            output_type.ToString());
 	}
 	auto divisor = children[1]->Copy();
 	unique_ptr<ParsedExpression> result =
@@ -694,9 +676,6 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait:
 		on_zero->CaseChecksMutable().push_back(std::move(zero_divisor));
 		on_zero->ElseMutable() = std::move(result);
 		result = std::move(on_zero);
-	}
-	if (declared_type.id() == LogicalTypeId::DECIMAL) {
-		result = make_uniq<CastExpression>(declared_type, std::move(result));
 	}
 	return result;
 }
@@ -804,7 +783,7 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformScalarFunctionExpr(cons
 		children.insert(children.begin(), std::move(constant_expression));
 	}
 	if (function_name == "divide") {
-		return TransformDivide(sexpr, signature, std::move(children));
+		return TransformDivide(sexpr, std::move(children));
 	}
 
 	return make_uniq<FunctionExpression>(Identifier(RemapFunctionName(function_name)), std::move(children));
