@@ -12,6 +12,7 @@
 #include "duckdb/execution/expression_executor.hpp"
 #include "duckdb/execution/index/art/art_key.hpp"
 #include "duckdb/function/table/table_scan.hpp"
+#include "duckdb/main/settings.hpp"
 #include "duckdb/parser/constraints/not_null_constraint.hpp"
 #include "duckdb/planner/expression/bound_between_expression.hpp"
 #include "duckdb/planner/expression/list.hpp"
@@ -470,8 +471,9 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 	// an i64 substring signature, emit the wider arguments directly.
 	bool is_substring = function_name == "substring" || function_name == "substr";
 	bool is_decimal_multiply = dfun.Function().GetName() == "*" && dfun.GetReturnType().id() == LogicalTypeId::DECIMAL;
-	// Substrait's divide takes its zero-divisor behavior as an option, and DuckDB's operators each have a fixed
-	// one: / follows IEEE (infinity or NaN) while // and divide() raise. The option exists for the integer and
+	// Substrait's divide takes its zero-divisor behavior as an option, and DuckDB's operators take theirs from
+	// session settings: / follows IEEE (infinity or NaN) while ieee_floating_point_ops is on, otherwise it, //
+	// and divide() raise or return NULL as error_on_division_by_zero says. The option exists for the integer and
 	// floating-point signatures only.
 	string division_by_zero;
 	if (function_name == "/" || function_name == "//" || function_name == "divide") {
@@ -482,7 +484,11 @@ void DuckDBToSubstrait::TransformFunctionExpression(Expression &dexpr, substrait
 			                  arg_type.id() == LogicalTypeId::DOUBLE;
 		}
 		if (option_applies) {
-			division_by_zero = function_name == "/" ? "IEEE" : "ERROR";
+			if (function_name == "/" && Settings::Get<IeeeFloatingPointOpsSetting>(context)) {
+				division_by_zero = "IEEE";
+			} else {
+				division_by_zero = Settings::Get<ErrorOnDivisionByZeroSetting>(context) ? "ERROR" : "NULL";
+			}
 		}
 	}
 	vector<substrait::Type> args_types;
@@ -2532,7 +2538,7 @@ substrait::Rel *DuckDBToSubstrait::TransformGet(LogicalOperator &dop) {
 	}
 	auto sget = get_rel->mutable_read();
 
-	if (dget.table_filters.HasFilters()) {
+	if (dget.table_filters.HasFilters() || dget.table_filters.HasMultiColumnFilters()) {
 		// Pushdown filter
 		// Table filters name scan columns by their position among the columns the scan reads; the
 		// ReadRel's base schema is the whole table, so translate to table column indexes.

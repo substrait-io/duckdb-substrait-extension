@@ -632,9 +632,10 @@ void SubstraitToDuckDB::VerifyCorrectExtractSubfield(const string &subfield) {
 }
 
 //! Substrait's divide truncates an integer result while DuckDB's / promotes to DOUBLE, so the declared output
-//! type picks the operator. Its on_division_by_zero option picks what a zero divisor does: IEEE is what / does,
-//! ERROR is what // and divide() do, and NULL is spelled out as a CASE. Without the option each operator keeps
-//! its own behavior.
+//! type picks the operator. Its on_division_by_zero option picks what a zero divisor does. DuckDB's operators take
+//! theirs from session settings (error_on_division_by_zero, ieee_floating_point_ops), so an explicit ERROR or NULL
+//! is spelled out as a CASE on the divisor. IEEE is what / does with its default settings. Without the option each
+//! operator keeps its own behavior.
 unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait::Expression &sexpr,
                                                                 const string &signature,
                                                                 vector<unique_ptr<ParsedExpression>> children) {
@@ -672,23 +673,27 @@ unique_ptr<ParsedExpression> SubstraitToDuckDB::TransformDivide(const substrait:
 		throw InvalidInputException("divide with on_division_by_zero IEEE needs a floating-point result, not %s",
 		                            declared_type.ToString());
 	}
-	unique_ptr<ParsedExpression> result;
-	if (StringUtil::CIEquals(policy, "ERROR")) {
-		result = make_uniq<FunctionExpression>("divide", std::move(children));
-	} else {
-		auto divisor = children[1]->Copy();
-		result = make_uniq<FunctionExpression>(Identifier(integral ? "//" : "/"), std::move(children));
-		if (StringUtil::CIEquals(policy, "NULL")) {
-			// CASE evaluates its branches per row, so the division is skipped where the divisor is zero.
-			auto null_on_zero = make_uniq<CaseExpression>();
-			CaseCheck zero_divisor;
-			zero_divisor.when_expr = make_uniq<ComparisonExpression>(
-			    ExpressionType::COMPARE_EQUAL, std::move(divisor), ConstantExpression::FromValue(Value::INTEGER(0)));
+	auto divisor = children[1]->Copy();
+	unique_ptr<ParsedExpression> result =
+	    make_uniq<FunctionExpression>(Identifier(integral ? "//" : "/"), std::move(children));
+	if (StringUtil::CIEquals(policy, "ERROR") || StringUtil::CIEquals(policy, "NULL")) {
+		// CASE evaluates its branches per row, so the division is skipped where the divisor is zero and the
+		// plan's policy applies whatever the session settings say.
+		auto on_zero = make_uniq<CaseExpression>();
+		CaseCheck zero_divisor;
+		zero_divisor.when_expr = make_uniq<ComparisonExpression>(ExpressionType::COMPARE_EQUAL, std::move(divisor),
+		                                                         ConstantExpression::FromValue(Value::INTEGER(0)));
+		if (StringUtil::CIEquals(policy, "ERROR")) {
+			vector<unique_ptr<ParsedExpression>> error_args;
+			error_args.push_back(ConstantExpression::FromValue(
+			    Value("Division by zero in a Substrait divide with on_division_by_zero ERROR")));
+			zero_divisor.then_expr = make_uniq<FunctionExpression>("error", std::move(error_args));
+		} else {
 			zero_divisor.then_expr = ConstantExpression::FromValue(Value(output_type));
-			null_on_zero->CaseChecksMutable().push_back(std::move(zero_divisor));
-			null_on_zero->ElseMutable() = std::move(result);
-			result = std::move(null_on_zero);
 		}
+		on_zero->CaseChecksMutable().push_back(std::move(zero_divisor));
+		on_zero->ElseMutable() = std::move(result);
+		result = std::move(on_zero);
 	}
 	if (declared_type.id() == LogicalTypeId::DECIMAL) {
 		result = make_uniq<CastExpression>(declared_type, std::move(result));
