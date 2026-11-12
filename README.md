@@ -159,8 +159,10 @@ Substrait window functions support ordering in the `OVER` clause. If the DuckDB 
 ### Verifying Round Trips
 
 With the `substrait_verify_roundtrip` setting enabled, `get_substrait` and `get_substrait_json` also run the plan
-they produced through `from_substrait` and raise an error if its result differs from running the SQL directly.
-This is what the extension's own tests use; it is off by default.
+they produced through `from_substrait` and compare its rows, value by value, with those of running the SQL directly.
+Any difference raises an error, with one exception: a `NaN` from the SQL where the plan produced `NULL` is
+accepted, since that is how division by zero on decimals has differed between the two. Column names are not
+compared. This is what the extension's own tests use; it is off by default.
 
 ```sql
 SET substrait_verify_roundtrip = true;
